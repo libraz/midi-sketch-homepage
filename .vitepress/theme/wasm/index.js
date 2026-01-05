@@ -55,6 +55,16 @@ export const CallDensity = {
     Standard: 2,
     Intense: 3,
 };
+// Arrangement growth constants
+export const ArrangementGrowth = {
+    LayerAdd: 0,
+    RegisterAdd: 1,
+};
+// Motif repeat scope constants
+export const MotifRepeatScope = {
+    FullSong: 0,
+    Section: 1,
+};
 let moduleInstance = null;
 let api = null;
 function getModule() {
@@ -287,6 +297,14 @@ export function createDefaultConfig(styleId) {
         vocalMinNoteDivision: view.getUint8(retPtr + 43),
         vocalRestRatio: view.getUint8(retPtr + 44),
         vocalAllowExtremLeap: view.getUint8(retPtr + 45) !== 0,
+        // Arrangement settings
+        arrangementGrowth: view.getUint8(retPtr + 46),
+        // Arpeggio sync settings
+        arpeggioSyncChord: view.getUint8(retPtr + 47) !== 0,
+        // Motif settings
+        motifRepeatScope: view.getUint8(retPtr + 48),
+        motifFixedProgression: view.getUint8(retPtr + 49) !== 0,
+        motifMaxChordCount: view.getUint8(retPtr + 50),
     };
 }
 /**
@@ -387,7 +405,7 @@ export class MidiSketch {
         }
     }
     allocSongConfig(m, config) {
-        const ptr = m._malloc(48); // Struct is 46 bytes, aligned to 48
+        const ptr = m._malloc(56); // Struct is 51 bytes, aligned to 56
         const view = new DataView(m.HEAPU8.buffer);
         // Basic settings
         view.setUint8(ptr + 0, config.stylePresetId ?? 0);
@@ -441,6 +459,14 @@ export class MidiSketch {
         view.setUint8(ptr + 43, config.vocalMinNoteDivision ?? 0);
         view.setUint8(ptr + 44, config.vocalRestRatio ?? 15);
         view.setUint8(ptr + 45, config.vocalAllowExtremLeap ? 1 : 0);
+        // Arrangement settings
+        view.setUint8(ptr + 46, config.arrangementGrowth ?? 0);
+        // Arpeggio sync settings
+        view.setUint8(ptr + 47, config.arpeggioSyncChord !== false ? 1 : 0);
+        // Motif settings
+        view.setUint8(ptr + 48, config.motifRepeatScope ?? 0);
+        view.setUint8(ptr + 49, config.motifFixedProgression !== false ? 1 : 0);
+        view.setUint8(ptr + 50, config.motifMaxChordCount ?? 4);
         return ptr;
     }
     allocVocalParams(m, params) {

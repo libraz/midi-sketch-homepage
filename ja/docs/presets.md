@@ -226,51 +226,65 @@ flowchart LR
 ### シンプルなポップソング
 
 ```javascript
-{
-    structureId: 0,      // StandardPop
-    moodId: 0,           // StraightPop
-    chordId: 0,          // Pop4 (I-V-vi-IV)
-    key: 0,              // Cメジャー
-    bpm: 0,              // デフォルト使用 (120)
-    drumsEnabled: true
-}
+import { createDefaultConfig } from 'midi-sketch'
+
+// MinimalGroovePopプリセットを使用
+const config = createDefaultConfig(0)
+config.key = 0                  // Cメジャー
+config.chordProgressionId = 0   // Pop4 (I-V-vi-IV)
+config.formId = 0               // StandardPop
+config.bpm = 0                  // デフォルト使用 (120)
+config.drumsEnabled = true
 ```
 
 ### エモーショナルバラード
 
 ```javascript
-{
-    structureId: 8,      // Ballad
-    moodId: 8,           // Ballad
-    chordId: 4,          // Emotional4
-    key: 7,              // Gメジャー
-    bpm: 75,             // より遅く
-    drumsEnabled: true
-}
+// BalladStandardプリセットを使用
+const config = createDefaultConfig(4)  // BalladStandard
+config.key = 7                         // Gメジャー
+config.chordProgressionId = 4          // Emotional4
+config.formId = 8                      // Ballad構造
+config.bpm = 75                        // より遅く
+config.drumsEnabled = true
 ```
 
 ### YOASOBIスタイル
 
 ```javascript
-{
-    stylePresetId: 5,    // YoasobiStyle
-    key: 2,              // Dメジャー
-    bpm: 0,              // デフォルト使用 (148)
-    chordId: 2,          // Komuro
-    drumsEnabled: true,
-    arpeggioEnabled: true
-}
+// YoasobiStyleプリセットを使用
+const config = createDefaultConfig(5)  // YoasobiStyle
+config.key = 2                         // Dメジャー
+config.chordProgressionId = 2          // Komuro
+config.bpm = 0                         // デフォルト使用 (148)
+config.drumsEnabled = true
+config.arpeggioEnabled = true
+config.vocalNoteDensity = 150          // ボカロスタイルの高密度メロディ
+config.vocalAllowExtremLeap = true     // 広い音程跳躍を許可
 ```
 
 ### チルバックグラウンド
 
 ```javascript
-{
-    structureId: 4,      // ShortForm
-    moodId: 7,           // Chill
-    chordId: 5,          // Minimal
-    key: 5,              // Fメジャー
-    bpm: 95,
-    drumsEnabled: false  // アンビエント用ドラムなし
-}
+// ChillMotifプリセットを使用
+const config = createDefaultConfig(10)  // ChillMotif
+config.key = 5                          // Fメジャー
+config.chordProgressionId = 5           // Minimal
+config.formId = 4                       // ShortForm
+config.bpm = 95
+config.drumsEnabled = false             // アンビエント用ドラムなし
+```
+
+### アイドルポップ（コール付き）
+
+```javascript
+// IdolStandardプリセットを使用
+const config = createDefaultConfig(2)  // IdolStandard
+config.key = 0                         // Cメジャー
+config.callEnabled = true              // コールトラック有効化
+config.introChant = 1                  // ガチ恋イントロ
+config.mixPattern = 1                  // スタンダードミックス
+config.callDensity = 2                 // 標準密度
+config.modulationTiming = 1            // ラスサビで転調
+config.modulationSemitones = 2         // 2半音上げ
 ```

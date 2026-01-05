@@ -226,51 +226,65 @@ Valid tempo range: 60-180 BPM
 ### Simple Pop Song
 
 ```javascript
-{
-    structureId: 0,      // StandardPop
-    moodId: 0,           // StraightPop
-    chordId: 0,          // Pop4 (I-V-vi-IV)
-    key: 0,              // C major
-    bpm: 0,              // Use default (120)
-    drumsEnabled: true
-}
+import { createDefaultConfig } from 'midi-sketch'
+
+// Use MinimalGroovePop preset
+const config = createDefaultConfig(0)
+config.key = 0                  // C major
+config.chordProgressionId = 0   // Pop4 (I-V-vi-IV)
+config.formId = 0               // StandardPop
+config.bpm = 0                  // Use default (120)
+config.drumsEnabled = true
 ```
 
 ### Emotional Ballad
 
 ```javascript
-{
-    structureId: 8,      // Ballad
-    moodId: 8,           // Ballad
-    chordId: 4,          // Emotional4
-    key: 7,              // G major
-    bpm: 75,             // Slower
-    drumsEnabled: true
-}
+// Use BalladStandard preset
+const config = createDefaultConfig(4)  // BalladStandard
+config.key = 7                         // G major
+config.chordProgressionId = 4          // Emotional4
+config.formId = 8                      // Ballad structure
+config.bpm = 75                        // Slower
+config.drumsEnabled = true
 ```
 
 ### YOASOBI Style
 
 ```javascript
-{
-    stylePresetId: 5,    // YoasobiStyle
-    key: 2,              // D major
-    bpm: 0,              // Use default (148)
-    chordId: 2,          // Komuro
-    drumsEnabled: true,
-    arpeggioEnabled: true
-}
+// Use YoasobiStyle preset
+const config = createDefaultConfig(5)  // YoasobiStyle
+config.key = 2                         // D major
+config.chordProgressionId = 2          // Komuro
+config.bpm = 0                         // Use default (148)
+config.drumsEnabled = true
+config.arpeggioEnabled = true
+config.vocalNoteDensity = 150          // Vocaloid-style dense melody
+config.vocalAllowExtremLeap = true     // Allow wide intervals
 ```
 
 ### Chill Background
 
 ```javascript
-{
-    structureId: 4,      // ShortForm
-    moodId: 7,           // Chill
-    chordId: 5,          // Minimal
-    key: 5,              // F major
-    bpm: 95,
-    drumsEnabled: false  // No drums for ambient
-}
+// Use ChillMotif preset
+const config = createDefaultConfig(10)  // ChillMotif
+config.key = 5                          // F major
+config.chordProgressionId = 5           // Minimal
+config.formId = 4                       // ShortForm
+config.bpm = 95
+config.drumsEnabled = false             // No drums for ambient
+```
+
+### Idol Pop with Calls
+
+```javascript
+// Use IdolStandard preset
+const config = createDefaultConfig(2)  // IdolStandard
+config.key = 0                         // C major
+config.callEnabled = true              // Enable call track
+config.introChant = 1                  // Gachikoi intro
+config.mixPattern = 1                  // Standard mix
+config.callDensity = 2                 // Standard density
+config.modulationTiming = 1            // Modulate at last chorus
+config.modulationSemitones = 2         // Up 2 semitones
 ```

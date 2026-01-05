@@ -119,11 +119,18 @@ sketch.generateFromConfig({
   arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange: 2,     // 1-3 octaves
   arpeggioGate: 80,           // Gate length (0-100)
+  arpeggioSyncChord: true,    // Sync arpeggio with chord changes
 
   // Vocal settings
   vocalLow: 55,               // Vocal range lower bound (MIDI note)
   vocalHigh: 74,              // Vocal range upper bound (MIDI note)
   skipVocal: false,           // Skip vocal generation (for BGM-first workflow)
+
+  // Vocal detail settings
+  vocalNoteDensity: 0,        // Note density (0=style default, 70=standard, 100=idol, 150=vocaloid)
+  vocalMinNoteDivision: 0,    // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
+  vocalRestRatio: 0,          // Rest ratio (0-50, percentage of phrase rest time)
+  vocalAllowExtremLeap: false, // Allow extreme leaps for vocaloid-style melodies
 
   // Humanization
   humanize: true,             // Enable humanization
@@ -143,6 +150,26 @@ sketch.generateFromConfig({
 
   // Duration
   targetDurationSeconds: 0,   // Target duration (0=use formId)
+
+  // Modulation settings
+  modulationTiming: 0,        // 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random
+  modulationSemitones: 1,     // Modulation amount (+1 to +4 semitones)
+
+  // Call/SE settings (for idol-style music)
+  seEnabled: false,           // Enable SE track
+  callEnabled: false,         // Enable call feature
+  callNotesEnabled: false,    // Output calls as notes
+  introChant: 0,              // 0=None, 1=Gachikoi, 2=Shouting
+  mixPattern: 0,              // 0=None, 1=Standard, 2=Tiger
+  callDensity: 0,             // 0=None, 1=Minimal, 2=Standard, 3=Intense
+
+  // Arrangement settings
+  arrangementGrowth: 0,       // 0=LayerAdd (add instruments), 1=RegisterAdd (expand register)
+
+  // Motif settings
+  motifRepeatScope: 0,        // 0=FullSong (same motif), 1=Section (per-section motif)
+  motifFixedProgression: true, // Use same chord progression for all sections
+  motifMaxChordCount: 0,      // Max chord count (0=no limit, 2-8)
 })
 ```
 
@@ -153,10 +180,16 @@ Use after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
 
 ```javascript
 sketch.regenerateVocal({
-  seed: 0,               // Random seed (0=new random)
-  vocalLow: 55,          // Vocal range lower bound (MIDI note)
-  vocalHigh: 74,         // Vocal range upper bound (MIDI note)
-  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
+  seed: 0,                     // Random seed (0=new random)
+  vocalLow: 55,                // Vocal range lower bound (MIDI note)
+  vocalHigh: 74,               // Vocal range upper bound (MIDI note)
+  vocalAttitude: 1,            // 0=Clean, 1=Expressive, 2=Raw
+
+  // Optional: Fine-tune vocal generation
+  vocalNoteDensity: 100,       // Note density (0=style default, 70=standard, 100=idol, 150=vocaloid)
+  vocalMinNoteDivision: 8,     // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
+  vocalRestRatio: 20,          // Rest ratio (0-50, percentage of phrase rest time)
+  vocalAllowExtremLeap: false, // Allow extreme leaps for vocaloid-style melodies
 })
 ```
 
@@ -226,4 +259,53 @@ VocalAttitude.Raw        // 2 - Raw, emotional vocals
 CompositionStyle.MelodyLead     // 0 - Traditional melody-driven
 CompositionStyle.BackgroundMotif // 1 - Motif-driven with subdued vocals
 CompositionStyle.SynthDriven    // 2 - Arpeggio-forward electronic
+```
+
+### `ModulationTiming`
+
+```javascript
+ModulationTiming.None        // 0 - No modulation
+ModulationTiming.LastChorus  // 1 - Modulate at last chorus
+ModulationTiming.AfterBridge // 2 - Modulate after bridge
+ModulationTiming.EachChorus  // 3 - Modulate at each chorus
+ModulationTiming.Random      // 4 - Random modulation timing
+```
+
+### `IntroChant`
+
+```javascript
+IntroChant.None     // 0 - No intro chant
+IntroChant.Gachikoi // 1 - Gachikoi style chant
+IntroChant.Shouting // 2 - Shouting style chant
+```
+
+### `MixPattern`
+
+```javascript
+MixPattern.None     // 0 - No mix pattern
+MixPattern.Standard // 1 - Standard call & response
+MixPattern.Tiger    // 2 - Tiger fire pattern
+```
+
+### `CallDensity`
+
+```javascript
+CallDensity.None     // 0 - No calls
+CallDensity.Minimal  // 1 - Minimal call insertions
+CallDensity.Standard // 2 - Standard call frequency
+CallDensity.Intense  // 3 - High-density calls
+```
+
+### `ArrangementGrowth`
+
+```javascript
+ArrangementGrowth.LayerAdd    // 0 - Add layers/instruments over time
+ArrangementGrowth.RegisterAdd // 1 - Expand register range over time
+```
+
+### `MotifRepeatScope`
+
+```javascript
+MotifRepeatScope.FullSong // 0 - Same motif throughout song
+MotifRepeatScope.Section  // 1 - Different motif per section
 ```

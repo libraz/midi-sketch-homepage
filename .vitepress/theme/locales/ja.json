@@ -65,6 +65,7 @@
     },
     "tabs": {
       "style": "スタイル",
+      "arrangement": "アレンジ",
       "feel": "フィール",
       "rhythm": "リズム",
       "arpeggio": "アルペジオ",
@@ -93,6 +94,28 @@
           "backgroundMotifDesc": "控えめなメロディでトラックを引き立てる",
           "synthDriven": "シンセドリブン",
           "synthDrivenDesc": "シンセサイザー的な電子音楽スタイル"
+        },
+        "motifSettings": {
+          "label": "モチーフ設定",
+          "repeatScope": "繰り返し範囲",
+          "repeatScopeOptions": {
+            "fullSong": "曲全体",
+            "section": "セクション単位"
+          },
+          "fixedProgression": "固定進行",
+          "fixedProgressionDesc": "全セクションで同じコード進行を使用",
+          "maxChordCount": "最大コード数",
+          "maxChordCountHint": "0=制限なし"
+        }
+      },
+      "arrangement": {
+        "label": "アレンジメント",
+        "growth": "音の広がり方",
+        "growthOptions": {
+          "layerAdd": "レイヤー追加",
+          "layerAddDesc": "セクションごとにパートを追加",
+          "registerAdd": "音域拡張",
+          "registerAddDesc": "同じパートで音域を広げる"
         }
       },
       "drums": {
@@ -121,6 +144,8 @@
         "octaveRangeHint": "パターンがまたがるオクターブ数",
         "gate": "ゲート",
         "gateHint": "音の長さ（100%=レガート、低いほどスタッカート）",
+        "syncChord": "コード同期",
+        "syncChordDesc": "コード変更時にアルペジオパターンをリセット",
         "synthDrivenNote": "シンセドリブンスタイルではアルペジオが常に有効になります。"
       },
       "chordExt": {
@@ -152,24 +177,26 @@
         "semitonesHint": "キーを何半音上げるか（+1〜+4）"
       },
       "se": {
-        "description": "サウンドエフェクトやコールパターンを追加して、ライブ感を演出します。アイドル曲やコンサート風のトラックに最適。",
-        "seEnabled": "SEトラックを有効化",
+        "description": "コールパターンを追加して、ライブ感を演出します。アイドル曲やコンサート風のトラックに最適。",
         "callEnabled": "コール機能を有効化",
         "callEnabledDesc": "観客のコールパターン（ハイ！フゥ！など）を追加",
         "callNotesEnabled": "コールをMIDIノートで出力",
         "introChant": "イントロコール",
+        "introChantDesc": "イントロ直後にコールセクションを挿入します",
         "introChantOptions": {
           "none": "なし",
           "gachikoi": "ガチ恋口上（約18秒）",
           "shouting": "シャウト（約4秒）"
         },
         "mixPattern": "MIXパターン",
+        "mixPatternDesc": "曲中にMIXブレイクセクションを挿入します",
         "mixPatternOptions": {
           "none": "なし",
           "standard": "スタンダード（約8秒）",
           "tiger": "タイガー・ファイヤー（約16秒）"
         },
-        "callDensity": "コール密度",
+        "callDensity": "サビのコール密度",
+        "callDensityDesc": "サビセクションでの「ハイ！」コールの頻度",
         "callDensityOptions": {
           "none": "なし",
           "minimal": "少なめ",

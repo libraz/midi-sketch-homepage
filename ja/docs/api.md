@@ -119,11 +119,18 @@ sketch.generateFromConfig({
   arpeggioSpeed: 1,           // 0=8分音符, 1=16分音符, 2=3連符
   arpeggioOctaveRange: 2,     // 1-3 オクターブ
   arpeggioGate: 80,           // ゲート長 (0-100)
+  arpeggioSyncChord: true,    // コードチェンジに同期
 
   // ボーカル設定
   vocalLow: 55,               // ボーカル音域下限 (MIDI ノート番号)
   vocalHigh: 74,              // ボーカル音域上限 (MIDI ノート番号)
   skipVocal: false,           // ボーカル生成をスキップ (BGM先行ワークフロー用)
+
+  // ボーカル詳細設定
+  vocalNoteDensity: 0,        // 音符密度 (0=スタイルデフォルト, 70=標準, 100=アイドル, 150=ボカロ)
+  vocalMinNoteDivision: 0,    // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
+  vocalRestRatio: 0,          // 休符率 (0-50, フレーズ休止時間の割合)
+  vocalAllowExtremLeap: false, // 広い跳躍を許可 (ボカロスタイル用)
 
   // ヒューマナイズ
   humanize: true,             // ヒューマナイズ有効化
@@ -143,6 +150,26 @@ sketch.generateFromConfig({
 
   // 尺
   targetDurationSeconds: 0,   // 目標尺 (0=formIdに従う)
+
+  // 転調設定
+  modulationTiming: 0,        // 0=なし, 1=ラスサビ, 2=ブリッジ後, 3=各サビ, 4=ランダム
+  modulationSemitones: 1,     // 転調量 (+1〜+4半音)
+
+  // コール/SE設定 (アイドル系楽曲用)
+  seEnabled: false,           // SEトラック有効化
+  callEnabled: false,         // コール機能有効化
+  callNotesEnabled: false,    // コールをノートとして出力
+  introChant: 0,              // 0=なし, 1=ガチ恋, 2=シャウト
+  mixPattern: 0,              // 0=なし, 1=スタンダード, 2=虎火
+  callDensity: 0,             // 0=なし, 1=控えめ, 2=標準, 3=高密度
+
+  // アレンジメント設定
+  arrangementGrowth: 0,       // 0=LayerAdd (楽器追加), 1=RegisterAdd (音域拡大)
+
+  // モチーフ設定
+  motifRepeatScope: 0,        // 0=FullSong (同一モチーフ), 1=Section (セクション別)
+  motifFixedProgression: true, // 全セクションで同じコード進行を使用
+  motifMaxChordCount: 0,      // 最大コード数 (0=制限なし, 2-8)
 })
 ```
 
@@ -153,10 +180,16 @@ BGM先行ワークフローでは `generateFromConfig()` の `skipVocal: true` �
 
 ```javascript
 sketch.regenerateVocal({
-  seed: 0,               // ランダムシード (0=新しいランダム)
-  vocalLow: 55,          // ボーカル音域下限 (MIDI ノート番号)
-  vocalHigh: 74,         // ボーカル音域上限 (MIDI ノート番号)
-  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
+  seed: 0,                     // ランダムシード (0=新しいランダム)
+  vocalLow: 55,                // ボーカル音域下限 (MIDI ノート番号)
+  vocalHigh: 74,               // ボーカル音域上限 (MIDI ノート番号)
+  vocalAttitude: 1,            // 0=Clean, 1=Expressive, 2=Raw
+
+  // オプション: ボーカル生成の微調整
+  vocalNoteDensity: 100,       // 音符密度 (0=スタイルデフォルト, 70=標準, 100=アイドル, 150=ボカロ)
+  vocalMinNoteDivision: 8,     // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
+  vocalRestRatio: 20,          // 休符率 (0-50, フレーズ休止時間の割合)
+  vocalAllowExtremLeap: false, // 広い跳躍を許可 (ボカロスタイル用)
 })
 ```
 
@@ -226,4 +259,53 @@ VocalAttitude.Raw        // 2 - 生々しく感情的なボーカル
 CompositionStyle.MelodyLead     // 0 - 従来のメロディ主導型
 CompositionStyle.BackgroundMotif // 1 - モチーフ主導でボーカル控えめ
 CompositionStyle.SynthDriven    // 2 - アルペジオ重視のエレクトロニック
+```
+
+### `ModulationTiming`
+
+```javascript
+ModulationTiming.None        // 0 - 転調なし
+ModulationTiming.LastChorus  // 1 - ラスサビで転調
+ModulationTiming.AfterBridge // 2 - ブリッジ後に転調
+ModulationTiming.EachChorus  // 3 - 各サビで転調
+ModulationTiming.Random      // 4 - ランダムなタイミング
+```
+
+### `IntroChant`
+
+```javascript
+IntroChant.None     // 0 - イントロチャントなし
+IntroChant.Gachikoi // 1 - ガチ恋スタイル
+IntroChant.Shouting // 2 - シャウトスタイル
+```
+
+### `MixPattern`
+
+```javascript
+MixPattern.None     // 0 - ミックスパターンなし
+MixPattern.Standard // 1 - 標準的なコール&レスポンス
+MixPattern.Tiger    // 2 - 虎火パターン
+```
+
+### `CallDensity`
+
+```javascript
+CallDensity.None     // 0 - コールなし
+CallDensity.Minimal  // 1 - 控えめなコール挿入
+CallDensity.Standard // 2 - 標準的なコール頻度
+CallDensity.Intense  // 3 - 高密度コール
+```
+
+### `ArrangementGrowth`
+
+```javascript
+ArrangementGrowth.LayerAdd    // 0 - 時間経過で楽器/レイヤーを追加
+ArrangementGrowth.RegisterAdd // 1 - 時間経過で音域を拡大
+```
+
+### `MotifRepeatScope`
+
+```javascript
+MotifRepeatScope.FullSong // 0 - 曲全体で同一モチーフ
+MotifRepeatScope.Section  // 1 - セクションごとに異なるモチーフ
 ```

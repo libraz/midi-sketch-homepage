@@ -9,28 +9,30 @@ MIDI Sketch は、ポップミュージックの MIDI スケッチを自動生�
 ## クイックスタート
 
 ```javascript
-import midisketch from 'midi-sketch'
+import { MidiSketch, init, createDefaultConfig, downloadMidi } from 'midi-sketch'
 
 // WASM モジュールを初期化
-await midisketch.init()
+await init()
 
 // インスタンスを作成
-const sketch = new midisketch.MidiSketch()
+const sketch = new MidiSketch()
+
+// スタイルプリセット用の設定を作成 (0 = 最初のスタイル)
+const config = createDefaultConfig(0)
+
+// 必要に応じてカスタマイズ
+config.key = 0           // キー (0 = C)
+config.bpm = 120         // テンポ (0 = スタイルのデフォルト)
+config.seed = 12345      // ランダムシード (0 = ランダム)
 
 // MIDI を生成
-sketch.generate({
-  structureId: 0,  // 曲構成
-  moodId: 0,       // ムードプリセット
-  chordId: 0,      // コード進行
-  key: 0,          // キー (0 = C)
-  bpm: 120         // テンポ
-})
+sketch.generateFromConfig(config)
 
 // MIDI データを取得
 const midiData = sketch.getMidi()
 
 // ファイルをダウンロード
-midisketch.downloadMidi(midiData, 'my-song.mid')
+downloadMidi(midiData, 'my-song.mid')
 ```
 
 ## 生成されるトラック

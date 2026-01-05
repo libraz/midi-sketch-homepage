@@ -9,11 +9,12 @@ const { t } = useI18n()
 const store = useWizardStore()
 
 // Advanced settings tab system
-type SettingsTab = 'style' | 'feel' | 'rhythm' | 'arpeggio' | 'harmony' | 'modulation' | 'se' | 'duration'
+type SettingsTab = 'style' | 'feel' | 'rhythm' | 'arpeggio' | 'harmony' | 'modulation' | 'se' | 'duration' | 'arrangement'
 const activeTab = ref<SettingsTab>('style') // Default to first tab
 
 const settingsTabs: { id: SettingsTab; icon: string; labelKey: string }[] = [
   { id: 'style', icon: '🎛️', labelKey: 'settingsStep.tabs.style' },
+  { id: 'arrangement', icon: '📊', labelKey: 'settingsStep.tabs.arrangement' },
   { id: 'feel', icon: '🎚️', labelKey: 'settingsStep.tabs.feel' },
   { id: 'rhythm', icon: '🥁', labelKey: 'settingsStep.tabs.rhythm' },
   { id: 'arpeggio', icon: '🎹', labelKey: 'settingsStep.tabs.arpeggio' },
@@ -23,8 +24,35 @@ const settingsTabs: { id: SettingsTab; icon: string; labelKey: string }[] = [
   { id: 'duration', icon: '⏱', labelKey: 'settingsStep.tabs.duration' }
 ]
 
+// Ref for tabs container
+const tabsContainer = ref<HTMLElement | null>(null)
+
 function selectTab(tab: SettingsTab) {
   activeTab.value = tab
+  // Scroll selected tab to center
+  scrollTabToCenter(tab)
+}
+
+function scrollTabToCenter(tabId: SettingsTab) {
+  if (!tabsContainer.value) return
+
+  const container = tabsContainer.value
+  const tabIndex = settingsTabs.findIndex(t => t.id === tabId)
+  const tabElement = container.children[tabIndex] as HTMLElement
+
+  if (!tabElement) return
+
+  const containerWidth = container.offsetWidth
+  const tabLeft = tabElement.offsetLeft
+  const tabWidth = tabElement.offsetWidth
+
+  // Calculate scroll position to center the tab
+  const scrollTo = tabLeft - (containerWidth / 2) + (tabWidth / 2)
+
+  container.scrollTo({
+    left: Math.max(0, scrollTo),
+    behavior: 'smooth'
+  })
 }
 const isPlayingScale = ref(false)
 const playingNoteIndex = ref(-1)
@@ -519,12 +547,14 @@ const callDensityOptions = [
         </div>
 
         <!-- Tab Bar -->
-        <div class="console-tabs" role="tablist">
-          <button
-            v-for="tab in settingsTabs"
-            :key="tab.id"
-            class="console-tab"
-            :class="{ 'console-tab--active': activeTab === tab.id }"
+        <div class="console-tabs-wrapper">
+          <div class="console-tabs-fade console-tabs-fade--left"></div>
+          <div ref="tabsContainer" class="console-tabs" role="tablist">
+            <button
+              v-for="tab in settingsTabs"
+              :key="tab.id"
+              class="console-tab"
+              :class="{ 'console-tab--active': activeTab === tab.id }"
             role="tab"
             :aria-selected="activeTab === tab.id"
             @click="selectTab(tab.id)"
@@ -532,6 +562,8 @@ const callDensityOptions = [
             <span class="console-tab__icon">{{ tab.icon }}</span>
             <span class="console-tab__label">{{ t(tab.labelKey) }}</span>
           </button>
+          </div>
+          <div class="console-tabs-fade console-tabs-fade--right"></div>
         </div>
 
         <!-- Tab Content Panels -->
@@ -555,6 +587,64 @@ const callDensityOptions = [
                     <span class="composition-card__desc">{{ t(`settingsStep.advanced.compositionStyle.options.${option.key}Desc`) }}</span>
                   </div>
                 </button>
+              </div>
+
+              <!-- Motif Settings (shown when BackgroundMotif is selected) -->
+              <div v-if="store.config.compositionStyle === 1" class="motif-settings">
+                <h4 class="subsection-title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.label') }}</h4>
+
+                <!-- Repeat Scope -->
+                <div class="option-group">
+                  <label class="option-label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScope') }}</label>
+                  <div class="option-buttons">
+                    <button
+                      class="option-btn"
+                      :class="{ 'option-btn--active': store.config.motifRepeatScope === 0 }"
+                      @click="store.config.motifRepeatScope = 0"
+                    >
+                      {{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.fullSong') }}
+                    </button>
+                    <button
+                      class="option-btn"
+                      :class="{ 'option-btn--active': store.config.motifRepeatScope === 1 }"
+                      @click="store.config.motifRepeatScope = 1"
+                    >
+                      {{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.section') }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Fixed Progression -->
+                <div class="setting-row">
+                  <label class="toggle-label">
+                    <input
+                      type="checkbox"
+                      v-model="store.config.motifFixedProgression"
+                      class="toggle-input"
+                    />
+                    <span class="toggle-switch"></span>
+                    <span class="toggle-text">
+                      <span class="toggle-title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgression') }}</span>
+                      <span class="toggle-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgressionDesc') }}</span>
+                    </span>
+                  </label>
+                </div>
+
+                <!-- Max Chord Count -->
+                <div class="slider-item">
+                  <label class="slider-label">
+                    {{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCount') }}
+                    <span class="slider-value">{{ store.config.motifMaxChordCount === 0 ? '∞' : store.config.motifMaxChordCount }}</span>
+                  </label>
+                  <p class="slider-hint">{{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCountHint') }}</p>
+                  <input
+                    type="range"
+                    v-model.number="store.config.motifMaxChordCount"
+                    min="0"
+                    max="8"
+                    class="slider"
+                  />
+                </div>
               </div>
             </template>
 
@@ -705,6 +795,22 @@ const callDensityOptions = [
                     class="slider"
                   />
                 </div>
+
+                <!-- Chord Sync -->
+                <div class="setting-row" style="margin-top: 1rem;">
+                  <label class="toggle-label">
+                    <input
+                      type="checkbox"
+                      v-model="store.config.arpeggioSyncChord"
+                      class="toggle-input"
+                    />
+                    <span class="toggle-switch"></span>
+                    <span class="toggle-text">
+                      <span class="toggle-title">{{ t('settingsStep.advanced.arpeggio.syncChord') }}</span>
+                      <span class="toggle-desc">{{ t('settingsStep.advanced.arpeggio.syncChordDesc') }}</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </template>
 
@@ -853,21 +959,8 @@ const callDensityOptions = [
             <template v-if="activeTab === 'se'">
               <p class="panel-description">{{ t('settingsStep.advanced.se.description') }}</p>
 
-              <!-- SE Track Toggle -->
-              <div class="setting-row">
-                <label class="toggle-label">
-                  <input
-                    type="checkbox"
-                    v-model="store.config.seEnabled"
-                    class="toggle-input"
-                  />
-                  <span class="toggle-switch"></span>
-                  <span>{{ t('settingsStep.advanced.se.seEnabled') }}</span>
-                </label>
-              </div>
-
               <!-- Call Feature Toggle -->
-              <div class="setting-row" style="margin-top: 1rem;">
+              <div class="setting-row">
                 <label class="toggle-label">
                   <input
                     type="checkbox"
@@ -900,6 +993,7 @@ const callDensityOptions = [
                 <!-- Intro Chant -->
                 <div class="option-group">
                   <label class="option-label">{{ t('settingsStep.advanced.se.introChant') }}</label>
+                  <p class="option-desc">{{ t('settingsStep.advanced.se.introChantDesc') }}</p>
                   <div class="option-buttons">
                     <button
                       v-for="option in introChantOptions"
@@ -916,6 +1010,7 @@ const callDensityOptions = [
                 <!-- Mix Pattern -->
                 <div class="option-group">
                   <label class="option-label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
+                  <p class="option-desc">{{ t('settingsStep.advanced.se.mixPatternDesc') }}</p>
                   <div class="option-buttons">
                     <button
                       v-for="option in mixPatternOptions"
@@ -932,6 +1027,7 @@ const callDensityOptions = [
                 <!-- Call Density -->
                 <div class="option-group">
                   <label class="option-label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
+                  <p class="option-desc">{{ t('settingsStep.advanced.se.callDensityDesc') }}</p>
                   <div class="option-buttons">
                     <button
                       v-for="option in callDensityOptions"
@@ -943,6 +1039,40 @@ const callDensityOptions = [
                       {{ t(`settingsStep.advanced.se.callDensityOptions.${option.key}`) }}
                     </button>
                   </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Arrangement Panel -->
+            <template v-if="activeTab === 'arrangement'">
+              <p class="panel-description">{{ t('settingsStep.advanced.arrangement.label') }}</p>
+
+              <!-- Growth Method -->
+              <div class="option-group">
+                <label class="option-label">{{ t('settingsStep.advanced.arrangement.growth') }}</label>
+                <div class="arrangement-cards">
+                  <button
+                    class="arrangement-card"
+                    :class="{ 'arrangement-card--active': store.config.arrangementGrowth === 0 }"
+                    @click="store.config.arrangementGrowth = 0"
+                  >
+                    <span class="arrangement-card__icon">📚</span>
+                    <div class="arrangement-card__content">
+                      <span class="arrangement-card__title">{{ t('settingsStep.advanced.arrangement.growthOptions.layerAdd') }}</span>
+                      <span class="arrangement-card__desc">{{ t('settingsStep.advanced.arrangement.growthOptions.layerAddDesc') }}</span>
+                    </div>
+                  </button>
+                  <button
+                    class="arrangement-card"
+                    :class="{ 'arrangement-card--active': store.config.arrangementGrowth === 1 }"
+                    @click="store.config.arrangementGrowth = 1"
+                  >
+                    <span class="arrangement-card__icon">📈</span>
+                    <div class="arrangement-card__content">
+                      <span class="arrangement-card__title">{{ t('settingsStep.advanced.arrangement.growthOptions.registerAdd') }}</span>
+                      <span class="arrangement-card__desc">{{ t('settingsStep.advanced.arrangement.growthOptions.registerAddDesc') }}</span>
+                    </div>
+                  </button>
                 </div>
               </div>
             </template>
@@ -1798,15 +1928,45 @@ const callDensityOptions = [
   50% { opacity: 1; }
 }
 
+/* Tab Wrapper with Scroll Indicators */
+.console-tabs-wrapper {
+  position: relative;
+}
+
+.console-tabs-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.8;
+}
+
+.console-tabs-fade--left {
+  left: 0;
+  background: linear-gradient(to right, rgba(15, 15, 22, 0.95) 0%, transparent 100%);
+  border-radius: 10px 0 0 10px;
+}
+
+.console-tabs-fade--right {
+  right: 0;
+  background: linear-gradient(to left, rgba(15, 15, 22, 0.95) 0%, transparent 100%);
+  border-radius: 0 10px 10px 0;
+}
+
 .console-tabs {
   display: flex;
   gap: 2px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   padding: 3px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .console-tabs::-webkit-scrollbar {
@@ -1817,15 +1977,15 @@ const callDensityOptions = [
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
-  flex: 1;
-  min-width: 0;
-  padding: 0.5rem 0.625rem;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  min-width: max-content;
+  padding: 0.625rem 1rem;
   background: transparent;
   border: none;
   border-radius: 8px;
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: rgba(250, 250, 250, 0.5);
   cursor: pointer;
@@ -1845,26 +2005,26 @@ const callDensityOptions = [
 }
 
 .console-tab__icon {
-  font-size: 0.875rem;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .console-tab__label {
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-@media (max-width: 640px) {
-  .console-tab__label {
-    display: none;
-  }
-
+@media (max-width: 480px) {
   .console-tab {
-    padding: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
   }
 
   .console-tab__icon {
-    font-size: 1.125rem;
+    font-size: 0.95rem;
+  }
+
+  .console-tabs-fade {
+    width: 20px;
   }
 }
 
@@ -1961,6 +2121,12 @@ const callDensityOptions = [
 .option-label {
   font-size: 0.8rem;
   color: rgba(250, 250, 250, 0.5);
+}
+
+.option-desc {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.4);
+  margin: 0.25rem 0 0.5rem;
 }
 
 .option-buttons {
@@ -2244,6 +2410,107 @@ const callDensityOptions = [
 }
 
 .composition-card--active .composition-card__desc {
+  color: rgba(250, 250, 250, 0.7);
+}
+
+/* Motif Settings */
+.motif-settings {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.subsection-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.7);
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subsection-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  background: var(--step-accent);
+  border-radius: 2px;
+}
+
+/* Arrangement Cards */
+.arrangement-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.arrangement-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.arrangement-card:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.05);
+  transform: translateX(4px);
+}
+
+.arrangement-card--active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--step-accent);
+  box-shadow: 0 0 20px -4px rgba(139, 92, 246, 0.3);
+}
+
+.arrangement-card__icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.arrangement-card--active .arrangement-card__icon {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.arrangement-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.arrangement-card__title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #FAFAFA;
+}
+
+.arrangement-card--active .arrangement-card__title {
+  color: var(--step-accent);
+}
+
+.arrangement-card__desc {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.5);
+  line-height: 1.4;
+}
+
+.arrangement-card--active .arrangement-card__desc {
   color: rgba(250, 250, 250, 0.7);
 }
 

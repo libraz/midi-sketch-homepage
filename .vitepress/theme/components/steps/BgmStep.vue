@@ -203,7 +203,6 @@ async function generate() {
       modulationTiming: store.config.modulationTiming,
       modulationSemitones: store.config.modulationSemitones,
       // SE/Call settings
-      seEnabled: store.config.seEnabled,
       callEnabled: store.config.callEnabled,
       callNotesEnabled: store.config.callNotesEnabled,
       introChant: store.config.introChant,
@@ -213,7 +212,15 @@ async function generate() {
       vocalNoteDensity: store.config.vocalNoteDensity,
       vocalMinNoteDivision: store.config.vocalMinNoteDivision,
       vocalRestRatio: store.config.vocalRestRatio,
-      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
+      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap,
+      // Arrangement settings
+      arrangementGrowth: store.config.arrangementGrowth,
+      // Arpeggio sync settings
+      arpeggioSyncChord: store.config.arpeggioSyncChord,
+      // Motif settings
+      motifRepeatScope: store.config.motifRepeatScope,
+      motifFixedProgression: store.config.motifFixedProgression,
+      motifMaxChordCount: store.config.motifMaxChordCount
     })
 
     try {

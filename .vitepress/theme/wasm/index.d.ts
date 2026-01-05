@@ -94,6 +94,16 @@ export interface SongConfig {
     vocalRestRatio: number;
     /** Allow extreme leaps for vocaloid-style melodies */
     vocalAllowExtremLeap: boolean;
+    /** Arrangement growth: 0=LayerAdd, 1=RegisterAdd */
+    arrangementGrowth: number;
+    /** Sync arpeggio with chord changes (default=true) */
+    arpeggioSyncChord: boolean;
+    /** Motif repeat scope: 0=FullSong, 1=Section */
+    motifRepeatScope: number;
+    /** Same progression for all sections (default=true) */
+    motifFixedProgression: boolean;
+    /** Max chord count (0=no limit, 2-8) */
+    motifMaxChordCount: number;
 }
 /**
  * Vocal regeneration parameters
@@ -211,6 +221,14 @@ export declare const CallDensity: {
     readonly Minimal: 1;
     readonly Standard: 2;
     readonly Intense: 3;
+};
+export declare const ArrangementGrowth: {
+    readonly LayerAdd: 0;
+    readonly RegisterAdd: 1;
+};
+export declare const MotifRepeatScope: {
+    readonly FullSong: 0;
+    readonly Section: 1;
 };
 /**
  * Initialize the WASM module

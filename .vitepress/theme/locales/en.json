@@ -65,6 +65,7 @@
     },
     "tabs": {
       "style": "Style",
+      "arrangement": "Arrange",
       "feel": "Feel",
       "rhythm": "Rhythm",
       "arpeggio": "Arpeggio",
@@ -93,6 +94,28 @@
           "backgroundMotifDesc": "Subtle melodic elements that support the track",
           "synthDriven": "Synth Driven",
           "synthDrivenDesc": "Electronic-style melody with synth characteristics"
+        },
+        "motifSettings": {
+          "label": "Motif Settings",
+          "repeatScope": "Repeat Scope",
+          "repeatScopeOptions": {
+            "fullSong": "Full Song",
+            "section": "Per Section"
+          },
+          "fixedProgression": "Fixed Progression",
+          "fixedProgressionDesc": "Use the same chord progression across all sections",
+          "maxChordCount": "Max Chord Count",
+          "maxChordCountHint": "0 = no limit"
+        }
+      },
+      "arrangement": {
+        "label": "Arrangement",
+        "growth": "Growth Method",
+        "growthOptions": {
+          "layerAdd": "Layer Add",
+          "layerAddDesc": "Add new parts as sections progress",
+          "registerAdd": "Register Add",
+          "registerAddDesc": "Expand range within the same parts"
         }
       },
       "drums": {
@@ -121,6 +144,8 @@
         "octaveRangeHint": "How many octaves the pattern spans",
         "gate": "Gate",
         "gateHint": "Note length (100% = legato, lower = staccato)",
+        "syncChord": "Chord Sync",
+        "syncChordDesc": "Reset arpeggio pattern on chord changes",
         "synthDrivenNote": "Arpeggio is always enabled when using Synth Driven composition style."
       },
       "chordExt": {
@@ -152,24 +177,26 @@
         "semitonesHint": "How many semitones to raise the key (+1 to +4)"
       },
       "se": {
-        "description": "Add sound effects and call patterns for live performance feel. Perfect for idol and concert-style tracks.",
-        "seEnabled": "Enable SE Track",
+        "description": "Add call patterns for live performance feel. Perfect for idol and concert-style tracks.",
         "callEnabled": "Enable Call Feature",
         "callEnabledDesc": "Add audience call patterns (Hai!, Fu!, etc.)",
         "callNotesEnabled": "Output Calls as MIDI Notes",
         "introChant": "Intro Chant",
+        "introChantDesc": "Inserts a chant section right after the intro",
         "introChantOptions": {
           "none": "None",
           "gachikoi": "Gachikoi (~18s)",
           "shouting": "Shouting (~4s)"
         },
         "mixPattern": "MIX Pattern",
+        "mixPatternDesc": "Inserts a MIX break section into the song",
         "mixPatternOptions": {
           "none": "None",
           "standard": "Standard (~8s)",
           "tiger": "Tiger Fire (~16s)"
         },
-        "callDensity": "Call Density",
+        "callDensity": "Chorus Call Density",
+        "callDensityDesc": "Frequency of 'Hai!' calls in chorus sections",
         "callDensityOptions": {
           "none": "None",
           "minimal": "Minimal",

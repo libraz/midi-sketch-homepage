@@ -39,7 +39,6 @@ export interface WizardConfig {
   modulationTiming: number // 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random
   modulationSemitones: number // +1 to +4
   // SE/Call settings
-  seEnabled: boolean
   callEnabled: boolean
   callNotesEnabled: boolean
   introChant: number // 0=None, 1=Gachikoi, 2=Shouting
@@ -50,6 +49,14 @@ export interface WizardConfig {
   vocalMinNoteDivision: number // 0=default, 4=quarter, 8=eighth, 16=sixteenth
   vocalRestRatio: number // 0-50 (percentage of phrase rest time)
   vocalAllowExtremLeap: boolean // Allow extreme leaps for vocaloid-style melodies
+  // Arrangement settings
+  arrangementGrowth: number // 0=LayerAdd, 1=RegisterAdd
+  // Arpeggio sync settings
+  arpeggioSyncChord: boolean // Sync arpeggio with chord changes
+  // Motif settings (for BackgroundMotif style)
+  motifRepeatScope: number // 0=FullSong, 1=Section
+  motifFixedProgression: boolean // Same progression all sections
+  motifMaxChordCount: number // Max chord count (0=no limit, 2-8)
 }
 
 const currentStep = ref(1)
@@ -95,7 +102,6 @@ const config = reactive<WizardConfig>({
   modulationTiming: 0,  // None
   modulationSemitones: 2,
   // SE/Call settings
-  seEnabled: true,
   callEnabled: false,
   callNotesEnabled: true,
   introChant: 0,  // None
@@ -105,7 +111,15 @@ const config = reactive<WizardConfig>({
   vocalNoteDensity: 0,  // 0=use style default
   vocalMinNoteDivision: 0,  // 0=default
   vocalRestRatio: 20,  // 20% rest ratio
-  vocalAllowExtremLeap: false
+  vocalAllowExtremLeap: false,
+  // Arrangement settings
+  arrangementGrowth: 0,  // LayerAdd
+  // Arpeggio sync settings
+  arpeggioSyncChord: true,
+  // Motif settings
+  motifRepeatScope: 0,  // FullSong
+  motifFixedProgression: true,
+  motifMaxChordCount: 4
 })
 
 export function useWizardStore() {
@@ -197,13 +211,66 @@ export function useWizardStore() {
   function reset() {
     currentStep.value = 1
     bgmGenerated.value = false
+    bgmVersion.value++
+    // Clear the shared instance reference
+    if (typeof window !== 'undefined') {
+      ;(window as any).__midiSketchInstance = null
+    }
+    // Reset all config to defaults
     config.songImageId = 'idol-classic'
     config.stylePresetId = 3
     config.chordProgressionId = 0
     config.key = 0
     config.bpm = 132
     config.seed = 0
+    config.formId = 5
+    config.vocalAttitude = 0
+    config.drumsEnabled = true
+    config.arpeggioEnabled = false
+    config.vocalLow = 57
+    config.vocalHigh = 79
+    config.humanize = false
+    config.humanizeTiming = 50
+    config.humanizeVelocity = 50
+    config.timbreId = 'pop_clean'
     config.activeCategory = 'idol'
+    // Arpeggio
+    config.arpeggioPattern = 0
+    config.arpeggioSpeed = 1
+    config.arpeggioOctaveRange = 2
+    config.arpeggioGate = 80
+    config.arpeggioSyncChord = true
+    // Chord extensions
+    config.chordExtSus = false
+    config.chordExt7th = false
+    config.chordExt9th = false
+    config.chordExtSusProb = 20
+    config.chordExt7thProb = 30
+    config.chordExt9thProb = 25
+    // Composition
+    config.compositionStyle = 0
+    // Duration
+    config.targetDurationSeconds = 150
+    // Modulation
+    config.modulationTiming = 0
+    config.modulationSemitones = 2
+    // SE/Call
+    config.callEnabled = false
+    config.callNotesEnabled = true
+    config.introChant = 0
+    config.mixPattern = 0
+    config.callDensity = 2
+    // Vocal detail
+    config.vocalNoteDensity = 0
+    config.vocalMinNoteDivision = 0
+    config.vocalRestRatio = 20
+    config.vocalAllowExtremLeap = false
+    // Arrangement
+    config.arrangementGrowth = 0
+    // Motif
+    config.motifRepeatScope = 0
+    config.motifFixedProgression = true
+    config.motifMaxChordCount = 4
   }
 
   function setBgmGenerated(value: boolean) {
