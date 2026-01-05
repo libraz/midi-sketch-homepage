@@ -1,0 +1,343 @@
+{
+  "wizard": {
+    "logo": "MIDI SKETCH",
+    "subtitle": "Pop Music MIDI Generator",
+    "steps": {
+      "style": "Style",
+      "chords": "Chords",
+      "keyTempo": "Key & Tempo",
+      "bgm": "BGM",
+      "melody": "Melody",
+      "complete": "Complete"
+    },
+    "nav": {
+      "back": "Back",
+      "next": "Next",
+      "generateMelody": "Generate Melody"
+    }
+  },
+  "styleStep": {
+    "title": "What kind of song do you want to create?",
+    "subtitle": "Choose a style that matches your vision",
+    "categories": {
+      "idol": "Idol",
+      "pop": "Pop",
+      "dance": "Dance / Electronic",
+      "ballad": "Ballad"
+    }
+  },
+  "chordStep": {
+    "title": "Choose a Chord Progression",
+    "subtitle": "This defines the emotional feel of your song",
+    "recommended": "Recommended",
+    "otherChords": "Other Chord Progressions",
+    "recommendedFor": "Recommended for \"{style}\""
+  },
+  "settingsStep": {
+    "title": "Set Key & Tempo",
+    "subtitle": "Fine-tune the feel of your song",
+    "key": {
+      "label": "Key",
+      "description": "Choose the key signature. Click to hear the scale",
+      "selected": "Selected:",
+      "major": "Major",
+      "playing": "Playing scale...",
+      "loadingAudio": "Loading audio..."
+    },
+    "tempo": {
+      "label": "Tempo (BPM)",
+      "description": "Beats per minute. Higher = faster tempo",
+      "recommended": "Recommended: "
+    },
+    "duration": {
+      "label": "Target Duration",
+      "description": "Set the approximate length of your song"
+    },
+    "presets": {
+      "label": "Quick Presets",
+      "ballad": "Ballad",
+      "medium": "Medium",
+      "pop": "Pop",
+      "upbeat": "Upbeat",
+      "slow": "Slow",
+      "standard": "Standard",
+      "fast": "Fast"
+    },
+    "tabs": {
+      "style": "Style",
+      "feel": "Feel",
+      "rhythm": "Rhythm",
+      "arpeggio": "Arpeggio",
+      "harmony": "Harmony",
+      "duration": "Duration"
+    },
+    "advanced": {
+      "toggle": "Advanced Settings",
+      "humanize": {
+        "label": "Humanize",
+        "description": "Add natural human-like imperfections to timing and dynamics. Makes MIDI sound less mechanical and more like a real performance.",
+        "timing": "Timing Variation",
+        "timingHint": "How much notes deviate from perfect grid timing",
+        "velocity": "Velocity Variation",
+        "velocityHint": "How much note velocities (volume) vary"
+      },
+      "compositionStyle": {
+        "label": "Composition Style",
+        "description": "What role should the melody play in the track?",
+        "options": {
+          "melodyLead": "Melody Lead",
+          "melodyLeadDesc": "Melody takes center stage, prominent and memorable",
+          "backgroundMotif": "Background Motif",
+          "backgroundMotifDesc": "Subtle melodic elements that support the track",
+          "synthDriven": "Synth Driven",
+          "synthDrivenDesc": "Electronic-style melody with synth characteristics"
+        }
+      },
+      "drums": {
+        "label": "Drums",
+        "description": "Enable drum track for rhythm backing"
+      },
+      "arpeggio": {
+        "label": "Arpeggio",
+        "description": "Break chords into individual notes played in sequence. Creates movement and texture in the accompaniment.",
+        "pattern": "Pattern",
+        "patternHint": "Direction of note sequence",
+        "patterns": {
+          "up": "Up",
+          "down": "Down",
+          "updown": "Up-Down",
+          "random": "Random"
+        },
+        "speed": "Speed",
+        "speedHint": "How fast the notes are played",
+        "speeds": {
+          "eighth": "8th Notes",
+          "sixteenth": "16th Notes",
+          "triplet": "Triplets"
+        },
+        "octaveRange": "Octave Range",
+        "octaveRangeHint": "How many octaves the pattern spans",
+        "gate": "Gate",
+        "gateHint": "Note length (100% = legato, lower = staccato)"
+      },
+      "chordExt": {
+        "label": "Chord Extensions",
+        "description": "Enhance basic chords with additional notes for richer harmony. Each extension adds a unique color and mood to your progression.",
+        "sus": "Sus (Suspended)",
+        "susDesc": "Replace the 3rd with 2nd or 4th. Creates tension and an open, unresolved feeling.",
+        "seventh": "7th Chords",
+        "seventhDesc": "Add the 7th degree. Brings jazzy warmth and sophistication.",
+        "ninth": "9th Chords",
+        "ninthDesc": "Add the 9th degree. Rich, dreamy sound popular in modern pop and R&B.",
+        "probability": "Probability",
+        "probabilityHint": "How often this extension is applied to eligible chords"
+      }
+    }
+  },
+  "bgmStep": {
+    "title": "Backing Track",
+    "subtitle": "Review chords, bass, drums and arpeggio",
+    "summary": {
+      "title": "Configuration Summary",
+      "style": "Style",
+      "chordProgression": "Chord Progression",
+      "key": "Key",
+      "tempo": "Tempo",
+      "options": "Options",
+      "drums": "Drums",
+      "arpeggio": "Arpeggio"
+    },
+    "loading": "Loading WASM module...",
+    "button": {
+      "generate": "Generate BGM",
+      "generating": "Generating..."
+    },
+    "result": {
+      "success": "BGM Generated!",
+      "preview": "Preview",
+      "play": "Play",
+      "pause": "Pause",
+      "stop": "Stop",
+      "rewind": "Rewind",
+      "download": "Download BGM MIDI",
+      "regenerate": "Regenerate BGM",
+      "regenerated": "Regenerated",
+      "loadingAudio": "Loading audio...",
+      "hint": "Listen to the backing track and proceed to melody generation"
+    }
+  },
+  "melodyStep": {
+    "title": "Melody Settings",
+    "subtitle": "Configure your vocal melody settings",
+    "bgmPreview": "BGM Preview",
+    "play": "Play",
+    "stop": "Stop",
+    "rewind": "Rewind",
+    "nextHint": "Click \"Next\" to generate melody",
+    "error": {
+      "noBgm": "Please generate the backing track first"
+    },
+    "advanced": {
+      "toggle": "Advanced Settings",
+      "vocalRange": {
+        "label": "Vocal Range",
+        "description": "Set the pitch range for the melody",
+        "low": "Low",
+        "high": "High",
+        "presets": {
+          "label": "Quick Presets",
+          "female-standard": "Female",
+          "female-high": "Female (High)",
+          "female-low": "Female (Low)",
+          "male-standard": "Male",
+          "male-high": "Male (High)",
+          "male-low": "Male (Low)",
+          "wide": "Wide",
+          "narrow": "Narrow",
+          "yuuki-sakuna": "Yuuki Sakuna"
+        }
+      },
+      "vocalAttitude": {
+        "label": "Vocal Attitude",
+        "description": "How expressive should the melody be?",
+        "options": {
+          "clean": "Clean",
+          "cleanDesc": "Precise, controlled style with stable pitch",
+          "expressive": "Expressive",
+          "expressiveDesc": "Emotional delivery with dynamic variation",
+          "raw": "Raw",
+          "rawDesc": "Powerful, unpolished with natural imperfections"
+        }
+      },
+      "compositionStyle": {
+        "label": "Composition Style",
+        "description": "What role should the melody play?",
+        "options": {
+          "melodyLead": "Melody Lead",
+          "melodyLeadDesc": "Melody takes center stage, prominent and memorable",
+          "backgroundMotif": "Background Motif",
+          "backgroundMotifDesc": "Subtle melodic elements that support the track",
+          "synthDriven": "Synth Driven",
+          "synthDrivenDesc": "Electronic-style melody with synth characteristics"
+        }
+      }
+    }
+  },
+  "finalStep": {
+    "title": "Complete!",
+    "subtitle": "Preview your finished track with melody",
+    "generating": "Generating melody...",
+    "complete": "Track Complete",
+    "preview": "Final Preview",
+    "rewind": "Rewind",
+    "download": "Download MIDI",
+    "regenerateVocal": "Regenerate Vocal",
+    "regenerated": "Regenerated",
+    "hint": "Go back to change settings if you're not satisfied",
+    "error": {
+      "noInstance": "Generation instance not found. Please restart from BGM step"
+    }
+  },
+  "pianoRoll": {
+    "sections": {
+      "Intro": "Intro",
+      "A": "Verse A",
+      "B": "Verse B",
+      "Chorus": "Chorus",
+      "Bridge": "Bridge",
+      "Interlude": "Interlude",
+      "Outro": "Outro",
+      "Break": "Break"
+    }
+  },
+  "songImages": {
+    "idol-classic": {
+      "name": "Classic Idol Pop",
+      "tagline": "Bright, catchy, and full of energy",
+      "description": "The quintessential idol sound - upbeat, memorable hooks with a touch of sweetness"
+    },
+    "idol-energy": {
+      "name": "High Energy Idol",
+      "tagline": "Maximum power, maximum fun",
+      "description": "Fast, powerful, and designed to get the crowd jumping"
+    },
+    "idol-emotional": {
+      "name": "Emotional Idol",
+      "tagline": "Heartfelt ballad with idol charm",
+      "description": "Slower idol songs that tell a story and touch the heart"
+    },
+    "jpop-standard": {
+      "name": "J-POP Standard",
+      "tagline": "The sound of Japanese pop music",
+      "description": "Classic J-POP sound with familiar chord progressions"
+    },
+    "citypop": {
+      "name": "City Pop",
+      "tagline": "Groovy, urban, nostalgic vibes",
+      "description": "Smooth, sophisticated sound inspired by 80s Japanese city pop"
+    },
+    "anime-op": {
+      "name": "Anime Opening",
+      "tagline": "Epic, dramatic, and memorable",
+      "description": "Powerful songs that could open your favorite anime"
+    },
+    "dance-pop": {
+      "name": "Dance Pop",
+      "tagline": "Get up and dance!",
+      "description": "Groovy beats and catchy hooks that make you move"
+    },
+    "edm-synth": {
+      "name": "EDM / Synth Pop",
+      "tagline": "Electronic beats, big drops",
+      "description": "Modern electronic sound with powerful synths"
+    },
+    "ballad-emotional": {
+      "name": "Emotional Ballad",
+      "tagline": "Pour your heart out",
+      "description": "Slow, emotional songs that tell a story"
+    },
+    "love-song": {
+      "name": "Love Song",
+      "tagline": "Bittersweet and beautiful",
+      "description": "Mid-tempo songs about love and longing"
+    }
+  },
+  "chordProgressions": {
+    "0": {
+      "description": "The most popular progression in pop music"
+    },
+    "1": {
+      "description": "Emotional progression starting from minor"
+    },
+    "2": {
+      "description": "Classic Pachelbel Canon progression"
+    },
+    "3": {
+      "description": "Dramatic minor progression"
+    },
+    "4": {
+      "description": "Classic dance pop progression"
+    },
+    "5": {
+      "description": "Royal road J-POP progression"
+    },
+    "6": {
+      "description": "Common anime opening progression"
+    },
+    "7": {
+      "description": "Sophisticated city pop harmony"
+    },
+    "8": {
+      "description": "Gentle ballad progression"
+    },
+    "9": {
+      "description": "Common EDM drop progression"
+    },
+    "10": {
+      "description": "Jazz-influenced progression"
+    },
+    "11": {
+      "description": "Classic sad minor progression"
+    }
+  }
+}

@@ -1,0 +1,343 @@
+{
+  "wizard": {
+    "logo": "MIDI SKETCH",
+    "subtitle": "ポップミュージック MIDI ジェネレーター",
+    "steps": {
+      "style": "曲イメージ",
+      "chords": "コード進行",
+      "keyTempo": "キー & テンポ",
+      "bgm": "BGM",
+      "melody": "メロディ",
+      "complete": "完成"
+    },
+    "nav": {
+      "back": "戻る",
+      "next": "次へ",
+      "generateMelody": "メロディを生成"
+    }
+  },
+  "styleStep": {
+    "title": "どんな曲をつくりたいですか？",
+    "subtitle": "イメージに近いスタイルを選んでください",
+    "categories": {
+      "idol": "アイドル",
+      "pop": "ポップス",
+      "dance": "ダンス / エレクトロ",
+      "ballad": "バラード"
+    }
+  },
+  "chordStep": {
+    "title": "コード進行を選んでください",
+    "subtitle": "曲の雰囲気を決める大切な要素です",
+    "recommended": "おすすめ",
+    "otherChords": "その他のコード進行",
+    "recommendedFor": "「{style}」におすすめ"
+  },
+  "settingsStep": {
+    "title": "キー & テンポを設定",
+    "subtitle": "曲調の最終調整をしましょう",
+    "key": {
+      "label": "キー（調）",
+      "description": "曲全体の調を選択します。クリックでスケールを試聴できます",
+      "selected": "選択中:",
+      "major": "メジャー",
+      "playing": "スケール再生中...",
+      "loadingAudio": "オーディオを読み込み中..."
+    },
+    "tempo": {
+      "label": "テンポ（BPM）",
+      "description": "1分間の拍数。高いほど速いテンポになります",
+      "recommended": "おすすめ: "
+    },
+    "duration": {
+      "label": "目標再生時間",
+      "description": "生成する楽曲のおおよその長さを設定します"
+    },
+    "presets": {
+      "label": "クイックプリセット",
+      "ballad": "バラード",
+      "medium": "ミディアム",
+      "pop": "ポップ",
+      "upbeat": "アップテンポ",
+      "slow": "スロー",
+      "standard": "スタンダード",
+      "fast": "ファスト"
+    },
+    "tabs": {
+      "style": "スタイル",
+      "feel": "フィール",
+      "rhythm": "リズム",
+      "arpeggio": "アルペジオ",
+      "harmony": "ハーモニー",
+      "duration": "再生時間"
+    },
+    "advanced": {
+      "toggle": "詳細設定",
+      "humanize": {
+        "label": "ヒューマナイズ",
+        "description": "タイミングや強弱に人間らしい揺らぎを加えます。機械的な印象を和らげ、生演奏のような自然な仕上がりに。",
+        "timing": "タイミングのばらつき",
+        "timingHint": "ノートがグリッドからどれくらいズレるか",
+        "velocity": "ベロシティのばらつき",
+        "velocityHint": "ノートの強さ（音量）がどれくらい変化するか"
+      },
+      "compositionStyle": {
+        "label": "作曲スタイル",
+        "description": "メロディの役割を設定します",
+        "options": {
+          "melodyLead": "メロディリード",
+          "melodyLeadDesc": "メロディが主役。印象的で耳に残るフレーズ",
+          "backgroundMotif": "バックグラウンドモチーフ",
+          "backgroundMotifDesc": "控えめなメロディでトラックを引き立てる",
+          "synthDriven": "シンセドリブン",
+          "synthDrivenDesc": "シンセサイザー的な電子音楽スタイル"
+        }
+      },
+      "drums": {
+        "label": "ドラム",
+        "description": "リズムバッキングのドラムトラックを有効化"
+      },
+      "arpeggio": {
+        "label": "アルペジオ",
+        "description": "コードの構成音を順番に鳴らして分散和音を作成します。伴奏に動きと質感を加えます。",
+        "pattern": "パターン",
+        "patternHint": "音の流れる方向",
+        "patterns": {
+          "up": "上昇",
+          "down": "下降",
+          "updown": "上下",
+          "random": "ランダム"
+        },
+        "speed": "スピード",
+        "speedHint": "音が鳴る速さ",
+        "speeds": {
+          "eighth": "8分音符",
+          "sixteenth": "16分音符",
+          "triplet": "3連符"
+        },
+        "octaveRange": "オクターブ幅",
+        "octaveRangeHint": "パターンがまたがるオクターブ数",
+        "gate": "ゲート",
+        "gateHint": "音の長さ（100%=レガート、低いほどスタッカート）"
+      },
+      "chordExt": {
+        "label": "コード拡張",
+        "description": "基本コードに音を追加してハーモニーを豊かにします。各拡張が独自の色合いとムードを加えます。",
+        "sus": "Sus（サスペンデッド）",
+        "susDesc": "3度を2度か4度に置き換え。緊張感と開放的な響きを生み出します。",
+        "seventh": "7thコード",
+        "seventhDesc": "7度を追加。ジャジーな温かみと洗練さを加えます。",
+        "ninth": "9thコード",
+        "ninthDesc": "9度を追加。現代ポップやR&Bで人気の豊かでドリーミーな響き。",
+        "probability": "確率",
+        "probabilityHint": "対象コードにこの拡張が適用される頻度"
+      }
+    }
+  },
+  "bgmStep": {
+    "title": "バッキングトラック",
+    "subtitle": "コード・ベース・ドラム・アルペジオを確認",
+    "summary": {
+      "title": "設定サマリー",
+      "style": "曲イメージ",
+      "chordProgression": "コード進行",
+      "key": "キー",
+      "tempo": "テンポ",
+      "options": "オプション",
+      "drums": "ドラム",
+      "arpeggio": "アルペジオ"
+    },
+    "loading": "WASM モジュールを読み込み中...",
+    "button": {
+      "generate": "BGMを生成",
+      "generating": "生成中..."
+    },
+    "result": {
+      "success": "BGM生成完了！",
+      "preview": "プレビュー",
+      "play": "再生",
+      "pause": "一時停止",
+      "stop": "停止",
+      "rewind": "巻き戻し",
+      "download": "BGMのみ MIDI ダウンロード",
+      "regenerate": "BGMを再生成",
+      "regenerated": "再生成完了",
+      "loadingAudio": "音源を読み込み中...",
+      "hint": "バッキングトラックを試聴して、メロディ生成に進みましょう"
+    }
+  },
+  "melodyStep": {
+    "title": "メロディ設定",
+    "subtitle": "ボーカルメロディの設定を調整します",
+    "bgmPreview": "BGM プレビュー",
+    "play": "再生",
+    "stop": "停止",
+    "rewind": "巻き戻し",
+    "nextHint": "「次へ」をクリックしてメロディを生成",
+    "error": {
+      "noBgm": "先にバッキングトラックを生成してください"
+    },
+    "advanced": {
+      "toggle": "詳細設定",
+      "vocalRange": {
+        "label": "ボーカル音域",
+        "description": "メロディの音域を設定します",
+        "low": "最低音",
+        "high": "最高音",
+        "presets": {
+          "label": "クイックプリセット",
+          "female-standard": "女性 標準",
+          "female-high": "女性 高め",
+          "female-low": "女性 低め",
+          "male-standard": "男性 標準",
+          "male-high": "男性 高め",
+          "male-low": "男性 低め",
+          "wide": "広め",
+          "narrow": "狭め",
+          "yuuki-sakuna": "結城さくな"
+        }
+      },
+      "vocalAttitude": {
+        "label": "ボーカルアティチュード",
+        "description": "メロディの表現力を調整します",
+        "options": {
+          "clean": "クリーン",
+          "cleanDesc": "安定したピッチで正確に歌い上げるスタイル",
+          "expressive": "エクスプレッシブ",
+          "expressiveDesc": "感情豊かで抑揚のある表現スタイル",
+          "raw": "ロウ",
+          "rawDesc": "力強く荒削りな、自然体の歌い方"
+        }
+      },
+      "compositionStyle": {
+        "label": "作曲スタイル",
+        "description": "メロディの役割を設定します",
+        "options": {
+          "melodyLead": "メロディリード",
+          "melodyLeadDesc": "メロディが主役。印象的で耳に残るフレーズ",
+          "backgroundMotif": "バックグラウンドモチーフ",
+          "backgroundMotifDesc": "控えめなメロディでトラックを引き立てる",
+          "synthDriven": "シンセドリブン",
+          "synthDrivenDesc": "シンセサイザー的な電子音楽スタイル"
+        }
+      }
+    }
+  },
+  "finalStep": {
+    "title": "完成！",
+    "subtitle": "メロディ付きの完成トラックをプレビュー",
+    "generating": "メロディを生成中...",
+    "complete": "トラック完成",
+    "preview": "完成プレビュー",
+    "rewind": "巻き戻し",
+    "download": "MIDIをダウンロード",
+    "regenerateVocal": "ボーカルを再生成",
+    "regenerated": "再生成完了",
+    "hint": "気に入らない場合は「戻る」で設定を変更できます",
+    "error": {
+      "noInstance": "生成インスタンスが見つかりません。BGMステップからやり直してください"
+    }
+  },
+  "pianoRoll": {
+    "sections": {
+      "Intro": "イントロ",
+      "A": "Aメロ",
+      "B": "Bメロ",
+      "Chorus": "サビ",
+      "Bridge": "ブリッジ",
+      "Interlude": "間奏",
+      "Outro": "アウトロ",
+      "Break": "ブレイク"
+    }
+  },
+  "songImages": {
+    "idol-classic": {
+      "name": "王道アイドル曲",
+      "tagline": "キラキラ・キャッチー・元気いっぱい",
+      "description": "王道のアイドルサウンド。アップテンポでキャッチー、ちょっと甘さも"
+    },
+    "idol-energy": {
+      "name": "ハイエナジーアイドル",
+      "tagline": "全力全開！盛り上がり最高潮",
+      "description": "ライブで盛り上がる！速くてパワフルな曲"
+    },
+    "idol-emotional": {
+      "name": "エモーショナルアイドル",
+      "tagline": "心に響くアイドルバラード",
+      "description": "ストーリーを感じる、心に残るアイドル曲"
+    },
+    "jpop-standard": {
+      "name": "J-POP スタンダード",
+      "tagline": "日本のポップスの王道",
+      "description": "聴き馴染みのあるコード進行で安定のJ-POPサウンド"
+    },
+    "citypop": {
+      "name": "シティポップ",
+      "tagline": "グルーヴィーで都会的、ノスタルジック",
+      "description": "80年代の日本のシティポップにインスパイアされた洗練されたサウンド"
+    },
+    "anime-op": {
+      "name": "アニメOP風",
+      "tagline": "壮大でドラマチック、印象的",
+      "description": "お気に入りのアニメのOPになりそうな力強い曲"
+    },
+    "dance-pop": {
+      "name": "ダンスポップ",
+      "tagline": "踊りたくなるビート",
+      "description": "体が自然と動き出すグルーヴィーなビートとキャッチーなフック"
+    },
+    "edm-synth": {
+      "name": "EDM / シンセポップ",
+      "tagline": "エレクトロニックビート、ビッグドロップ",
+      "description": "パワフルなシンセが映えるモダンなエレクトロニックサウンド"
+    },
+    "ballad-emotional": {
+      "name": "エモーショナルバラード",
+      "tagline": "心を込めて歌い上げる",
+      "description": "ゆっくりと感情を込めて物語を紡ぐ曲"
+    },
+    "love-song": {
+      "name": "切ないラブソング",
+      "tagline": "切なくて美しい",
+      "description": "恋と切なさを歌うミディアムテンポの曲"
+    }
+  },
+  "chordProgressions": {
+    "0": {
+      "description": "ポップミュージックで最も人気のある進行"
+    },
+    "1": {
+      "description": "マイナーから始まる感動的な進行"
+    },
+    "2": {
+      "description": "パッヘルベルのカノン進行"
+    },
+    "3": {
+      "description": "ドラマチックなマイナー進行"
+    },
+    "4": {
+      "description": "クラシックなダンスポップ進行"
+    },
+    "5": {
+      "description": "J-POPの王道進行"
+    },
+    "6": {
+      "description": "アニメOPによく使われる進行"
+    },
+    "7": {
+      "description": "シティポップの洗練されたハーモニー"
+    },
+    "8": {
+      "description": "優しいバラード進行"
+    },
+    "9": {
+      "description": "EDMのドロップによく使われる進行"
+    },
+    "10": {
+      "description": "ジャズの影響を受けた進行"
+    },
+    "11": {
+      "description": "クラシックな悲しいマイナー進行"
+    }
+  }
+}

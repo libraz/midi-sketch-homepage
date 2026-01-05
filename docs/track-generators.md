@@ -1,0 +1,414 @@
+# Track Generators
+
+This document details each track generator in [MIDI Sketch](https://github.com/libraz/midi-sketch).
+
+## Track Overview
+
+```mermaid
+flowchart TB
+    subgraph Rhythm ["Rhythm Section"]
+        Bass["Bass (Ch 2)"]
+        Drums["Drums (Ch 9)"]
+    end
+
+    subgraph Harmony ["Harmony"]
+        Chord["Chord (Ch 1)"]
+    end
+
+    subgraph Melody ["Melody Layer"]
+        Vocal["Vocal (Ch 0)"]
+        Motif["Motif (Ch 3)"]
+        Arpeggio["Arpeggio (Ch 4)"]
+    end
+
+    subgraph Markers ["Markers"]
+        SE["SE (Ch 15)"]
+    end
+```
+
+## Vocal Track
+
+**Source:** `src/track/vocal.cpp` (~900 lines)
+
+The most complex generator, handling melody creation with music theory constraints.
+
+### Generation Flow
+
+```mermaid
+flowchart TD
+    A[Start Section] --> B{Check phrase cache}
+    B -->|Cached| C[Retrieve phrase]
+    B -->|New| D[Generate phrase]
+    D --> E[Cache phrase]
+    C --> F[Apply voice leading]
+    E --> F
+    F --> G[Beat analysis]
+    G --> H{Strong beat?}
+    H -->|Yes| I[Chord tone priority]
+    H -->|No| J[Allow tensions]
+    I --> K[Apply vocal attitude]
+    J --> K
+    K --> L[Range clamp]
+    L --> M[Add to track]
+```
+
+### Pitch Selection Algorithm
+
+```cpp
+// Priority for strong beats (1, 3)
+1. Root note (highest priority)
+2. Fifth
+3. Third
+4. Seventh (if chord has it)
+5. Ninth (if chord has it)
+
+// Weak beats allow
+- Passing tones (stepwise motion)
+- Neighbor tones (return to original)
+- Suspensions (resolve down by step)
+- Anticipations (early arrival)
+```
+
+### Vocal Attitudes
+
+| Attitude | Description | Implementation |
+|----------|-------------|----------------|
+| **Clean** | Conservative, singable | Chord tones only, on-beat |
+| **Expressive** | Emotional, dynamic | Tensions allowed, timing variance |
+| **Raw** | Edgy, unconventional | Non-chord tones, boundary breaking |
+
+### Phrase Caching
+
+Phrases are cached by section type to ensure musical coherence:
+
+```cpp
+std::map<SectionType, std::vector<Phrase>> phraseCache_;
+
+// A section uses same/similar phrases when repeated
+// Chorus maintains its melodic identity
+```
+
+### Range Constraints
+
+```cpp
+struct VocalRange {
+    uint8_t low = 60;   // C4
+    uint8_t high = 79;  // G5
+};
+```
+
+---
+
+## Chord Track
+
+**Source:** `src/track/chord_track.cpp` (~820 lines)
+
+Generates harmonic voicings with voice leading optimization.
+
+### Voicing Types
+
+```mermaid
+flowchart LR
+    subgraph Close ["Close Voicing"]
+        C1[R] --> C2[3] --> C3[5] --> C4[7]
+    end
+
+    subgraph Open ["Open Voicing"]
+        O1[R] --> O2[5] --> O3[3] --> O4[7]
+    end
+
+    subgraph Rootless ["Rootless"]
+        RL1[3] --> RL2[5] --> RL3[7] --> RL4[9]
+    end
+```
+
+### Voice Leading Algorithm
+
+```cpp
+int voiceLeadingDistance(Voicing& prev, Voicing& next) {
+    int distance = 0;
+    for (int i = 0; i < 4; i++) {
+        distance += abs(prev.notes[i] - next.notes[i]);
+    }
+    return distance;
+}
+
+// Select voicing that minimizes distance
+Voicing selectBestVoicing(Voicing& prev, vector<Voicing>& candidates) {
+    return min_element(candidates, [&](auto& a, auto& b) {
+        return voiceLeadingDistance(prev, a) < voiceLeadingDistance(prev, b);
+    });
+}
+```
+
+### Bass Coordination
+
+Uses `BassAnalysis` to avoid doubling:
+
+```cpp
+if (bassAnalysis.hasRootOnBeat1) {
+    // Use rootless voicing - bass provides root
+    voicing = generateRootlessVoicing(chord);
+} else {
+    // Include root in chord voicing
+    voicing = generateFullVoicing(chord);
+}
+```
+
+### Register Constraints
+
+```cpp
+constexpr uint8_t CHORD_LOW = 48;   // C3
+constexpr uint8_t CHORD_HIGH = 84;  // C6
+```
+
+---
+
+## Bass Track
+
+**Source:** `src/track/bass.cpp` (~450 lines)
+
+Generates the harmonic foundation with root-focused patterns.
+
+### Pattern Types
+
+| Pattern | Description | Rhythm |
+|---------|-------------|--------|
+| Sparse | Minimal, ballad-style | Beat 1 only |
+| Standard | Pop/rock baseline | Beats 1, 3 with fills |
+| Driving | Energetic, forward | Eighth notes throughout |
+
+### Generation Logic
+
+```mermaid
+flowchart TD
+    A[Get chord] --> B[Extract root]
+    B --> C{Section type?}
+    C -->|Chorus| D[Octave +12]
+    C -->|Intro/Outro| E[Octave -12]
+    C -->|Verse| F[Standard octave]
+    D --> G[Generate pattern]
+    E --> G
+    F --> G
+    G --> H{Beat 4?}
+    H -->|Yes| I[Approach note option]
+    H -->|No| J[Standard note]
+```
+
+### Approach Notes
+
+Beat 4 may use chromatic approach to next root:
+
+```cpp
+// If next chord root is C
+// Beat 4 could be B (half step below) or Db (half step above)
+uint8_t approachNote = nextRoot - 1; // chromatic approach
+```
+
+---
+
+## Drums Track
+
+**Source:** `src/track/drums.cpp` (~680 lines)
+
+Generates drum patterns with fills and dynamics.
+
+### GM Drum Map
+
+```cpp
+constexpr uint8_t KICK = 36;
+constexpr uint8_t SNARE = 38;
+constexpr uint8_t SIDE_STICK = 37;
+constexpr uint8_t CLOSED_HH = 42;
+constexpr uint8_t OPEN_HH = 46;
+constexpr uint8_t RIDE = 51;
+constexpr uint8_t CRASH = 49;
+constexpr uint8_t TOM_HIGH = 50;
+constexpr uint8_t TOM_MID = 47;
+constexpr uint8_t TOM_LOW = 45;
+```
+
+### Pattern Styles
+
+```mermaid
+flowchart TD
+    A[Mood] --> B{Style selection}
+    B -->|Ballad, Chill| C[Sparse]
+    B -->|StraightPop| D[Standard]
+    B -->|ElectroPop, IdolPop| E[FourOnFloor]
+    B -->|BrightUpbeat| F[Upbeat]
+    B -->|LightRock| G[Rock]
+    B -->|Yoasobi, Synthwave| H[Synth]
+```
+
+### Fill Types
+
+```cpp
+enum class FillType {
+    TomDescend,    // High → Mid → Low tom
+    TomAscend,     // Low → Mid → High tom
+    SnareRoll,     // Rapid snare hits
+    Combo          // Mixed elements
+};
+```
+
+Fills are inserted at:
+- Section transitions
+- Every 4 or 8 bars
+- Before chorus
+
+### Ghost Notes
+
+Velocity-reduced snare articulations for groove:
+
+```cpp
+// Main snare: velocity 100
+// Ghost note: velocity 40-60
+```
+
+---
+
+## Motif Track
+
+**Source:** `src/track/motif.cpp` (~470 lines)
+
+For `BackgroundMotif` composition style. Creates repeating patterns.
+
+### Parameters
+
+```cpp
+struct MotifParams {
+    MotifLength length;           // TwoBars, FourBars
+    RhythmDensity rhythm_density; // Sparse, Medium, Driving
+    MotifMotion motion;           // Stepwise, GentleLeap
+    RepeatScope repeat_scope;     // FullSong, PerSection
+    MotifRegister register_;      // Mid, High
+};
+```
+
+### Pattern Generation
+
+```mermaid
+flowchart TD
+    A[Create pattern] --> B[Determine length]
+    B --> C[Generate 3-5 notes]
+    C --> D{Motion type?}
+    D -->|Stepwise| E[Max interval: 2]
+    D -->|GentleLeap| F[Max interval: 5]
+    E --> G[Add tension notes]
+    F --> G
+    G --> H[Set rhythm]
+    H --> I{Repeat scope?}
+    I -->|FullSong| J[Same pattern all sections]
+    I -->|PerSection| K[New pattern each section]
+```
+
+### Register Ranges
+
+| Register | Range |
+|----------|-------|
+| Mid | C3 (48) - C5 (72) |
+| High | C4 (60) - C6 (84) |
+
+---
+
+## Arpeggio Track
+
+**Source:** `src/track/arpeggio.cpp` (~200 lines)
+
+For `SynthDriven` composition style. Creates arpeggiated patterns.
+
+### Parameters
+
+```cpp
+struct ArpeggioParams {
+    ArpeggioPattern pattern;  // Up, Down, UpDown, Random
+    ArpeggioSpeed speed;      // Eighth, Sixteenth, Triplet
+    uint8_t octave_range;     // 1-3 octaves
+    float gate;               // Note length ratio (0.0-1.0)
+    bool sync_chord;          // Follow chord changes
+};
+```
+
+### Pattern Types
+
+```mermaid
+flowchart LR
+    subgraph Up ["Up"]
+        U1[C] --> U2[E] --> U3[G] --> U4[C']
+    end
+
+    subgraph Down ["Down"]
+        D1[C'] --> D2[G] --> D3[E] --> D4[C]
+    end
+
+    subgraph UpDown ["UpDown"]
+        UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
+    end
+```
+
+### Speed Conversion
+
+```cpp
+Tick getNoteDuration(ArpeggioSpeed speed) {
+    switch (speed) {
+        case Eighth:    return TICKS_PER_BEAT / 2;    // 240
+        case Sixteenth: return TICKS_PER_BEAT / 4;    // 120
+        case Triplet:   return TICKS_PER_BEAT / 3;    // 160
+    }
+}
+```
+
+---
+
+## SE Track
+
+**Source:** `src/track/se.cpp` (~15 lines)
+
+Minimal track for section markers (text events only).
+
+```cpp
+void generateSE(Song& song) {
+    for (auto& section : song.arrangement.sections) {
+        MidiEvent marker;
+        marker.tick = section.start_tick;
+        marker.type = MidiEventType::Text;
+        marker.text = section.name;
+        song.se.addEvent(marker);
+    end
+}
+```
+
+---
+
+## Velocity Calculation
+
+Common velocity formula across tracks:
+
+```cpp
+uint8_t calculateVelocity(
+    uint8_t baseVelocity,
+    int beat,
+    SectionType section,
+    float trackBalance
+) {
+    float beatAdjust = getBeatAccent(beat);      // Strong beats: +10
+    float sectionMult = getSectionEnergy(section); // Chorus: 1.2
+
+    return clamp(
+        baseVelocity * beatAdjust * sectionMult * trackBalance,
+        1, 127
+    );
+}
+```
+
+### Track Balance
+
+| Track | Balance | Notes |
+|-------|---------|-------|
+| Vocal | 1.00 | Lead instrument |
+| Chord | 0.75 | Supporting |
+| Bass | 0.85 | Foundation |
+| Drums | 0.90 | Timing driver |
+| Motif | 0.70 | Background |
+| Arpeggio | 0.85 | Mid-level |
