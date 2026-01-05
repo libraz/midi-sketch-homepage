@@ -15,8 +15,10 @@ const {
   currentTick,
   togglePlay: playerTogglePlay,
   stop,
+  pause,
   rewind,
-  play
+  play,
+  setTrackInstrument
 } = useMidiPlayer()
 
 function handleSeek(tick: number) {
@@ -26,11 +28,43 @@ function handleSeek(tick: number) {
   }
 }
 
+function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
+  setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
+  }
+}
+
 const isGenerating = ref(false)
 const error = ref<string | null>(null)
 const midiData = ref<Uint8Array | null>(null)
 const eventData = ref<any>(null)
 const justRegenerated = ref(false)
+const isAdvancedOpen = ref(false)
+
+// Note density presets
+const densityPresets = [
+  { key: 'default', value: 0 },
+  { key: 'standard', value: 70 },
+  { key: 'idol', value: 100 },
+  { key: 'vocaloid', value: 150 }
+]
+
+// Min note division options
+const noteDivisionOptions = [
+  { key: 'auto', value: 0 },
+  { key: 'quarter', value: 4 },
+  { key: 'eighth', value: 8 },
+  { key: 'sixteenth', value: 16 }
+]
+
+// Get display value for density
+const densityDisplayValue = computed(() => {
+  if (store.config.vocalNoteDensity === 0) return t('finalStep.vocalDetail.density.default')
+  return store.config.vocalNoteDensity
+})
 
 let midisketch: any = null
 let instance: any = null
@@ -84,7 +118,11 @@ async function generateMelody() {
       seed: Math.floor(Math.random() * 0xFFFFFFFF),
       vocalLow: store.config.vocalLow,
       vocalHigh: store.config.vocalHigh,
-      vocalAttitude: store.config.vocalAttitude
+      vocalAttitude: store.config.vocalAttitude,
+      vocalNoteDensity: store.config.vocalNoteDensity,
+      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
+      vocalRestRatio: store.config.vocalRestRatio,
+      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
     })
 
     midiData.value = instance.getMidi()
@@ -104,8 +142,9 @@ async function generateMelody() {
 async function regenerateVocalTrack() {
   if (!instance) return
 
+  // Pause playback before regenerating (keeps position)
   if (isPlaying.value) {
-    stop()
+    pause()
   }
 
   isGenerating.value = true
@@ -115,7 +154,11 @@ async function regenerateVocalTrack() {
       seed: Math.floor(Math.random() * 0xFFFFFFFF),
       vocalLow: store.config.vocalLow,
       vocalHigh: store.config.vocalHigh,
-      vocalAttitude: store.config.vocalAttitude
+      vocalAttitude: store.config.vocalAttitude,
+      vocalNoteDensity: store.config.vocalNoteDensity,
+      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
+      vocalRestRatio: store.config.vocalRestRatio,
+      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
     })
 
     midiData.value = instance.getMidi()
@@ -214,23 +257,129 @@ function handleRewind() {
             </template>
           </div>
         </div>
-        <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" />
+        <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" />
+      </div>
+
+      <!-- Vocal Detail Settings Console -->
+      <div class="vocal-console" :class="{ 'vocal-console--open': isAdvancedOpen }">
+        <button class="vocal-console__header" @click="isAdvancedOpen = !isAdvancedOpen">
+          <div class="vocal-console__title">
+            <span class="vocal-console__icon">🎤</span>
+            <span>{{ t('finalStep.vocalDetail.title') }}</span>
+          </div>
+          <span class="vocal-console__chevron" :class="{ 'vocal-console__chevron--open': isAdvancedOpen }">▼</span>
+        </button>
+
+        <Transition name="panel-expand">
+          <div v-if="isAdvancedOpen" class="vocal-console__panel">
+            <!-- Note Density -->
+            <div class="vocal-setting">
+              <div class="vocal-setting__header">
+                <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.density.label') }}</label>
+                <span class="vocal-setting__value">{{ densityDisplayValue }}</span>
+              </div>
+              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.density.hint') }}</p>
+
+              <div class="density-presets">
+                <button
+                  v-for="preset in densityPresets"
+                  :key="preset.key"
+                  class="density-preset"
+                  :class="{ 'density-preset--active': store.config.vocalNoteDensity === preset.value }"
+                  @click="store.config.vocalNoteDensity = preset.value"
+                >
+                  {{ t(`finalStep.vocalDetail.density.presets.${preset.key}`) }}
+                </button>
+              </div>
+
+              <div class="slider-wrap">
+                <input
+                  type="range"
+                  v-model.number="store.config.vocalNoteDensity"
+                  min="0"
+                  max="200"
+                  class="vocal-slider"
+                />
+                <div class="slider-track">
+                  <div class="slider-fill" :style="{ width: `${(store.config.vocalNoteDensity / 200) * 100}%` }"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Min Note Division -->
+            <div class="vocal-setting">
+              <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.division.label') }}</label>
+              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.division.hint') }}</p>
+
+              <div class="division-buttons">
+                <button
+                  v-for="opt in noteDivisionOptions"
+                  :key="opt.key"
+                  class="division-btn"
+                  :class="{ 'division-btn--active': store.config.vocalMinNoteDivision === opt.value }"
+                  @click="store.config.vocalMinNoteDivision = opt.value"
+                >
+                  <span class="division-btn__icon">{{ opt.value === 0 ? '⟳' : '♩' }}</span>
+                  <span class="division-btn__label">{{ t(`finalStep.vocalDetail.division.options.${opt.key}`) }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Rest Ratio -->
+            <div class="vocal-setting">
+              <div class="vocal-setting__header">
+                <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.rest.label') }}</label>
+                <span class="vocal-setting__value">{{ store.config.vocalRestRatio }}%</span>
+              </div>
+              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.rest.hint') }}</p>
+
+              <div class="slider-wrap">
+                <input
+                  type="range"
+                  v-model.number="store.config.vocalRestRatio"
+                  min="0"
+                  max="50"
+                  class="vocal-slider"
+                />
+                <div class="slider-track">
+                  <div class="slider-fill" :style="{ width: `${(store.config.vocalRestRatio / 50) * 100}%` }"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extreme Leap Toggle -->
+            <div class="vocal-setting vocal-setting--toggle">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  v-model="store.config.vocalAllowExtremLeap"
+                  class="toggle-input"
+                />
+                <span class="toggle-switch"></span>
+                <span class="toggle-text">
+                  <span class="toggle-title">{{ t('finalStep.vocalDetail.extremeLeap.label') }}</span>
+                  <span class="toggle-desc">{{ t('finalStep.vocalDetail.extremeLeap.hint') }}</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </Transition>
       </div>
 
       <!-- Actions -->
       <div class="result-actions">
-        <button class="download-btn" @click="download">
-          <span class="download-btn__icon">⬇</span>
-          <span>{{ t('finalStep.download') }}</span>
-        </button>
-
         <button
           class="regenerate-btn"
-          :disabled="isPlaying || isGenerating"
+          :disabled="isGenerating"
           @click="regenerateVocalTrack"
         >
           <span class="regenerate-btn__icon">↻</span>
           <span>{{ t('finalStep.regenerateVocal') }}</span>
+        </button>
+
+        <button class="download-btn" @click="download">
+          <span class="download-btn__icon">⬇</span>
+          <span>{{ t('finalStep.download') }}</span>
         </button>
       </div>
 
@@ -568,10 +717,350 @@ function handleRewind() {
   text-align: center;
 }
 
+/* Vocal Console */
+.vocal-console {
+  background: rgba(15, 15, 22, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.vocal-console--open {
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 20px -8px rgba(139, 92, 246, 0.2);
+}
+
+.vocal-console__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.vocal-console__header:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.vocal-console__title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vocal-console__icon {
+  font-size: 1.1rem;
+}
+
+.vocal-console__chevron {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.4);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vocal-console__chevron--open {
+  transform: rotate(180deg);
+  color: #8B5CF6;
+}
+
+.vocal-console__panel {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Panel expand transition */
+.panel-expand-enter-active {
+  animation: panelExpandIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-expand-leave-active {
+  animation: panelExpandOut 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes panelExpandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 600px;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelExpandOut {
+  from {
+    opacity: 1;
+    max-height: 600px;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Vocal Setting Item */
+.vocal-setting {
+  background: rgba(20, 20, 28, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.vocal-setting__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.vocal-setting__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.vocal-setting__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8B5CF6;
+  padding: 0.2rem 0.5rem;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 4px;
+}
+
+.vocal-setting__hint {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.45);
+  margin: 0 0 0.875rem;
+  line-height: 1.4;
+}
+
+/* Density Presets */
+.density-presets {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.density-preset {
+  flex: 1;
+  min-width: 70px;
+  padding: 0.5rem 0.625rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.density-preset:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #FAFAFA;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.density-preset--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8B5CF6;
+  color: #FAFAFA;
+  box-shadow: 0 0 12px -4px rgba(139, 92, 246, 0.4);
+}
+
+/* Slider */
+.slider-wrap {
+  position: relative;
+  height: 6px;
+}
+
+.vocal-slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.slider-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.slider-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8B5CF6, #EC4899);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+  transition: width 0.1s ease;
+}
+
+/* Division Buttons */
+.division-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.division-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.625rem 0.5rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.division-btn:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.division-btn--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8B5CF6;
+  box-shadow: 0 0 12px -4px rgba(139, 92, 246, 0.4);
+}
+
+.division-btn__icon {
+  font-size: 1rem;
+  color: rgba(250, 250, 250, 0.6);
+  transition: color 0.2s ease;
+}
+
+.division-btn--active .division-btn__icon {
+  color: #8B5CF6;
+}
+
+.division-btn__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+  text-align: center;
+}
+
+.division-btn--active .division-btn__label {
+  color: #FAFAFA;
+}
+
+/* Toggle */
+.vocal-setting--toggle {
+  padding: 0.875rem 1rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  cursor: pointer;
+}
+
+.toggle-input {
+  display: none;
+}
+
+.toggle-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  margin-top: 2px;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-input:checked + .toggle-switch {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  box-shadow: 0 0 12px -2px rgba(139, 92, 246, 0.5);
+}
+
+.toggle-input:checked + .toggle-switch::after {
+  transform: translateX(20px);
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toggle-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.toggle-desc {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.45);
+  line-height: 1.4;
+}
+
 @media (max-width: 640px) {
   .download-btn {
     padding: 1rem 1.5rem;
     font-size: 1rem;
+  }
+
+  .division-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .density-presets {
+    flex-wrap: wrap;
+  }
+
+  .density-preset {
+    flex: 0 0 calc(50% - 0.25rem);
   }
 }
 </style>

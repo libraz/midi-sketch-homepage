@@ -9,12 +9,21 @@ import PianoRoll from '../PianoRoll.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
-const { isPlaying, currentTick, duration, play, stop } = useMidiPlayer()
+const { isPlaying, currentTick, duration, play, stop, setTrackInstrument } = useMidiPlayer()
 
 function handleSeek(tick: number) {
   stop()
   if (eventData.value) {
     play(eventData.value, tick)
+  }
+}
+
+function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
+  setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
   }
 }
 
@@ -222,7 +231,7 @@ async function togglePlay() {
               <span class="play-btn__text">{{ isPlaying ? t('generateStep.result.stop') : t('generateStep.result.play') }}</span>
             </button>
           </div>
-          <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" />
+          <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" />
         </div>
 
         <div class="result-actions">

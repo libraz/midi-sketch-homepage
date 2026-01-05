@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import * as Tone from 'tone'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
@@ -9,7 +9,7 @@ const { t } = useI18n()
 const store = useWizardStore()
 
 // Advanced settings tab system
-type SettingsTab = 'style' | 'feel' | 'rhythm' | 'arpeggio' | 'harmony' | 'duration'
+type SettingsTab = 'style' | 'feel' | 'rhythm' | 'arpeggio' | 'harmony' | 'modulation' | 'se' | 'duration'
 const activeTab = ref<SettingsTab>('style') // Default to first tab
 
 const settingsTabs: { id: SettingsTab; icon: string; labelKey: string }[] = [
@@ -18,6 +18,8 @@ const settingsTabs: { id: SettingsTab; icon: string; labelKey: string }[] = [
   { id: 'rhythm', icon: '🥁', labelKey: 'settingsStep.tabs.rhythm' },
   { id: 'arpeggio', icon: '🎹', labelKey: 'settingsStep.tabs.arpeggio' },
   { id: 'harmony', icon: '♯', labelKey: 'settingsStep.tabs.harmony' },
+  { id: 'modulation', icon: '🔀', labelKey: 'settingsStep.tabs.modulation' },
+  { id: 'se', icon: '📣', labelKey: 'settingsStep.tabs.se' },
   { id: 'duration', icon: '⏱', labelKey: 'settingsStep.tabs.duration' }
 ]
 
@@ -325,6 +327,50 @@ const compositionStyleOptions = [
   { key: 'backgroundMotif', value: 1, icon: '🎹' },
   { key: 'synthDriven', value: 2, icon: '🎛️' }
 ]
+
+// SynthDriven forces arpeggio on (WASM constraint)
+const isSynthDriven = computed(() => store.config.compositionStyle === 2)
+
+// When SynthDriven is selected, force arpeggio on; when switching away, turn it off
+watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
+  if (newStyle === 2) {
+    store.config.arpeggioEnabled = true
+  } else if (oldStyle === 2) {
+    // Switching away from SynthDriven: turn off arpeggio
+    store.config.arpeggioEnabled = false
+  }
+})
+
+// Modulation timing options
+const modulationTimingOptions = [
+  { key: 'none', value: 0 },
+  { key: 'lastChorus', value: 1 },
+  { key: 'afterBridge', value: 2 },
+  { key: 'eachChorus', value: 3 },
+  { key: 'random', value: 4 }
+]
+
+// Intro chant options
+const introChantOptions = [
+  { key: 'none', value: 0 },
+  { key: 'gachikoi', value: 1 },
+  { key: 'shouting', value: 2 }
+]
+
+// Mix pattern options
+const mixPatternOptions = [
+  { key: 'none', value: 0 },
+  { key: 'standard', value: 1 },
+  { key: 'tiger', value: 2 }
+]
+
+// Call density options
+const callDensityOptions = [
+  { key: 'none', value: 0 },
+  { key: 'minimal', value: 1 },
+  { key: 'standard', value: 2 },
+  { key: 'intense', value: 3 }
+]
 </script>
 
 <template>
@@ -579,17 +625,21 @@ const compositionStyleOptions = [
             <!-- Arpeggio Panel -->
             <template v-if="activeTab === 'arpeggio'">
               <div class="setting-row">
-                <label class="toggle-label">
+                <label class="toggle-label" :class="{ 'toggle-label--disabled': isSynthDriven }">
                   <input
                     type="checkbox"
                     v-model="store.config.arpeggioEnabled"
                     class="toggle-input"
+                    :disabled="isSynthDriven"
                   />
                   <span class="toggle-switch"></span>
                   <span>{{ t('settingsStep.advanced.arpeggio.label') }}</span>
                 </label>
               </div>
-              <p class="panel-hint">{{ t('settingsStep.advanced.arpeggio.description') }}</p>
+              <p v-if="isSynthDriven" class="panel-hint panel-hint--forced">
+                {{ t('settingsStep.advanced.arpeggio.synthDrivenNote') }}
+              </p>
+              <p v-else class="panel-hint">{{ t('settingsStep.advanced.arpeggio.description') }}</p>
 
               <div v-if="store.config.arpeggioEnabled" class="arpeggio-settings">
                 <!-- Pattern -->
@@ -758,6 +808,141 @@ const compositionStyleOptions = [
                     class="slider"
                   />
                   <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.ninthHint') }}</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Modulation Panel -->
+            <template v-if="activeTab === 'modulation'">
+              <p class="panel-description">{{ t('settingsStep.advanced.modulation.description') }}</p>
+
+              <!-- Modulation Timing -->
+              <div class="option-group">
+                <label class="option-label">{{ t('settingsStep.advanced.modulation.timing') }}</label>
+                <div class="option-buttons option-buttons--wrap">
+                  <button
+                    v-for="option in modulationTimingOptions"
+                    :key="option.key"
+                    class="option-btn"
+                    :class="{ 'option-btn--active': store.config.modulationTiming === option.value }"
+                    @click="store.config.modulationTiming = option.value"
+                  >
+                    {{ t(`settingsStep.advanced.modulation.timingOptions.${option.key}`) }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modulation Semitones (only shown when timing is not None) -->
+              <div v-if="store.config.modulationTiming !== 0" class="slider-item" style="margin-top: 1rem;">
+                <label class="slider-label">
+                  {{ t('settingsStep.advanced.modulation.semitones') }}
+                  <span class="slider-value">+{{ store.config.modulationSemitones }}</span>
+                </label>
+                <p class="slider-hint">{{ t('settingsStep.advanced.modulation.semitonesHint') }}</p>
+                <input
+                  type="range"
+                  v-model.number="store.config.modulationSemitones"
+                  min="1"
+                  max="4"
+                  class="slider"
+                />
+              </div>
+            </template>
+
+            <!-- SE/Call Panel -->
+            <template v-if="activeTab === 'se'">
+              <p class="panel-description">{{ t('settingsStep.advanced.se.description') }}</p>
+
+              <!-- SE Track Toggle -->
+              <div class="setting-row">
+                <label class="toggle-label">
+                  <input
+                    type="checkbox"
+                    v-model="store.config.seEnabled"
+                    class="toggle-input"
+                  />
+                  <span class="toggle-switch"></span>
+                  <span>{{ t('settingsStep.advanced.se.seEnabled') }}</span>
+                </label>
+              </div>
+
+              <!-- Call Feature Toggle -->
+              <div class="setting-row" style="margin-top: 1rem;">
+                <label class="toggle-label">
+                  <input
+                    type="checkbox"
+                    v-model="store.config.callEnabled"
+                    class="toggle-input"
+                  />
+                  <span class="toggle-switch"></span>
+                  <span class="toggle-text">
+                    <span class="toggle-title">{{ t('settingsStep.advanced.se.callEnabled') }}</span>
+                    <span class="toggle-desc">{{ t('settingsStep.advanced.se.callEnabledDesc') }}</span>
+                  </span>
+                </label>
+              </div>
+
+              <!-- Call Settings (shown when call is enabled) -->
+              <div v-if="store.config.callEnabled" class="call-settings">
+                <!-- Call Notes Toggle -->
+                <div class="setting-row">
+                  <label class="toggle-label">
+                    <input
+                      type="checkbox"
+                      v-model="store.config.callNotesEnabled"
+                      class="toggle-input"
+                    />
+                    <span class="toggle-switch"></span>
+                    <span>{{ t('settingsStep.advanced.se.callNotesEnabled') }}</span>
+                  </label>
+                </div>
+
+                <!-- Intro Chant -->
+                <div class="option-group">
+                  <label class="option-label">{{ t('settingsStep.advanced.se.introChant') }}</label>
+                  <div class="option-buttons">
+                    <button
+                      v-for="option in introChantOptions"
+                      :key="option.key"
+                      class="option-btn"
+                      :class="{ 'option-btn--active': store.config.introChant === option.value }"
+                      @click="store.config.introChant = option.value"
+                    >
+                      {{ t(`settingsStep.advanced.se.introChantOptions.${option.key}`) }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Mix Pattern -->
+                <div class="option-group">
+                  <label class="option-label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
+                  <div class="option-buttons">
+                    <button
+                      v-for="option in mixPatternOptions"
+                      :key="option.key"
+                      class="option-btn"
+                      :class="{ 'option-btn--active': store.config.mixPattern === option.value }"
+                      @click="store.config.mixPattern = option.value"
+                    >
+                      {{ t(`settingsStep.advanced.se.mixPatternOptions.${option.key}`) }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Call Density -->
+                <div class="option-group">
+                  <label class="option-label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
+                  <div class="option-buttons">
+                    <button
+                      v-for="option in callDensityOptions"
+                      :key="option.key"
+                      class="option-btn"
+                      :class="{ 'option-btn--active': store.config.callDensity === option.value }"
+                      @click="store.config.callDensity = option.value"
+                    >
+                      {{ t(`settingsStep.advanced.se.callDensityOptions.${option.key}`) }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </template>
@@ -1720,6 +1905,14 @@ const compositionStyleOptions = [
   margin: 0.75rem 0 0;
 }
 
+.panel-hint--forced {
+  color: rgba(139, 92, 246, 0.7);
+  background: rgba(139, 92, 246, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--step-accent);
+}
+
 /* Panel slide transition */
 .panel-slide-enter-active {
   animation: panelSlideIn 0.25s ease-out;
@@ -1800,6 +1993,20 @@ const compositionStyleOptions = [
   color: #FAFAFA;
 }
 
+.option-buttons--wrap {
+  flex-wrap: wrap;
+}
+
+/* Call Settings */
+.call-settings {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 /* Chord Extension Items */
 .chord-ext-item {
   padding: 0.875rem 0;
@@ -1852,6 +2059,20 @@ const compositionStyleOptions = [
   cursor: pointer;
   font-size: 0.9rem;
   color: rgba(250, 250, 250, 0.8);
+}
+
+.toggle-label--disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.toggle-label--disabled .toggle-switch {
+  background: var(--step-accent);
+  opacity: 0.6;
+}
+
+.toggle-label--disabled .toggle-switch::after {
+  transform: translateX(20px);
 }
 
 .toggle-input {

@@ -69,6 +69,8 @@
       "rhythm": "リズム",
       "arpeggio": "アルペジオ",
       "harmony": "ハーモニー",
+      "modulation": "転調",
+      "se": "SE/コール",
       "duration": "再生時間"
     },
     "advanced": {
@@ -118,7 +120,8 @@
         "octaveRange": "オクターブ幅",
         "octaveRangeHint": "パターンがまたがるオクターブ数",
         "gate": "ゲート",
-        "gateHint": "音の長さ（100%=レガート、低いほどスタッカート）"
+        "gateHint": "音の長さ（100%=レガート、低いほどスタッカート）",
+        "synthDrivenNote": "シンセドリブンスタイルではアルペジオが常に有効になります。"
       },
       "chordExt": {
         "label": "コード拡張",
@@ -134,6 +137,45 @@
         "ninthDesc": "9度を追加。現代ポップやR&Bで人気の豊かでドリーミーな響き。",
         "ninthHint": "推奨: 10-40%",
         "probability": "確率"
+      },
+      "modulation": {
+        "description": "転調を追加して、音楽的な緊張感と盛り上がりを演出します。J-POPやアニソンでよく使われる手法です。",
+        "timing": "転調タイミング",
+        "timingOptions": {
+          "none": "なし",
+          "lastChorus": "最後のサビ",
+          "afterBridge": "ブリッジ後",
+          "eachChorus": "サビごと",
+          "random": "ランダム"
+        },
+        "semitones": "上昇半音数",
+        "semitonesHint": "キーを何半音上げるか（+1〜+4）"
+      },
+      "se": {
+        "description": "サウンドエフェクトやコールパターンを追加して、ライブ感を演出します。アイドル曲やコンサート風のトラックに最適。",
+        "seEnabled": "SEトラックを有効化",
+        "callEnabled": "コール機能を有効化",
+        "callEnabledDesc": "観客のコールパターン（ハイ！フゥ！など）を追加",
+        "callNotesEnabled": "コールをMIDIノートで出力",
+        "introChant": "イントロコール",
+        "introChantOptions": {
+          "none": "なし",
+          "gachikoi": "ガチ恋口上（約18秒）",
+          "shouting": "シャウト（約4秒）"
+        },
+        "mixPattern": "MIXパターン",
+        "mixPatternOptions": {
+          "none": "なし",
+          "standard": "スタンダード（約8秒）",
+          "tiger": "タイガー・ファイヤー（約16秒）"
+        },
+        "callDensity": "コール密度",
+        "callDensityOptions": {
+          "none": "なし",
+          "minimal": "少なめ",
+          "standard": "標準",
+          "intense": "多め"
+        }
       }
     }
   },
@@ -239,6 +281,38 @@
     "hint": "気に入らない場合は「戻る」で設定を変更できます",
     "error": {
       "noInstance": "生成インスタンスが見つかりません。BGMステップからやり直してください"
+    },
+    "vocalDetail": {
+      "title": "ボーカル詳細設定",
+      "density": {
+        "label": "音符密度",
+        "hint": "生成される音符の数を調整します。高いほど複雑で忙しいメロディに。",
+        "default": "デフォルト",
+        "presets": {
+          "default": "デフォルト",
+          "standard": "スタンダード",
+          "idol": "アイドル",
+          "vocaloid": "ボカロ"
+        }
+      },
+      "division": {
+        "label": "最小音符長",
+        "hint": "使用する最も短い音符の長さ。細かいほど速いパッセージが可能に。",
+        "options": {
+          "auto": "自動",
+          "quarter": "4分",
+          "eighth": "8分",
+          "sixteenth": "16分"
+        }
+      },
+      "rest": {
+        "label": "休符率",
+        "hint": "フレーズ間の休符に割り当てる時間の割合。高いほど余白が増えます。"
+      },
+      "extremeLeap": {
+        "label": "大跳躍を許可",
+        "hint": "ボカロ風のドラマチックな大きな音程跳躍を有効にします。"
+      }
     }
   },
   "pianoRoll": {

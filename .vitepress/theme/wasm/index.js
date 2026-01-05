@@ -28,6 +28,33 @@ export const CompositionStyle = {
 export const ATTITUDE_CLEAN = 1 << 0;
 export const ATTITUDE_EXPRESSIVE = 1 << 1;
 export const ATTITUDE_RAW = 1 << 2;
+// Modulation timing constants
+export const ModulationTiming = {
+    None: 0,
+    LastChorus: 1,
+    AfterBridge: 2,
+    EachChorus: 3,
+    Random: 4,
+};
+// Intro chant constants
+export const IntroChant = {
+    None: 0,
+    Gachikoi: 1,
+    Shouting: 2,
+};
+// Mix pattern constants
+export const MixPattern = {
+    None: 0,
+    Standard: 1,
+    Tiger: 2,
+};
+// Call density constants
+export const CallDensity = {
+    None: 0,
+    Minimal: 1,
+    Standard: 2,
+    Intense: 3,
+};
 let moduleInstance = null;
 let api = null;
 function getModule() {
@@ -245,6 +272,21 @@ export function createDefaultConfig(styleId) {
         compositionStyle: view.getUint8(retPtr + 29),
         // Duration
         targetDurationSeconds: view.getUint16(retPtr + 32, true),
+        // Modulation settings
+        modulationTiming: view.getUint8(retPtr + 34),
+        modulationSemitones: view.getInt8(retPtr + 35),
+        // SE/Call settings
+        seEnabled: view.getUint8(retPtr + 36) !== 0,
+        callEnabled: view.getUint8(retPtr + 37) !== 0,
+        callNotesEnabled: view.getUint8(retPtr + 38) !== 0,
+        introChant: view.getUint8(retPtr + 39),
+        mixPattern: view.getUint8(retPtr + 40),
+        callDensity: view.getUint8(retPtr + 41),
+        // Vocal density settings
+        vocalNoteDensity: view.getUint8(retPtr + 42),
+        vocalMinNoteDivision: view.getUint8(retPtr + 43),
+        vocalRestRatio: view.getUint8(retPtr + 44),
+        vocalAllowExtremLeap: view.getUint8(retPtr + 45) !== 0,
     };
 }
 /**
@@ -345,7 +387,7 @@ export class MidiSketch {
         }
     }
     allocSongConfig(m, config) {
-        const ptr = m._malloc(36); // Struct is 36 bytes with padding
+        const ptr = m._malloc(48); // Struct is 46 bytes, aligned to 48
         const view = new DataView(m.HEAPU8.buffer);
         // Basic settings
         view.setUint8(ptr + 0, config.stylePresetId ?? 0);
@@ -384,15 +426,35 @@ export class MidiSketch {
         view.setUint8(ptr + 31, 0);
         // Duration
         view.setUint16(ptr + 32, config.targetDurationSeconds ?? 0, true);
+        // Modulation settings
+        view.setUint8(ptr + 34, config.modulationTiming ?? 0);
+        view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
+        // SE/Call settings
+        view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
+        view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
+        view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
+        view.setUint8(ptr + 39, config.introChant ?? 0);
+        view.setUint8(ptr + 40, config.mixPattern ?? 0);
+        view.setUint8(ptr + 41, config.callDensity ?? 2);
+        // Vocal density settings
+        view.setUint8(ptr + 42, config.vocalNoteDensity ?? 0);
+        view.setUint8(ptr + 43, config.vocalMinNoteDivision ?? 0);
+        view.setUint8(ptr + 44, config.vocalRestRatio ?? 15);
+        view.setUint8(ptr + 45, config.vocalAllowExtremLeap ? 1 : 0);
         return ptr;
     }
     allocVocalParams(m, params) {
-        const ptr = m._malloc(8);
+        const ptr = m._malloc(12); // 11 bytes + padding
         const view = new DataView(m.HEAPU8.buffer);
         view.setUint32(ptr + 0, params.seed ?? 0, true);
         view.setUint8(ptr + 4, params.vocalLow ?? 60);
         view.setUint8(ptr + 5, params.vocalHigh ?? 79);
         view.setUint8(ptr + 6, params.vocalAttitude ?? 0);
+        // Vocal density parameters
+        view.setUint8(ptr + 7, params.vocalNoteDensity ?? 0);
+        view.setUint8(ptr + 8, params.vocalMinNoteDivision ?? 0);
+        view.setUint8(ptr + 9, params.vocalRestRatio ?? 15);
+        view.setUint8(ptr + 10, params.vocalAllowExtremLeap ? 1 : 0);
         return ptr;
     }
 }

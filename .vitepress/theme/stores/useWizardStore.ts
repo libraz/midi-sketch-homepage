@@ -35,6 +35,21 @@ export interface WizardConfig {
   compositionStyle: number // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
   // Duration
   targetDurationSeconds: number // 0=use formId, or target duration in seconds
+  // Modulation settings
+  modulationTiming: number // 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random
+  modulationSemitones: number // +1 to +4
+  // SE/Call settings
+  seEnabled: boolean
+  callEnabled: boolean
+  callNotesEnabled: boolean
+  introChant: number // 0=None, 1=Gachikoi, 2=Shouting
+  mixPattern: number // 0=None, 1=Standard, 2=Tiger
+  callDensity: number // 0=None, 1=Minimal, 2=Standard, 3=Intense
+  // Vocal detail settings
+  vocalNoteDensity: number // 0-200 (0=style default, 70=standard, 100=idol, 150=vocaloid)
+  vocalMinNoteDivision: number // 0=default, 4=quarter, 8=eighth, 16=sixteenth
+  vocalRestRatio: number // 0-50 (percentage of phrase rest time)
+  vocalAllowExtremLeap: boolean // Allow extreme leaps for vocaloid-style melodies
 }
 
 const currentStep = ref(1)
@@ -75,7 +90,22 @@ const config = reactive<WizardConfig>({
   // Composition
   compositionStyle: 0,
   // Duration
-  targetDurationSeconds: 150  // 2:30 default
+  targetDurationSeconds: 150,  // 2:30 default
+  // Modulation settings
+  modulationTiming: 0,  // None
+  modulationSemitones: 2,
+  // SE/Call settings
+  seEnabled: true,
+  callEnabled: false,
+  callNotesEnabled: true,
+  introChant: 0,  // None
+  mixPattern: 0,  // None
+  callDensity: 2,  // Standard
+  // Vocal detail settings
+  vocalNoteDensity: 0,  // 0=use style default
+  vocalMinNoteDivision: 0,  // 0=default
+  vocalRestRatio: 20,  // 20% rest ratio
+  vocalAllowExtremLeap: false
 })
 
 export function useWizardStore() {

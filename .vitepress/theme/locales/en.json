@@ -69,6 +69,8 @@
       "rhythm": "Rhythm",
       "arpeggio": "Arpeggio",
       "harmony": "Harmony",
+      "modulation": "Key Change",
+      "se": "SE/Call",
       "duration": "Duration"
     },
     "advanced": {
@@ -118,7 +120,8 @@
         "octaveRange": "Octave Range",
         "octaveRangeHint": "How many octaves the pattern spans",
         "gate": "Gate",
-        "gateHint": "Note length (100% = legato, lower = staccato)"
+        "gateHint": "Note length (100% = legato, lower = staccato)",
+        "synthDrivenNote": "Arpeggio is always enabled when using Synth Driven composition style."
       },
       "chordExt": {
         "label": "Chord Extensions",
@@ -134,6 +137,45 @@
         "ninthDesc": "Add the 9th degree. Rich, dreamy sound popular in modern pop and R&B.",
         "ninthHint": "Recommended: 10-40%",
         "probability": "Probability"
+      },
+      "modulation": {
+        "description": "Add key changes (modulation) to create musical tension and excitement. Common in J-POP and anime songs.",
+        "timing": "When to Modulate",
+        "timingOptions": {
+          "none": "None",
+          "lastChorus": "Last Chorus",
+          "afterBridge": "After Bridge",
+          "eachChorus": "Each Chorus",
+          "random": "Random"
+        },
+        "semitones": "Semitones Up",
+        "semitonesHint": "How many semitones to raise the key (+1 to +4)"
+      },
+      "se": {
+        "description": "Add sound effects and call patterns for live performance feel. Perfect for idol and concert-style tracks.",
+        "seEnabled": "Enable SE Track",
+        "callEnabled": "Enable Call Feature",
+        "callEnabledDesc": "Add audience call patterns (Hai!, Fu!, etc.)",
+        "callNotesEnabled": "Output Calls as MIDI Notes",
+        "introChant": "Intro Chant",
+        "introChantOptions": {
+          "none": "None",
+          "gachikoi": "Gachikoi (~18s)",
+          "shouting": "Shouting (~4s)"
+        },
+        "mixPattern": "MIX Pattern",
+        "mixPatternOptions": {
+          "none": "None",
+          "standard": "Standard (~8s)",
+          "tiger": "Tiger Fire (~16s)"
+        },
+        "callDensity": "Call Density",
+        "callDensityOptions": {
+          "none": "None",
+          "minimal": "Minimal",
+          "standard": "Standard",
+          "intense": "Intense"
+        }
       }
     }
   },
@@ -239,6 +281,38 @@
     "hint": "Go back to change settings if you're not satisfied",
     "error": {
       "noInstance": "Generation instance not found. Please restart from BGM step"
+    },
+    "vocalDetail": {
+      "title": "Vocal Detail Settings",
+      "density": {
+        "label": "Note Density",
+        "hint": "Controls how many notes are generated. Higher values create busier, more complex melodies.",
+        "default": "Default",
+        "presets": {
+          "default": "Default",
+          "standard": "Standard",
+          "idol": "Idol",
+          "vocaloid": "Vocaloid"
+        }
+      },
+      "division": {
+        "label": "Minimum Note Division",
+        "hint": "The shortest note length allowed. Smaller divisions enable faster passages.",
+        "options": {
+          "auto": "Auto",
+          "quarter": "Quarter",
+          "eighth": "8th",
+          "sixteenth": "16th"
+        }
+      },
+      "rest": {
+        "label": "Rest Ratio",
+        "hint": "Percentage of time allocated to rests between phrases. Higher values create more breathing room."
+      },
+      "extremeLeap": {
+        "label": "Allow Extreme Leaps",
+        "hint": "Enable large pitch jumps for dramatic, vocaloid-style melodies."
+      }
     }
   },
   "pianoRoll": {

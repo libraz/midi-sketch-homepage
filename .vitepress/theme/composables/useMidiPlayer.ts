@@ -65,6 +65,7 @@ interface EventData {
 
 let audioContext: AudioContext | null = null
 let piano: any = null
+let guitar: any = null
 let drums: any = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
@@ -72,6 +73,11 @@ let isInitialized = false
 // Global loading state for sharing across components
 const globalIsLoading = ref(false)
 const globalIsReady = ref(false)
+
+// Track-specific instrument settings
+const trackInstruments = ref<Record<string, 'piano' | 'guitar'>>({
+  Chord: 'piano'
+})
 
 export function useMidiPlayer() {
   const isPlaying = ref(false)
@@ -89,7 +95,7 @@ export function useMidiPlayer() {
 
   async function init() {
     // Already initialized
-    if (isInitialized && piano && drums) {
+    if (isInitialized && piano && guitar && drums) {
       globalIsReady.value = true
       return
     }
@@ -107,13 +113,15 @@ export function useMidiPlayer() {
       try {
         audioContext = new AudioContext()
 
-        // Load piano and drums in parallel
-        const [loadedPiano, loadedDrums] = await Promise.all([
+        // Load piano, guitar, and drums in parallel
+        const [loadedPiano, loadedGuitar, loadedDrums] = await Promise.all([
           new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
+          new Soundfont(audioContext, { instrument: 'distortion_guitar' }).load,
           new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
         ])
 
         piano = loadedPiano
+        guitar = loadedGuitar
         drums = loadedDrums
         isInitialized = true
         globalIsReady.value = true
@@ -198,8 +206,13 @@ export function useMidiPlayer() {
               })
             }
           } else if (!isDrumTrack) {
-            // Play piano/melodic sound
-            piano.start({
+            // Select instrument based on track settings
+            const instrument = (track.name === 'Chord' && trackInstruments.value.Chord === 'guitar' && guitar)
+              ? guitar
+              : piano
+
+            // Play melodic sound with selected instrument
+            instrument.start({
               note: noteNum,
               velocity: note.velocity,
               time: audioContext.currentTime + adjustedStartSeconds,
@@ -259,6 +272,9 @@ export function useMidiPlayer() {
     if (piano) {
       piano.stop()
     }
+    if (guitar) {
+      guitar.stop()
+    }
     if (drums) {
       drums.stop()
     }
@@ -301,9 +317,16 @@ export function useMidiPlayer() {
     if (piano) {
       piano.stop()
     }
+    if (guitar) {
+      guitar.stop()
+    }
     if (drums) {
       drums.stop()
     }
+  }
+
+  function setTrackInstrument(track: string, instrument: 'piano' | 'guitar') {
+    trackInstruments.value[track] = instrument
   }
 
   function rewind() {
@@ -333,6 +356,7 @@ export function useMidiPlayer() {
     togglePlay,
     stop,
     rewind,
-    seek
+    seek,
+    setTrackInstrument
   }
 }

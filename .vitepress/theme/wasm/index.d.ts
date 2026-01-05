@@ -70,6 +70,30 @@ export interface SongConfig {
     compositionStyle: number;
     /** Target duration in seconds (0 = use formId) */
     targetDurationSeconds: number;
+    /** Modulation timing: 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random */
+    modulationTiming: number;
+    /** Modulation semitones (+1 to +4) */
+    modulationSemitones: number;
+    /** Enable SE track */
+    seEnabled: boolean;
+    /** Enable call feature */
+    callEnabled: boolean;
+    /** Output calls as notes */
+    callNotesEnabled: boolean;
+    /** Intro chant: 0=None, 1=Gachikoi, 2=Shouting */
+    introChant: number;
+    /** Mix pattern: 0=None, 1=Standard, 2=Tiger */
+    mixPattern: number;
+    /** Call density: 0=None, 1=Minimal, 2=Standard, 3=Intense */
+    callDensity: number;
+    /** Note density (0-200, where 0=use style default, 70=standard, 100=idol, 150=vocaloid) */
+    vocalNoteDensity: number;
+    /** Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth) */
+    vocalMinNoteDivision: number;
+    /** Rest ratio (0-50, percentage of phrase rest time) */
+    vocalRestRatio: number;
+    /** Allow extreme leaps for vocaloid-style melodies */
+    vocalAllowExtremLeap: boolean;
 }
 /**
  * Vocal regeneration parameters
@@ -83,6 +107,14 @@ export interface VocalParams {
     vocalHigh: number;
     /** Vocal attitude: 0=Clean, 1=Expressive, 2=Raw */
     vocalAttitude: number;
+    /** Note density (0-200, where 0=use style default, 70=standard, 100=idol, 150=vocaloid) */
+    vocalNoteDensity?: number;
+    /** Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth) */
+    vocalMinNoteDivision?: number;
+    /** Rest ratio (0-50, percentage of phrase rest time) */
+    vocalRestRatio?: number;
+    /** Allow extreme leaps for vocaloid-style melodies */
+    vocalAllowExtremLeap?: boolean;
 }
 /**
  * Preset information
@@ -157,6 +189,29 @@ export declare const CompositionStyle: {
 export declare const ATTITUDE_CLEAN: number;
 export declare const ATTITUDE_EXPRESSIVE: number;
 export declare const ATTITUDE_RAW: number;
+export declare const ModulationTiming: {
+    readonly None: 0;
+    readonly LastChorus: 1;
+    readonly AfterBridge: 2;
+    readonly EachChorus: 3;
+    readonly Random: 4;
+};
+export declare const IntroChant: {
+    readonly None: 0;
+    readonly Gachikoi: 1;
+    readonly Shouting: 2;
+};
+export declare const MixPattern: {
+    readonly None: 0;
+    readonly Standard: 1;
+    readonly Tiger: 2;
+};
+export declare const CallDensity: {
+    readonly None: 0;
+    readonly Minimal: 1;
+    readonly Standard: 2;
+    readonly Intense: 3;
+};
 /**
  * Initialize the WASM module
  */

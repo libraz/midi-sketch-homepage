@@ -19,13 +19,25 @@ const {
   rewind,
   preload,
   stop,
-  play
+  pause,
+  play,
+  setTrackInstrument
 } = useMidiPlayer()
 
 function handleSeek(tick: number) {
   stop()
   if (eventData.value) {
     play(eventData.value, tick)
+  }
+}
+
+function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
+  setTrackInstrument(payload.track, payload.instrument)
+  // If playing, restart to apply the new instrument
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
   }
 }
 
@@ -186,7 +198,22 @@ async function generate() {
       chordExt7thProb: store.config.chordExt7thProb,
       chordExt9thProb: store.config.chordExt9thProb,
       compositionStyle: store.config.compositionStyle,
-      targetDurationSeconds: store.config.targetDurationSeconds
+      targetDurationSeconds: store.config.targetDurationSeconds,
+      // Modulation settings
+      modulationTiming: store.config.modulationTiming,
+      modulationSemitones: store.config.modulationSemitones,
+      // SE/Call settings
+      seEnabled: store.config.seEnabled,
+      callEnabled: store.config.callEnabled,
+      callNotesEnabled: store.config.callNotesEnabled,
+      introChant: store.config.introChant,
+      mixPattern: store.config.mixPattern,
+      callDensity: store.config.callDensity,
+      // Vocal detail settings
+      vocalNoteDensity: store.config.vocalNoteDensity,
+      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
+      vocalRestRatio: store.config.vocalRestRatio,
+      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
     })
 
     try {
@@ -205,9 +232,9 @@ async function generate() {
 }
 
 async function regenerate() {
-  // Stop playback before regenerating
+  // Pause playback before regenerating (keeps position)
   if (isPlaying.value) {
-    rewind()
+    pause()
   }
 
   store.config.seed = Math.floor(Math.random() * 0xFFFFFFFF)
@@ -323,7 +350,7 @@ function downloadMidi() {
             </template>
           </div>
         </div>
-        <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" />
+        <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" />
       </div>
 
       <div class="result-actions">
@@ -333,7 +360,7 @@ function downloadMidi() {
         </button>
         <button
           class="regenerate-btn"
-          :disabled="isPlaying || isGenerating"
+          :disabled="isGenerating"
           @click="regenerate"
         >
           <span class="regenerate-btn__icon">↻</span>

@@ -53,7 +53,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   seek: [tick: number]
+  instrumentChange: [payload: { track: string; instrument: 'piano' | 'guitar' }]
 }>()
+
+// Instrument selection for Chords track
+const chordsInstrument = ref<'piano' | 'guitar'>('piano')
+
+function toggleChordsInstrument() {
+  chordsInstrument.value = chordsInstrument.value === 'piano' ? 'guitar' : 'piano'
+  emit('instrumentChange', { track: 'Chords', instrument: chordsInstrument.value })
+}
 
 function handleSectionClick(section: Section) {
   const tick = section.start_ticks ?? section.startTick
@@ -544,16 +553,41 @@ const progressPercent = computed(() => {
 
     <!-- Track Legend -->
     <div class="track-legend">
-      <div
-        v-for="(track, index) in visibleTracks"
-        :key="track.name"
-        class="legend-item"
-      >
-        <span
-          class="legend-color"
-          :style="{ backgroundColor: getTrackColor(index) }"
-        />
-        <span class="legend-name">{{ track.name }}</span>
+      <div class="legend-tracks">
+        <div
+          v-for="(track, index) in visibleTracks"
+          :key="track.name"
+          class="legend-item"
+        >
+          <span
+            class="legend-color"
+            :style="{ backgroundColor: getTrackColor(index) }"
+          />
+          <span class="legend-name">{{ track.name }}</span>
+        </div>
+      </div>
+
+      <!-- Instrument Toggle for Chord Track (right side) -->
+      <div class="instrument-toggle">
+        <span class="instrument-toggle__label">Chord</span>
+        <div class="instrument-toggle__buttons">
+          <button
+            class="instrument-btn"
+            :class="{ 'instrument-btn--active': chordsInstrument === 'piano' }"
+            @click="chordsInstrument = 'piano'; emit('instrumentChange', { track: 'Chord', instrument: 'piano' })"
+            title="Piano"
+          >
+            <span class="instrument-icon">🎹</span>
+          </button>
+          <button
+            class="instrument-btn"
+            :class="{ 'instrument-btn--active': chordsInstrument === 'guitar' }"
+            @click="chordsInstrument = 'guitar'; emit('instrumentChange', { track: 'Chord', instrument: 'guitar' })"
+            title="Electric Guitar"
+          >
+            <span class="instrument-icon">🎸</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1224,11 +1258,19 @@ const progressPercent = computed(() => {
 /* Track Legend */
 .track-legend {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
   padding: 0.625rem 1rem;
   background: linear-gradient(180deg, rgba(20, 20, 28, 0.9) 0%, rgba(25, 25, 35, 0.95) 100%);
   border-top: 1px solid var(--border);
+}
+
+.legend-tracks {
+  display: flex;
+  gap: 1rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .legend-item {
@@ -1249,6 +1291,91 @@ const progressPercent = computed(() => {
   font-weight: 500;
   color: var(--text-secondary);
   letter-spacing: 0.02em;
+}
+
+/* Instrument Toggle - Hardware-inspired switch */
+.instrument-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.instrument-toggle__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.instrument-toggle__buttons {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.instrument-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.instrument-btn + .instrument-btn {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.instrument-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.instrument-btn--active {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(139, 92, 246, 0.2) 100%);
+  box-shadow:
+    0 0 8px rgba(236, 72, 153, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.instrument-btn--active::before {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
+  background: #EC4899;
+  border-radius: 1px;
+  box-shadow: 0 0 6px rgba(236, 72, 153, 0.8);
+}
+
+.instrument-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+  filter: grayscale(0.3);
+  transition: filter 0.2s ease;
+}
+
+.instrument-btn--active .instrument-icon {
+  filter: grayscale(0) drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+}
+
+.instrument-btn:not(.instrument-btn--active) .instrument-icon {
+  opacity: 0.5;
 }
 
 /* Responsive */
