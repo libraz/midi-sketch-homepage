@@ -122,15 +122,18 @@
       },
       "chordExt": {
         "label": "Chord Extensions",
-        "description": "Enhance basic chords with additional notes for richer harmony. Each extension adds a unique color and mood to your progression.",
+        "desc1": "Multiple can be enabled, but only one applies per chord",
+        "desc2": "0% = disabled, 100% = always when conditions match",
         "sus": "Sus (Suspended)",
         "susDesc": "Replace the 3rd with 2nd or 4th. Creates tension and an open, unresolved feeling.",
+        "susHint": "Recommended: 10-40%",
         "seventh": "7th Chords",
         "seventhDesc": "Add the 7th degree. Brings jazzy warmth and sophistication.",
+        "seventhHint": "Recommended: 20-60% (higher for jazz)",
         "ninth": "9th Chords",
         "ninthDesc": "Add the 9th degree. Rich, dreamy sound popular in modern pop and R&B.",
-        "probability": "Probability",
-        "probabilityHint": "How often this extension is applied to eligible chords"
+        "ninthHint": "Recommended: 10-40%",
+        "probability": "Probability"
       }
     }
   },

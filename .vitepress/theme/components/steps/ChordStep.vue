@@ -54,11 +54,23 @@ const currentSongImage = computed(() =>
 )
 
 const recommendedChordIds = computed(() => {
-  if (!currentSongImage.value) return []
-  // Filter recommended chords to only include valid ones for the current style
-  const recommended = currentSongImage.value.recommendedChords
-  if (validProgressionIds.value.length === 0) return recommended
-  return recommended.filter(id => validProgressionIds.value.includes(id))
+  const validIds = validProgressionIds.value
+
+  // If no valid progressions from WASM, fall back to songImage recommendations
+  if (validIds.length === 0) {
+    return currentSongImage.value?.recommendedChords || []
+  }
+
+  // Filter songImage recommendations by WASM valid progressions
+  const recommended = currentSongImage.value?.recommendedChords || []
+  const filtered = recommended.filter(id => validIds.includes(id))
+
+  // If no match, use first 3 valid progressions as recommendations
+  if (filtered.length === 0) {
+    return validIds.slice(0, 3)
+  }
+
+  return filtered
 })
 
 // Recommended chords (filtered and sorted by recommendation order)

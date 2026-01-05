@@ -142,6 +142,23 @@ async function generate() {
       store.config.chordProgressionId = validProgressions[0]
     }
 
+    // Validate vocalAttitude for current style
+    const presets = midisketch.getStylePresets()
+    const preset = presets.find((p: any) => p.id === store.config.stylePresetId)
+    if (preset) {
+      const allowedAttitudes = preset.allowedAttitudes
+      const attitudeFlag = 1 << store.config.vocalAttitude
+      if ((allowedAttitudes & attitudeFlag) === 0) {
+        // Find first allowed attitude
+        for (let i = 0; i < 3; i++) {
+          if ((allowedAttitudes & (1 << i)) !== 0) {
+            store.config.vocalAttitude = i
+            break
+          }
+        }
+      }
+    }
+
     instance.generateFromConfig({
       stylePresetId: store.config.stylePresetId,
       key: store.config.key,

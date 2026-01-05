@@ -660,16 +660,18 @@ const compositionStyleOptions = [
 
             <!-- Harmony Panel (Chord Extensions) -->
             <template v-if="activeTab === 'harmony'">
-              <p class="panel-description">{{ t('settingsStep.advanced.chordExt.description') }}</p>
+              <ul class="panel-description-list">
+                <li>{{ t('settingsStep.advanced.chordExt.desc1') }}</li>
+                <li>{{ t('settingsStep.advanced.chordExt.desc2') }}</li>
+              </ul>
 
               <!-- Sus -->
-              <div class="chord-ext-item" :class="{ 'chord-ext-item--disabled': store.config.chordExt9th }">
+              <div class="chord-ext-item">
                 <div class="setting-row">
                   <label class="toggle-label">
                     <input
                       type="checkbox"
                       v-model="store.config.chordExtSus"
-                      :disabled="store.config.chordExt9th"
                       class="toggle-input"
                     />
                     <span class="toggle-switch"></span>
@@ -679,7 +681,7 @@ const compositionStyleOptions = [
                     </span>
                   </label>
                 </div>
-                <div v-if="store.config.chordExtSus && !store.config.chordExt9th" class="slider-item slider-item--nested">
+                <div v-if="store.config.chordExtSus" class="slider-item slider-item--nested">
                   <label class="slider-label">
                     {{ t('settingsStep.advanced.chordExt.probability') }}
                     <span class="slider-value">{{ store.config.chordExtSusProb }}%</span>
@@ -691,6 +693,7 @@ const compositionStyleOptions = [
                     max="100"
                     class="slider"
                   />
+                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.susHint') }}</span>
                 </div>
               </div>
 
@@ -722,17 +725,17 @@ const compositionStyleOptions = [
                     max="100"
                     class="slider"
                   />
+                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.seventhHint') }}</span>
                 </div>
               </div>
 
               <!-- 9th -->
-              <div class="chord-ext-item" :class="{ 'chord-ext-item--disabled': store.config.chordExtSus }">
+              <div class="chord-ext-item">
                 <div class="setting-row">
                   <label class="toggle-label">
                     <input
                       type="checkbox"
                       v-model="store.config.chordExt9th"
-                      :disabled="store.config.chordExtSus"
                       class="toggle-input"
                     />
                     <span class="toggle-switch"></span>
@@ -742,7 +745,7 @@ const compositionStyleOptions = [
                     </span>
                   </label>
                 </div>
-                <div v-if="store.config.chordExt9th && !store.config.chordExtSus" class="slider-item slider-item--nested">
+                <div v-if="store.config.chordExt9th" class="slider-item slider-item--nested">
                   <label class="slider-label">
                     {{ t('settingsStep.advanced.chordExt.probability') }}
                     <span class="slider-value">{{ store.config.chordExt9thProb }}%</span>
@@ -754,6 +757,7 @@ const compositionStyleOptions = [
                     max="100"
                     class="slider"
                   />
+                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.ninthHint') }}</span>
                 </div>
               </div>
             </template>
@@ -1694,6 +1698,22 @@ const compositionStyleOptions = [
   line-height: 1.5;
 }
 
+.panel-description-list {
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.5);
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.panel-description-list li {
+  margin-bottom: 0.25rem;
+}
+
+.panel-description-list li:last-child {
+  margin-bottom: 0;
+}
+
 .panel-hint {
   font-size: 0.75rem;
   color: rgba(250, 250, 250, 0.4);
@@ -1795,14 +1815,6 @@ const compositionStyleOptions = [
   padding-top: 0;
 }
 
-.chord-ext-item--disabled {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.chord-ext-item--disabled .toggle-switch {
-  background: rgba(255, 255, 255, 0.05);
-}
 
 .slider-item--nested {
   margin-top: 0.75rem;
