@@ -6,22 +6,22 @@
 
 ```mermaid
 flowchart LR
-    subgraph Phase1 [フェーズ1: 構造]
-        P1[アレンジメント構築]
+    subgraph Phase1 ["フェーズ1: 構造"]
+        P1["アレンジメント構築"]
     end
 
-    subgraph Phase2 [フェーズ2: リズムセクション]
-        P2A[ベース] --> P2B[コード]
-        P2B --> P2C[ドラム]
+    subgraph Phase2 ["フェーズ2: リズムセクション"]
+        P2A["ベース"] --> P2B["コード"]
+        P2B --> P2C["ドラム"]
     end
 
-    subgraph Phase3 [フェーズ3: メロディ]
-        P3A[ボーカル] --> P3B[モチーフ]
-        P3B --> P3C[アルペジオ]
+    subgraph Phase3 ["フェーズ3: メロディ"]
+        P3A["ボーカル"] --> P3B["モチーフ"]
+        P3B --> P3C["アルペジオ"]
     end
 
-    subgraph Phase4 [フェーズ4: 仕上げ]
-        P4A[トランジション・ダイナミクス] --> P4B[ヒューマナイズ]
+    subgraph Phase4 ["フェーズ4: 仕上げ"]
+        P4A["トランジション・ダイナミクス"] --> P4B["ヒューマナイズ"]
     end
 
     Phase1 --> Phase2 --> Phase3 --> Phase4

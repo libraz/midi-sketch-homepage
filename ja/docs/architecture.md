@@ -78,12 +78,12 @@ struct Song {
 
 ```mermaid
 flowchart TD
-    subgraph Input [入力]
+    subgraph Input ["入力"]
         A[GeneratorParams] --> G
         B[SongConfig] --> G
     end
 
-    subgraph Generator [生成器]
+    subgraph Generator ["生成器"]
         G[Generator] --> S1[buildStructure]
         S1 --> S2[generateBass]
         S2 --> S3[generateChord]

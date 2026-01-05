@@ -97,20 +97,66 @@ midisketch.downloadMidi(midiData, 'song.mid')
 const sketch = new midisketch.MidiSketch()
 ```
 
-### `generate(params)`
+### `generateFromConfig(config)`
 
-Generate MIDI with the given parameters.
+Generate MIDI from a SongConfig object.
 
 ```javascript
-sketch.generate({
-  structureId: 0,              // Structure pattern (0-10)
-  moodId: 0,                   // Mood preset (0-19)
-  chordId: 0,                  // Chord progression (0-21)
-  key: 0,                      // Key (0-11: C to B)
-  bpm: 120,                    // Tempo (60-180, 0=use default)
-  seed: 12345,                 // Random seed (0=auto)
-  drumsEnabled: true,          // Enable drums track
-  targetDurationSeconds: 0,    // Target duration (0=use structure, 60-300)
+sketch.generateFromConfig({
+  // Basic settings
+  stylePresetId: 0,           // Style preset ID
+  key: 0,                     // Key (0-11: C to B)
+  bpm: 120,                   // Tempo (0=use style default)
+  seed: 12345,                // Random seed (0=random)
+  chordProgressionId: 0,      // Chord progression ID
+  formId: 0,                  // Form/structure ID
+  vocalAttitude: 0,           // 0=Clean, 1=Expressive, 2=Raw
+  drumsEnabled: true,         // Enable drums track
+
+  // Arpeggio settings
+  arpeggioEnabled: false,     // Enable arpeggio track
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
+  arpeggioOctaveRange: 2,     // 1-3 octaves
+  arpeggioGate: 80,           // Gate length (0-100)
+
+  // Vocal settings
+  vocalLow: 55,               // Vocal range lower bound (MIDI note)
+  vocalHigh: 74,              // Vocal range upper bound (MIDI note)
+  skipVocal: false,           // Skip vocal generation (for BGM-first workflow)
+
+  // Humanization
+  humanize: true,             // Enable humanization
+  humanizeTiming: 50,         // Timing variation (0-100)
+  humanizeVelocity: 50,       // Velocity variation (0-100)
+
+  // Chord extensions
+  chordExtSus: false,         // Enable sus2/sus4 chords
+  chordExt7th: false,         // Enable 7th chords
+  chordExt9th: false,         // Enable 9th chords
+  chordExtSusProb: 20,        // Sus chord probability (0-100)
+  chordExt7thProb: 30,        // 7th chord probability (0-100)
+  chordExt9thProb: 25,        // 9th chord probability (0-100)
+
+  // Composition style
+  compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+
+  // Duration
+  targetDurationSeconds: 0,   // Target duration (0=use formId)
+})
+```
+
+### `regenerateVocal(params)`
+
+Regenerate only the vocal track. BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
+Use after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
+
+```javascript
+sketch.regenerateVocal({
+  seed: 0,               // Random seed (0=new random)
+  vocalLow: 55,          // Vocal range lower bound (MIDI note)
+  vocalHigh: 74,         // Vocal range upper bound (MIDI note)
+  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
 })
 ```
 
@@ -128,54 +174,7 @@ Returns the event data for visualization/playback.
 
 ```javascript
 const events = sketch.getEvents()
-// { sections: [...], tracks: [...], bpm: 120, totalTicks: ... }
-```
-
-### `regenerateMelody(seed?)`
-
-Regenerate only the melody track.
-
-```javascript
-sketch.regenerateMelody() // New random seed
-sketch.regenerateMelody(42) // Specific seed
-```
-
-### `regenerateMelodyEx(params)`
-
-Regenerate only the melody track with full parameter control. BGM tracks remain unchanged.
-
-```javascript
-sketch.regenerateMelodyEx({
-  seed: 0,               // Random seed (0=new random)
-  vocalLow: 55,          // Vocal range lower bound (MIDI note)
-  vocalHigh: 74,         // Vocal range upper bound (MIDI note)
-  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
-  compositionStyle: 0,   // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
-})
-```
-
-### `generateFromConfig(config)`
-
-Generate MIDI from a SongConfig object.
-
-```javascript
-sketch.generateFromConfig({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 12345,
-  chordProgressionId: 0,
-  formId: 0,
-  vocalAttitude: 0,
-  drumsEnabled: true,
-  arpeggioEnabled: false,
-  vocalLow: 55,
-  vocalHigh: 74,
-  humanize: true,
-  humanizeTiming: 50,
-  humanizeVelocity: 50,
-  targetDurationSeconds: 0,
-})
+// { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
 ```
 
 ### `destroy()`
@@ -184,6 +183,31 @@ Clean up resources.
 
 ```javascript
 sketch.destroy()
+```
+
+## BGM-First Workflow
+
+Generate backing track first, then add vocals:
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+
+// Step 1: Generate BGM only
+const config = midisketch.createDefaultConfig(0)
+config.skipVocal = true
+sketch.generateFromConfig(config)
+
+// Preview BGM...
+
+// Step 2: Add vocals
+sketch.regenerateVocal({
+  seed: 0,
+  vocalLow: 55,
+  vocalHigh: 74,
+  vocalAttitude: 1,
+})
+
+const midiData = sketch.getMidi()
 ```
 
 ## Constants

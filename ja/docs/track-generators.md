@@ -6,22 +6,22 @@
 
 ```mermaid
 flowchart TB
-    subgraph Rhythm [リズムセクション]
+    subgraph Rhythm ["リズムセクション"]
         Bass["ベース (Ch 2)"]
         Drums["ドラム (Ch 9)"]
     end
 
-    subgraph Harmony [ハーモニー]
+    subgraph Harmony ["ハーモニー"]
         Chord["コード (Ch 1)"]
     end
 
-    subgraph Melody [メロディレイヤー]
+    subgraph Melody ["メロディレイヤー"]
         Vocal["ボーカル (Ch 0)"]
         Motif["モチーフ (Ch 3)"]
         Arpeggio["アルペジオ (Ch 4)"]
     end
 
-    subgraph Markers [マーカー]
+    subgraph Markers ["マーカー"]
         SE["SE (Ch 15)"]
     end
 ```
@@ -109,15 +109,15 @@ struct VocalRange {
 
 ```mermaid
 flowchart LR
-    subgraph Close [クローズボイシング]
+    subgraph Close ["クローズボイシング"]
         C1[R] --> C2[3] --> C3[5] --> C4[7]
     end
 
-    subgraph Open [オープンボイシング]
+    subgraph Open ["オープンボイシング"]
         O1[R] --> O2[5] --> O3[3] --> O4[7]
     end
 
-    subgraph Rootless [ルートレス]
+    subgraph Rootless ["ルートレス"]
         RL1[3] --> RL2[5] --> RL3[7] --> RL4[9]
     end
 ```
@@ -335,15 +335,15 @@ struct ArpeggioParams {
 
 ```mermaid
 flowchart LR
-    subgraph Up [アップ]
+    subgraph Up ["アップ"]
         U1[C] --> U2[E] --> U3[G] --> U4[C']
     end
 
-    subgraph Down [ダウン]
+    subgraph Down ["ダウン"]
         D1[C'] --> D2[G] --> D3[E] --> D4[C]
     end
 
-    subgraph UpDown [アップダウン]
+    subgraph UpDown ["アップダウン"]
         UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
     end
 ```

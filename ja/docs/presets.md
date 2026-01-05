@@ -73,20 +73,20 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    subgraph Slow [スロー (80-100 BPM)]
+    subgraph Slow ["スロー (80-100 BPM)"]
         S1[Ballad]
         S2[Sentimental]
         S3[Chill]
     end
 
-    subgraph Mid [ミッド (100-125 BPM)]
+    subgraph Mid ["ミッド (100-125 BPM)"]
         M1[StraightPop]
         M2[MidPop]
         M3[CityPop]
         M4[Synthwave]
     end
 
-    subgraph Fast [ファスト (125-150 BPM)]
+    subgraph Fast ["ファスト (125-150 BPM)"]
         F1[BrightUpbeat]
         F2[ElectroPop]
         F3[IdolPop]

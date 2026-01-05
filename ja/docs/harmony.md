@@ -10,15 +10,15 @@ MIDI Sketchには一般的なポップミュージックパターンをカバー
 
 ```mermaid
 flowchart LR
-    subgraph Canon [カノン (I-V-vi-IV)]
+    subgraph Canon ["カノン (I-V-vi-IV)"]
         C1[I] --> C2[V] --> C3[vi] --> C4[IV]
     end
 
-    subgraph Axis [Axis (vi-IV-I-V)]
+    subgraph Axis ["Axis (vi-IV-I-V)"]
         A1[vi] --> A2[IV] --> A3[I] --> A4[V]
     end
 
-    subgraph Komuro [小室 (vi-IV-V-I)]
+    subgraph Komuro ["小室 (vi-IV-V-I)"]
         K1[vi] --> K2[IV] --> K3[V] --> K4[I]
     end
 ```
@@ -167,17 +167,17 @@ Voicing optimizeVoicing(Voicing prev, Chord next) {
 
 ```mermaid
 flowchart TB
-    subgraph Close [クローズポジション]
+    subgraph Close ["クローズポジション"]
         direction LR
         CL1["C4"] --- CL2["E4"] --- CL3["G4"] --- CL4["B4"]
     end
 
-    subgraph Open [オープンポジション]
+    subgraph Open ["オープンポジション"]
         direction LR
         OP1["C3"] --- OP2["G3"] --- OP3["E4"] --- OP4["B4"]
     end
 
-    subgraph Rootless [ルートレス（ベース協調用）]
+    subgraph Rootless ["ルートレス（ベース協調用）"]
         direction LR
         RL1["E3"] --- RL2["G3"] --- RL3["B3"] --- RL4["D4"]
     end

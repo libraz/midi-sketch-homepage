@@ -97,20 +97,66 @@ midisketch.downloadMidi(midiData, 'song.mid')
 const sketch = new midisketch.MidiSketch()
 ```
 
-### `generate(params)`
+### `generateFromConfig(config)`
 
-指定されたパラメータで MIDI を生成します。
+SongConfig オブジェクトから MIDI を生成します。
 
 ```javascript
-sketch.generate({
-  structureId: 0,              // 曲構成パターン (0-10)
-  moodId: 0,                   // ムードプリセット (0-19)
-  chordId: 0,                  // コード進行 (0-21)
-  key: 0,                      // キー (0-11: C から B)
-  bpm: 120,                    // テンポ (60-180, 0=デフォルト)
-  seed: 12345,                 // ランダムシード (0=自動)
-  drumsEnabled: true,          // ドラムトラックを有効化
-  targetDurationSeconds: 0,    // 目標尺 (0=構成に従う, 60-300秒)
+sketch.generateFromConfig({
+  // 基本設定
+  stylePresetId: 0,           // スタイルプリセット ID
+  key: 0,                     // キー (0-11: C から B)
+  bpm: 120,                   // テンポ (0=スタイルのデフォルト)
+  seed: 12345,                // ランダムシード (0=ランダム)
+  chordProgressionId: 0,      // コード進行 ID
+  formId: 0,                  // フォーム/構成 ID
+  vocalAttitude: 0,           // 0=Clean, 1=Expressive, 2=Raw
+  drumsEnabled: true,         // ドラムトラック有効化
+
+  // アルペジオ設定
+  arpeggioEnabled: false,     // アルペジオトラック有効化
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed: 1,           // 0=8分音符, 1=16分音符, 2=3連符
+  arpeggioOctaveRange: 2,     // 1-3 オクターブ
+  arpeggioGate: 80,           // ゲート長 (0-100)
+
+  // ボーカル設定
+  vocalLow: 55,               // ボーカル音域下限 (MIDI ノート番号)
+  vocalHigh: 74,              // ボーカル音域上限 (MIDI ノート番号)
+  skipVocal: false,           // ボーカル生成をスキップ (BGM先行ワークフロー用)
+
+  // ヒューマナイズ
+  humanize: true,             // ヒューマナイズ有効化
+  humanizeTiming: 50,         // タイミング変動 (0-100)
+  humanizeVelocity: 50,       // ベロシティ変動 (0-100)
+
+  // コード拡張
+  chordExtSus: false,         // sus2/sus4 コード有効化
+  chordExt7th: false,         // 7th コード有効化
+  chordExt9th: false,         // 9th コード有効化
+  chordExtSusProb: 20,        // sus コード確率 (0-100)
+  chordExt7thProb: 30,        // 7th コード確率 (0-100)
+  chordExt9thProb: 25,        // 9th コード確率 (0-100)
+
+  // 作曲スタイル
+  compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+
+  // 尺
+  targetDurationSeconds: 0,   // 目標尺 (0=formIdに従う)
+})
+```
+
+### `regenerateVocal(params)`
+
+ボーカルトラックのみを再生成します。BGM トラック（コード、ベース、ドラム、アルペジオ）は変更されません。
+BGM先行ワークフローでは `generateFromConfig()` の `skipVocal: true` と組み合わせて使用します。
+
+```javascript
+sketch.regenerateVocal({
+  seed: 0,               // ランダムシード (0=新しいランダム)
+  vocalLow: 55,          // ボーカル音域下限 (MIDI ノート番号)
+  vocalHigh: 74,         // ボーカル音域上限 (MIDI ノート番号)
+  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
 })
 ```
 
@@ -128,54 +174,7 @@ const midiData = sketch.getMidi()
 
 ```javascript
 const events = sketch.getEvents()
-// { sections: [...], tracks: [...], bpm: 120, totalTicks: ... }
-```
-
-### `regenerateMelody(seed?)`
-
-メロディトラックのみを再生成します。
-
-```javascript
-sketch.regenerateMelody() // 新しいランダムシード
-sketch.regenerateMelody(42) // 特定のシード
-```
-
-### `regenerateMelodyEx(params)`
-
-メロディトラックのみを完全なパラメータ制御で再生成します。BGM トラックは変更されません。
-
-```javascript
-sketch.regenerateMelodyEx({
-  seed: 0,               // ランダムシード (0=新しいランダム)
-  vocalLow: 55,          // ボーカル音域下限 (MIDI ノート番号)
-  vocalHigh: 74,         // ボーカル音域上限 (MIDI ノート番号)
-  vocalAttitude: 1,      // 0=Clean, 1=Expressive, 2=Raw
-  compositionStyle: 0,   // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
-})
-```
-
-### `generateFromConfig(config)`
-
-SongConfig オブジェクトから MIDI を生成します。
-
-```javascript
-sketch.generateFromConfig({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 12345,
-  chordProgressionId: 0,
-  formId: 0,
-  vocalAttitude: 0,
-  drumsEnabled: true,
-  arpeggioEnabled: false,
-  vocalLow: 55,
-  vocalHigh: 74,
-  humanize: true,
-  humanizeTiming: 50,
-  humanizeVelocity: 50,
-  targetDurationSeconds: 0,
-})
+// { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
 ```
 
 ### `destroy()`
@@ -184,6 +183,31 @@ sketch.generateFromConfig({
 
 ```javascript
 sketch.destroy()
+```
+
+## BGM先行ワークフロー
+
+バッキングトラックを先に生成し、後からボーカルを追加：
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+
+// ステップ1: BGMのみ生成
+const config = midisketch.createDefaultConfig(0)
+config.skipVocal = true
+sketch.generateFromConfig(config)
+
+// BGMをプレビュー...
+
+// ステップ2: ボーカルを追加
+sketch.regenerateVocal({
+  seed: 0,
+  vocalLow: 55,
+  vocalHigh: 74,
+  vocalAttitude: 1,
+})
+
+const midiData = sketch.getMidi()
 ```
 
 ## 定数
