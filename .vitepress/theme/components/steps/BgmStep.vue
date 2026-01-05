@@ -124,12 +124,24 @@ onMounted(async () => {
 })
 
 async function generate() {
-  if (!instance) return
+  if (!instance || !midisketch) return
 
   isGenerating.value = true
   error.value = null
 
   try {
+    // Validate formId for current style
+    const validForms = midisketch.getFormsByStyle(store.config.stylePresetId)
+    if (validForms.length > 0 && !validForms.includes(store.config.formId)) {
+      store.config.formId = validForms[0]
+    }
+
+    // Validate chordProgressionId for current style
+    const validProgressions = midisketch.getProgressionsByStyle(store.config.stylePresetId)
+    if (validProgressions.length > 0 && !validProgressions.includes(store.config.chordProgressionId)) {
+      store.config.chordProgressionId = validProgressions[0]
+    }
+
     instance.generateFromConfig({
       stylePresetId: store.config.stylePresetId,
       key: store.config.key,

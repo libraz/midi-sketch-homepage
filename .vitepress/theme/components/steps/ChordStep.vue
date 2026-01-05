@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { useChordPlayer } from '../../composables/useChordPlayer'
@@ -10,6 +10,38 @@ const { t } = useI18n()
 const store = useWizardStore()
 const { isPlaying, currentChordIndex, playChord, playProgression, stop } = useChordPlayer()
 const playingChordId = ref<number | null>(null)
+
+// WASM module for getting valid progressions
+let midisketch: any = null
+const validProgressionIds = ref<number[]>([])
+const isWasmLoaded = ref(false)
+
+onMounted(async () => {
+  if (typeof window === 'undefined') return
+
+  try {
+    const mod = await import('../../wasm/index.js')
+    midisketch = mod
+    const wasmPath = new URL('../../wasm/midisketch.wasm', import.meta.url).href
+    await mod.init({ wasmPath })
+    isWasmLoaded.value = true
+    updateValidProgressions()
+  } catch (e) {
+    console.warn('WASM load failed, showing all progressions:', e)
+    // Fall back to showing all progressions
+    validProgressionIds.value = chordProgressions.map(c => c.id)
+  }
+})
+
+function updateValidProgressions() {
+  if (!midisketch || !isWasmLoaded.value) return
+  validProgressionIds.value = midisketch.getProgressionsByStyle(store.config.stylePresetId)
+}
+
+// Watch for style changes
+watch(() => store.config.stylePresetId, () => {
+  updateValidProgressions()
+})
 
 watch(isPlaying, (playing) => {
   if (!playing) {
@@ -23,7 +55,10 @@ const currentSongImage = computed(() =>
 
 const recommendedChordIds = computed(() => {
   if (!currentSongImage.value) return []
-  return currentSongImage.value.recommendedChords
+  // Filter recommended chords to only include valid ones for the current style
+  const recommended = currentSongImage.value.recommendedChords
+  if (validProgressionIds.value.length === 0) return recommended
+  return recommended.filter(id => validProgressionIds.value.includes(id))
 })
 
 // Recommended chords (filtered and sorted by recommendation order)
@@ -34,10 +69,16 @@ const recommendedChords = computed(() => {
     .filter((c): c is typeof chordProgressions[0] => c !== undefined)
 })
 
-// Other chords (not recommended for this style)
+// Other chords (valid for style but not recommended)
 const otherChords = computed(() => {
   const ids = recommendedChordIds.value
-  return chordProgressions.filter(c => !ids.includes(c.id))
+  // Only show valid progressions that are not already recommended
+  if (validProgressionIds.value.length === 0) {
+    return chordProgressions.filter(c => !ids.includes(c.id))
+  }
+  return chordProgressions.filter(c =>
+    validProgressionIds.value.includes(c.id) && !ids.includes(c.id)
+  )
 })
 
 // Show other chords section toggle
