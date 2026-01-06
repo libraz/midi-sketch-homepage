@@ -47,7 +47,9 @@
     "tempo": {
       "label": "Tempo (BPM)",
       "description": "Beats per minute. Higher = faster tempo",
-      "recommended": "Recommended: "
+      "recommended": "Recommended: ",
+      "belowRange": "Below range",
+      "aboveRange": "Above range"
     },
     "duration": {
       "label": "Target Duration",
@@ -65,14 +67,59 @@
     },
     "tabs": {
       "style": "Style",
-      "arrangement": "Arrange",
-      "feel": "Feel",
       "rhythm": "Rhythm",
-      "arpeggio": "Arpeggio",
       "harmony": "Harmony",
+      "production": "Production",
       "modulation": "Key Change",
-      "se": "SE/Call",
-      "duration": "Duration"
+      "se": "SE/Call"
+    },
+    "rack": {
+      "statusDefault": "Hover over a parameter for details",
+      "modules": {
+        "track": "TRACK",
+        "inst": "INST",
+        "harmony": "HARMONY",
+        "output": "OUTPUT"
+      },
+      "params": {
+        "mode": "MODE",
+        "scope": "SCOPE",
+        "chords": "CHORDS",
+        "arrange": "ARRANGE",
+        "pattern": "PATTERN",
+        "rate": "RATE",
+        "octave": "OCTAVE",
+        "gate": "GATE",
+        "syncChord": "SYNC CHORD",
+        "drums": "DRUMS",
+        "arpeggio": "ARPEGGIO",
+        "humanize": "HUMANIZE",
+        "time": "TIME",
+        "vel": "VEL",
+        "complexity": "COMPLEXITY",
+        "hook": "HOOK",
+        "keyChange": "KEY CHANGE",
+        "semitones": "SEMITONES",
+        "duration": "DURATION",
+        "callResponse": "CALL/RESPONSE",
+        "midiOutput": "MIDI OUTPUT",
+        "intro": "INTRO",
+        "mix": "MIX",
+        "density": "DENSITY",
+        "fixedProg": "FIXED PROG"
+      },
+      "values": {
+        "song": "SONG",
+        "sect": "SECT",
+        "layer": "LAYER",
+        "register": "REGISTER",
+        "auto": "AUTO",
+        "lead": "Lead",
+        "motif": "Motif",
+        "synth": "Synth",
+        "off": "OFF",
+        "basic": "BASIC"
+      }
     },
     "advanced": {
       "toggle": "Advanced Settings",
@@ -235,7 +282,9 @@
       "regenerate": "Regenerate BGM",
       "regenerated": "Regenerated",
       "loadingAudio": "Loading audio...",
-      "hint": "Listen to the backing track and proceed to melody generation"
+      "hint": "Listen to the backing track and proceed to melody generation",
+      "undo": "Undo",
+      "redo": "Redo"
     }
   },
   "melodyStep": {
@@ -292,6 +341,76 @@
           "synthDriven": "Synth Driven",
           "synthDrivenDesc": "Electronic-style melody with synth characteristics"
         }
+      },
+      "vocalStyle": {
+        "label": "Vocal Style",
+        "description": "Select a style to auto-adjust note density, rhythm patterns, and pitch leaps",
+        "implicitNote": "※ Internal parameters are automatically set based on the selected style",
+        "options": {
+          "auto": "Auto",
+          "autoDesc": "Automatically selected based on the style preset",
+          "standard": "Standard",
+          "standardDesc": "Balanced, standard melody",
+          "vocaloid": "Vocaloid",
+          "vocaloidDesc": "16th-note heavy, fast passages, pitch leaps allowed",
+          "ultraVocaloid": "Ultra Vocaloid",
+          "ultraVocaloidDesc": "32nd notes, ultra-dense, extreme leaps OK, no rests",
+          "idol": "Idol",
+          "idolDesc": "8th-note based, catchy hooks, chorus builds up",
+          "ballad": "Ballad",
+          "balladDesc": "Quarter-note focused, relaxed, long notes, narrow range",
+          "rock": "Rock",
+          "rockDesc": "Powerful hooks, syncopation, range rises in chorus",
+          "cityPop": "City Pop",
+          "cityPopDesc": "Stylish syncopation, tension notes, sophisticated melody",
+          "anime": "Anime",
+          "animeDesc": "Catchy hooks, chorus builds up, dramatic",
+          "brightKira": "Bright Kira",
+          "brightKiraDesc": "Bright and sparkling, shifts to high range in chorus",
+          "coolSynth": "Cool Synth",
+          "coolSynthDesc": "16th-note heavy, cool synth style, no long notes",
+          "cuteAffected": "Cute Affected",
+          "cuteAffectedDesc": "Cute and charming, subtle syncopation, rises a bit in chorus",
+          "powerfulShout": "Powerful Shout",
+          "powerfulShoutDesc": "Powerful vocals, quarter-note focused, denser in chorus"
+        }
+      },
+      "vocalGroove": {
+        "label": "Vocal Groove",
+        "description": "Set the rhythmic feel. Swing and off-beat change the groove",
+        "options": {
+          "straight": "Straight",
+          "straightDesc": "Rhythm faithful to the beat",
+          "offBeat": "Off Beat",
+          "offBeatDesc": "Emphasizes the backbeat",
+          "swing": "Swing",
+          "swingDesc": "Jazz-style swung rhythm",
+          "syncopated": "Syncopated",
+          "syncopatedDesc": "Complex syncopation",
+          "driving16th": "Driving 16th",
+          "driving16thDesc": "Driven by 16th notes",
+          "bouncy8th": "Bouncy 8th",
+          "bouncy8thDesc": "Bouncy 8th note feel"
+        }
+      },
+      "melodicComplexity": {
+        "label": "Melodic Complexity",
+        "description": "Set the complexity of the melody. Simpler melodies are more memorable, complex ones have more variation",
+        "options": {
+          "simple": "Simple",
+          "standard": "Standard",
+          "complex": "Complex"
+        }
+      },
+      "hookIntensity": {
+        "label": "Hook Intensity",
+        "description": "Set the strength of catchy hooks and memorable phrases. Stronger hooks are more ear-catching",
+        "options": {
+          "off": "Off",
+          "light": "Light",
+          "normal": "Normal",
+          "strong": "Strong"
+        }
       }
     }
   },
@@ -306,11 +425,27 @@
     "regenerateVocal": "Regenerate Vocal",
     "regenerated": "Regenerated",
     "hint": "Go back to change settings if you're not satisfied",
+    "undo": "Undo",
+    "redo": "Redo",
     "error": {
       "noInstance": "Generation instance not found. Please restart from BGM step"
     },
+    "summary": {
+      "title": "Current Settings",
+      "vocalRange": "Range",
+      "vocalStyle": "Style",
+      "vocalGroove": "Groove",
+      "complexity": "Complexity",
+      "hook": "Hook Intensity",
+      "implicitSettings": "Auto-applied Settings",
+      "noteFromStyle": "From style: Note density and rhythm patterns auto-adjusted",
+      "noteFromComplexity": "From complexity: Note density and leap range adjusted",
+      "noteFromGroove": "From groove: Swing and syncopation feel applied",
+      "auto": "Auto"
+    },
     "vocalDetail": {
       "title": "Vocal Detail Settings",
+      "description": "Fine-tune detailed parameters. Custom settings override style preset defaults.",
       "density": {
         "label": "Note Density",
         "hint": "Controls how many notes are generated. Higher values create busier, more complex melodies.",
@@ -334,11 +469,51 @@
       },
       "rest": {
         "label": "Rest Ratio",
-        "hint": "Percentage of time allocated to rests between phrases. Higher values create more breathing room."
+        "hint": "Percentage of time allocated to rests between phrases. Higher values create more breathing room.",
+        "options": {
+          "auto": "Auto",
+          "custom": "Custom"
+        }
       },
       "extremeLeap": {
         "label": "Allow Extreme Leaps",
-        "hint": "Enable large pitch jumps for dramatic, vocaloid-style melodies."
+        "hint": "Enable large pitch jumps for dramatic, vocaloid-style melodies.",
+        "options": {
+          "auto": "Auto",
+          "on": "On",
+          "off": "Off"
+        }
+      },
+      "style": {
+        "label": "Vocal Style",
+        "hint": "Choose a rhythm pattern style for the vocal melody.",
+        "options": {
+          "auto": "Auto",
+          "standard": "Standard",
+          "vocaloid": "Vocaloid",
+          "ultraVocaloid": "Ultra Vocaloid",
+          "idol": "Idol",
+          "ballad": "Ballad",
+          "rock": "Rock",
+          "cityPop": "City Pop",
+          "anime": "Anime",
+          "brightKira": "Bright Kira",
+          "coolSynth": "Cool Synth",
+          "cuteAffected": "Cute Affected",
+          "powerfulShout": "Powerful Shout"
+        }
+      },
+      "groove": {
+        "label": "Vocal Groove",
+        "hint": "Set the rhythmic feel of the vocal melody.",
+        "options": {
+          "straight": "Straight",
+          "offBeat": "Off Beat",
+          "swing": "Swing",
+          "syncopated": "Syncopated",
+          "driving16th": "Driving 16th",
+          "bouncy8th": "Bouncy 8th"
+        }
       }
     }
   },
@@ -442,6 +617,28 @@
     },
     "11": {
       "description": "Classic sad minor progression"
+    }
+  },
+  "share": {
+    "shareOnX": "Share on X",
+    "copyUrl": "Copy URL",
+    "copied": "Copied! Listen to the track and proceed to melody generation",
+    "xShare": "Share this track on X",
+    "tweetBgm": "I created a BGM track with MIDI Sketch!",
+    "tweetVocal": "I created a vocal melody with MIDI Sketch!"
+  },
+  "preview": {
+    "infoText": "Made with MIDI Sketch. Algorithmically generated, no AI. Download as MIDI - edit every note.",
+    "summary": {
+      "style": "Style",
+      "chord": "Chord",
+      "key": "Key",
+      "bpm": "BPM",
+      "length": "Length",
+      "options": "Options",
+      "type": "Type",
+      "drums": "Drums",
+      "arpeggio": "Arpeggio"
     }
   }
 }

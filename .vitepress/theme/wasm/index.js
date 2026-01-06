@@ -65,6 +65,45 @@ export const MotifRepeatScope = {
     FullSong: 0,
     Section: 1,
 };
+// Melodic complexity constants
+export const MelodicComplexity = {
+    Simple: 0,
+    Standard: 1,
+    Complex: 2,
+};
+// Hook intensity constants
+export const HookIntensity = {
+    Off: 0,
+    Light: 1,
+    Normal: 2,
+    Strong: 3,
+};
+// Vocal groove feel constants
+export const VocalGrooveFeel = {
+    Straight: 0,
+    OffBeat: 1,
+    Swing: 2,
+    Syncopated: 3,
+    Driving16th: 4,
+    Bouncy8th: 5,
+};
+// Vocal style preset constants
+export const VocalStylePreset = {
+    Auto: 0,
+    Standard: 1,
+    Vocaloid: 2,
+    UltraVocaloid: 3,
+    Idol: 4,
+    Ballad: 5,
+    Rock: 6,
+    CityPop: 7,
+    Anime: 8,
+    // Extended styles (9-12)
+    BrightKira: 9,
+    CoolSynth: 10,
+    CuteAffected: 11,
+    PowerfulShout: 12,
+};
 let moduleInstance = null;
 let api = null;
 function getModule() {
@@ -297,14 +336,19 @@ export function createDefaultConfig(styleId) {
         vocalMinNoteDivision: view.getUint8(retPtr + 43),
         vocalRestRatio: view.getUint8(retPtr + 44),
         vocalAllowExtremLeap: view.getUint8(retPtr + 45) !== 0,
+        vocalStyle: view.getUint8(retPtr + 46),
         // Arrangement settings
-        arrangementGrowth: view.getUint8(retPtr + 46),
+        arrangementGrowth: view.getUint8(retPtr + 47),
         // Arpeggio sync settings
-        arpeggioSyncChord: view.getUint8(retPtr + 47) !== 0,
+        arpeggioSyncChord: view.getUint8(retPtr + 48) !== 0,
         // Motif settings
-        motifRepeatScope: view.getUint8(retPtr + 48),
-        motifFixedProgression: view.getUint8(retPtr + 49) !== 0,
-        motifMaxChordCount: view.getUint8(retPtr + 50),
+        motifRepeatScope: view.getUint8(retPtr + 49),
+        motifFixedProgression: view.getUint8(retPtr + 50) !== 0,
+        motifMaxChordCount: view.getUint8(retPtr + 51),
+        // Melodic complexity and hook control
+        melodicComplexity: view.getUint8(retPtr + 52),
+        hookIntensity: view.getUint8(retPtr + 53),
+        vocalGroove: view.getUint8(retPtr + 54),
     };
 }
 /**
@@ -459,28 +503,34 @@ export class MidiSketch {
         view.setUint8(ptr + 43, config.vocalMinNoteDivision ?? 0);
         view.setUint8(ptr + 44, config.vocalRestRatio ?? 15);
         view.setUint8(ptr + 45, config.vocalAllowExtremLeap ? 1 : 0);
+        view.setUint8(ptr + 46, config.vocalStyle ?? 0);
         // Arrangement settings
-        view.setUint8(ptr + 46, config.arrangementGrowth ?? 0);
+        view.setUint8(ptr + 47, config.arrangementGrowth ?? 0);
         // Arpeggio sync settings
-        view.setUint8(ptr + 47, config.arpeggioSyncChord !== false ? 1 : 0);
+        view.setUint8(ptr + 48, config.arpeggioSyncChord !== false ? 1 : 0);
         // Motif settings
-        view.setUint8(ptr + 48, config.motifRepeatScope ?? 0);
-        view.setUint8(ptr + 49, config.motifFixedProgression !== false ? 1 : 0);
-        view.setUint8(ptr + 50, config.motifMaxChordCount ?? 4);
+        view.setUint8(ptr + 49, config.motifRepeatScope ?? 0);
+        view.setUint8(ptr + 50, config.motifFixedProgression !== false ? 1 : 0);
+        view.setUint8(ptr + 51, config.motifMaxChordCount ?? 4);
+        // Melodic complexity and hook control
+        view.setUint8(ptr + 52, config.melodicComplexity ?? 1); // Default: Standard
+        view.setUint8(ptr + 53, config.hookIntensity ?? 2); // Default: Normal
+        view.setUint8(ptr + 54, config.vocalGroove ?? 0); // Default: Straight
         return ptr;
     }
     allocVocalParams(m, params) {
-        const ptr = m._malloc(12); // 11 bytes + padding
+        const ptr = m._malloc(12); // 12 bytes
         const view = new DataView(m.HEAPU8.buffer);
         view.setUint32(ptr + 0, params.seed ?? 0, true);
         view.setUint8(ptr + 4, params.vocalLow ?? 60);
         view.setUint8(ptr + 5, params.vocalHigh ?? 79);
         view.setUint8(ptr + 6, params.vocalAttitude ?? 0);
+        view.setUint8(ptr + 7, params.vocalStyle ?? 0);
         // Vocal density parameters
-        view.setUint8(ptr + 7, params.vocalNoteDensity ?? 0);
-        view.setUint8(ptr + 8, params.vocalMinNoteDivision ?? 0);
-        view.setUint8(ptr + 9, params.vocalRestRatio ?? 15);
-        view.setUint8(ptr + 10, params.vocalAllowExtremLeap ? 1 : 0);
+        view.setUint8(ptr + 8, params.vocalNoteDensity ?? 0);
+        view.setUint8(ptr + 9, params.vocalMinNoteDivision ?? 0);
+        view.setUint8(ptr + 10, params.vocalRestRatio ?? 15);
+        view.setUint8(ptr + 11, params.vocalAllowExtremLeap ? 1 : 0);
         return ptr;
     }
 }

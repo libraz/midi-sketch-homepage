@@ -131,6 +131,10 @@ sketch.generateFromConfig({
   vocalMinNoteDivision: 0,    // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
   vocalRestRatio: 0,          // 休符率 (0-50, フレーズ休止時間の割合)
   vocalAllowExtremLeap: false, // 広い跳躍を許可 (ボカロスタイル用)
+  vocalStyle: 0,              // ボーカルスタイルプリセット (0=自動, 1-12=特定プリセット)
+  melodicComplexity: 1,       // メロディ複雑さ (0=シンプル, 1=標準, 2=複雑)
+  hookIntensity: 2,           // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング)
+  vocalGroove: 0,             // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング, 3=シンコペ, 4=16分ドライブ, 5=バウンス8分)
 
   // ヒューマナイズ
   humanize: true,             // ヒューマナイズ有効化
@@ -186,6 +190,7 @@ sketch.regenerateVocal({
   vocalAttitude: 1,            // 0=Clean, 1=Expressive, 2=Raw
 
   // オプション: ボーカル生成の微調整
+  vocalStyle: 0,               // ボーカルスタイルプリセット (0=自動, 1-12=特定プリセット)
   vocalNoteDensity: 100,       // 音符密度 (0=スタイルデフォルト, 70=標準, 100=アイドル, 150=ボカロ)
   vocalMinNoteDivision: 8,     // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
   vocalRestRatio: 20,          // 休符率 (0-50, フレーズ休止時間の割合)
@@ -308,4 +313,50 @@ ArrangementGrowth.RegisterAdd // 1 - 時間経過で音域を拡大
 ```javascript
 MotifRepeatScope.FullSong // 0 - 曲全体で同一モチーフ
 MotifRepeatScope.Section  // 1 - セクションごとに異なるモチーフ
+```
+
+### `VocalStylePreset`
+
+```javascript
+VocalStylePreset.Auto          // 0 - スタイルに基づいて自動選択
+VocalStylePreset.Standard      // 1 - 標準ポップボーカル
+VocalStylePreset.Vocaloid      // 2 - ボカロスタイル (高速、広い跳躍)
+VocalStylePreset.UltraVocaloid // 3 - 超高速ボカロ (32分音符)
+VocalStylePreset.Idol          // 4 - アイドルスタイル (キャッチー、フック重視)
+VocalStylePreset.Ballad        // 5 - バラード (スロー、ロングノート)
+VocalStylePreset.Rock          // 6 - ロック (パワフル、サビで音域シフト)
+VocalStylePreset.CityPop       // 7 - シティポップ (ジャジー、シンコペ)
+VocalStylePreset.Anime         // 8 - アニメスタイル (ダイナミック、表現豊か)
+VocalStylePreset.BrightKira    // 9 - ブライト/キラキラ (高音域、煌びやか)
+VocalStylePreset.CoolSynth     // 10 - クールシンセ (エレクトロニック、正確)
+VocalStylePreset.CuteAffected  // 11 - キュート/あざとい (プレイフル)
+VocalStylePreset.PowerfulShout // 12 - パワフルシャウト (激しい)
+```
+
+### `MelodicComplexity`
+
+```javascript
+MelodicComplexity.Simple   // 0 - 音程変化の少ないシンプルなメロディ
+MelodicComplexity.Standard // 1 - 標準的な複雑さ
+MelodicComplexity.Complex  // 2 - より大きな音程差とバリエーション
+```
+
+### `HookIntensity`
+
+```javascript
+HookIntensity.Off    // 0 - フック反復なし
+HookIntensity.Light  // 1 - 控えめなフック
+HookIntensity.Normal // 2 - 標準的なフック反復（デフォルト）
+HookIntensity.Strong // 3 - 強いフック、キャッチー重視
+```
+
+### `VocalGrooveFeel`
+
+```javascript
+VocalGrooveFeel.Straight   // 0 - ストレートリズム（デフォルト）
+VocalGrooveFeel.OffBeat    // 1 - オフビート強調
+VocalGrooveFeel.Swing      // 2 - スウィング感
+VocalGrooveFeel.Syncopated // 3 - シンコペーションリズム
+VocalGrooveFeel.Driving16th // 4 - ドライブ感のある16分音符
+VocalGrooveFeel.Bouncy8th  // 5 - バウンス感のある8分音符
 ```

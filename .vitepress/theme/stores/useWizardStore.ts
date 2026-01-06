@@ -1,5 +1,64 @@
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { songImages } from '../data/songImages'
+
+// ============================================
+// Step Dependencies
+// ============================================
+// Step 1 (Style) → affects Step 4 (BGM)
+// Step 2 (Chord) → affects Step 4 (BGM)
+// Step 3 (Settings) → affects Step 4 (BGM)
+// Step 4 (BGM) → affects Step 6 (Final)
+// Step 5 (Melody) → affects Step 6 (Final)
+// Step 6 (Final) → terminal
+
+// Config keys that affect BGM generation (Step 4)
+const BGM_AFFECTING_KEYS: (keyof WizardConfig)[] = [
+  'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
+  'drumsEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
+  'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
+  'chordExtSus', 'chordExt7th', 'chordExt9th',
+  'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
+  'compositionStyle', 'targetDurationSeconds',
+  'modulationTiming', 'modulationSemitones',
+  'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+  'arrangementGrowth', 'motifRepeatScope', 'motifFixedProgression', 'motifMaxChordCount',
+  'humanize', 'humanizeTiming', 'humanizeVelocity',
+  'melodicComplexity', 'hookIntensity'
+]
+
+// Config keys that affect Vocal generation (Step 6)
+const VOCAL_AFFECTING_KEYS: (keyof WizardConfig)[] = [
+  'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
+  'vocalNoteDensity', 'vocalMinNoteDivision', 'vocalRestRatio', 'vocalAllowExtremLeap',
+  'vocalGroove'
+]
+
+// ============================================
+// Step-specific Config Keys (for reset on navigation)
+// ============================================
+// Step 2: Chord selection
+const STEP2_KEYS: (keyof WizardConfig)[] = ['chordProgressionId']
+
+// Step 3: Key, Tempo, and advanced settings
+const STEP3_KEYS: (keyof WizardConfig)[] = [
+  'key', 'bpm', 'formId', 'drumsEnabled', 'arpeggioEnabled',
+  'arpeggioPattern', 'arpeggioSpeed', 'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
+  'chordExtSus', 'chordExt7th', 'chordExt9th',
+  'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
+  'compositionStyle', 'targetDurationSeconds',
+  'modulationTiming', 'modulationSemitones',
+  'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+  'arrangementGrowth', 'motifRepeatScope', 'motifFixedProgression', 'motifMaxChordCount',
+  'humanize', 'humanizeTiming', 'humanizeVelocity',
+  'melodicComplexity', 'hookIntensity'
+]
+
+// Step 5: Melody/Vocal settings
+const STEP5_KEYS: (keyof WizardConfig)[] = [
+  'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
+  'vocalNoteDensity', 'vocalMinNoteDivision', 'vocalRestRatio', 'vocalAllowExtremLeap',
+  'vocalGroove'
+]
 
 export interface WizardConfig {
   songImageId: string
@@ -48,7 +107,8 @@ export interface WizardConfig {
   vocalNoteDensity: number // 0-200 (0=style default, 70=standard, 100=idol, 150=vocaloid)
   vocalMinNoteDivision: number // 0=default, 4=quarter, 8=eighth, 16=sixteenth
   vocalRestRatio: number // 0-50 (percentage of phrase rest time)
-  vocalAllowExtremLeap: boolean // Allow extreme leaps for vocaloid-style melodies
+  vocalRestRatioMode: number // 0=Auto (follow vocalStyle), 1=Custom (use slider value)
+  vocalAllowExtremLeap: number // 0=Auto (follow vocalStyle), 1=On, 2=Off
   // Arrangement settings
   arrangementGrowth: number // 0=LayerAdd, 1=RegisterAdd
   // Arpeggio sync settings
@@ -57,14 +117,20 @@ export interface WizardConfig {
   motifRepeatScope: number // 0=FullSong, 1=Section
   motifFixedProgression: boolean // Same progression all sections
   motifMaxChordCount: number // Max chord count (0=no limit, 2-8)
+  // Vocal style preset
+  vocalStyle: number // 0=Auto, 1=Standard, 2=Vocaloid, 3=UltraVocaloid, 4=Idol, 5=Ballad, 6=Rock, 7=CityPop, 8=Anime, 9=BrightKira, 10=CoolSynth, 11=CuteAffected, 12=PowerfulShout
+  // Melodic complexity (BGM)
+  melodicComplexity: number // 0=Simple, 1=Standard, 2=Complex
+  // Hook intensity (BGM)
+  hookIntensity: number // 0=Off, 1=Light, 2=Normal, 3=Strong
+  // Vocal groove feel
+  vocalGroove: number // 0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th
 }
 
-const currentStep = ref(1)
-const totalSteps = 6
-const bgmGenerated = ref(false)
-const bgmVersion = ref(0)
-
-const config = reactive<WizardConfig>({
+// ============================================
+// Default Configuration
+// ============================================
+const DEFAULT_CONFIG: WizardConfig = {
   songImageId: 'idol-classic',
   stylePresetId: 3,
   chordProgressionId: 0,
@@ -87,6 +153,7 @@ const config = reactive<WizardConfig>({
   arpeggioSpeed: 1,
   arpeggioOctaveRange: 2,
   arpeggioGate: 80,
+  arpeggioSyncChord: true,
   // Chord extensions
   chordExtSus: false,
   chordExt7th: false,
@@ -97,30 +164,82 @@ const config = reactive<WizardConfig>({
   // Composition
   compositionStyle: 0,
   // Duration
-  targetDurationSeconds: 150,  // 2:30 default
-  // Modulation settings
-  modulationTiming: 0,  // None
+  targetDurationSeconds: 150,
+  // Modulation
+  modulationTiming: 0,
   modulationSemitones: 2,
-  // SE/Call settings
+  // SE/Call
   callEnabled: false,
   callNotesEnabled: true,
-  introChant: 0,  // None
-  mixPattern: 0,  // None
-  callDensity: 2,  // Standard
-  // Vocal detail settings
-  vocalNoteDensity: 0,  // 0=use style default
-  vocalMinNoteDivision: 0,  // 0=default
-  vocalRestRatio: 20,  // 20% rest ratio
-  vocalAllowExtremLeap: false,
-  // Arrangement settings
-  arrangementGrowth: 0,  // LayerAdd
-  // Arpeggio sync settings
-  arpeggioSyncChord: true,
-  // Motif settings
-  motifRepeatScope: 0,  // FullSong
+  introChant: 0,
+  mixPattern: 0,
+  callDensity: 2,
+  // Vocal detail
+  vocalNoteDensity: 0,
+  vocalMinNoteDivision: 0,
+  vocalRestRatio: 20,
+  vocalRestRatioMode: 0, // 0=Auto
+  vocalAllowExtremLeap: 0, // 0=Auto
+  // Arrangement
+  arrangementGrowth: 0,
+  // Motif
+  motifRepeatScope: 0,
   motifFixedProgression: true,
-  motifMaxChordCount: 4
-})
+  motifMaxChordCount: 4,
+  // Vocal style
+  vocalStyle: 0,
+  // Melodic complexity
+  melodicComplexity: 1,
+  // Hook intensity
+  hookIntensity: 2,
+  // Vocal groove
+  vocalGroove: 0
+}
+
+// ============================================
+// State
+// ============================================
+const currentStep = ref(1)
+const totalSteps = 6
+const bgmGenerated = ref(false)
+const bgmVersion = ref(0)
+const melodyVersion = ref(0)
+
+const config = reactive<WizardConfig>({ ...DEFAULT_CONFIG })
+
+// ============================================
+// Step Invalidation
+// ============================================
+/**
+ * Invalidate a step, forcing it to regenerate when visited.
+ * Also clears any dependent state.
+ */
+function invalidateStep(step: 4 | 6) {
+  if (step === 4) {
+    bgmGenerated.value = false
+    bgmVersion.value++
+    // Clear the shared instance reference
+    if (typeof window !== 'undefined') {
+      ;(window as any).__midiSketchInstance = null
+    }
+    // BGM invalidation also invalidates Final step
+    invalidateStep(6)
+  } else if (step === 6) {
+    melodyVersion.value++
+  }
+}
+
+/**
+ * Check if a config key affects a specific step and invalidate if needed.
+ */
+function onConfigChange(key: keyof WizardConfig) {
+  // Only invalidate if we're past the affected step
+  if (BGM_AFFECTING_KEYS.includes(key) && currentStep.value >= 4) {
+    invalidateStep(4)
+  } else if (VOCAL_AFFECTING_KEYS.includes(key) && currentStep.value >= 6) {
+    invalidateStep(6)
+  }
+}
 
 export function useWizardStore() {
   const canGoNext = computed(() => currentStep.value < totalSteps)
@@ -131,7 +250,13 @@ export function useWizardStore() {
   )
 
   function nextStep() {
-    if (canGoNext.value) currentStep.value++
+    if (canGoNext.value) {
+      // Increment melody version when advancing to FinalStep to force remount
+      if (currentStep.value === 5) {
+        melodyVersion.value++
+      }
+      currentStep.value++
+    }
   }
 
   function prevStep() {
@@ -152,20 +277,42 @@ export function useWizardStore() {
     }
   }
 
-  // Clear settings for steps after the given step
-  function clearStepsAfter(step: number) {
-    // Step 4 is BGM generation - clear if going before it
-    if (step < 4) {
-      bgmGenerated.value = false
-      bgmVersion.value++  // Force BgmStep remount
-      // Clear the shared instance reference
-      if (typeof window !== 'undefined') {
-        ;(window as any).__midiSketchInstance = null
-      }
+  // Reset specific config keys to their default values
+  function resetConfigKeys(keys: (keyof WizardConfig)[]) {
+    for (const key of keys) {
+      (config as any)[key] = DEFAULT_CONFIG[key]
     }
-    // Step 5 is Melody settings, Step 6 is Final - clear if going before step 6
-    if (step < 6) {
-      // Final step will regenerate melody on mount
+  }
+
+  // Clear settings for steps after the given step
+  // When going back to step N, settings for steps >= N are reset to defaults
+  function clearStepsAfter(step: number) {
+    // Reset settings for the target step and all steps after it
+    if (step <= 1) {
+      // Going back to step 1: reset step 2, 3, 5 settings
+      resetConfigKeys(STEP2_KEYS)
+      resetConfigKeys(STEP3_KEYS)
+      resetConfigKeys(STEP5_KEYS)
+    } else if (step <= 2) {
+      // Going back to step 2: reset step 2, 3, 5 settings
+      resetConfigKeys(STEP2_KEYS)
+      resetConfigKeys(STEP3_KEYS)
+      resetConfigKeys(STEP5_KEYS)
+    } else if (step <= 3) {
+      // Going back to step 3: reset step 3, 5 settings
+      resetConfigKeys(STEP3_KEYS)
+      resetConfigKeys(STEP5_KEYS)
+    } else if (step <= 5) {
+      // Going back to step 4 or 5: reset step 5 settings
+      resetConfigKeys(STEP5_KEYS)
+    }
+    // Step 6: no settings to reset
+
+    // Invalidate generation results
+    if (step <= 4) {
+      invalidateStep(4)
+    } else if (step <= 5) {
+      invalidateStep(6)
     }
   }
 
@@ -193,15 +340,9 @@ export function useWizardStore() {
   }
 
   function setBpm(bpm: number) {
-    // Clamp BPM to current song image's tempo range
-    const image = songImages.find(s => s.id === config.songImageId)
-    if (image) {
-      const min = image.tempoRange.min
-      const max = image.tempoRange.max
-      config.bpm = Math.max(min, Math.min(max, bpm))
-    } else {
-      config.bpm = bpm
-    }
+    // Clamp BPM to library's full range (60-180)
+    // Song image's tempoRange is now just a recommendation, not a hard limit
+    config.bpm = Math.max(60, Math.min(180, bpm))
   }
 
   function setActiveCategory(category: string) {
@@ -210,67 +351,11 @@ export function useWizardStore() {
 
   function reset() {
     currentStep.value = 1
-    bgmGenerated.value = false
-    bgmVersion.value++
-    // Clear the shared instance reference
-    if (typeof window !== 'undefined') {
-      ;(window as any).__midiSketchInstance = null
-    }
+    invalidateStep(4)  // This also invalidates step 6
+    melodyVersion.value = 0
+
     // Reset all config to defaults
-    config.songImageId = 'idol-classic'
-    config.stylePresetId = 3
-    config.chordProgressionId = 0
-    config.key = 0
-    config.bpm = 132
-    config.seed = 0
-    config.formId = 5
-    config.vocalAttitude = 0
-    config.drumsEnabled = true
-    config.arpeggioEnabled = false
-    config.vocalLow = 57
-    config.vocalHigh = 79
-    config.humanize = false
-    config.humanizeTiming = 50
-    config.humanizeVelocity = 50
-    config.timbreId = 'pop_clean'
-    config.activeCategory = 'idol'
-    // Arpeggio
-    config.arpeggioPattern = 0
-    config.arpeggioSpeed = 1
-    config.arpeggioOctaveRange = 2
-    config.arpeggioGate = 80
-    config.arpeggioSyncChord = true
-    // Chord extensions
-    config.chordExtSus = false
-    config.chordExt7th = false
-    config.chordExt9th = false
-    config.chordExtSusProb = 20
-    config.chordExt7thProb = 30
-    config.chordExt9thProb = 25
-    // Composition
-    config.compositionStyle = 0
-    // Duration
-    config.targetDurationSeconds = 150
-    // Modulation
-    config.modulationTiming = 0
-    config.modulationSemitones = 2
-    // SE/Call
-    config.callEnabled = false
-    config.callNotesEnabled = true
-    config.introChant = 0
-    config.mixPattern = 0
-    config.callDensity = 2
-    // Vocal detail
-    config.vocalNoteDensity = 0
-    config.vocalMinNoteDivision = 0
-    config.vocalRestRatio = 20
-    config.vocalAllowExtremLeap = false
-    // Arrangement
-    config.arrangementGrowth = 0
-    // Motif
-    config.motifRepeatScope = 0
-    config.motifFixedProgression = true
-    config.motifMaxChordCount = 4
+    Object.assign(config, DEFAULT_CONFIG)
   }
 
   function setBgmGenerated(value: boolean) {
@@ -278,22 +363,34 @@ export function useWizardStore() {
   }
 
   return {
+    // State
     currentStep,
     totalSteps,
     bgmGenerated,
     bgmVersion,
+    melodyVersion,
     config,
+
+    // Computed
     canGoNext,
     canGoBack,
     currentSongImage,
+
+    // Navigation
     nextStep,
     prevStep,
     goToStep,
+
+    // Config helpers
     selectSongImage,
     selectChordProgression,
     setKey,
     setBpm,
     setActiveCategory,
+
+    // Step management
+    invalidateStep,
+    onConfigChange,
     setBgmGenerated,
     reset
   }

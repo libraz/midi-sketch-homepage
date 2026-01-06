@@ -195,6 +195,86 @@ flowchart LR
 | Expressive | Tensions, timing variation | Emotional, dynamic |
 | Raw | Non-chord tones, boundary breaking | Edgy, modern |
 
+## Vocal Style Presets
+
+13 vocal style presets that define melodic characteristics:
+
+| ID | Name | Min Division | Note Density | Max Leap | Character |
+|----|------|--------------|--------------|----------|-----------|
+| 0 | Auto | - | - | - | Auto-select based on style |
+| 1 | Standard | 8th | 0.7 | 7 | Balanced pop vocal |
+| 2 | Vocaloid | 16th | 1.2+ | 14 | Fast, wide leaps, syncopated |
+| 3 | UltraVocaloid | 32nd | 2.5 | 24 | Extreme speed, very wide leaps |
+| 4 | Idol | 8th | 0.8 | 7 | Catchy hooks, long chorus tones |
+| 5 | Ballad | Quarter | 0.4 | 5 | Slow, sustained notes |
+| 6 | Rock | 8th | 0.7 | 9 | Powerful, chorus register shift |
+| 7 | CityPop | 8th | 0.6 | 7 | Jazzy, syncopated, tension notes |
+| 8 | Anime | 8th | 0.85 | 10 | Dynamic hooks, bar-crossing |
+| 9 | BrightKira | 8th | 0.85 | 10 | High register, sparkling |
+| 10 | CoolSynth | 16th | - | 7 | Electronic, precise timing |
+| 11 | CuteAffected | 8th | - | 8 | Playful, moderate register shift |
+| 12 | PowerfulShout | Quarter | 0.6 | 12 | Intense, high chorus density |
+
+### Vocal Style Categories
+
+```mermaid
+flowchart TD
+    subgraph Fast ["Fast/Dense"]
+        V2[Vocaloid]
+        V3[UltraVocaloid]
+        V10[CoolSynth]
+    end
+
+    subgraph Standard ["Standard"]
+        V1[Standard]
+        V4[Idol]
+        V8[Anime]
+        V9[BrightKira]
+    end
+
+    subgraph Slow ["Slow/Sparse"]
+        V5[Ballad]
+        V6[Rock]
+        V7[CityPop]
+        V11[CuteAffected]
+        V12[PowerfulShout]
+    end
+```
+
+## Melodic Complexity
+
+3 complexity levels affecting melody generation:
+
+| Level | Effect | Use Case |
+|-------|--------|----------|
+| Simple (0) | Reduced density, smaller leaps, more hooks | Catchy, memorable |
+| Standard (1) | Default behavior | General use |
+| Complex (2) | Increased density, larger leaps, more variation | Sophisticated |
+
+## Hook Intensity
+
+4 hook repetition levels:
+
+| Level | Effect | Use Case |
+|-------|--------|----------|
+| Off (0) | No hook repetition | Progressive, varied |
+| Light (1) | Light hook presence | Subtle callbacks |
+| Normal (2) | Standard repetition | Balanced pop (default) |
+| Strong (3) | Strong hook emphasis | Catchy, commercial |
+
+## Vocal Groove Feel
+
+6 rhythm feel options:
+
+| Groove | Effect | Best For |
+|--------|--------|----------|
+| Straight (0) | On-beat, no swing | Pop, rock |
+| OffBeat (1) | Off-beat emphasis | Reggae-influenced |
+| Swing (2) | Swing timing | Jazz, R&B |
+| Syncopated (3) | Syncopated rhythm | Latin, funk |
+| Driving16th (4) | 16th note drive | Electronic, fast pop |
+| Bouncy8th (5) | Bouncy 8th notes | Upbeat pop |
+
 ## Key Options
 
 12 keys available (0-11):

@@ -131,6 +131,10 @@ sketch.generateFromConfig({
   vocalMinNoteDivision: 0,    // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
   vocalRestRatio: 0,          // Rest ratio (0-50, percentage of phrase rest time)
   vocalAllowExtremLeap: false, // Allow extreme leaps for vocaloid-style melodies
+  vocalStyle: 0,              // Vocal style preset (0=Auto, 1-12=specific presets)
+  melodicComplexity: 1,       // Melody complexity (0=Simple, 1=Standard, 2=Complex)
+  hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
+  vocalGroove: 0,             // Groove feel (0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th)
 
   // Humanization
   humanize: true,             // Enable humanization
@@ -186,6 +190,7 @@ sketch.regenerateVocal({
   vocalAttitude: 1,            // 0=Clean, 1=Expressive, 2=Raw
 
   // Optional: Fine-tune vocal generation
+  vocalStyle: 0,               // Vocal style preset (0=Auto, 1-12=specific presets)
   vocalNoteDensity: 100,       // Note density (0=style default, 70=standard, 100=idol, 150=vocaloid)
   vocalMinNoteDivision: 8,     // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
   vocalRestRatio: 20,          // Rest ratio (0-50, percentage of phrase rest time)
@@ -308,4 +313,50 @@ ArrangementGrowth.RegisterAdd // 1 - Expand register range over time
 ```javascript
 MotifRepeatScope.FullSong // 0 - Same motif throughout song
 MotifRepeatScope.Section  // 1 - Different motif per section
+```
+
+### `VocalStylePreset`
+
+```javascript
+VocalStylePreset.Auto          // 0 - Auto-select based on style
+VocalStylePreset.Standard      // 1 - Standard pop vocal
+VocalStylePreset.Vocaloid      // 2 - Vocaloid-style (fast, wide leaps)
+VocalStylePreset.UltraVocaloid // 3 - Ultra-fast vocaloid (32nd notes)
+VocalStylePreset.Idol          // 4 - Idol-style (catchy, hook-heavy)
+VocalStylePreset.Ballad        // 5 - Ballad (slow, long notes)
+VocalStylePreset.Rock          // 6 - Rock (powerful, chorus register shift)
+VocalStylePreset.CityPop       // 7 - City pop (jazzy, syncopated)
+VocalStylePreset.Anime         // 8 - Anime-style (dynamic, expressive)
+VocalStylePreset.BrightKira    // 9 - Bright/kira-kira (high, sparkling)
+VocalStylePreset.CoolSynth     // 10 - Cool synth (electronic, precise)
+VocalStylePreset.CuteAffected  // 11 - Cute/affected (playful)
+VocalStylePreset.PowerfulShout // 12 - Powerful shout (intense)
+```
+
+### `MelodicComplexity`
+
+```javascript
+MelodicComplexity.Simple   // 0 - Simple melodies with minimal intervals
+MelodicComplexity.Standard // 1 - Standard melodic complexity
+MelodicComplexity.Complex  // 2 - Complex with larger intervals and more variation
+```
+
+### `HookIntensity`
+
+```javascript
+HookIntensity.Off    // 0 - No hook repetition
+HookIntensity.Light  // 1 - Light hook presence
+HookIntensity.Normal // 2 - Normal hook repetition (default)
+HookIntensity.Strong // 3 - Strong, catchy hook emphasis
+```
+
+### `VocalGrooveFeel`
+
+```javascript
+VocalGrooveFeel.Straight   // 0 - Straight rhythm (default)
+VocalGrooveFeel.OffBeat    // 1 - Off-beat emphasis
+VocalGrooveFeel.Swing      // 2 - Swing feel
+VocalGrooveFeel.Syncopated // 3 - Syncopated rhythm
+VocalGrooveFeel.Driving16th // 4 - Driving 16th note feel
+VocalGrooveFeel.Bouncy8th  // 5 - Bouncy 8th note feel
 ```

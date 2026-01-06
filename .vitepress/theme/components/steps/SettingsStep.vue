@@ -4,55 +4,27 @@ import * as Tone from 'tone'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { songImages } from '../../data/songImages'
+import { KEY_NAMES, NOTE_NAMES, midiToNoteName, midiToFreq } from '../../utils/midiUtils'
 
 const { t } = useI18n()
 const store = useWizardStore()
 
-// Advanced settings tab system
-type SettingsTab = 'style' | 'feel' | 'rhythm' | 'arpeggio' | 'harmony' | 'modulation' | 'se' | 'duration' | 'arrangement'
-const activeTab = ref<SettingsTab>('style') // Default to first tab
+// DAW-style rack modules (collapsible sections - all collapsed by default)
+type RackModule = 'track' | 'instruments' | 'harmony' | 'output'
+const expandedModules = ref<Set<RackModule>>(new Set())
 
-const settingsTabs: { id: SettingsTab; icon: string; labelKey: string }[] = [
-  { id: 'style', icon: '🎛️', labelKey: 'settingsStep.tabs.style' },
-  { id: 'arrangement', icon: '📊', labelKey: 'settingsStep.tabs.arrangement' },
-  { id: 'feel', icon: '🎚️', labelKey: 'settingsStep.tabs.feel' },
-  { id: 'rhythm', icon: '🥁', labelKey: 'settingsStep.tabs.rhythm' },
-  { id: 'arpeggio', icon: '🎹', labelKey: 'settingsStep.tabs.arpeggio' },
-  { id: 'harmony', icon: '♯', labelKey: 'settingsStep.tabs.harmony' },
-  { id: 'modulation', icon: '🔀', labelKey: 'settingsStep.tabs.modulation' },
-  { id: 'se', icon: '📣', labelKey: 'settingsStep.tabs.se' },
-  { id: 'duration', icon: '⏱', labelKey: 'settingsStep.tabs.duration' }
-]
-
-// Ref for tabs container
-const tabsContainer = ref<HTMLElement | null>(null)
-
-function selectTab(tab: SettingsTab) {
-  activeTab.value = tab
-  // Scroll selected tab to center
-  scrollTabToCenter(tab)
+function toggleModule(module: RackModule) {
+  if (expandedModules.value.has(module)) {
+    expandedModules.value.delete(module)
+  } else {
+    expandedModules.value.add(module)
+  }
+  // Force reactivity
+  expandedModules.value = new Set(expandedModules.value)
 }
 
-function scrollTabToCenter(tabId: SettingsTab) {
-  if (!tabsContainer.value) return
-
-  const container = tabsContainer.value
-  const tabIndex = settingsTabs.findIndex(t => t.id === tabId)
-  const tabElement = container.children[tabIndex] as HTMLElement
-
-  if (!tabElement) return
-
-  const containerWidth = container.offsetWidth
-  const tabLeft = tabElement.offsetLeft
-  const tabWidth = tabElement.offsetWidth
-
-  // Calculate scroll position to center the tab
-  const scrollTo = tabLeft - (containerWidth / 2) + (tabWidth / 2)
-
-  container.scrollTo({
-    left: Math.max(0, scrollTo),
-    behavior: 'smooth'
-  })
+function isModuleExpanded(module: RackModule): boolean {
+  return expandedModules.value.has(module)
 }
 const isPlayingScale = ref(false)
 const playingNoteIndex = ref(-1)
@@ -62,9 +34,6 @@ const isAudioLoading = ref(true)
 const currentSongImage = computed(() =>
   songImages.find(s => s.id === store.config.songImageId)
 )
-
-const KEY_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 // Piano keyboard layout: white keys and their positions
 const WHITE_KEYS = [0, 2, 4, 5, 7, 9, 11] // C, D, E, F, G, A, B
@@ -76,16 +45,6 @@ const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11, 12]
 
 // Synth for scale playback
 let scaleSynth: Tone.Synth | null = null
-
-function midiToNoteName(midi: number): string {
-  const note = NOTE_NAMES[midi % 12]
-  const octave = Math.floor(midi / 12) - 1
-  return `${note}${octave}`
-}
-
-function midiToFreq(midi: number): number {
-  return 440 * Math.pow(2, (midi - 69) / 12)
-}
 
 function isSharpKey(index: number) {
   return BLACK_KEYS.includes(index)
@@ -146,16 +105,17 @@ async function preloadAudio() {
     silentOsc.start()
     silentOsc.stop('+0.01')
 
-    // Clean up after a short delay
-    setTimeout(() => {
+    // Clean up after a short delay (tracked for cleanup)
+    const cleanupId = setTimeout(() => {
       silentOsc.dispose()
       silentGain.dispose()
-    }, 100)
+    }, 100) as unknown as number
+    audioCleanupTimeouts.push(cleanupId)
 
     isAudioReady.value = true
     isAudioLoading.value = false
-  } catch (e) {
-    console.warn('Audio preload failed, will retry on interaction:', e)
+  } catch {
+    // Audio preload failed, will retry on interaction
     isAudioLoading.value = false
   }
 }
@@ -175,14 +135,15 @@ async function resumeAudioIfNeeded() {
     silentOsc.start()
     silentOsc.stop('+0.01')
 
-    setTimeout(() => {
+    const cleanupId = setTimeout(() => {
       silentOsc.dispose()
       silentGain.dispose()
-    }, 100)
+    }, 100) as unknown as number
+    audioCleanupTimeouts.push(cleanupId)
 
     isAudioReady.value = true
-  } catch (e) {
-    console.warn('Audio resume failed:', e)
+  } catch {
+    // Audio resume failed silently
   }
 }
 
@@ -194,21 +155,28 @@ onMounted(() => {
   preloadAudio()
 
   // Also set up interaction handler in case browser blocked autoplay
-  const handleFirstInteraction = () => {
+  firstInteractionHandler = () => {
     resumeAudioIfNeeded()
-    window.removeEventListener('click', handleFirstInteraction)
-    window.removeEventListener('touchstart', handleFirstInteraction)
-    window.removeEventListener('keydown', handleFirstInteraction)
+    if (firstInteractionHandler) {
+      window.removeEventListener('click', firstInteractionHandler)
+      window.removeEventListener('touchstart', firstInteractionHandler)
+      window.removeEventListener('keydown', firstInteractionHandler)
+      firstInteractionHandler = null
+    }
   }
 
-  window.addEventListener('click', handleFirstInteraction, { once: true })
-  window.addEventListener('touchstart', handleFirstInteraction, { once: true })
-  window.addEventListener('keydown', handleFirstInteraction, { once: true })
+  window.addEventListener('click', firstInteractionHandler, { once: true })
+  window.addEventListener('touchstart', firstInteractionHandler, { once: true })
+  window.addEventListener('keydown', firstInteractionHandler, { once: true })
 })
 
 // Track current scale playback to allow cancellation
 let scaleTimeouts: number[] = []
+let audioCleanupTimeouts: number[] = []
 let currentPlayingKey = ref(-1)
+
+// Track event listener for cleanup
+let firstInteractionHandler: (() => void) | null = null
 
 function stopCurrentScale() {
   scaleTimeouts.forEach(id => clearTimeout(id))
@@ -255,6 +223,19 @@ async function selectKey(key: number) {
 
 onUnmounted(() => {
   stopCurrentScale()
+
+  // Clean up audio cleanup timeouts
+  audioCleanupTimeouts.forEach(id => clearTimeout(id))
+  audioCleanupTimeouts = []
+
+  // Clean up event listeners
+  if (firstInteractionHandler) {
+    window.removeEventListener('click', firstInteractionHandler)
+    window.removeEventListener('touchstart', firstInteractionHandler)
+    window.removeEventListener('keydown', firstInteractionHandler)
+    firstInteractionHandler = null
+  }
+
   if (scaleSynth) {
     scaleSynth.dispose()
     scaleSynth = null
@@ -269,6 +250,14 @@ function updateBpm(event: Event) {
 // Calculate beat duration in seconds for CSS animation
 const beatDuration = computed(() => {
   return 60 / store.config.bpm
+})
+
+// Recommended BPM range from current song image
+const recommendedMin = computed(() => currentSongImage.value?.tempoRange.min || 60)
+const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 180)
+const isInRecommendedRange = computed(() => {
+  const bpm = store.config.bpm
+  return bpm >= recommendedMin.value && bpm <= recommendedMax.value
 })
 
 // Dynamic tempo presets based on song image's tempo range
@@ -356,16 +345,24 @@ const compositionStyleOptions = [
   { key: 'synthDriven', value: 2, icon: '🎛️' }
 ]
 
+
 // SynthDriven forces arpeggio on (WASM constraint)
 const isSynthDriven = computed(() => store.config.compositionStyle === 2)
 
-// When SynthDriven is selected, force arpeggio on; when switching away, turn it off
+// Sync implicit settings when compositionStyle changes
+// Based on wasm-js-option-relationships.md Section 8.3
 watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
+  // SynthDriven (2): force arpeggio on
   if (newStyle === 2) {
     store.config.arpeggioEnabled = true
   } else if (oldStyle === 2) {
     // Switching away from SynthDriven: turn off arpeggio
     store.config.arpeggioEnabled = false
+  }
+
+  // BackgroundMotif (1) or SynthDriven (2): auto-disable modulation
+  if (newStyle === 1 || newStyle === 2) {
+    store.config.modulationTiming = 0
   }
 })
 
@@ -410,721 +407,525 @@ const callDensityOptions = [
     </header>
 
     <div class="settings-layout">
-      <!-- Key Selector -->
-      <section class="setting-section">
-        <h3 class="setting-label">
-          <span class="setting-label__icon">♯</span>
-          <span>{{ t('settingsStep.key.label') }}</span>
-        </h3>
-        <p class="setting-description">{{ t('settingsStep.key.description') }}</p>
+      <!-- Key & Tempo Combined Section -->
+      <section class="setting-section setting-section--combined">
+        <div class="key-tempo-grid">
+          <!-- Key Selector (Left) -->
+          <div class="key-panel">
+            <h3 class="setting-label setting-label--compact">
+              <span class="setting-label__icon">♯</span>
+              <span>{{ t('settingsStep.key.label') }}</span>
+            </h3>
 
-        <div class="piano-keyboard" :class="{ 'piano-keyboard--loading': isAudioLoading }">
-          <!-- Loading Overlay -->
-          <Transition name="fade">
-            <div v-if="isAudioLoading" class="piano-loading">
-              <div class="piano-loading__spinner"></div>
-              <span class="piano-loading__text">{{ t('settingsStep.key.loadingAudio') }}</span>
-            </div>
-          </Transition>
+            <div class="piano-keyboard piano-keyboard--compact" :class="{ 'piano-keyboard--loading': isAudioLoading }">
+              <!-- Loading Overlay -->
+              <Transition name="fade">
+                <div v-if="isAudioLoading" class="piano-loading">
+                  <div class="piano-loading__spinner"></div>
+                </div>
+              </Transition>
 
-          <!-- White Keys -->
-          <div class="piano-white-keys">
-            <button
-              v-for="keyIndex in WHITE_KEYS"
-              :key="keyIndex"
-              class="piano-key piano-key--white"
-              :class="{
-                'piano-key--selected': store.config.key === keyIndex,
-                'piano-key--playing': isPlayingScale && store.config.key === keyIndex
-              }"
-              :disabled="isAudioLoading"
-              @click="selectKey(keyIndex)"
-            >
-              <span class="piano-key__label">{{ KEY_NAMES[keyIndex] }}</span>
-              <span class="piano-key__hint">{{ KEY_NAMES[keyIndex] }}{{ t('settingsStep.key.major') }}</span>
-            </button>
-          </div>
-
-          <!-- Black Keys -->
-          <div class="piano-black-keys">
-            <button
-              v-for="(keyIndex, i) in BLACK_KEYS"
-              :key="keyIndex"
-              class="piano-key piano-key--black"
-              :class="{
-                'piano-key--selected': store.config.key === keyIndex,
-                'piano-key--playing': isPlayingScale && store.config.key === keyIndex
-              }"
-              :disabled="isAudioLoading"
-              :style="{ left: `calc(${BLACK_KEY_POSITIONS[i]} * (100% / 7) + (100% / 14) - 18px)` }"
-              @click="selectKey(keyIndex)"
-            >
-              <span class="piano-key__label">{{ KEY_NAMES[keyIndex] }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="key-info">
-          <div class="key-info__current">
-            <span class="key-info__label">{{ t('settingsStep.key.selected') }}</span>
-            <span class="key-info__value">{{ KEY_NAMES[store.config.key] }} {{ t('settingsStep.key.major') }}</span>
-          </div>
-          <!-- Playing indicator - absolutely positioned to avoid layout shift -->
-          <Transition name="playing-indicator">
-            <div v-if="isPlayingScale" class="key-info__playing">
-              <span class="key-info__wave">♪</span>
-              <span class="key-info__playing-text">{{ t('settingsStep.key.playing') }}</span>
-            </div>
-          </Transition>
-        </div>
-      </section>
-
-      <!-- BPM Slider -->
-      <section class="setting-section">
-        <h3 class="setting-label">
-          <span class="setting-label__icon">♩</span>
-          <span>{{ t('settingsStep.tempo.label') }}</span>
-        </h3>
-        <p class="setting-description">{{ t('settingsStep.tempo.description') }}</p>
-
-        <div class="bpm-control">
-          <div class="bpm-display">
-            <!-- Metronome Visualizer -->
-            <div class="metronome" :style="{ '--beat-duration': `${beatDuration}s` }">
-              <div class="metronome__ring"></div>
-              <div class="metronome__ring metronome__ring--delayed"></div>
-              <div class="metronome__dot"></div>
-            </div>
-
-            <div class="bpm-display__text">
-              <span class="bpm-display__value" :style="{ '--beat-duration': `${beatDuration}s` }">{{ store.config.bpm }}</span>
-              <span class="bpm-display__unit">BPM</span>
-            </div>
-          </div>
-
-          <div class="bpm-slider-wrap">
-            <input
-              type="range"
-              class="bpm-slider"
-              :value="store.config.bpm"
-              :min="currentSongImage?.tempoRange.min || 60"
-              :max="currentSongImage?.tempoRange.max || 180"
-              @input="updateBpm"
-            />
-            <div class="bpm-slider-track">
-              <div
-                class="bpm-slider-fill"
-                :style="{
-                  width: `${((store.config.bpm - (currentSongImage?.tempoRange.min || 60)) / ((currentSongImage?.tempoRange.max || 180) - (currentSongImage?.tempoRange.min || 60))) * 100}%`
-                }"
-              ></div>
-            </div>
-          </div>
-
-          <div class="tempo-presets">
-            <button
-              v-for="(preset, index) in dynamicTempoPresets"
-              :key="index"
-              class="tempo-preset"
-              :class="{
-                'tempo-preset--active': isPresetActive(preset.bpm, index),
-                'tempo-preset--default': preset.isDefault
-              }"
-              @click="store.setBpm(preset.bpm)"
-            >
-              <span class="tempo-preset__bpm">{{ preset.bpm }}</span>
-              <span class="tempo-preset__label">{{ t(`settingsStep.presets.${preset.labelKey}`) }}</span>
-              <span v-if="preset.isDefault" class="tempo-preset__star">★</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Studio Console: Advanced Settings Tabs -->
-      <div class="studio-console">
-        <div class="console-header">
-          <span class="console-title">{{ t('settingsStep.advanced.toggle') }}</span>
-        </div>
-
-        <!-- Tab Bar -->
-        <div class="console-tabs-wrapper">
-          <div class="console-tabs-fade console-tabs-fade--left"></div>
-          <div ref="tabsContainer" class="console-tabs" role="tablist">
-            <button
-              v-for="tab in settingsTabs"
-              :key="tab.id"
-              class="console-tab"
-              :class="{ 'console-tab--active': activeTab === tab.id }"
-            role="tab"
-            :aria-selected="activeTab === tab.id"
-            @click="selectTab(tab.id)"
-          >
-            <span class="console-tab__icon">{{ tab.icon }}</span>
-            <span class="console-tab__label">{{ t(tab.labelKey) }}</span>
-          </button>
-          </div>
-          <div class="console-tabs-fade console-tabs-fade--right"></div>
-        </div>
-
-        <!-- Tab Content Panels -->
-        <Transition name="panel-slide" mode="out-in">
-          <div :key="activeTab" class="console-panel" role="tabpanel">
-
-            <!-- Style Panel -->
-            <template v-if="activeTab === 'style'">
-              <p class="panel-description">{{ t('settingsStep.advanced.compositionStyle.description') }}</p>
-              <div class="composition-cards">
+              <!-- White Keys -->
+              <div class="piano-white-keys">
                 <button
-                  v-for="option in compositionStyleOptions"
-                  :key="option.key"
-                  class="composition-card"
-                  :class="{ 'composition-card--active': store.config.compositionStyle === option.value }"
-                  @click="store.config.compositionStyle = option.value"
+                  v-for="keyIndex in WHITE_KEYS"
+                  :key="keyIndex"
+                  class="piano-key piano-key--white"
+                  :class="{
+                    'piano-key--selected': store.config.key === keyIndex,
+                    'piano-key--playing': isPlayingScale && store.config.key === keyIndex
+                  }"
+                  :disabled="isAudioLoading"
+                  @click="selectKey(keyIndex)"
                 >
-                  <span class="composition-card__icon">{{ option.icon }}</span>
-                  <div class="composition-card__content">
-                    <span class="composition-card__title">{{ t(`settingsStep.advanced.compositionStyle.options.${option.key}`) }}</span>
-                    <span class="composition-card__desc">{{ t(`settingsStep.advanced.compositionStyle.options.${option.key}Desc`) }}</span>
-                  </div>
+                  <span class="piano-key__label">{{ KEY_NAMES[keyIndex] }}</span>
                 </button>
               </div>
 
-              <!-- Motif Settings (shown when BackgroundMotif is selected) -->
-              <div v-if="store.config.compositionStyle === 1" class="motif-settings">
-                <h4 class="subsection-title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.label') }}</h4>
-
-                <!-- Repeat Scope -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScope') }}</label>
-                  <div class="option-buttons">
-                    <button
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.motifRepeatScope === 0 }"
-                      @click="store.config.motifRepeatScope = 0"
-                    >
-                      {{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.fullSong') }}
-                    </button>
-                    <button
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.motifRepeatScope === 1 }"
-                      @click="store.config.motifRepeatScope = 1"
-                    >
-                      {{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.section') }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Fixed Progression -->
-                <div class="setting-row">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.motifFixedProgression"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">
-                      <span class="toggle-title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgression') }}</span>
-                      <span class="toggle-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgressionDesc') }}</span>
-                    </span>
-                  </label>
-                </div>
-
-                <!-- Max Chord Count -->
-                <div class="slider-item">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCount') }}
-                    <span class="slider-value">{{ store.config.motifMaxChordCount === 0 ? '∞' : store.config.motifMaxChordCount }}</span>
-                  </label>
-                  <p class="slider-hint">{{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCountHint') }}</p>
-                  <input
-                    type="range"
-                    v-model.number="store.config.motifMaxChordCount"
-                    min="0"
-                    max="8"
-                    class="slider"
-                  />
-                </div>
+              <!-- Black Keys -->
+              <div class="piano-black-keys">
+                <button
+                  v-for="(keyIndex, i) in BLACK_KEYS"
+                  :key="keyIndex"
+                  class="piano-key piano-key--black"
+                  :class="{
+                    'piano-key--selected': store.config.key === keyIndex,
+                    'piano-key--playing': isPlayingScale && store.config.key === keyIndex
+                  }"
+                  :disabled="isAudioLoading"
+                  :style="{ left: `calc(${BLACK_KEY_POSITIONS[i]} * (100% / 7) + (100% / 14) - 12px)` }"
+                  @click="selectKey(keyIndex)"
+                >
+                  <span class="piano-key__label">{{ KEY_NAMES[keyIndex] }}</span>
+                </button>
               </div>
-            </template>
+            </div>
 
-            <!-- Feel Panel (Humanize) -->
-            <template v-if="activeTab === 'feel'">
-              <p class="panel-description">{{ t('settingsStep.advanced.humanize.description') }}</p>
+            <div class="key-info key-info--compact">
+              <span class="key-info__value">{{ KEY_NAMES[store.config.key] }} {{ t('settingsStep.key.major') }}</span>
+              <Transition name="playing-indicator">
+                <span v-if="isPlayingScale" class="key-info__wave">♪</span>
+              </Transition>
+            </div>
+          </div>
 
-              <div class="setting-row">
-                <label class="toggle-label">
-                  <input
-                    type="checkbox"
-                    v-model="store.config.humanize"
-                    class="toggle-input"
-                  />
-                  <span class="toggle-switch"></span>
-                  <span>{{ t('settingsStep.advanced.humanize.label') }}</span>
-                </label>
+          <!-- Divider -->
+          <div class="key-tempo-divider"></div>
+
+          <!-- Tempo Panel (Right) -->
+          <div class="tempo-panel">
+            <h3 class="setting-label setting-label--compact">
+              <span class="setting-label__icon">♩</span>
+              <span>{{ t('settingsStep.tempo.label') }}</span>
+            </h3>
+
+            <div class="bpm-control bpm-control--compact">
+              <div class="bpm-display bpm-display--compact">
+                <!-- Metronome Visualizer -->
+                <div class="metronome metronome--compact" :style="{ '--beat-duration': `${beatDuration}s` }">
+                  <div class="metronome__ring"></div>
+                  <div class="metronome__dot"></div>
+                </div>
+
+                <div class="bpm-display__text">
+                  <span class="bpm-display__value" :class="{ 'bpm-display__value--outside': !isInRecommendedRange }" :style="{ '--beat-duration': `${beatDuration}s` }">{{ store.config.bpm }}</span>
+                  <span class="bpm-display__unit">BPM</span>
+                </div>
+                <Transition name="zone-badge">
+                  <span v-if="!isInRecommendedRange" class="bpm-zone-badge bpm-zone-badge--compact">
+                    <span class="bpm-zone-badge__icon">⚠</span>
+                  </span>
+                </Transition>
               </div>
 
-              <div v-if="store.config.humanize" class="slider-group">
-                <div class="slider-item">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.humanize.timing') }}
-                    <span class="slider-value">{{ store.config.humanizeTiming }}%</span>
-                  </label>
-                  <p class="slider-hint">{{ t('settingsStep.advanced.humanize.timingHint') }}</p>
-                  <input
-                    type="range"
-                    v-model.number="store.config.humanizeTiming"
-                    min="0"
-                    max="100"
-                    class="slider"
-                  />
-                </div>
-                <div class="slider-item">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.humanize.velocity') }}
-                    <span class="slider-value">{{ store.config.humanizeVelocity }}%</span>
-                  </label>
-                  <p class="slider-hint">{{ t('settingsStep.advanced.humanize.velocityHint') }}</p>
-                  <input
-                    type="range"
-                    v-model.number="store.config.humanizeVelocity"
-                    min="0"
-                    max="100"
-                    class="slider"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <!-- Rhythm Panel (Drums) -->
-            <template v-if="activeTab === 'rhythm'">
-              <div class="setting-row">
-                <label class="toggle-label">
-                  <input
-                    type="checkbox"
-                    v-model="store.config.drumsEnabled"
-                    class="toggle-input"
-                  />
-                  <span class="toggle-switch"></span>
-                  <span>{{ t('settingsStep.advanced.drums.label') }}</span>
-                </label>
-              </div>
-              <p class="panel-hint">{{ t('settingsStep.advanced.drums.description') }}</p>
-            </template>
-
-            <!-- Arpeggio Panel -->
-            <template v-if="activeTab === 'arpeggio'">
-              <div class="setting-row">
-                <label class="toggle-label" :class="{ 'toggle-label--disabled': isSynthDriven }">
-                  <input
-                    type="checkbox"
-                    v-model="store.config.arpeggioEnabled"
-                    class="toggle-input"
-                    :disabled="isSynthDriven"
-                  />
-                  <span class="toggle-switch"></span>
-                  <span>{{ t('settingsStep.advanced.arpeggio.label') }}</span>
-                </label>
-              </div>
-              <p v-if="isSynthDriven" class="panel-hint panel-hint--forced">
-                {{ t('settingsStep.advanced.arpeggio.synthDrivenNote') }}
-              </p>
-              <p v-else class="panel-hint">{{ t('settingsStep.advanced.arpeggio.description') }}</p>
-
-              <div v-if="store.config.arpeggioEnabled" class="arpeggio-settings">
-                <!-- Pattern -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.arpeggio.pattern') }}</label>
-                  <div class="option-buttons">
-                    <button
-                      v-for="(pattern, index) in ['up', 'down', 'updown', 'random']"
-                      :key="pattern"
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.arpeggioPattern === index }"
-                      @click="store.config.arpeggioPattern = index"
-                    >
-                      {{ t(`settingsStep.advanced.arpeggio.patterns.${pattern}`) }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Speed -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.arpeggio.speed') }}</label>
-                  <div class="option-buttons">
-                    <button
-                      v-for="(speed, index) in ['eighth', 'sixteenth', 'triplet']"
-                      :key="speed"
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.arpeggioSpeed === index }"
-                      @click="store.config.arpeggioSpeed = index"
-                    >
-                      {{ t(`settingsStep.advanced.arpeggio.speeds.${speed}`) }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Octave Range -->
-                <div class="slider-item">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.arpeggio.octaveRange') }}
-                    <span class="slider-value">{{ store.config.arpeggioOctaveRange }}</span>
-                  </label>
-                  <p class="slider-hint">{{ t('settingsStep.advanced.arpeggio.octaveRangeHint') }}</p>
-                  <input
-                    type="range"
-                    v-model.number="store.config.arpeggioOctaveRange"
-                    min="1"
-                    max="3"
-                    class="slider"
-                  />
-                </div>
-
-                <!-- Gate -->
-                <div class="slider-item">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.arpeggio.gate') }}
-                    <span class="slider-value">{{ store.config.arpeggioGate }}%</span>
-                  </label>
-                  <p class="slider-hint">{{ t('settingsStep.advanced.arpeggio.gateHint') }}</p>
-                  <input
-                    type="range"
-                    v-model.number="store.config.arpeggioGate"
-                    min="10"
-                    max="100"
-                    class="slider"
-                  />
-                </div>
-
-                <!-- Chord Sync -->
-                <div class="setting-row" style="margin-top: 1rem;">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.arpeggioSyncChord"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">
-                      <span class="toggle-title">{{ t('settingsStep.advanced.arpeggio.syncChord') }}</span>
-                      <span class="toggle-desc">{{ t('settingsStep.advanced.arpeggio.syncChordDesc') }}</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </template>
-
-            <!-- Harmony Panel (Chord Extensions) -->
-            <template v-if="activeTab === 'harmony'">
-              <ul class="panel-description-list">
-                <li>{{ t('settingsStep.advanced.chordExt.desc1') }}</li>
-                <li>{{ t('settingsStep.advanced.chordExt.desc2') }}</li>
-              </ul>
-
-              <!-- Sus -->
-              <div class="chord-ext-item">
-                <div class="setting-row">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.chordExtSus"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">
-                      <span class="toggle-title">{{ t('settingsStep.advanced.chordExt.sus') }}</span>
-                      <span class="toggle-desc">{{ t('settingsStep.advanced.chordExt.susDesc') }}</span>
-                    </span>
-                  </label>
-                </div>
-                <div v-if="store.config.chordExtSus" class="slider-item slider-item--nested">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.chordExt.probability') }}
-                    <span class="slider-value">{{ store.config.chordExtSusProb }}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    v-model.number="store.config.chordExtSusProb"
-                    min="0"
-                    max="100"
-                    class="slider"
-                  />
-                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.susHint') }}</span>
-                </div>
-              </div>
-
-              <!-- 7th -->
-              <div class="chord-ext-item">
-                <div class="setting-row">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.chordExt7th"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">
-                      <span class="toggle-title">{{ t('settingsStep.advanced.chordExt.seventh') }}</span>
-                      <span class="toggle-desc">{{ t('settingsStep.advanced.chordExt.seventhDesc') }}</span>
-                    </span>
-                  </label>
-                </div>
-                <div v-if="store.config.chordExt7th" class="slider-item slider-item--nested">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.chordExt.probability') }}
-                    <span class="slider-value">{{ store.config.chordExt7thProb }}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    v-model.number="store.config.chordExt7thProb"
-                    min="0"
-                    max="100"
-                    class="slider"
-                  />
-                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.seventhHint') }}</span>
-                </div>
-              </div>
-
-              <!-- 9th -->
-              <div class="chord-ext-item">
-                <div class="setting-row">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.chordExt9th"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">
-                      <span class="toggle-title">{{ t('settingsStep.advanced.chordExt.ninth') }}</span>
-                      <span class="toggle-desc">{{ t('settingsStep.advanced.chordExt.ninthDesc') }}</span>
-                    </span>
-                  </label>
-                </div>
-                <div v-if="store.config.chordExt9th" class="slider-item slider-item--nested">
-                  <label class="slider-label">
-                    {{ t('settingsStep.advanced.chordExt.probability') }}
-                    <span class="slider-value">{{ store.config.chordExt9thProb }}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    v-model.number="store.config.chordExt9thProb"
-                    min="0"
-                    max="100"
-                    class="slider"
-                  />
-                  <span class="slider-hint">{{ t('settingsStep.advanced.chordExt.ninthHint') }}</span>
-                </div>
-              </div>
-            </template>
-
-            <!-- Modulation Panel -->
-            <template v-if="activeTab === 'modulation'">
-              <p class="panel-description">{{ t('settingsStep.advanced.modulation.description') }}</p>
-
-              <!-- Modulation Timing -->
-              <div class="option-group">
-                <label class="option-label">{{ t('settingsStep.advanced.modulation.timing') }}</label>
-                <div class="option-buttons option-buttons--wrap">
-                  <button
-                    v-for="option in modulationTimingOptions"
-                    :key="option.key"
-                    class="option-btn"
-                    :class="{ 'option-btn--active': store.config.modulationTiming === option.value }"
-                    @click="store.config.modulationTiming = option.value"
+              <div class="bpm-slider-wrap bpm-slider-wrap--extended">
+                <!-- Multi-zone track -->
+                <div class="bpm-track-zones">
+                  <!-- Left extended zone (60 to recommendedMin) -->
+                  <div
+                    class="bpm-zone bpm-zone--extended-left"
+                    :style="{ width: `${((recommendedMin - 60) / 120) * 100}%` }"
+                  ></div>
+                  <!-- Recommended zone -->
+                  <div
+                    class="bpm-zone bpm-zone--recommended"
+                    :style="{
+                      left: `${((recommendedMin - 60) / 120) * 100}%`,
+                      width: `${((recommendedMax - recommendedMin) / 120) * 100}%`
+                    }"
                   >
-                    {{ t(`settingsStep.advanced.modulation.timingOptions.${option.key}`) }}
-                  </button>
-                </div>
-              </div>
+                    <div class="bpm-zone__glow"></div>
+                  </div>
+                  <!-- Right extended zone (recommendedMax to 180) -->
+                  <div
+                    class="bpm-zone bpm-zone--extended-right"
+                    :style="{
+                      left: `${((recommendedMax - 60) / 120) * 100}%`,
+                      width: `${((180 - recommendedMax) / 120) * 100}%`
+                    }"
+                  ></div>
 
-              <!-- Modulation Semitones (only shown when timing is not None) -->
-              <div v-if="store.config.modulationTiming !== 0" class="slider-item" style="margin-top: 1rem;">
-                <label class="slider-label">
-                  {{ t('settingsStep.advanced.modulation.semitones') }}
-                  <span class="slider-value">+{{ store.config.modulationSemitones }}</span>
-                </label>
-                <p class="slider-hint">{{ t('settingsStep.advanced.modulation.semitonesHint') }}</p>
+                  <!-- Boundary markers -->
+                  <div class="bpm-boundary bpm-boundary--left" :style="{ left: `${((recommendedMin - 60) / 120) * 100}%` }">
+                    <span class="bpm-boundary__label">{{ recommendedMin }}</span>
+                  </div>
+                  <div class="bpm-boundary bpm-boundary--right" :style="{ left: `${((recommendedMax - 60) / 120) * 100}%` }">
+                    <span class="bpm-boundary__label">{{ recommendedMax }}</span>
+                  </div>
+                </div>
+
+                <!-- Edge labels -->
+                <div class="bpm-edge-labels">
+                  <span class="bpm-edge-label">60</span>
+                  <span class="bpm-edge-label">180</span>
+                </div>
+
+                <!-- Slider thumb position indicator -->
+                <div
+                  class="bpm-thumb-indicator"
+                  :class="{ 'bpm-thumb-indicator--outside': !isInRecommendedRange }"
+                  :style="{ left: `${((store.config.bpm - 60) / 120) * 100}%` }"
+                >
+                  <div class="bpm-thumb-indicator__pulse"></div>
+                </div>
+
+                <!-- Invisible range input -->
                 <input
                   type="range"
-                  v-model.number="store.config.modulationSemitones"
-                  min="1"
-                  max="4"
-                  class="slider"
+                  class="bpm-slider bpm-slider--extended"
+                  :value="store.config.bpm"
+                  min="60"
+                  max="180"
+                  @input="updateBpm"
                 />
               </div>
-            </template>
 
-            <!-- SE/Call Panel -->
-            <template v-if="activeTab === 'se'">
-              <p class="panel-description">{{ t('settingsStep.advanced.se.description') }}</p>
-
-              <!-- Call Feature Toggle -->
-              <div class="setting-row">
-                <label class="toggle-label">
-                  <input
-                    type="checkbox"
-                    v-model="store.config.callEnabled"
-                    class="toggle-input"
-                  />
-                  <span class="toggle-switch"></span>
-                  <span class="toggle-text">
-                    <span class="toggle-title">{{ t('settingsStep.advanced.se.callEnabled') }}</span>
-                    <span class="toggle-desc">{{ t('settingsStep.advanced.se.callEnabledDesc') }}</span>
-                  </span>
-                </label>
+              <div class="tempo-presets tempo-presets--compact">
+                <button
+                  v-for="(preset, index) in dynamicTempoPresets"
+                  :key="index"
+                  class="tempo-preset tempo-preset--compact"
+                  :class="{
+                    'tempo-preset--active': isPresetActive(preset.bpm, index),
+                    'tempo-preset--default': preset.isDefault
+                  }"
+                  @click="store.setBpm(preset.bpm)"
+                >
+                  <span class="tempo-preset__bpm">{{ preset.bpm }}</span>
+                  <span v-if="preset.isDefault" class="tempo-preset__star">★</span>
+                </button>
               </div>
-
-              <!-- Call Settings (shown when call is enabled) -->
-              <div v-if="store.config.callEnabled" class="call-settings">
-                <!-- Call Notes Toggle -->
-                <div class="setting-row">
-                  <label class="toggle-label">
-                    <input
-                      type="checkbox"
-                      v-model="store.config.callNotesEnabled"
-                      class="toggle-input"
-                    />
-                    <span class="toggle-switch"></span>
-                    <span>{{ t('settingsStep.advanced.se.callNotesEnabled') }}</span>
-                  </label>
-                </div>
-
-                <!-- Intro Chant -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.se.introChant') }}</label>
-                  <p class="option-desc">{{ t('settingsStep.advanced.se.introChantDesc') }}</p>
-                  <div class="option-buttons">
-                    <button
-                      v-for="option in introChantOptions"
-                      :key="option.key"
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.introChant === option.value }"
-                      @click="store.config.introChant = option.value"
-                    >
-                      {{ t(`settingsStep.advanced.se.introChantOptions.${option.key}`) }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Mix Pattern -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
-                  <p class="option-desc">{{ t('settingsStep.advanced.se.mixPatternDesc') }}</p>
-                  <div class="option-buttons">
-                    <button
-                      v-for="option in mixPatternOptions"
-                      :key="option.key"
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.mixPattern === option.value }"
-                      @click="store.config.mixPattern = option.value"
-                    >
-                      {{ t(`settingsStep.advanced.se.mixPatternOptions.${option.key}`) }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Call Density -->
-                <div class="option-group">
-                  <label class="option-label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
-                  <p class="option-desc">{{ t('settingsStep.advanced.se.callDensityDesc') }}</p>
-                  <div class="option-buttons">
-                    <button
-                      v-for="option in callDensityOptions"
-                      :key="option.key"
-                      class="option-btn"
-                      :class="{ 'option-btn--active': store.config.callDensity === option.value }"
-                      @click="store.config.callDensity = option.value"
-                    >
-                      {{ t(`settingsStep.advanced.se.callDensityOptions.${option.key}`) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <!-- Arrangement Panel -->
-            <template v-if="activeTab === 'arrangement'">
-              <p class="panel-description">{{ t('settingsStep.advanced.arrangement.label') }}</p>
-
-              <!-- Growth Method -->
-              <div class="option-group">
-                <label class="option-label">{{ t('settingsStep.advanced.arrangement.growth') }}</label>
-                <div class="arrangement-cards">
-                  <button
-                    class="arrangement-card"
-                    :class="{ 'arrangement-card--active': store.config.arrangementGrowth === 0 }"
-                    @click="store.config.arrangementGrowth = 0"
-                  >
-                    <span class="arrangement-card__icon">📚</span>
-                    <div class="arrangement-card__content">
-                      <span class="arrangement-card__title">{{ t('settingsStep.advanced.arrangement.growthOptions.layerAdd') }}</span>
-                      <span class="arrangement-card__desc">{{ t('settingsStep.advanced.arrangement.growthOptions.layerAddDesc') }}</span>
-                    </div>
-                  </button>
-                  <button
-                    class="arrangement-card"
-                    :class="{ 'arrangement-card--active': store.config.arrangementGrowth === 1 }"
-                    @click="store.config.arrangementGrowth = 1"
-                  >
-                    <span class="arrangement-card__icon">📈</span>
-                    <div class="arrangement-card__content">
-                      <span class="arrangement-card__title">{{ t('settingsStep.advanced.arrangement.growthOptions.registerAdd') }}</span>
-                      <span class="arrangement-card__desc">{{ t('settingsStep.advanced.arrangement.growthOptions.registerAddDesc') }}</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </template>
-
-            <!-- Duration Panel -->
-            <template v-if="activeTab === 'duration'">
-              <p class="panel-description">{{ t('settingsStep.duration.description') }}</p>
-
-              <div class="duration-control">
-                <div class="duration-display">
-                  <span class="duration-value">{{ formattedDuration }}</span>
-                </div>
-
-                <div class="duration-presets">
-                  <button
-                    v-for="preset in durationPresets"
-                    :key="preset.seconds"
-                    class="duration-preset"
-                    :class="{ 'duration-preset--active': store.config.targetDurationSeconds === preset.seconds }"
-                    @click="store.config.targetDurationSeconds = preset.seconds"
-                  >
-                    {{ preset.label }}
-                  </button>
-                </div>
-
-                <div class="duration-slider-wrap">
-                  <input
-                    type="range"
-                    class="duration-slider"
-                    v-model.number="store.config.targetDurationSeconds"
-                    min="60"
-                    max="300"
-                    step="15"
-                  />
-                  <div class="duration-slider-track">
-                    <div
-                      class="duration-slider-fill"
-                      :style="{ width: `${((store.config.targetDurationSeconds - 60) / 240) * 100}%` }"
-                    ></div>
-                  </div>
-                </div>
-
-                <div class="duration-range">
-                  <span>1:00</span>
-                  <span>5:00</span>
-                </div>
-              </div>
-            </template>
-
+            </div>
           </div>
-        </Transition>
-      </div>
+        </div>
+      </section>
+
+      <!-- Advanced Settings -->
+      <section class="setting-section advanced-section">
+        <div class="advanced-header" @click="expandedModules.size === 0 ? Object.keys({'track':1,'instruments':1,'melody':1,'harmony':1,'output':1}).forEach(m => expandedModules.add(m as RackModule)) : expandedModules.clear(); expandedModules = new Set(expandedModules)">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">⚙</span>
+            <span>{{ t('settingsStep.advanced.toggle') }}</span>
+          </h3>
+          <span class="advanced-expand-hint">{{ expandedModules.size > 0 ? '▲' : '▼' }}</span>
+        </div>
+
+        <!-- TRACK Panel -->
+        <div class="settings-panel" :class="{ 'settings-panel--open': isModuleExpanded('track') }">
+          <button class="settings-panel__header" @click="toggleModule('track')">
+            <span class="settings-panel__title">{{ t('settingsStep.advanced.compositionStyle.label') }}</span>
+            <span class="settings-panel__value">{{ [t('settingsStep.rack.values.lead'), t('settingsStep.rack.values.motif'), t('settingsStep.rack.values.synth')][store.config.compositionStyle] }}</span>
+            <span class="settings-panel__chevron">›</span>
+          </button>
+          <div v-show="isModuleExpanded('track')" class="settings-panel__body">
+            <!-- Composition Mode -->
+            <div class="param-group">
+              <label class="param-label">{{ t('settingsStep.rack.params.mode') }}</label>
+              <p class="param-desc">{{ t('settingsStep.advanced.compositionStyle.description') }}</p>
+              <div class="option-cards">
+                <button
+                  v-for="option in compositionStyleOptions"
+                  :key="option.key"
+                  class="option-card"
+                  :class="{ 'option-card--active': store.config.compositionStyle === option.value }"
+                  @click="store.config.compositionStyle = option.value"
+                >
+                  <span class="option-card__icon">{{ option.icon }}</span>
+                  <span class="option-card__label">{{ t(`settingsStep.advanced.compositionStyle.options.${option.key}`) }}</span>
+                  <span class="option-card__desc">{{ t(`settingsStep.advanced.compositionStyle.options.${option.key}Desc`) }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Motif Settings (when BackgroundMotif) -->
+            <template v-if="store.config.compositionStyle === 1">
+              <div class="param-row">
+                <div class="param-group param-group--half">
+                  <label class="param-label">{{ t('settingsStep.rack.params.scope') }}</label>
+                  <p class="param-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScope') }}</p>
+                  <div class="toggle-group">
+                    <button class="toggle-btn" :class="{ 'toggle-btn--active': store.config.motifRepeatScope === 0 }" @click="store.config.motifRepeatScope = 0">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.fullSong') }}</button>
+                    <button class="toggle-btn" :class="{ 'toggle-btn--active': store.config.motifRepeatScope === 1 }" @click="store.config.motifRepeatScope = 1">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScopeOptions.section') }}</button>
+                  </div>
+                </div>
+                <div class="param-group param-group--half">
+                  <label class="param-label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCount') }}</label>
+                  <p class="param-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.maxChordCountHint') }}</p>
+                  <div class="slider-row">
+                    <input type="range" v-model.number="store.config.motifMaxChordCount" min="0" max="8" class="param-slider" />
+                    <span class="param-value">{{ store.config.motifMaxChordCount === 0 ? '∞' : store.config.motifMaxChordCount }}</span>
+                  </div>
+                </div>
+              </div>
+              <label class="switch-row">
+                <input type="checkbox" v-model="store.config.motifFixedProgression" />
+                <span class="switch-track"></span>
+                <div class="switch-content">
+                  <span class="switch-label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgression') }}</span>
+                  <span class="switch-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgressionDesc') }}</span>
+                </div>
+              </label>
+            </template>
+
+            <!-- Arrangement -->
+            <div class="param-group">
+              <label class="param-label">{{ t('settingsStep.advanced.arrangement.label') }}</label>
+              <p class="param-desc">{{ t('settingsStep.advanced.arrangement.growth') }}</p>
+              <div class="toggle-group">
+                <button class="toggle-btn" :class="{ 'toggle-btn--active': store.config.arrangementGrowth === 0 }" @click="store.config.arrangementGrowth = 0">
+                  <span>{{ t('settingsStep.advanced.arrangement.growthOptions.layerAdd') }}</span>
+                </button>
+                <button class="toggle-btn" :class="{ 'toggle-btn--active': store.config.arrangementGrowth === 1 }" @click="store.config.arrangementGrowth = 1">
+                  <span>{{ t('settingsStep.advanced.arrangement.growthOptions.registerAdd') }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INSTRUMENTS Panel -->
+        <div class="settings-panel" :class="{ 'settings-panel--open': isModuleExpanded('instruments') }">
+          <button class="settings-panel__header" @click="toggleModule('instruments')">
+            <span class="settings-panel__title">{{ t('settingsStep.rack.modules.inst') }}</span>
+            <span class="settings-panel__value">
+              {{ store.config.drumsEnabled ? 'Drums' : '' }}{{ store.config.drumsEnabled && store.config.arpeggioEnabled ? ' + ' : '' }}{{ store.config.arpeggioEnabled ? 'Arp' : '' }}{{ !store.config.drumsEnabled && !store.config.arpeggioEnabled ? t('settingsStep.rack.values.off') : '' }}
+            </span>
+            <span class="settings-panel__chevron">›</span>
+          </button>
+          <div v-show="isModuleExpanded('instruments')" class="settings-panel__body">
+            <!-- Drums -->
+            <label class="switch-row switch-row--main">
+              <input type="checkbox" v-model="store.config.drumsEnabled" />
+              <span class="switch-track"></span>
+              <div class="switch-content">
+                <span class="switch-label">{{ t('settingsStep.advanced.drums.label') }}</span>
+                <span class="switch-desc">{{ t('settingsStep.advanced.drums.description') }}</span>
+              </div>
+            </label>
+
+            <!-- Arpeggio -->
+            <div class="param-section">
+              <label class="switch-row switch-row--main" :class="{ 'switch-row--forced': isSynthDriven }">
+                <input type="checkbox" v-model="store.config.arpeggioEnabled" :disabled="isSynthDriven" />
+                <span class="switch-track"></span>
+                <div class="switch-content">
+                  <span class="switch-label">{{ t('settingsStep.advanced.arpeggio.label') }}</span>
+                  <span class="switch-desc">{{ t('settingsStep.advanced.arpeggio.description') }}</span>
+                </div>
+                <span v-if="isSynthDriven" class="auto-badge">{{ t('settingsStep.rack.values.auto') }}</span>
+              </label>
+
+              <template v-if="store.config.arpeggioEnabled">
+                <div class="param-row">
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.arpeggio.pattern') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.arpeggio.patternHint') }}</p>
+                    <div class="btn-group">
+                      <button v-for="(p, i) in ['up', 'down', 'updown', 'random']" :key="i" class="btn-option" :class="{ 'btn-option--active': store.config.arpeggioPattern === i }" @click="store.config.arpeggioPattern = i">{{ t(`settingsStep.advanced.arpeggio.patterns.${p}`) }}</button>
+                    </div>
+                  </div>
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.arpeggio.speed') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.arpeggio.speedHint') }}</p>
+                    <div class="btn-group">
+                      <button v-for="(s, i) in ['eighth', 'sixteenth', 'triplet']" :key="i" class="btn-option" :class="{ 'btn-option--active': store.config.arpeggioSpeed === i }" @click="store.config.arpeggioSpeed = i">{{ t(`settingsStep.advanced.arpeggio.speeds.${s}`) }}</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="param-row">
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.arpeggio.octaveRange') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.arpeggio.octaveRangeHint') }}</p>
+                    <div class="slider-row">
+                      <input type="range" v-model.number="store.config.arpeggioOctaveRange" min="1" max="3" class="param-slider" />
+                      <span class="param-value">{{ store.config.arpeggioOctaveRange }}</span>
+                    </div>
+                  </div>
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.arpeggio.gate') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.arpeggio.gateHint') }}</p>
+                    <div class="slider-row">
+                      <input type="range" v-model.number="store.config.arpeggioGate" min="10" max="100" class="param-slider" />
+                      <span class="param-value">{{ store.config.arpeggioGate }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <label class="switch-row">
+                  <input type="checkbox" v-model="store.config.arpeggioSyncChord" />
+                  <span class="switch-track"></span>
+                  <div class="switch-content">
+                    <span class="switch-label">{{ t('settingsStep.advanced.arpeggio.syncChord') }}</span>
+                    <span class="switch-desc">{{ t('settingsStep.advanced.arpeggio.syncChordDesc') }}</span>
+                  </div>
+                </label>
+              </template>
+            </div>
+
+            <!-- Humanize -->
+            <div class="param-section">
+              <label class="switch-row switch-row--main">
+                <input type="checkbox" v-model="store.config.humanize" />
+                <span class="switch-track"></span>
+                <div class="switch-content">
+                  <span class="switch-label">{{ t('settingsStep.advanced.humanize.label') }}</span>
+                  <span class="switch-desc">{{ t('settingsStep.advanced.humanize.description') }}</span>
+                </div>
+              </label>
+              <template v-if="store.config.humanize">
+                <div class="param-row">
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.humanize.timing') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.humanize.timingHint') }}</p>
+                    <div class="slider-row">
+                      <input type="range" v-model.number="store.config.humanizeTiming" min="0" max="100" class="param-slider" />
+                      <span class="param-value">{{ store.config.humanizeTiming }}%</span>
+                    </div>
+                  </div>
+                  <div class="param-group param-group--half">
+                    <label class="param-label">{{ t('settingsStep.advanced.humanize.velocity') }}</label>
+                    <p class="param-desc">{{ t('settingsStep.advanced.humanize.velocityHint') }}</p>
+                    <div class="slider-row">
+                      <input type="range" v-model.number="store.config.humanizeVelocity" min="0" max="100" class="param-slider" />
+                      <span class="param-value">{{ store.config.humanizeVelocity }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- HARMONY Panel -->
+        <div class="settings-panel" :class="{ 'settings-panel--open': isModuleExpanded('harmony') }">
+          <button class="settings-panel__header" @click="toggleModule('harmony')">
+            <span class="settings-panel__title">{{ t('settingsStep.advanced.chordExt.label') }}</span>
+            <span class="settings-panel__value">
+              {{ store.config.chordExtSus ? 'Sus' : '' }}{{ store.config.chordExt7th ? ' 7th' : '' }}{{ store.config.chordExt9th ? ' 9th' : '' }}{{ store.config.modulationTiming !== 0 ? ' +Mod' : '' }}{{ !store.config.chordExtSus && !store.config.chordExt7th && !store.config.chordExt9th && store.config.modulationTiming === 0 ? t('settingsStep.rack.values.basic') : '' }}
+            </span>
+            <span class="settings-panel__chevron">›</span>
+          </button>
+          <div v-show="isModuleExpanded('harmony')" class="settings-panel__body">
+            <!-- Chord Extensions -->
+            <p class="section-desc">{{ t('settingsStep.advanced.chordExt.desc1') }}</p>
+            <div class="chord-ext-grid">
+              <div class="chord-ext-card">
+                <label class="chord-ext-toggle">
+                  <input type="checkbox" v-model="store.config.chordExtSus" />
+                  <span class="chord-ext-check"></span>
+                  <div class="chord-ext-content">
+                    <span class="chord-ext-name">{{ t('settingsStep.advanced.chordExt.sus') }}</span>
+                    <span class="chord-ext-desc">{{ t('settingsStep.advanced.chordExt.susDesc') }}</span>
+                  </div>
+                </label>
+                <div v-if="store.config.chordExtSus" class="chord-ext-slider">
+                  <span class="chord-ext-hint">{{ t('settingsStep.advanced.chordExt.susHint') }}</span>
+                  <div class="slider-row">
+                    <input type="range" v-model.number="store.config.chordExtSusProb" min="0" max="100" class="param-slider" />
+                    <span class="param-value">{{ store.config.chordExtSusProb }}%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="chord-ext-card">
+                <label class="chord-ext-toggle">
+                  <input type="checkbox" v-model="store.config.chordExt7th" />
+                  <span class="chord-ext-check"></span>
+                  <div class="chord-ext-content">
+                    <span class="chord-ext-name">{{ t('settingsStep.advanced.chordExt.seventh') }}</span>
+                    <span class="chord-ext-desc">{{ t('settingsStep.advanced.chordExt.seventhDesc') }}</span>
+                  </div>
+                </label>
+                <div v-if="store.config.chordExt7th" class="chord-ext-slider">
+                  <span class="chord-ext-hint">{{ t('settingsStep.advanced.chordExt.seventhHint') }}</span>
+                  <div class="slider-row">
+                    <input type="range" v-model.number="store.config.chordExt7thProb" min="0" max="100" class="param-slider" />
+                    <span class="param-value">{{ store.config.chordExt7thProb }}%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="chord-ext-card">
+                <label class="chord-ext-toggle">
+                  <input type="checkbox" v-model="store.config.chordExt9th" />
+                  <span class="chord-ext-check"></span>
+                  <div class="chord-ext-content">
+                    <span class="chord-ext-name">{{ t('settingsStep.advanced.chordExt.ninth') }}</span>
+                    <span class="chord-ext-desc">{{ t('settingsStep.advanced.chordExt.ninthDesc') }}</span>
+                  </div>
+                </label>
+                <div v-if="store.config.chordExt9th" class="chord-ext-slider">
+                  <span class="chord-ext-hint">{{ t('settingsStep.advanced.chordExt.ninthHint') }}</span>
+                  <div class="slider-row">
+                    <input type="range" v-model.number="store.config.chordExt9thProb" min="0" max="100" class="param-slider" />
+                    <span class="param-value">{{ store.config.chordExt9thProb }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modulation -->
+            <div class="param-group">
+              <label class="param-label">{{ t('settingsStep.advanced.modulation.timing') }}</label>
+              <p class="param-desc">{{ t('settingsStep.advanced.modulation.description') }}</p>
+              <div class="btn-group btn-group--wrap">
+                <button v-for="option in modulationTimingOptions" :key="option.key" class="btn-option" :class="{ 'btn-option--active': store.config.modulationTiming === option.value }" @click="store.config.modulationTiming = option.value">{{ t(`settingsStep.advanced.modulation.timingOptions.${option.key}`) }}</button>
+              </div>
+            </div>
+            <div v-if="store.config.modulationTiming !== 0" class="param-group">
+              <label class="param-label">{{ t('settingsStep.advanced.modulation.semitones') }}</label>
+              <p class="param-desc">{{ t('settingsStep.advanced.modulation.semitonesHint') }}</p>
+              <div class="slider-row">
+                <input type="range" v-model.number="store.config.modulationSemitones" min="1" max="4" class="param-slider" />
+                <span class="param-value">+{{ store.config.modulationSemitones }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OUTPUT Panel -->
+        <div class="settings-panel" :class="{ 'settings-panel--open': isModuleExpanded('output') }">
+          <button class="settings-panel__header" @click="toggleModule('output')">
+            <span class="settings-panel__title">{{ t('settingsStep.rack.modules.output') }}</span>
+            <span class="settings-panel__value">{{ formattedDuration }}{{ store.config.callEnabled ? ' + Call' : '' }}</span>
+            <span class="settings-panel__chevron">›</span>
+          </button>
+          <div v-show="isModuleExpanded('output')" class="settings-panel__body">
+            <!-- Duration -->
+            <div class="param-group">
+              <div class="duration-header">
+                <label class="param-label">{{ t('settingsStep.duration.label') }}</label>
+                <span class="duration-display">{{ formattedDuration }}</span>
+              </div>
+              <p class="param-desc">{{ t('settingsStep.duration.description') }}</p>
+              <div class="duration-presets">
+                <button v-for="preset in durationPresets" :key="preset.seconds" class="duration-btn" :class="{ 'duration-btn--active': store.config.targetDurationSeconds === preset.seconds }" @click="store.config.targetDurationSeconds = preset.seconds">{{ preset.label }}</button>
+              </div>
+              <div class="slider-row">
+                <input type="range" v-model.number="store.config.targetDurationSeconds" min="60" max="300" step="15" class="param-slider" />
+              </div>
+            </div>
+
+            <!-- Call/Response -->
+            <div class="param-section">
+              <p class="section-desc">{{ t('settingsStep.advanced.se.description') }}</p>
+              <label class="switch-row switch-row--main">
+                <input type="checkbox" v-model="store.config.callEnabled" />
+                <span class="switch-track"></span>
+                <div class="switch-content">
+                  <span class="switch-label">{{ t('settingsStep.advanced.se.callEnabled') }}</span>
+                  <span class="switch-desc">{{ t('settingsStep.advanced.se.callEnabledDesc') }}</span>
+                </div>
+              </label>
+              <template v-if="store.config.callEnabled">
+                <label class="switch-row">
+                  <input type="checkbox" v-model="store.config.callNotesEnabled" />
+                  <span class="switch-track"></span>
+                  <span class="switch-label">{{ t('settingsStep.advanced.se.callNotesEnabled') }}</span>
+                </label>
+                <div class="param-group">
+                  <label class="param-label">{{ t('settingsStep.advanced.se.introChant') }}</label>
+                  <p class="param-desc">{{ t('settingsStep.advanced.se.introChantDesc') }}</p>
+                  <div class="btn-group">
+                    <button v-for="option in introChantOptions" :key="option.key" class="btn-option" :class="{ 'btn-option--active': store.config.introChant === option.value }" @click="store.config.introChant = option.value">{{ t(`settingsStep.advanced.se.introChantOptions.${option.key}`) }}</button>
+                  </div>
+                </div>
+                <div class="param-group">
+                  <label class="param-label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
+                  <p class="param-desc">{{ t('settingsStep.advanced.se.mixPatternDesc') }}</p>
+                  <div class="btn-group">
+                    <button v-for="option in mixPatternOptions" :key="option.key" class="btn-option" :class="{ 'btn-option--active': store.config.mixPattern === option.value }" @click="store.config.mixPattern = option.value">{{ t(`settingsStep.advanced.se.mixPatternOptions.${option.key}`) }}</button>
+                  </div>
+                </div>
+                <div class="param-group">
+                  <label class="param-label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
+                  <p class="param-desc">{{ t('settingsStep.advanced.se.callDensityDesc') }}</p>
+                  <div class="btn-group">
+                    <button v-for="option in callDensityOptions" :key="option.key" class="btn-option" :class="{ 'btn-option--active': store.config.callDensity === option.value }" @click="store.config.callDensity = option.value">{{ t(`settingsStep.advanced.se.callDensityOptions.${option.key}`) }}</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -1187,6 +988,130 @@ const callDensityOptions = [
   margin: 0 0 1.25rem;
 }
 
+/* Combined Key & Tempo Section */
+.setting-section--combined {
+  padding: 1rem 1.25rem;
+}
+
+.key-tempo-grid {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .key-tempo-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .key-tempo-divider {
+    display: none;
+  }
+}
+
+.key-panel,
+.tempo-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.key-tempo-divider {
+  width: 1px;
+  height: 100%;
+  min-height: 120px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.2) 20%,
+    rgba(139, 92, 246, 0.3) 50%,
+    rgba(139, 92, 246, 0.2) 80%,
+    transparent 100%
+  );
+}
+
+.setting-label--compact {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Compact Key Info */
+.key-info--compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.key-info--compact .key-info__value {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--step-accent);
+}
+
+.key-info--compact .key-info__wave {
+  color: var(--step-accent);
+  animation: waveAnimation 0.5s ease-in-out infinite;
+}
+
+/* Compact BPM Control */
+.bpm-control--compact {
+  gap: 0.75rem;
+}
+
+.bpm-display--compact {
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bpm-display--compact .bpm-display__value {
+  font-size: 2.5rem;
+}
+
+/* Compact Metronome */
+.metronome--compact {
+  width: 36px;
+  height: 36px;
+}
+
+.metronome--compact .metronome__dot {
+  width: 12px;
+  height: 12px;
+}
+
+/* Compact Zone Badge */
+.bpm-zone-badge--compact {
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.4rem;
+}
+
+/* Compact Tempo Presets */
+.tempo-presets--compact {
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.tempo-preset--compact {
+  width: auto;
+  min-width: 50px;
+  padding: 0.4rem 0.6rem;
+  flex-direction: row;
+  gap: 0.25rem;
+}
+
+.tempo-preset--compact .tempo-preset__bpm {
+  font-size: 0.85rem;
+}
+
+.tempo-preset--compact .tempo-preset__star {
+  position: static;
+  font-size: 0.6rem;
+}
+
 /* Piano Keyboard */
 .piano-keyboard {
   position: relative;
@@ -1198,6 +1123,44 @@ const callDensityOptions = [
   border: 1px solid rgba(139, 92, 246, 0.15);
   padding: 12px 8px 8px;
   transition: opacity 0.3s ease;
+}
+
+/* Compact Piano Keyboard */
+.piano-keyboard--compact {
+  height: 160px;
+  margin-bottom: 0;
+  padding: 8px 6px 6px;
+  border-radius: 10px;
+}
+
+.piano-keyboard--compact .piano-key--white {
+  border-radius: 0 0 5px 5px;
+}
+
+.piano-keyboard--compact .piano-key__label {
+  font-size: 0.6rem;
+  bottom: 4px;
+}
+
+.piano-keyboard--compact .piano-key--black {
+  width: 28px;
+  height: calc(70% + 10px);
+  border-radius: 0 0 4px 4px;
+}
+
+.piano-keyboard--compact .piano-key--black .piano-key__label {
+  font-size: 0.5rem;
+  bottom: 3px;
+}
+
+.piano-keyboard--compact .piano-black-keys {
+  top: 6px;
+  left: 6px;
+  right: 6px;
+}
+
+.piano-keyboard--compact {
+  padding-top: 6px;
 }
 
 .piano-keyboard--loading .piano-white-keys,
@@ -1698,6 +1661,247 @@ const callDensityOptions = [
   height: 8px;
 }
 
+.bpm-slider-wrap--extended {
+  height: auto;
+  padding-top: 8px;
+  padding-bottom: 24px;
+}
+
+/* Edge labels (60 and 180) */
+.bpm-edge-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.bpm-edge-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.3);
+}
+
+/* Boundary markers */
+.bpm-boundary {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.bpm-boundary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(180deg,
+    rgba(139, 92, 246, 0.9) 0%,
+    rgba(139, 92, 246, 0.6) 100%
+  );
+  border-radius: 1px;
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
+}
+
+.bpm-boundary__label {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+}
+
+/* Multi-zone track */
+.bpm-track-zones {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  overflow: visible;
+  background: rgba(30, 30, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bpm-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.bpm-zone--extended-left {
+  left: 0;
+  background: linear-gradient(90deg,
+    rgba(100, 100, 120, 0.2) 0%,
+    rgba(100, 100, 120, 0.15) 100%
+  );
+  border-radius: 5px 0 0 5px;
+}
+
+.bpm-zone--extended-right {
+  background: linear-gradient(90deg,
+    rgba(100, 100, 120, 0.15) 0%,
+    rgba(100, 100, 120, 0.2) 100%
+  );
+  border-radius: 0 5px 5px 0;
+}
+
+.bpm-zone--recommended {
+  background: linear-gradient(90deg,
+    rgba(139, 92, 246, 0.3) 0%,
+    rgba(139, 92, 246, 0.45) 50%,
+    rgba(236, 72, 153, 0.3) 100%
+  );
+  border-top: 1px solid rgba(139, 92, 246, 0.5);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.5);
+  box-shadow:
+    inset 0 0 8px rgba(139, 92, 246, 0.3),
+    0 0 12px rgba(139, 92, 246, 0.2);
+  overflow: hidden;
+}
+
+.bpm-zone__glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    transparent 100%
+  );
+  animation: zoneGlow 3s ease-in-out infinite;
+}
+
+@keyframes zoneGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Thumb indicator */
+.bpm-thumb-indicator {
+  position: absolute;
+  top: 8px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%);
+  box-shadow:
+    0 0 12px rgba(139, 92, 246, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.bpm-thumb-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  opacity: 0.9;
+}
+
+.bpm-thumb-indicator__pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  animation: thumbPulse 1.5s ease-out infinite;
+  opacity: 0;
+}
+
+@keyframes thumbPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.bpm-thumb-indicator--outside {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #B45309 100%);
+  box-shadow:
+    0 0 16px rgba(245, 158, 11, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.bpm-thumb-indicator--outside .bpm-thumb-indicator__pulse {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* Extended slider input */
+.bpm-slider--extended {
+  position: absolute;
+  top: 8px;
+  width: 100%;
+  height: 18px;
+  margin-top: -4px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 4;
+}
+
+/* Zone badge */
+.bpm-zone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: #F59E0B;
+}
+
+.bpm-zone-badge__icon {
+  font-size: 0.65rem;
+}
+
+.bpm-zone-badge__text {
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Zone badge transition */
+.zone-badge-enter-active,
+.zone-badge-leave-active {
+  transition: all 0.25s ease;
+}
+
+.zone-badge-enter-from,
+.zone-badge-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+/* BPM value outside indicator */
+.bpm-display__value--outside {
+  color: #F59E0B !important;
+  text-shadow: 0 0 40px rgba(245, 158, 11, 0.4) !important;
+}
+
 .bpm-slider {
   position: absolute;
   width: 100%;
@@ -1899,197 +2103,611 @@ const callDensityOptions = [
   text-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
 }
 
-/* Studio Console */
-.studio-console {
-  background: rgba(15, 15, 22, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.15);
-  border-radius: 20px;
-  padding: 1.25rem;
-  margin-top: 0.5rem;
+/* Advanced Settings Section */
+.advanced-section {
+  margin-top: 1.5rem;
 }
 
-.console-header {
+.advanced-header {
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.2s ease;
 }
 
-.console-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: rgba(250, 250, 250, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.advanced-header:hover {
+  background: rgba(139, 92, 246, 0.05);
 }
 
-@keyframes indicatorPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+.advanced-expand-hint {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.4);
+  transition: transform 0.2s ease;
 }
 
-/* Tab Wrapper with Scroll Indicators */
-.console-tabs-wrapper {
-  position: relative;
+/* Hint Bar */
+.hint-bar {
+  min-height: 1.5rem;
+  padding: 0 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.console-tabs-fade {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 24px;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.8;
+/* Settings Panel (Accordion) */
+.settings-panel {
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  background: rgba(20, 20, 28, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.console-tabs-fade--left {
-  left: 0;
-  background: linear-gradient(to right, rgba(15, 15, 22, 0.95) 0%, transparent 100%);
-  border-radius: 10px 0 0 10px;
+.settings-panel:hover {
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
-.console-tabs-fade--right {
-  right: 0;
-  background: linear-gradient(to left, rgba(15, 15, 22, 0.95) 0%, transparent 100%);
-  border-radius: 0 10px 10px 0;
+.settings-panel--open {
+  border-color: rgba(139, 92, 246, 0.25);
+  background: rgba(20, 20, 28, 0.6);
 }
 
-.console-tabs {
-  display: flex;
-  gap: 2px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  padding: 3px;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-.console-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.console-tab {
+.settings-panel__header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  flex: 0 0 auto;
-  min-width: max-content;
-  padding: 0.625rem 1rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: rgba(250, 250, 250, 0.5);
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  transition: background 0.15s ease;
+  gap: 0.75rem;
 }
 
-.console-tab:hover:not(.console-tab--active) {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(250, 250, 250, 0.75);
+.settings-panel__header:hover {
+  background: rgba(139, 92, 246, 0.05);
 }
 
-.console-tab--active {
-  background: rgba(139, 92, 246, 0.2);
-  color: #FAFAFA;
-  box-shadow: 0 0 12px -2px rgba(139, 92, 246, 0.3);
-}
-
-.console-tab__icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.console-tab__label {
+.settings-panel__title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: #FAFAFA;
 }
 
-@media (max-width: 480px) {
-  .console-tab {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-  }
-
-  .console-tab__icon {
-    font-size: 0.95rem;
-  }
-
-  .console-tabs-fade {
-    width: 20px;
-  }
+.settings-panel__value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(167, 139, 250, 0.8);
+  margin-left: auto;
 }
 
-.console-panel {
-  margin-top: 1rem;
-  padding: 1.25rem;
-  background: rgba(20, 20, 28, 0.5);
-  border: 1px solid rgba(139, 92, 246, 0.08);
-  border-radius: 14px;
+.settings-panel__chevron {
+  font-size: 1rem;
+  color: rgba(250, 250, 250, 0.3);
+  transition: transform 0.2s ease;
 }
 
-.panel-description {
+.settings-panel--open .settings-panel__chevron {
+  transform: rotate(90deg);
+}
+
+.settings-panel__body {
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+/* Param Group */
+.param-group {
+  margin-bottom: 1rem;
+}
+
+.param-group:last-child {
+  margin-bottom: 0;
+}
+
+.param-group--half {
+  flex: 1;
+  min-width: 0;
+}
+
+.param-group--third {
+  flex: 1;
+  min-width: 0;
+}
+
+.param-label {
+  display: block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.param-desc {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.5);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.section-desc {
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.8rem;
   color: rgba(250, 250, 250, 0.5);
   margin: 0 0 1rem;
   line-height: 1.5;
 }
 
-.panel-description-list {
-  font-size: 0.8rem;
-  color: rgba(250, 250, 250, 0.5);
-  margin: 0 0 1rem;
-  padding-left: 1.25rem;
-  line-height: 1.6;
+.param-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-.panel-description-list li {
-  margin-bottom: 0.25rem;
-}
-
-.panel-description-list li:last-child {
+.param-row:last-child {
   margin-bottom: 0;
 }
 
-.panel-hint {
+.param-section {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.08);
+}
+
+/* Option Cards (for composition mode) */
+.option-cards {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.option-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(30, 30, 42, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-card:hover:not(.option-card--active) {
+  background: rgba(40, 40, 55, 0.6);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.option-card--active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 16px -4px rgba(139, 92, 246, 0.3);
+}
+
+.option-card__icon {
+  font-size: 1.25rem;
+}
+
+.option-card__label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.8);
+}
+
+.option-card__desc {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.45);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.option-card--active .option-card__label {
+  color: #FAFAFA;
+}
+
+.option-card--active .option-card__desc {
+  color: rgba(250, 250, 250, 0.7);
+}
+
+/* Toggle Group */
+.toggle-group {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(20, 20, 28, 0.6);
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggle-btn:hover:not(.toggle-btn--active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(250, 250, 250, 0.7);
+}
+
+.toggle-btn--active {
+  background: rgba(139, 92, 246, 0.2);
+  color: #FAFAFA;
+}
+
+/* Button Group */
+.btn-group {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.btn-group--wrap {
+  flex-wrap: wrap;
+}
+
+.btn-group--col {
+  flex-direction: column;
+}
+
+.btn-option {
+  flex: 1;
+  padding: 0.5rem 0.625rem;
+  background: rgba(30, 30, 42, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+
+.btn-option:hover:not(.btn-option--active) {
+  background: rgba(40, 40, 55, 0.6);
+  border-color: rgba(139, 92, 246, 0.2);
+  color: rgba(250, 250, 250, 0.8);
+}
+
+.btn-option--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #FAFAFA;
+}
+
+/* Slider Row */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.param-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.param-value--mini {
+  font-size: 0.75rem;
+  min-width: 2rem;
+}
+
+/* Param Slider */
+.param-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.param-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 100%);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.param-slider--mini {
+  height: 4px;
+}
+
+.param-slider--mini::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+/* Switch Row */
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.375rem 0;
+}
+
+.switch-row input {
+  display: none;
+}
+
+.switch-track {
+  width: 36px;
+  height: 20px;
+  background: rgba(60, 60, 80, 0.5);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: rgba(180, 180, 200, 0.6);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.switch-row input:checked + .switch-track {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+.switch-row input:checked + .switch-track::after {
+  left: 19px;
+  background: #a78bfa;
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+}
+
+.switch-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.switch-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.7);
+}
+
+.switch-desc {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.45);
+  line-height: 1.4;
+}
+
+.switch-row input:checked ~ .switch-label,
+.switch-row input:checked ~ * .switch-label,
+.switch-row input:checked ~ .switch-content .switch-label {
+  color: #FAFAFA;
+}
+
+.switch-row input:checked ~ .switch-content .switch-desc {
+  color: rgba(250, 250, 250, 0.6);
+}
+
+.switch-row--main {
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.switch-row--main .switch-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.switch-row--forced {
+  opacity: 0.7;
+}
+
+.auto-badge {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+/* Chord Extension Grid */
+.chord-ext-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.chord-ext-card {
+  background: rgba(30, 30, 42, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.chord-ext-card:has(input:checked) {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.chord-ext-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.chord-ext-toggle input {
+  display: none;
+}
+
+.chord-ext-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.chord-ext-toggle input:checked + .chord-ext-check {
+  background: var(--step-accent);
+  border-color: var(--step-accent);
+}
+
+.chord-ext-toggle input:checked + .chord-ext-check::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.chord-ext-content {
+  flex: 1;
+}
+
+.chord-ext-name {
+  display: block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.chord-ext-toggle input:checked ~ .chord-ext-content .chord-ext-name {
+  color: #FAFAFA;
+}
+
+.chord-ext-desc {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.5);
+  line-height: 1.4;
+}
+
+.chord-ext-slider {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.chord-ext-hint {
+  display: block;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.75rem;
   color: rgba(250, 250, 250, 0.4);
-  margin: 0.75rem 0 0;
+  margin-bottom: 0.5rem;
 }
 
-.panel-hint--forced {
-  color: rgba(139, 92, 246, 0.7);
-  background: rgba(139, 92, 246, 0.1);
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border-left: 3px solid var(--step-accent);
+/* Duration Controls */
+.duration-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
-/* Panel slide transition */
-.panel-slide-enter-active {
-  animation: panelSlideIn 0.25s ease-out;
+.duration-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--step-accent);
 }
 
-.panel-slide-leave-active {
-  animation: panelSlideOut 0.15s ease-in;
+.duration-presets {
+  display: flex;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
 }
 
-@keyframes panelSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
+.duration-btn {
+  flex: 1;
+  padding: 0.5rem 0.375rem;
+  background: rgba(30, 30, 42, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.duration-btn:hover:not(.duration-btn--active) {
+  background: rgba(40, 40, 55, 0.6);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.duration-btn--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--step-accent);
+}
+
+@media (max-width: 480px) {
+  .settings-panel__body {
+    padding: 0.875rem 1rem 1rem;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .param-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .chord-ext-row {
+    flex-direction: column;
   }
 }
 
@@ -2413,11 +3031,296 @@ const callDensityOptions = [
   color: rgba(250, 250, 250, 0.7);
 }
 
-/* Motif Settings */
-.motif-settings {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(139, 92, 246, 0.15);
+/* Motif Panel */
+.motif-panel {
+  margin-top: 1.25rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.motif-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8B5CF6, #6366F1, #8B5CF6);
+  background-size: 200% 100%;
+  animation: motifShimmer 3s ease-in-out infinite;
+}
+
+@keyframes motifShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.motif-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+}
+
+.motif-panel__icon {
+  font-size: 1.25rem;
+}
+
+.motif-panel__title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #FAFAFA;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.motif-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 480px) {
+  .motif-panel__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Motif Card */
+.motif-card {
+  background: rgba(20, 20, 28, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 12px;
+  padding: 0.875rem;
+}
+
+.motif-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.motif-card__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 0.625rem;
+}
+
+.motif-card__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--step-accent);
+  background: rgba(139, 92, 246, 0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.motif-card__hint {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.4);
+  margin: 0 0 0.625rem;
+  line-height: 1.3;
+}
+
+/* Motif Toggle Group */
+.motif-toggle-group {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.motif-toggle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.625rem 0.5rem;
+  background: rgba(30, 30, 42, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 10px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.motif-toggle__icon {
+  font-size: 1rem;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.motif-toggle:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.motif-toggle:hover .motif-toggle__icon {
+  opacity: 1;
+}
+
+.motif-toggle--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--step-accent);
+  color: #FAFAFA;
+  box-shadow: 0 0 16px -4px rgba(139, 92, 246, 0.4);
+}
+
+.motif-toggle--active .motif-toggle__icon {
+  opacity: 1;
+}
+
+/* Motif Slider */
+.motif-slider-wrap {
+  position: relative;
+  height: 6px;
+}
+
+.motif-slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.motif-slider__track {
+  position: absolute;
+  inset: 0;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.motif-slider__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8B5CF6, #6366F1);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+  transition: width 0.1s ease;
+}
+
+/* Motif Switch */
+.motif-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: rgba(20, 20, 28, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.motif-switch:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.motif-switch__input {
+  display: none;
+}
+
+.motif-switch__toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  transition: all 0.25s ease;
+  margin-top: 2px;
+}
+
+.motif-switch__toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.motif-switch__input:checked + .motif-switch__toggle {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  box-shadow: 0 0 12px -2px rgba(139, 92, 246, 0.5);
+}
+
+.motif-switch__input:checked + .motif-switch__toggle::after {
+  transform: translateX(18px);
+}
+
+.motif-switch__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.motif-switch__title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.motif-switch__desc {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.45);
+  line-height: 1.4;
+}
+
+/* Motif Panel Transition */
+.motif-panel-enter-active {
+  animation: motifPanelIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.motif-panel-leave-active {
+  animation: motifPanelOut 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes motifPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes motifPanelOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
 }
 
 .subsection-title {
@@ -2432,6 +3335,53 @@ const callDensityOptions = [
 }
 
 .subsection-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  background: var(--step-accent);
+  border-radius: 2px;
+}
+
+.style-subsection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.subsection-desc {
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.45);
+  margin: -0.5rem 0 1rem;
+  line-height: 1.4;
+}
+
+/* Panel Section (for consolidated tabs) */
+.panel-section {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.panel-section:first-child {
+  padding-top: 0;
+}
+
+.panel-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.section-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title::before {
   content: '';
   width: 3px;
   height: 14px;
@@ -2641,5 +3591,12 @@ const callDensityOptions = [
     font-size: 0.6rem;
     padding: 1px 4px;
   }
+}
+
+/* Rack labels with tooltips - use native title attribute */
+.rack-param-label[title],
+.rack-switch__label[title],
+.rack-ext-toggle__box[title] {
+  cursor: help;
 }
 </style>

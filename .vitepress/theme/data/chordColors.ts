@@ -1,29 +1,31 @@
+// Modern, cohesive color palette with depth
+// Colors are designed to work harmoniously together while maintaining distinction
 export const chordDegreeColors: Record<string, string> = {
-  // Major degrees
-  'I': '#2196F3',    // Blue - Tonic (stable, home)
-  'II': '#4CAF50',   // Green - Supertonic
-  'III': '#9C27B0',  // Purple - Mediant
-  'IV': '#FF9800',   // Orange - Subdominant (warm)
-  'V': '#F44336',    // Red - Dominant (tension)
-  'VI': '#3F51B5',   // Indigo - Submediant
-  'VII': '#757575',  // Gray - Leading tone
+  // Major degrees - Refined, modern palette
+  'I': '#6366F1',    // Indigo - Tonic (stable, home) - primary
+  'II': '#10B981',   // Emerald - Supertonic - fresh
+  'III': '#A855F7',  // Purple - Mediant - mystical
+  'IV': '#F59E0B',   // Amber - Subdominant (warm)
+  'V': '#EF4444',    // Red - Dominant (tension)
+  'VI': '#3B82F6',   // Blue - Submediant
+  'VII': '#64748B',  // Slate - Leading tone
 
-  // Minor degrees
-  'i': '#1976D2',    // Dark Blue
-  'ii': '#388E3C',   // Dark Green
-  'iii': '#7B1FA2',  // Dark Purple
-  'iv': '#F57C00',   // Dark Orange
-  'v': '#D32F2F',    // Dark Red
-  'vi': '#303F9F',   // Dark Indigo
-  'vii': '#616161',  // Dark Gray
+  // Minor degrees - Deeper, richer variants
+  'i': '#4F46E5',    // Deep Indigo
+  'ii': '#059669',   // Deep Emerald
+  'iii': '#9333EA',  // Deep Purple
+  'iv': '#D97706',   // Deep Amber
+  'v': '#DC2626',    // Deep Red
+  'vi': '#2563EB',   // Deep Blue
+  'vii': '#475569',  // Deep Slate
 
-  // Alterations
-  'bII': '#00BCD4',  // Cyan - Neapolitan
-  'bIII': '#8E24AA', // Purple variant
-  'bVI': '#5C6BC0',  // Indigo variant
-  'bVII': '#78909C', // Blue Gray
-  '#IV': '#FFC107',  // Amber
-  '#iv': '#FFB300',  // Dark Amber
+  // Alterations - Distinctive accent colors
+  'bII': '#06B6D4',  // Cyan - Neapolitan
+  'bIII': '#C026D3', // Fuchsia variant
+  'bVI': '#7C3AED',  // Violet variant
+  'bVII': '#8B5CF6', // Light Violet
+  '#IV': '#FBBF24',  // Yellow
+  '#iv': '#F59E0B',  // Amber
 }
 
 export function getChordGradient(degrees: string[]): string {

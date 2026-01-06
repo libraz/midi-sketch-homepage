@@ -121,7 +121,7 @@ onMounted(() => {
           <SettingsStep v-else-if="store.currentStep.value === 3" :key="3" />
           <BgmStep v-else-if="store.currentStep.value === 4" :key="`bgm-${store.bgmVersion.value}`" />
           <MelodyStep v-else-if="store.currentStep.value === 5" :key="5" />
-          <FinalStep v-else-if="store.currentStep.value === 6" :key="6" />
+          <FinalStep v-else-if="store.currentStep.value === 6" :key="`final-${store.melodyVersion.value}`" />
         </Transition>
       </div>
     </main>

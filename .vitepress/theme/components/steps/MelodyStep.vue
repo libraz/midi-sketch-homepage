@@ -2,15 +2,60 @@
 import { ref, computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
+import { midiToNoteName } from '../../utils/midiUtils'
 
 const { t } = useI18n()
 const store = useWizardStore()
 
+// Note: vocalRestRatio and vocalAllowExtremLeap are now computed at WASM call time
+// based on their respective mode settings (Auto/Custom, Auto/On/Off)
 
 const vocalAttitudeOptions = [
   { key: 'clean', value: 0 },
   { key: 'expressive', value: 1 },
   { key: 'raw', value: 2 }
+]
+
+// Vocal style presets with icons
+const vocalStyleOptions = [
+  { key: 'auto', value: 0, icon: '🔮' },
+  { key: 'standard', value: 1, icon: '🎵' },
+  { key: 'vocaloid', value: 2, icon: '💫' },
+  { key: 'ultraVocaloid', value: 3, icon: '⚡' },
+  { key: 'idol', value: 4, icon: '🎀' },
+  { key: 'ballad', value: 5, icon: '🌙' },
+  { key: 'rock', value: 6, icon: '🎸' },
+  { key: 'cityPop', value: 7, icon: '🌃' },
+  { key: 'anime', value: 8, icon: '✨' },
+  { key: 'brightKira', value: 9, icon: '☀' },
+  { key: 'coolSynth', value: 10, icon: '🔷' },
+  { key: 'cuteAffected', value: 11, icon: '🍬' },
+  { key: 'powerfulShout', value: 12, icon: '🔥' }
+]
+
+// Vocal groove options with visual rhythm patterns
+const vocalGrooveOptions = [
+  { key: 'straight', value: 0, pattern: [1, 1, 1, 1, 1, 1, 1, 1], icon: '▬' },
+  { key: 'offBeat', value: 1, pattern: [0.3, 1, 0.3, 1, 0.3, 1, 0.3, 1], icon: '⌐' },
+  { key: 'swing', value: 2, pattern: [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5], icon: '♪' },
+  { key: 'syncopated', value: 3, pattern: [0.5, 1, 0.3, 1, 0.7, 0.4, 1, 0.6], icon: '⚡' },
+  { key: 'driving16th', value: 4, pattern: [0.8, 0.6, 0.8, 0.6, 0.8, 0.6, 0.8, 1], icon: '»' },
+  { key: 'bouncy8th', value: 5, pattern: [1, 0.4, 0.8, 0.4, 1, 0.4, 0.8, 0.4], icon: '∿' }
+]
+
+// Melodic complexity options
+const melodicComplexityOptions = [
+  { key: 'simple', value: 0 },
+  { key: 'standard', value: 1 },
+  { key: 'complex', value: 2 }
+]
+
+// Hook intensity options
+const hookIntensityOptions = [
+  { key: 'off', value: 0 },
+  { key: 'light', value: 1 },
+  { key: 'normal', value: 2 },
+  { key: 'strong', value: 3 }
 ]
 
 // Vocal range presets (MIDI note numbers)
@@ -23,16 +68,8 @@ const vocalRangePresets = [
   { id: 'male-low', icon: '🎵', low: 45, high: 64 },         // A2-E4
   { id: 'wide', icon: '📢', low: 52, high: 76 },             // E3-E5
   { id: 'narrow', icon: '🎯', low: 55, high: 74 },           // G3-D5
-  { id: 'yuuki-sakuna', icon: '🌸', low: 50, high: 81 }      // D3-A5
+  { id: 'yuuki-sakuna', icon: '🌸', low: 59, high: 83 }      // B3-B5
 ]
-
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
-function midiToNoteName(midi: number): string {
-  const note = NOTE_NAMES[midi % 12]
-  const octave = Math.floor(midi / 12) - 1
-  return `${note}${octave}`
-}
 
 function selectVocalPreset(preset: typeof vocalRangePresets[0]) {
   store.config.vocalLow = preset.low
@@ -157,6 +194,100 @@ const rangeBarStyle = computed(() => {
           </div>
         </section>
 
+        <!-- Vocal Style -->
+        <section class="setting-section">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">🎼</span>
+            <span>{{ t('melodyStep.advanced.vocalStyle.label') }}</span>
+          </h3>
+          <p class="setting-description">{{ t('melodyStep.advanced.vocalStyle.description') }}</p>
+
+          <div class="compact-btns compact-btns--grid">
+            <button
+              v-for="opt in vocalStyleOptions"
+              :key="opt.key"
+              class="compact-btn"
+              :class="{ 'compact-btn--active': store.config.vocalStyle === opt.value }"
+              @click="store.config.vocalStyle = opt.value"
+            >
+              <span class="compact-btn__icon">{{ opt.icon }}</span>
+              <span>{{ t(`melodyStep.advanced.vocalStyle.options.${opt.key}`) }}</span>
+            </button>
+          </div>
+          <!-- Show description only for selected style -->
+          <div v-if="store.config.vocalStyle !== 0" class="selected-desc">
+            <span class="selected-desc__text">{{ t(`melodyStep.advanced.vocalStyle.options.${vocalStyleOptions.find(o => o.value === store.config.vocalStyle)?.key}Desc`) }}</span>
+          </div>
+        </section>
+
+        <!-- Vocal Groove -->
+        <section class="setting-section">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">🎸</span>
+            <span>{{ t('melodyStep.advanced.vocalGroove.label') }}</span>
+          </h3>
+          <p class="setting-description">{{ t('melodyStep.advanced.vocalGroove.description') }}</p>
+
+          <div class="compact-btns compact-btns--grid">
+            <button
+              v-for="opt in vocalGrooveOptions"
+              :key="opt.key"
+              class="compact-btn"
+              :class="{ 'compact-btn--active': store.config.vocalGroove === opt.value }"
+              @click="store.config.vocalGroove = opt.value"
+            >
+              <span class="compact-btn__icon">{{ opt.icon }}</span>
+              <span>{{ t(`melodyStep.advanced.vocalGroove.options.${opt.key}`) }}</span>
+            </button>
+          </div>
+          <!-- Show description only for selected groove -->
+          <div v-if="store.config.vocalGroove !== 0" class="selected-desc">
+            <span class="selected-desc__text">{{ t(`melodyStep.advanced.vocalGroove.options.${vocalGrooveOptions.find(o => o.value === store.config.vocalGroove)?.key}Desc`) }}</span>
+          </div>
+        </section>
+
+        <!-- Melodic Complexity -->
+        <section class="setting-section">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">🎼</span>
+            <span>{{ t('melodyStep.advanced.melodicComplexity.label') }}</span>
+          </h3>
+          <p class="setting-description">{{ t('melodyStep.advanced.melodicComplexity.description') }}</p>
+
+          <div class="option-cards option-cards--row">
+            <button
+              v-for="opt in melodicComplexityOptions"
+              :key="opt.key"
+              class="option-card option-card--compact"
+              :class="{ 'option-card--active': store.config.melodicComplexity === opt.value }"
+              @click="store.config.melodicComplexity = opt.value"
+            >
+              <span class="option-card__title">{{ t(`melodyStep.advanced.melodicComplexity.options.${opt.key}`) }}</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Hook Intensity -->
+        <section class="setting-section">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">🎯</span>
+            <span>{{ t('melodyStep.advanced.hookIntensity.label') }}</span>
+          </h3>
+          <p class="setting-description">{{ t('melodyStep.advanced.hookIntensity.description') }}</p>
+
+          <div class="option-cards option-cards--row">
+            <button
+              v-for="opt in hookIntensityOptions"
+              :key="opt.key"
+              class="option-card option-card--compact"
+              :class="{ 'option-card--active': store.config.hookIntensity === opt.value }"
+              @click="store.config.hookIntensity = opt.value"
+            >
+              <span class="option-card__title">{{ t(`melodyStep.advanced.hookIntensity.options.${opt.key}`) }}</span>
+            </button>
+          </div>
+        </section>
+
       </div>
   </div>
 </template>
@@ -271,6 +402,23 @@ const rangeBarStyle = computed(() => {
 
 .option-card--active .option-card__desc {
   color: rgba(250, 250, 250, 0.7);
+}
+
+/* Horizontal option cards */
+.option-cards--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.option-card--compact {
+  flex: 1;
+  min-width: 80px;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+}
+
+.option-card--compact .option-card__title {
+  font-size: 0.8rem;
 }
 
 /* Vocal Range Styles */
@@ -434,6 +582,83 @@ const rangeBarStyle = computed(() => {
   box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
 }
 
+/* Compact Buttons Grid */
+.compact-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* Fixed-width grid variant - 3 columns */
+.compact-btns--grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.compact-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.5rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(236, 72, 153, 0.12);
+  border-radius: 8px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.compact-btn:hover {
+  border-color: rgba(236, 72, 153, 0.3);
+  color: #FAFAFA;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.compact-btn--active {
+  background: rgba(236, 72, 153, 0.2);
+  border-color: var(--step-accent);
+  color: #FAFAFA;
+  box-shadow: 0 0 12px -4px rgba(236, 72, 153, 0.4);
+}
+
+.compact-btn__icon {
+  font-size: 0.9rem;
+}
+
+/* Selected Description (appears below buttons) */
+.selected-desc {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(219, 39, 119, 0.08) 100%);
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  border-radius: 10px;
+  animation: descFadeIn 0.2s ease-out;
+}
+
+@keyframes descFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selected-desc__text {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.75);
+  line-height: 1.5;
+}
+
 @media (max-width: 640px) {
   .melody-btn {
     padding: 1rem 1.5rem;
@@ -450,6 +675,10 @@ const rangeBarStyle = computed(() => {
 
   .option-card__desc {
     font-size: 0.7rem;
+  }
+
+  .style-buttons {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

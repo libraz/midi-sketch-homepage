@@ -26,9 +26,8 @@ onMounted(async () => {
     await mod.init({ wasmPath })
     isWasmLoaded.value = true
     updateValidProgressions()
-  } catch (e) {
-    console.warn('WASM load failed, showing all progressions:', e)
-    // Fall back to showing all progressions
+  } catch {
+    // WASM load failed, fall back to showing all progressions
     validProgressionIds.value = chordProgressions.map(c => c.id)
   }
 })
@@ -294,6 +293,7 @@ async function togglePlay(id: number) {
 <style scoped>
 .chord-step {
   --step-accent: #8B5CF6;
+  overflow: visible;
 }
 
 .step-header {
@@ -317,6 +317,7 @@ async function togglePlay(id: number) {
 
 .chord-section {
   margin-bottom: 1.5rem;
+  overflow: visible;
 }
 
 .chord-section--other {
@@ -403,7 +404,9 @@ async function togglePlay(id: number) {
 .chord-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.25rem;
+  padding: 0.5rem;
+  margin: -0.5rem;
 }
 
 .chord-card {
@@ -496,52 +499,121 @@ async function togglePlay(id: number) {
 
 .chord-flow {
   display: flex;
-  gap: 0.375rem;
-  margin-bottom: 1rem;
-  overflow: hidden;
-  padding-bottom: 0.25rem;
+  gap: 0.5rem;
+  margin: 0.5rem -0.25rem 0.75rem;
+  overflow: visible;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
 }
 
 .chord-badge {
   flex: 1;
-  min-width: 50px;
+  min-width: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.625rem 0.5rem;
-  border-radius: 8px;
-  transition: transform 0.2s ease;
+  padding: 0.75rem 0.5rem;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  /* Add subtle inner glow and depth */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Glossy highlight overlay */
+.chord-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  border-radius: 10px 10px 0 0;
+  pointer-events: none;
+}
+
+/* Connector arrow between badges */
+.chord-badge::after {
+  content: '→';
+  position: absolute;
+  right: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.25);
+  z-index: 1;
+}
+
+.chord-badge:last-child::after {
+  display: none;
 }
 
 .chord-badge:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
+    0 8px 24px 4px rgba(255, 255, 255, 0.12),
+    0 0 0 2px rgba(255, 255, 255, 0.15);
+  filter: brightness(1.15);
 }
 
 .chord-badge--playing {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px -4px currentColor;
-  animation: badge-pulse 0.4s ease-out;
+  transform: translateY(-3px) scale(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+    0 12px 32px 6px rgba(255, 255, 255, 0.15),
+    0 0 0 2px rgba(255, 255, 255, 0.2);
+  filter: brightness(1.25);
+  animation: badge-glow 0.6s ease-out;
 }
 
-@keyframes badge-pulse {
-  0% { transform: translateY(-3px) scale(1.05); }
-  100% { transform: translateY(-3px) scale(1); }
+@keyframes badge-glow {
+  0% {
+    transform: translateY(-4px) scale(1.1);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.05);
+    filter: brightness(1);
+  }
 }
 
 .chord-badge__note {
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
 }
 
 .chord-badge__degree {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.75);
-  margin-top: 2px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 3px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .chord-card__description {
@@ -585,10 +657,27 @@ async function togglePlay(id: number) {
 
   .chord-flow {
     flex-wrap: nowrap;
+    padding: 0.375rem;
+    gap: 0.375rem;
   }
 
   .chord-badge {
-    min-width: 44px;
+    min-width: 42px;
+    padding: 0.5rem 0.375rem;
+  }
+
+  .chord-badge__note {
+    font-size: 0.85rem;
+  }
+
+  .chord-badge__degree {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+  }
+
+  .chord-badge::after {
+    font-size: 0.5rem;
+    right: -0.375rem;
   }
 }
 </style>

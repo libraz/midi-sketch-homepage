@@ -3,12 +3,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { useMidiPlayer } from '../../composables/useMidiPlayer'
+import { useMidiRegeneration } from '../../composables/useMidiRegeneration'
+import { useSeedHistory } from '../../composables/useSeedHistory'
 import { songImages } from '../../data/songImages'
 import { chordProgressions } from '../../data/chordColors'
+import { KEY_NAMES } from '../../utils/midiUtils'
 import PianoRoll from '../PianoRoll.vue'
+import ShareButtons from '../ShareButtons.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
+const player = useMidiPlayer()
 const {
   isPlaying,
   isPaused,
@@ -19,10 +24,28 @@ const {
   rewind,
   preload,
   stop,
-  pause,
   play,
   setTrackInstrument
-} = useMidiPlayer()
+} = player
+
+const {
+  isGenerating,
+  error,
+  justRegenerated,
+  safeGetEvents,
+  showFeedback,
+  withPlaybackPreservation
+} = useMidiRegeneration(player)
+
+const {
+  canUndo: canUndoBgm,
+  canRedo: canRedoBgm,
+  pushSeed: pushBgmSeed,
+  initWithSeed: initBgmSeed,
+  undo: undoBgmSeed,
+  redo: redoBgmSeed,
+  generateSeed
+} = useSeedHistory()
 
 function handleSeek(tick: number) {
   stop()
@@ -42,19 +65,14 @@ function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 
 }
 
 const isLoading = ref(true)
-const isGenerating = ref(false)
 const isGenerated = ref(false)
-const error = ref<string | null>(null)
 const eventData = ref<any>(null)
-const justRegenerated = ref(false)
 
 let midisketch: any = null
 let instance: any = null
 
 // Expose instance for melody step
 defineExpose({ getInstance: () => instance })
-
-const KEY_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
 const currentSongImage = computed(() =>
   songImages.find(s => s.id === store.config.songImageId)
@@ -63,6 +81,35 @@ const currentSongImage = computed(() =>
 const currentChord = computed(() =>
   chordProgressions.find(c => c.id === store.config.chordProgressionId)
 )
+
+// Compute effective vocalAllowExtremLeap boolean value
+// 0=Auto (follow vocalStyle), 1=On, 2=Off
+const effectiveVocalAllowExtremLeap = computed(() => {
+  const setting = store.config.vocalAllowExtremLeap
+  if (setting === 1) return true  // On
+  if (setting === 2) return false // Off
+  // Auto: UltraVocaloid (3) implies extreme leap
+  return store.config.vocalStyle === 3
+})
+
+// Compute effective vocalRestRatio value
+// 0=Auto (follow vocalStyle), 1=Custom (use slider)
+const vocalStyleRestRatioMap: Record<number, number> = {
+  0: 15,  // Auto - use moderate default
+  1: 15,  // Standard
+  2: 5,   // Vocaloid
+  3: 0,   // UltraVocaloid
+  4: 15,  // Idol
+  5: 25,  // Ballad
+  6: 15, 7: 15, 8: 15, 9: 15, 10: 15, 11: 15, 12: 15
+}
+
+const effectiveVocalRestRatio = computed(() => {
+  if (store.config.vocalRestRatioMode === 1) {
+    return store.config.vocalRestRatio
+  }
+  return vocalStyleRestRatioMap[store.config.vocalStyle] ?? 15
+})
 
 // Build advanced settings summary
 const advancedSummary = computed(() => {
@@ -127,7 +174,10 @@ onMounted(async () => {
     // Store instance reference for melody step
     ;(window as any).__midiSketchInstance = instance
 
-    // Auto-generate on mount
+    // Auto-generate on mount with initial seed
+    const initialSeed = store.config.seed || generateSeed()
+    initBgmSeed(initialSeed)
+    store.config.seed = initialSeed
     generate()
   } catch (e: any) {
     error.value = e.message
@@ -135,7 +185,7 @@ onMounted(async () => {
   }
 })
 
-async function generate() {
+async function generate(overrideSeed?: number) {
   if (!instance || !midisketch) return
 
   isGenerating.value = true
@@ -171,11 +221,14 @@ async function generate() {
       }
     }
 
+    // Use override seed if provided, otherwise use store seed or generate new one
+    const seed = overrideSeed ?? store.config.seed ?? Math.floor(Math.random() * 0xFFFFFFFF)
+
     instance.generateFromConfig({
       stylePresetId: store.config.stylePresetId,
       key: store.config.key,
       bpm: store.config.bpm,
-      seed: store.config.seed || Math.floor(Math.random() * 0xFFFFFFFF),
+      seed,
       chordProgressionId: store.config.chordProgressionId,
       formId: store.config.formId,
       vocalAttitude: store.config.vocalAttitude,
@@ -211,8 +264,8 @@ async function generate() {
       // Vocal detail settings
       vocalNoteDensity: store.config.vocalNoteDensity,
       vocalMinNoteDivision: store.config.vocalMinNoteDivision,
-      vocalRestRatio: store.config.vocalRestRatio,
-      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap,
+      vocalRestRatio: effectiveVocalRestRatio.value,
+      vocalAllowExtremLeap: effectiveVocalAllowExtremLeap.value,
       // Arrangement settings
       arrangementGrowth: store.config.arrangementGrowth,
       // Arpeggio sync settings
@@ -223,11 +276,7 @@ async function generate() {
       motifMaxChordCount: store.config.motifMaxChordCount
     })
 
-    try {
-      eventData.value = instance.getEvents()
-    } catch {
-      eventData.value = null
-    }
+    eventData.value = safeGetEvents(instance)
 
     isGenerated.value = true
     store.setBgmGenerated(true)
@@ -239,29 +288,32 @@ async function generate() {
 }
 
 async function regenerate() {
-  // Save current position and playing state before regenerating
-  const wasPlaying = isPlaying.value
-  const wasPaused = isPaused.value
-  const savedTick = currentTick.value
+  await withPlaybackPreservation(async () => {
+    const newSeed = pushBgmSeed()
+    store.config.seed = newSeed
+    await generate(newSeed)
+  }, () => eventData.value)
+  showFeedback()
+}
 
-  // Stop playback completely to clear scheduled audio and reset isPaused
-  if (wasPlaying || wasPaused) {
-    stop()
-  }
+async function undoGeneration() {
+  const seed = undoBgmSeed()
+  if (seed === null) return
 
-  store.config.seed = Math.floor(Math.random() * 0xFFFFFFFF)
-  await generate()
+  await withPlaybackPreservation(async () => {
+    store.config.seed = seed
+    await generate(seed)
+  }, () => eventData.value)
+}
 
-  // Resume playback from saved position with new data
-  if (wasPlaying && eventData.value) {
-    await play(eventData.value, savedTick)
-  }
+async function redoGeneration() {
+  const seed = redoBgmSeed()
+  if (seed === null) return
 
-  // Show regeneration feedback
-  justRegenerated.value = true
-  setTimeout(() => {
-    justRegenerated.value = false
-  }, 1500)
+  await withPlaybackPreservation(async () => {
+    store.config.seed = seed
+    await generate(seed)
+  }, () => eventData.value)
 }
 
 async function togglePlay() {
@@ -285,8 +337,8 @@ function downloadMidi() {
     a.download = `midi-sketch-bgm-${Date.now()}.mid`
     a.click()
     URL.revokeObjectURL(url)
-  } catch (e: any) {
-    console.error('Failed to download MIDI:', e)
+  } catch {
+    // Download failed silently
   }
 }
 </script>
@@ -299,18 +351,11 @@ function downloadMidi() {
       <p class="step-header__subtitle">{{ t('bgmStep.subtitle') }}</p>
     </header>
 
-    <!-- Summary Card -->
-    <div class="summary-card">
-      <div class="summary-card__header">
-        <span class="summary-card__icon">◈</span>
-        <span class="summary-card__title">{{ t('bgmStep.summary.title') }}</span>
-      </div>
-
-      <div class="summary-list">
-        <div v-for="item in summary" :key="item.label" class="summary-item">
-          <span class="summary-item__label">{{ item.label }}</span>
-          <span class="summary-item__value">{{ item.value }}</span>
-        </div>
+    <!-- Settings Summary -->
+    <div class="settings-summary">
+      <div v-for="item in summary" :key="item.label" class="summary-row">
+        <span class="summary-label">{{ item.label }}</span>
+        <span class="summary-value">{{ item.value }}</span>
       </div>
     </div>
 
@@ -347,23 +392,32 @@ function downloadMidi() {
               <span class="soundfont-loading__text">{{ t('bgmStep.result.loadingAudio') }}</span>
             </div>
             <template v-else>
-              <button
-                class="control-btn control-btn--rewind"
-                @click="handleRewind"
-                :title="t('bgmStep.result.rewind')"
-                :disabled="!isSoundfontReady"
-              >
-                <span>⏮</span>
-              </button>
-              <button
-                class="control-btn control-btn--play"
-                :class="{ 'control-btn--playing': isPlaying, 'control-btn--paused': isPaused }"
-                @click="togglePlay"
-                :disabled="!isSoundfontReady"
-              >
-                <span v-if="isPlaying">⏸</span>
-                <span v-else>▶</span>
-              </button>
+              <div class="transport-bar">
+                <button
+                  class="transport-btn transport-btn--rewind"
+                  @click="handleRewind"
+                  :title="t('bgmStep.result.rewind')"
+                  :disabled="!isSoundfontReady"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                  </svg>
+                </button>
+                <div class="transport-divider"></div>
+                <button
+                  class="transport-btn transport-btn--play"
+                  :class="{ 'transport-btn--active': isPlaying, 'transport-btn--paused': isPaused }"
+                  @click="togglePlay"
+                  :disabled="!isSoundfontReady"
+                >
+                  <svg v-if="isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7L8 5z"/>
+                  </svg>
+                </button>
+              </div>
             </template>
           </div>
         </div>
@@ -371,21 +425,51 @@ function downloadMidi() {
       </div>
 
       <div class="result-actions">
-        <button class="download-btn" @click="downloadMidi">
-          <span class="download-btn__icon">⬇</span>
+        <!-- Regenerate Button with integrated history -->
+        <div class="regen-card">
+          <button
+            class="history-inline history-inline--undo"
+            :disabled="!canUndoBgm || isGenerating"
+            @click="undoGeneration"
+            :title="t('bgmStep.result.undo')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+            </svg>
+          </button>
+          <button
+            class="regen-main"
+            :disabled="isGenerating"
+            @click="regenerate"
+          >
+            <svg class="regen-main__icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            <span>{{ t('bgmStep.result.regenerate') }}</span>
+          </button>
+          <button
+            class="history-inline history-inline--redo"
+            :disabled="!canRedoBgm || isGenerating"
+            @click="redoGeneration"
+            :title="t('bgmStep.result.redo')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Download Button -->
+        <button class="action-btn action-btn--download" @click="downloadMidi">
+          <svg class="action-btn__icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
           <span>{{ t('bgmStep.result.download') }}</span>
         </button>
-        <button
-          class="regenerate-btn"
-          :disabled="isGenerating"
-          @click="regenerate"
-        >
-          <span class="regenerate-btn__icon">↻</span>
-          <span>{{ t('bgmStep.result.regenerate') }}</span>
-        </button>
-      </div>
 
-      <p class="result-hint">{{ t('bgmStep.result.hint') }}</p>
+        <!-- Share Buttons -->
+        <ShareButtons share-type="bgm" />
+      </div>
     </div>
   </div>
 </template>
@@ -414,58 +498,39 @@ function downloadMidi() {
   margin: 0;
 }
 
-.summary-card {
+/* Settings Summary (matches FinalStep) */
+.settings-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background: rgba(20, 20, 28, 0.5);
-  border: 1px solid rgba(139, 92, 246, 0.12);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
 }
 
-.summary-card__header {
+.summary-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
 }
 
-.summary-card__icon {
-  color: var(--step-accent);
-  font-size: 1.25rem;
-}
-
-.summary-card__title {
+.summary-label {
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(250, 250, 250, 0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.summary-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.summary-item__label {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: rgba(250, 250, 250, 0.5);
 }
 
-.summary-item__value {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.95rem;
+.summary-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--step-accent);
+  padding: 0.125rem 0.5rem;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 4px;
 }
 
 .loading-state {
@@ -595,7 +660,7 @@ function downloadMidi() {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -667,130 +732,251 @@ function downloadMidi() {
 .player-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
-.control-btn {
+/* Transport Bar - DAW-style unified control */
+.transport-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(20, 20, 28, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 24px;
+  padding: 4px;
+  gap: 0;
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.transport-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(139, 92, 246, 0.2);
+  margin: 0 2px;
+}
+
+.transport-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 8px;
-  color: #FAFAFA;
-  font-size: 1rem;
+  border: none;
+  background: transparent;
+  color: rgba(250, 250, 250, 0.7);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
 }
 
-.control-btn:hover {
-  background: rgba(139, 92, 246, 0.25);
-  border-color: var(--step-accent);
+.transport-btn:hover:not(:disabled) {
+  color: #FAFAFA;
+  background: rgba(139, 92, 246, 0.15);
 }
 
-.control-btn--play {
-  width: 44px;
-  height: 44px;
-  font-size: 1.2rem;
+.transport-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-.control-btn--playing {
+.transport-btn--rewind {
+  width: 32px;
+  height: 32px;
+}
+
+.transport-btn--play {
+  width: 40px;
+  height: 40px;
+  color: #FAFAFA;
+}
+
+.transport-btn--play:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.2);
+  transform: scale(1.05);
+}
+
+.transport-btn--active {
   background: linear-gradient(135deg, var(--step-accent), #7C3AED);
-  border-color: transparent;
+  color: white;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
 }
 
-.control-btn--paused {
+.transport-btn--active:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9D6FFA, #8B5CF6);
+}
+
+.transport-btn--paused {
   background: rgba(236, 72, 153, 0.2);
-  border-color: rgba(236, 72, 153, 0.4);
 }
 
-.control-btn--rewind:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
+.transport-btn--paused:hover:not(:disabled) {
+  background: rgba(236, 72, 153, 0.3);
 }
 
 .result-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
 }
 
-.download-btn {
+/* ============================================
+   Regenerate Card - Integrated History Controls
+   ============================================ */
+.regen-card {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-  border: none;
-  border-radius: 14px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: white;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow:
-    0 6px 24px -6px rgba(139, 92, 246, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-.download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 10px 32px -6px rgba(139, 92, 246, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
-}
-
-.download-btn__icon {
-  font-size: 1.25rem;
-}
-
-.regenerate-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 1rem 1.5rem;
+  align-items: stretch;
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  border: none;
-  border-radius: 14px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: white;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  border-radius: 12px;
   box-shadow:
-    0 6px 24px -6px rgba(245, 158, 11, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    0 4px 16px -4px rgba(245, 158, 11, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.regenerate-btn:hover:not(:disabled) {
+.regen-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 10px 32px -6px rgba(245, 158, 11, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    0 8px 24px -4px rgba(245, 158, 11, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.regenerate-btn__icon {
-  font-size: 1.25rem;
-  transition: transform 0.3s ease;
+/* Inline History Buttons */
+.history-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.regenerate-btn:hover:not(:disabled) .regenerate-btn__icon {
+.history-inline:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
+}
+
+.history-inline:active:not(:disabled) {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.history-inline:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.history-inline svg {
+  transition: transform 0.2s ease;
+}
+
+.history-inline:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* Main Regenerate Button */
+.regen-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.9rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regen-main:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.regen-main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.regen-main__icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.regen-main:hover:not(:disabled) .regen-main__icon {
   transform: rotate(180deg);
 }
 
-.regenerate-btn:disabled {
+/* ============================================
+   Download Button
+   ============================================ */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.action-btn:hover::before {
+  opacity: 1;
+}
+
+.action-btn__icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.action-btn--download {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  box-shadow:
+    0 4px 16px -4px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-btn--download:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px -4px rgba(139, 92, 246, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-btn--download:hover:not(:disabled) .action-btn__icon {
+  transform: translateY(2px);
 }
 
 .result-hint {
@@ -824,11 +1010,6 @@ function downloadMidi() {
   font-size: 0.8rem;
   font-weight: 500;
   color: rgba(250, 250, 250, 0.7);
-}
-
-.control-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

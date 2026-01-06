@@ -191,6 +191,7 @@ export default withMermaid(defineConfig({
               text: 'Reference',
               items: [
                 { text: 'API Reference', link: '/docs/api' },
+                { text: 'Option Relationships', link: '/docs/option-relationships' },
               ]
             }
           ]
@@ -230,6 +231,7 @@ export default withMermaid(defineConfig({
               text: 'リファレンス',
               items: [
                 { text: 'API リファレンス', link: '/ja/docs/api' },
+                { text: 'オプション関係性', link: '/ja/docs/option-relationships' },
               ]
             }
           ]

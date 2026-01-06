@@ -6,6 +6,7 @@ import './custom.css'
 import MidiDemo from './MidiDemo.vue'
 import MidiWizard from './components/MidiWizard.vue'
 import DemoLayout from './DemoLayout.vue'
+import PreviewLayout from './PreviewLayout.vue'
 
 export default {
   extends: DefaultTheme,
@@ -13,6 +14,9 @@ export default {
     const { frontmatter } = useData()
     if (frontmatter.value.layout === 'demo') {
       return h(DemoLayout)
+    }
+    if (frontmatter.value.layout === 'preview') {
+      return h(PreviewLayout)
     }
     return h(DefaultTheme.Layout, null, {})
   },

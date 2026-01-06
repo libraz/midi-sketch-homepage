@@ -3,10 +3,41 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { useMidiPlayer } from '../../composables/useMidiPlayer'
+import { useMidiRegeneration } from '../../composables/useMidiRegeneration'
+import { useSeedHistory } from '../../composables/useSeedHistory'
+import { midiToNoteName } from '../../utils/midiUtils'
 import PianoRoll from '../PianoRoll.vue'
+import ShareButtons from '../ShareButtons.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
+const player = useMidiPlayer()
+
+// Vocal style options (matching MelodyStep)
+const vocalStyleOptions = [
+  { key: 'standard', value: 1 },
+  { key: 'vocaloid', value: 2 },
+  { key: 'ultraVocaloid', value: 3 },
+  { key: 'idol', value: 4 },
+  { key: 'ballad', value: 5 },
+  { key: 'rock', value: 6 },
+  { key: 'cityPop', value: 7 },
+  { key: 'anime', value: 8 },
+  { key: 'brightKira', value: 9 },
+  { key: 'coolSynth', value: 10 },
+  { key: 'cuteAffected', value: 11 },
+  { key: 'powerfulShout', value: 12 }
+]
+
+// Vocal groove options (matching MelodyStep)
+const vocalGrooveOptions = [
+  { key: 'straight', value: 0 },
+  { key: 'offBeat', value: 1 },
+  { key: 'swing', value: 2 },
+  { key: 'syncopated', value: 3 },
+  { key: 'driving16th', value: 4 },
+  { key: 'bouncy8th', value: 5 }
+]
 const {
   isPlaying,
   isPaused,
@@ -15,11 +46,29 @@ const {
   currentTick,
   togglePlay: playerTogglePlay,
   stop,
-  pause,
   rewind,
   play,
   setTrackInstrument
-} = useMidiPlayer()
+} = player
+
+const {
+  isGenerating,
+  error,
+  justRegenerated,
+  safeGetEvents,
+  showFeedback,
+  withPlaybackPreservation
+} = useMidiRegeneration(player)
+
+const {
+  canUndo: canUndoVocal,
+  canRedo: canRedoVocal,
+  pushSeed: pushVocalSeed,
+  initWithSeed: initVocalSeed,
+  undo: undoVocalSeed,
+  redo: redoVocalSeed,
+  generateSeed
+} = useSeedHistory()
 
 function handleSeek(tick: number) {
   stop()
@@ -37,11 +86,8 @@ function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 
   }
 }
 
-const isGenerating = ref(false)
-const error = ref<string | null>(null)
 const midiData = ref<Uint8Array | null>(null)
 const eventData = ref<any>(null)
-const justRegenerated = ref(false)
 const isAdvancedOpen = ref(false)
 
 // Note density presets
@@ -66,16 +112,45 @@ const densityDisplayValue = computed(() => {
   return store.config.vocalNoteDensity
 })
 
+// Compute effective vocalAllowExtremLeap boolean value
+// 0=Auto (follow vocalStyle), 1=On, 2=Off
+const effectiveVocalAllowExtremLeap = computed(() => {
+  const setting = store.config.vocalAllowExtremLeap
+  if (setting === 1) return true  // On
+  if (setting === 2) return false // Off
+  // Auto: UltraVocaloid (3) implies extreme leap
+  return store.config.vocalStyle === 3
+})
+
+// Compute effective vocalRestRatio value
+// 0=Auto (follow vocalStyle), 1=Custom (use slider)
+const vocalStyleRestRatioMap: Record<number, number> = {
+  0: 15,  // Auto - use moderate default
+  1: 15,  // Standard
+  2: 5,   // Vocaloid: 0.05
+  3: 0,   // UltraVocaloid: 0%
+  4: 15,  // Idol: 0.15
+  5: 25,  // Ballad: 0.25
+  6: 15,  // Rock
+  7: 15,  // CityPop
+  8: 15,  // Anime
+  9: 15,  // BrightKira
+  10: 15, // CoolSynth
+  11: 15, // CuteAffected
+  12: 15, // PowerfulShout
+}
+
+const effectiveVocalRestRatio = computed(() => {
+  if (store.config.vocalRestRatioMode === 1) {
+    // Custom mode: use slider value
+    return store.config.vocalRestRatio
+  }
+  // Auto mode: use vocalStyle default
+  return vocalStyleRestRatioMap[store.config.vocalStyle] ?? 15
+})
+
 let midisketch: any = null
 let instance: any = null
-
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
-function midiToNoteName(midi: number): string {
-  const note = NOTE_NAMES[midi % 12]
-  const octave = Math.floor(midi / 12) - 1
-  return `${note}${octave}`
-}
 
 // Summary of vocal settings
 const vocalSummary = computed(() => {
@@ -103,6 +178,26 @@ onMounted(async () => {
   await generateMelody()
 })
 
+// Internal generation function that accepts a seed
+async function generateWithSeed(seed: number) {
+  if (!instance) return
+
+  instance.regenerateVocal({
+    seed,
+    vocalLow: store.config.vocalLow,
+    vocalHigh: store.config.vocalHigh,
+    vocalAttitude: store.config.vocalAttitude,
+    vocalNoteDensity: store.config.vocalNoteDensity,
+    vocalMinNoteDivision: store.config.vocalMinNoteDivision,
+    vocalRestRatio: effectiveVocalRestRatio.value,
+    vocalAllowExtremLeap: effectiveVocalAllowExtremLeap.value,
+    vocalStyle: store.config.vocalStyle
+  })
+
+  midiData.value = instance.getMidi()
+  eventData.value = safeGetEvents(instance)
+}
+
 async function generateMelody() {
   if (!instance) return
 
@@ -114,24 +209,10 @@ async function generateMelody() {
   error.value = null
 
   try {
-    instance.regenerateVocal({
-      seed: Math.floor(Math.random() * 0xFFFFFFFF),
-      vocalLow: store.config.vocalLow,
-      vocalHigh: store.config.vocalHigh,
-      vocalAttitude: store.config.vocalAttitude,
-      vocalNoteDensity: store.config.vocalNoteDensity,
-      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
-      vocalRestRatio: store.config.vocalRestRatio,
-      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
-    })
-
-    midiData.value = instance.getMidi()
-
-    try {
-      eventData.value = instance.getEvents()
-    } catch {
-      eventData.value = null
-    }
+    // Generate initial seed and add to history
+    const initialSeed = generateSeed()
+    initVocalSeed(initialSeed)
+    await generateWithSeed(initialSeed)
   } catch (e: any) {
     error.value = e.message
   } finally {
@@ -142,53 +223,29 @@ async function generateMelody() {
 async function regenerateVocalTrack() {
   if (!instance) return
 
-  // Save current position and playing state before regenerating
-  const wasPlaying = isPlaying.value
-  const wasPaused = isPaused.value
-  const savedTick = currentTick.value
+  await withPlaybackPreservation(async () => {
+    const newSeed = pushVocalSeed()
+    await generateWithSeed(newSeed)
+  }, () => eventData.value)
+  showFeedback()
+}
 
-  // Stop playback completely to clear scheduled audio and reset isPaused
-  if (wasPlaying || wasPaused) {
-    stop()
-  }
+async function undoVocalGeneration() {
+  const seed = undoVocalSeed()
+  if (seed === null || !instance) return
 
-  isGenerating.value = true
+  await withPlaybackPreservation(async () => {
+    await generateWithSeed(seed)
+  }, () => eventData.value)
+}
 
-  try {
-    instance.regenerateVocal({
-      seed: Math.floor(Math.random() * 0xFFFFFFFF),
-      vocalLow: store.config.vocalLow,
-      vocalHigh: store.config.vocalHigh,
-      vocalAttitude: store.config.vocalAttitude,
-      vocalNoteDensity: store.config.vocalNoteDensity,
-      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
-      vocalRestRatio: store.config.vocalRestRatio,
-      vocalAllowExtremLeap: store.config.vocalAllowExtremLeap
-    })
+async function redoVocalGeneration() {
+  const seed = redoVocalSeed()
+  if (seed === null || !instance) return
 
-    midiData.value = instance.getMidi()
-
-    try {
-      eventData.value = instance.getEvents()
-    } catch {
-      eventData.value = null
-    }
-
-    // Resume playback from saved position with new data
-    if (wasPlaying && eventData.value) {
-      await play(eventData.value, savedTick)
-    }
-
-    // Show regeneration feedback
-    justRegenerated.value = true
-    setTimeout(() => {
-      justRegenerated.value = false
-    }, 1500)
-  } catch (e: any) {
-    error.value = e.message
-  } finally {
-    isGenerating.value = false
-  }
+  await withPlaybackPreservation(async () => {
+    await generateWithSeed(seed)
+  }, () => eventData.value)
 }
 
 function download() {
@@ -228,6 +285,29 @@ function handleRewind() {
 
     <!-- Result -->
     <template v-else-if="eventData">
+      <!-- Settings Summary -->
+      <div class="settings-summary">
+        <div class="summary-row">
+          <span class="summary-label">{{ t('finalStep.summary.vocalRange') }}</span>
+          <span class="summary-value">{{ vocalSummary }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">{{ t('finalStep.summary.vocalStyle') }}</span>
+          <span class="summary-value">{{ store.config.vocalStyle === 0 ? t('finalStep.summary.auto') : t(`melodyStep.advanced.vocalStyle.options.${vocalStyleOptions[store.config.vocalStyle - 1]?.key || 'auto'}`) }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">{{ t('finalStep.summary.vocalGroove') }}</span>
+          <span class="summary-value">{{ t(`melodyStep.advanced.vocalGroove.options.${vocalGrooveOptions[store.config.vocalGroove]?.key || 'straight'}`) }}</span>
+        </div>
+        <div v-if="store.config.vocalStyle !== 0 || store.config.vocalGroove !== 0" class="implicit-info">
+          <span class="implicit-info__icon">ℹ</span>
+          <span class="implicit-info__text">
+            {{ store.config.vocalStyle !== 0 ? t('finalStep.summary.noteFromStyle') : '' }}
+            {{ store.config.vocalGroove !== 0 ? t('finalStep.summary.noteFromGroove') : '' }}
+          </span>
+        </div>
+      </div>
+
       <!-- Piano Roll Preview -->
       <div class="piano-roll-container" :class="{ 'piano-roll-container--regenerated': justRegenerated }">
         <!-- Regenerated Indicator -->
@@ -247,23 +327,32 @@ function handleRewind() {
               <span class="soundfont-loading__text">{{ t('bgmStep.result.loadingAudio') }}</span>
             </div>
             <template v-else>
-              <button
-                class="control-btn control-btn--rewind"
-                @click="handleRewind"
-                :title="t('finalStep.rewind')"
-                :disabled="!isSoundfontReady"
-              >
-                <span>⏮</span>
-              </button>
-              <button
-                class="control-btn control-btn--play"
-                :class="{ 'control-btn--playing': isPlaying, 'control-btn--paused': isPaused }"
-                @click="togglePlay"
-                :disabled="!isSoundfontReady"
-              >
-                <span v-if="isPlaying">⏸</span>
-                <span v-else>▶</span>
-              </button>
+              <div class="transport-bar">
+                <button
+                  class="transport-btn transport-btn--rewind"
+                  @click="handleRewind"
+                  :title="t('finalStep.rewind')"
+                  :disabled="!isSoundfontReady"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                  </svg>
+                </button>
+                <div class="transport-divider"></div>
+                <button
+                  class="transport-btn transport-btn--play"
+                  :class="{ 'transport-btn--active': isPlaying, 'transport-btn--paused': isPaused }"
+                  @click="togglePlay"
+                  :disabled="!isSoundfontReady"
+                >
+                  <svg v-if="isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7L8 5z"/>
+                  </svg>
+                </button>
+              </div>
             </template>
           </div>
         </div>
@@ -339,38 +428,98 @@ function handleRewind() {
             <div class="vocal-setting">
               <div class="vocal-setting__header">
                 <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.rest.label') }}</label>
-                <span class="vocal-setting__value">{{ store.config.vocalRestRatio }}%</span>
+                <span class="vocal-setting__value">{{ effectiveVocalRestRatio }}%</span>
               </div>
               <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.rest.hint') }}</p>
 
-              <div class="slider-wrap">
-                <input
-                  type="range"
-                  v-model.number="store.config.vocalRestRatio"
-                  min="0"
-                  max="50"
-                  class="vocal-slider"
-                />
-                <div class="slider-track">
-                  <div class="slider-fill" :style="{ width: `${(store.config.vocalRestRatio / 50) * 100}%` }"></div>
-                </div>
+              <!-- Auto/Custom Toggle -->
+              <div class="rest-mode-selector">
+                <button
+                  class="rest-mode-btn"
+                  :class="{ 'rest-mode-btn--active': store.config.vocalRestRatioMode === 0 }"
+                  @click="store.config.vocalRestRatioMode = 0"
+                >
+                  <span class="rest-mode-btn__icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 6V3L8 7l4 4V8c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 14c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 9.74A7.93 7.93 0 004 14c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                    </svg>
+                  </span>
+                  <span class="rest-mode-btn__label">{{ t('finalStep.vocalDetail.rest.options.auto') }}</span>
+                </button>
+                <button
+                  class="rest-mode-btn"
+                  :class="{ 'rest-mode-btn--active': store.config.vocalRestRatioMode === 1 }"
+                  @click="store.config.vocalRestRatioMode = 1"
+                >
+                  <span class="rest-mode-btn__icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </span>
+                  <span class="rest-mode-btn__label">{{ t('finalStep.vocalDetail.rest.options.custom') }}</span>
+                </button>
               </div>
+
+              <!-- Slider (only visible in Custom mode) -->
+              <Transition name="slider-expand">
+                <div v-if="store.config.vocalRestRatioMode === 1" class="slider-wrap slider-wrap--with-margin">
+                  <input
+                    type="range"
+                    v-model.number="store.config.vocalRestRatio"
+                    min="0"
+                    max="50"
+                    class="vocal-slider"
+                  />
+                  <div class="slider-track">
+                    <div class="slider-fill" :style="{ width: `${(store.config.vocalRestRatio / 50) * 100}%` }"></div>
+                  </div>
+                </div>
+              </Transition>
             </div>
 
-            <!-- Extreme Leap Toggle -->
-            <div class="vocal-setting vocal-setting--toggle">
-              <label class="toggle-label">
-                <input
-                  type="checkbox"
-                  v-model="store.config.vocalAllowExtremLeap"
-                  class="toggle-input"
-                />
-                <span class="toggle-switch"></span>
-                <span class="toggle-text">
-                  <span class="toggle-title">{{ t('finalStep.vocalDetail.extremeLeap.label') }}</span>
-                  <span class="toggle-desc">{{ t('finalStep.vocalDetail.extremeLeap.hint') }}</span>
-                </span>
-              </label>
+            <!-- Extreme Leap Selector -->
+            <div class="vocal-setting">
+              <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.extremeLeap.label') }}</label>
+              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.extremeLeap.hint') }}</p>
+
+              <div class="leap-selector">
+                <button
+                  class="leap-btn"
+                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 0 }"
+                  @click="store.config.vocalAllowExtremLeap = 0"
+                >
+                  <span class="leap-btn__icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 6V3L8 7l4 4V8c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 14c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 9.74A7.93 7.93 0 004 14c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                    </svg>
+                  </span>
+                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.auto') }}</span>
+                </button>
+                <button
+                  class="leap-btn"
+                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 1 }"
+                  @click="store.config.vocalAllowExtremLeap = 1"
+                >
+                  <span class="leap-btn__icon leap-btn__icon--on">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                  </span>
+                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.on') }}</span>
+                </button>
+                <button
+                  class="leap-btn"
+                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 2 }"
+                  @click="store.config.vocalAllowExtremLeap = 2"
+                >
+                  <span class="leap-btn__icon leap-btn__icon--off">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                  </span>
+                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.off') }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </Transition>
@@ -378,19 +527,50 @@ function handleRewind() {
 
       <!-- Actions -->
       <div class="result-actions">
-        <button
-          class="regenerate-btn"
-          :disabled="isGenerating"
-          @click="regenerateVocalTrack"
-        >
-          <span class="regenerate-btn__icon">↻</span>
-          <span>{{ t('finalStep.regenerateVocal') }}</span>
-        </button>
+        <!-- Regenerate Button with integrated history -->
+        <div class="regen-card">
+          <button
+            class="history-inline history-inline--undo"
+            :disabled="!canUndoVocal || isGenerating"
+            @click="undoVocalGeneration"
+            :title="t('finalStep.undo')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+            </svg>
+          </button>
+          <button
+            class="regen-main"
+            :disabled="isGenerating"
+            @click="regenerateVocalTrack"
+          >
+            <svg class="regen-main__icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            <span>{{ t('finalStep.regenerateVocal') }}</span>
+          </button>
+          <button
+            class="history-inline history-inline--redo"
+            :disabled="!canRedoVocal || isGenerating"
+            @click="redoVocalGeneration"
+            :title="t('finalStep.redo')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+            </svg>
+          </button>
+        </div>
 
-        <button class="download-btn" @click="download">
-          <span class="download-btn__icon">⬇</span>
+        <!-- Download Button -->
+        <button class="action-btn action-btn--download" @click="download">
+          <svg class="action-btn__icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
           <span>{{ t('finalStep.download') }}</span>
         </button>
+
+        <!-- Share Buttons -->
+        <ShareButtons share-type="vocal" />
       </div>
 
       <p class="result-hint">{{ t('finalStep.hint') }}</p>
@@ -460,6 +640,63 @@ function handleRewind() {
   font-size: 1.5rem;
 }
 
+/* Settings Summary */
+.settings-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(20, 20, 28, 0.5);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.5);
+}
+
+.summary-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  padding: 0.125rem 0.5rem;
+  background: rgba(16, 185, 129, 0.15);
+  border-radius: 4px;
+}
+
+.implicit-info {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.implicit-info__icon {
+  font-size: 0.9rem;
+  color: rgba(16, 185, 129, 0.7);
+  flex-shrink: 0;
+}
+
+.implicit-info__text {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.5);
+  line-height: 1.4;
+}
+
 .piano-roll-container {
   position: relative;
   margin-bottom: 1.5rem;
@@ -495,7 +732,7 @@ function handleRewind() {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -567,53 +804,84 @@ function handleRewind() {
 .player-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
-.control-btn {
+/* Transport Bar - DAW-style unified control */
+.transport-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(20, 20, 28, 0.8);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 24px;
+  padding: 4px;
+  gap: 0;
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.transport-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(16, 185, 129, 0.2);
+  margin: 0 2px;
+}
+
+.transport-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 8px;
-  color: #FAFAFA;
-  font-size: 1rem;
+  border: none;
+  background: transparent;
+  color: rgba(250, 250, 250, 0.7);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
 }
 
-.control-btn:hover {
-  background: rgba(16, 185, 129, 0.25);
-  border-color: var(--step-accent);
+.transport-btn:hover:not(:disabled) {
+  color: #FAFAFA;
+  background: rgba(16, 185, 129, 0.15);
 }
 
-.control-btn--play {
-  width: 44px;
-  height: 44px;
-  font-size: 1.2rem;
-}
-
-.control-btn--playing {
-  background: linear-gradient(135deg, var(--step-accent), #059669);
-  border-color: transparent;
-}
-
-.control-btn--paused {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: rgba(139, 92, 246, 0.4);
-}
-
-.control-btn--rewind:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.control-btn:disabled {
-  opacity: 0.4;
+.transport-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
+}
+
+.transport-btn--rewind {
+  width: 32px;
+  height: 32px;
+}
+
+.transport-btn--play {
+  width: 40px;
+  height: 40px;
+  color: #FAFAFA;
+}
+
+.transport-btn--play:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+  transform: scale(1.05);
+}
+
+.transport-btn--active {
+  background: linear-gradient(135deg, var(--step-accent), #059669);
+  color: white;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+}
+
+.transport-btn--active:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34D399, #10B981);
+}
+
+.transport-btn--paused {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.transport-btn--paused:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.3);
 }
 
 /* Soundfont loading indicator */
@@ -646,78 +914,168 @@ function handleRewind() {
 .result-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  text-align: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
 }
 
-.download-btn {
+/* ============================================
+   Regenerate Card - Integrated History Controls
+   ============================================ */
+.regen-card {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 1.25rem 2rem;
-  background: linear-gradient(135deg, var(--step-accent) 0%, #059669 100%);
-  border: none;
-  border-radius: 16px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: white;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  align-items: stretch;
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  border-radius: 12px;
   box-shadow:
-    0 8px 32px -8px rgba(16, 185, 129, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    0 4px 16px -4px rgba(236, 72, 153, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.download-btn:hover {
+.regen-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 12px 40px -8px rgba(16, 185, 129, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    0 8px 24px -4px rgba(236, 72, 153, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.download-btn__icon {
-  font-size: 1.25rem;
-}
-
-.regenerate-btn {
+/* Inline History Buttons */
+.history-inline {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 1rem 1.5rem;
-  background: rgba(236, 72, 153, 0.15);
-  border: 1px solid rgba(236, 72, 153, 0.3);
-  border-radius: 14px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #FAFAFA;
+  width: 44px;
+  min-width: 44px;
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
-.regenerate-btn:hover:not(:disabled) {
-  background: rgba(236, 72, 153, 0.25);
-  border-color: #EC4899;
-  transform: translateY(-1px);
+.history-inline:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
 }
 
-.regenerate-btn__icon {
-  font-size: 1.25rem;
-  transition: transform 0.3s ease;
+.history-inline:active:not(:disabled) {
+  background: rgba(0, 0, 0, 0.3);
 }
 
-.regenerate-btn:hover:not(:disabled) .regenerate-btn__icon {
+.history-inline:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.history-inline svg {
+  transition: transform 0.2s ease;
+}
+
+.history-inline:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+/* Main Regenerate Button */
+.regen-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.9rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regen-main:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.regen-main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.regen-main__icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.regen-main:hover:not(:disabled) .regen-main__icon {
   transform: rotate(180deg);
 }
 
-.regenerate-btn:disabled {
+/* ============================================
+   Download Button
+   ============================================ */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.action-btn:hover::before {
+  opacity: 1;
+}
+
+.action-btn__icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+}
+
+.action-btn--download {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  box-shadow:
+    0 4px 16px -4px rgba(16, 185, 129, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-btn--download:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px -4px rgba(16, 185, 129, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-btn--download:hover:not(:disabled) .action-btn__icon {
+  transform: translateY(2px);
 }
 
 .result-hint {
@@ -985,6 +1343,157 @@ function handleRewind() {
 
 .division-btn--active .division-btn__label {
   color: #FAFAFA;
+}
+
+/* Leap Selector (3-value: Auto/On/Off) */
+.leap-selector {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.leap-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 56px;
+  padding: 0.5rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leap-btn:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.leap-btn--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8B5CF6;
+  box-shadow: 0 0 12px -4px rgba(139, 92, 246, 0.4);
+}
+
+.leap-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(250, 250, 250, 0.5);
+  transition: all 0.2s ease;
+}
+
+.leap-btn__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.leap-btn--active .leap-btn__icon {
+  color: #8B5CF6;
+}
+
+/* On button - green accent when active */
+.leap-btn--active .leap-btn__icon--on {
+  color: #10B981;
+}
+
+/* Off button - red/coral accent when active */
+.leap-btn--active .leap-btn__icon--off {
+  color: #F87171;
+}
+
+.leap-btn__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+  text-align: center;
+}
+
+.leap-btn--active .leap-btn__label {
+  color: #FAFAFA;
+}
+
+/* Rest Ratio Mode Selector */
+.rest-mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.rest-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(30, 30, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rest-mode-btn:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.rest-mode-btn--active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8B5CF6;
+  box-shadow: 0 0 12px -4px rgba(139, 92, 246, 0.4);
+}
+
+.rest-mode-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(250, 250, 250, 0.5);
+  transition: color 0.2s ease;
+}
+
+.rest-mode-btn--active .rest-mode-btn__icon {
+  color: #8B5CF6;
+}
+
+.rest-mode-btn__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+}
+
+.rest-mode-btn--active .rest-mode-btn__label {
+  color: #FAFAFA;
+}
+
+.slider-wrap--with-margin {
+  margin-top: 0.75rem;
+}
+
+/* Slider expand transition */
+.slider-expand-enter-active,
+.slider-expand-leave-active {
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.slider-expand-enter-from,
+.slider-expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+}
+
+.slider-expand-enter-to,
+.slider-expand-leave-from {
+  opacity: 1;
+  max-height: 50px;
+  margin-top: 0.75rem;
 }
 
 /* Toggle */

@@ -1,12 +1,36 @@
 <script setup lang="ts">
 import MidiWizard from './components/MidiWizard.vue'
 import { useData } from 'vitepress'
+import { computed } from 'vue'
 
 const { lang } = useData()
+
+// Locale configuration for multi-language support
+const locales = {
+  en: { label: 'English', shortLabel: 'EN', path: '', docsLabel: 'Docs' },
+  ja: { label: '日本語', shortLabel: '日本語', path: '/ja', docsLabel: 'ドキュメント' },
+  // Add more locales here: zh: { label: '中文', shortLabel: '中文', path: '/zh', docsLabel: '文档' },
+} as const
+
+type LocaleKey = keyof typeof locales
+const defaultLocale: LocaleKey = 'en'
+
+// Current locale config
+const currentLocale = computed(() => locales[lang.value as LocaleKey] || locales[defaultLocale])
+
+// Build locale-aware path
+const localePath = (path: string) => `${currentLocale.value.path}${path}`
+
+// Available locales for language switcher (excluding current)
+const otherLocales = computed(() =>
+  Object.entries(locales)
+    .filter(([key]) => key !== lang.value)
+    .map(([key, config]) => ({ key, ...config }))
+)
 </script>
 
 <template>
-  <div class="demo-page" :class="{ 'demo-page--ja': lang === 'ja' }">
+  <div class="demo-page" :class="`demo-page--${lang}`">
     <!-- Ambient Background -->
     <div class="demo-page__backdrop">
       <div class="demo-page__grid"></div>
@@ -36,13 +60,15 @@ const { lang } = useData()
           <span>GitHub</span>
         </a>
         <span class="demo-page__divider">·</span>
-        <a href="/docs/getting-started" class="demo-page__link">
-          <span>{{ lang === 'ja' ? 'ドキュメント' : 'Docs' }}</span>
+        <a :href="localePath('/docs/getting-started')" class="demo-page__link">
+          <span>{{ currentLocale.docsLabel }}</span>
         </a>
-        <span class="demo-page__divider">·</span>
-        <a :href="lang === 'ja' ? '/' : '/ja/'" class="demo-page__link demo-page__lang-switch">
-          <span>{{ lang === 'ja' ? 'EN' : '日本語' }}</span>
-        </a>
+        <template v-for="locale in otherLocales" :key="locale.key">
+          <span class="demo-page__divider">·</span>
+          <a :href="locale.path || '/'" class="demo-page__link demo-page__lang-switch">
+            <span>{{ locale.shortLabel }}</span>
+          </a>
+        </template>
       </div>
     </footer>
   </div>

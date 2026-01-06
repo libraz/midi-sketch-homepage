@@ -5,6 +5,7 @@ import { useWizardStore } from '../../stores/useWizardStore'
 import { useMidiPlayer } from '../../composables/useMidiPlayer'
 import { songImages } from '../../data/songImages'
 import { chordProgressions } from '../../data/chordColors'
+import { KEY_NAMES } from '../../utils/midiUtils'
 import PianoRoll from '../PianoRoll.vue'
 
 const { t } = useI18n()
@@ -36,8 +37,6 @@ const eventData = ref<any>(null)
 
 let midisketch: any = null
 let instance: any = null
-
-const KEY_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
 const currentSongImage = computed(() =>
   songImages.find(s => s.id === store.config.songImageId)

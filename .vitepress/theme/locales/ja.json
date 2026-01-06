@@ -47,7 +47,9 @@
     "tempo": {
       "label": "テンポ（BPM）",
       "description": "1分間の拍数。高いほど速いテンポになります",
-      "recommended": "おすすめ: "
+      "recommended": "おすすめ: ",
+      "belowRange": "推奨より低い",
+      "aboveRange": "推奨より高い"
     },
     "duration": {
       "label": "目標再生時間",
@@ -65,14 +67,59 @@
     },
     "tabs": {
       "style": "スタイル",
-      "arrangement": "アレンジ",
-      "feel": "フィール",
       "rhythm": "リズム",
-      "arpeggio": "アルペジオ",
       "harmony": "ハーモニー",
+      "production": "演出",
       "modulation": "転調",
-      "se": "SE/コール",
-      "duration": "再生時間"
+      "se": "SE/コール"
+    },
+    "rack": {
+      "statusDefault": "パラメータにホバーすると説明を表示",
+      "modules": {
+        "track": "トラック",
+        "inst": "楽器",
+        "harmony": "ハーモニー",
+        "output": "出力"
+      },
+      "params": {
+        "mode": "モード",
+        "scope": "範囲",
+        "chords": "コード数",
+        "arrange": "アレンジ",
+        "pattern": "パターン",
+        "rate": "レート",
+        "octave": "オクターブ",
+        "gate": "ゲート",
+        "syncChord": "コード同期",
+        "drums": "ドラム",
+        "arpeggio": "アルペジオ",
+        "humanize": "ヒューマナイズ",
+        "time": "タイム",
+        "vel": "ベロシティ",
+        "complexity": "複雑度",
+        "hook": "フック",
+        "keyChange": "転調",
+        "semitones": "半音",
+        "duration": "時間",
+        "callResponse": "コール",
+        "midiOutput": "MIDI出力",
+        "intro": "イントロ",
+        "mix": "MIX",
+        "density": "密度",
+        "fixedProg": "固定進行"
+      },
+      "values": {
+        "song": "全体",
+        "sect": "区間",
+        "layer": "レイヤー",
+        "register": "音域",
+        "auto": "自動",
+        "lead": "リード",
+        "motif": "モチーフ",
+        "synth": "シンセ",
+        "off": "OFF",
+        "basic": "基本"
+      }
     },
     "advanced": {
       "toggle": "詳細設定",
@@ -235,7 +282,9 @@
       "regenerate": "BGMを再生成",
       "regenerated": "再生成完了",
       "loadingAudio": "音源を読み込み中...",
-      "hint": "バッキングトラックを試聴して、メロディ生成に進みましょう"
+      "hint": "バッキングトラックを試聴して、メロディ生成に進みましょう",
+      "undo": "元に戻す",
+      "redo": "やり直す"
     }
   },
   "melodyStep": {
@@ -292,6 +341,76 @@
           "synthDriven": "シンセドリブン",
           "synthDrivenDesc": "シンセサイザー的な電子音楽スタイル"
         }
+      },
+      "vocalStyle": {
+        "label": "ボーカルスタイル",
+        "description": "スタイルを選ぶと、音符密度・リズムパターン・音程跳躍などが自動調整されます",
+        "implicitNote": "※ 選択したスタイルに応じて内部パラメータが自動設定されます",
+        "options": {
+          "auto": "自動",
+          "autoDesc": "曲のスタイルプリセットに合わせて自動選択",
+          "standard": "スタンダード",
+          "standardDesc": "バランスの取れた標準的なメロディ",
+          "vocaloid": "ボカロ",
+          "vocaloidDesc": "16分音符多め・速いパッセージ・跳躍音程あり",
+          "ultraVocaloid": "超ボカロ",
+          "ultraVocaloidDesc": "32分音符・超高密度・極端な跳躍OK・休符なし",
+          "idol": "アイドル",
+          "idolDesc": "8分音符基調・覚えやすいフック・サビ盛り上げ",
+          "ballad": "バラード",
+          "balladDesc": "4分音符中心・ゆったり・長い音符多め・狭い音域",
+          "rock": "ロック",
+          "rockDesc": "力強いフック・シンコペーション・サビで音域上昇",
+          "cityPop": "シティポップ",
+          "cityPopDesc": "おしゃれなシンコペ・テンション多用・洗練されたメロディ",
+          "anime": "アニメ",
+          "animeDesc": "キャッチーなフック・サビ盛り上げ・ドラマチック",
+          "brightKira": "ブライト・キラキラ",
+          "brightKiraDesc": "明るく華やか・サビで高音域にシフト",
+          "coolSynth": "クール・シンセ",
+          "coolSynthDesc": "16分音符多め・クールでシンセ的・長音なし",
+          "cuteAffected": "キュート・あざとい",
+          "cuteAffectedDesc": "可愛らしい・控えめなシンコペ・サビで少し上へ",
+          "powerfulShout": "パワフル・シャウト",
+          "powerfulShoutDesc": "力強く叫ぶ・4分音符中心・サビ密度アップ"
+        }
+      },
+      "vocalGroove": {
+        "label": "ボーカルグルーブ",
+        "description": "リズム感を調整します。スウィングやオフビートでノリが変わります",
+        "options": {
+          "straight": "ストレート",
+          "straightDesc": "拍に忠実なリズム",
+          "offBeat": "オフビート",
+          "offBeatDesc": "裏拍を強調したノリ",
+          "swing": "スウィング",
+          "swingDesc": "ジャズ風の揺れたリズム",
+          "syncopated": "シンコペ",
+          "syncopatedDesc": "複雑なシンコペーション",
+          "driving16th": "ドライビング16分",
+          "driving16thDesc": "16分音符で駆け抜ける",
+          "bouncy8th": "バウンシー8分",
+          "bouncy8thDesc": "弾むような8分音符"
+        }
+      },
+      "melodicComplexity": {
+        "label": "メロディ複雑度",
+        "description": "メロディの複雑さを設定します。シンプルなほど覚えやすく、複雑なほど変化に富みます",
+        "options": {
+          "simple": "シンプル",
+          "standard": "標準",
+          "complex": "複雑"
+        }
+      },
+      "hookIntensity": {
+        "label": "フック強度",
+        "description": "サビや印象的なフレーズの強さを設定します。強いほど耳に残りやすくなります",
+        "options": {
+          "off": "なし",
+          "light": "弱め",
+          "normal": "標準",
+          "strong": "強め"
+        }
       }
     }
   },
@@ -306,11 +425,27 @@
     "regenerateVocal": "ボーカルを再生成",
     "regenerated": "再生成完了",
     "hint": "気に入らない場合は「戻る」で設定を変更できます",
+    "undo": "元に戻す",
+    "redo": "やり直す",
     "error": {
       "noInstance": "生成インスタンスが見つかりません。BGMステップからやり直してください"
     },
+    "summary": {
+      "title": "現在の設定",
+      "vocalRange": "音域",
+      "vocalStyle": "スタイル",
+      "vocalGroove": "グルーブ",
+      "complexity": "複雑度",
+      "hook": "フック強度",
+      "implicitSettings": "自動適用された設定",
+      "noteFromStyle": "スタイルから: 音符密度・リズムパターンが自動調整されています",
+      "noteFromComplexity": "複雑度から: 音符密度・跳躍幅が調整されています",
+      "noteFromGroove": "グルーブから: スウィング・シンコペ感が適用されています",
+      "auto": "自動"
+    },
     "vocalDetail": {
       "title": "ボーカル詳細設定",
+      "description": "詳細パラメータを微調整できます。上書き設定するとスタイルプリセットの自動設定より優先されます。",
       "density": {
         "label": "音符密度",
         "hint": "生成される音符の数を調整します。高いほど複雑で忙しいメロディに。",
@@ -334,11 +469,51 @@
       },
       "rest": {
         "label": "休符率",
-        "hint": "フレーズ間の休符に割り当てる時間の割合。高いほど余白が増えます。"
+        "hint": "フレーズ間の休符に割り当てる時間の割合。高いほど余白が増えます。",
+        "options": {
+          "auto": "自動",
+          "custom": "カスタム"
+        }
       },
       "extremeLeap": {
         "label": "大跳躍を許可",
-        "hint": "ボカロ風のドラマチックな大きな音程跳躍を有効にします。"
+        "hint": "ボカロ風のドラマチックな大きな音程跳躍を有効にします。",
+        "options": {
+          "auto": "自動",
+          "on": "オン",
+          "off": "オフ"
+        }
+      },
+      "style": {
+        "label": "ボーカルスタイル",
+        "hint": "ボーカルメロディのリズムパターンスタイルを選択します。",
+        "options": {
+          "auto": "自動",
+          "standard": "スタンダード",
+          "vocaloid": "ボカロ",
+          "ultraVocaloid": "超ボカロ",
+          "idol": "アイドル",
+          "ballad": "バラード",
+          "rock": "ロック",
+          "cityPop": "シティポップ",
+          "anime": "アニメ",
+          "brightKira": "ブライト・キラキラ",
+          "coolSynth": "クール・シンセ",
+          "cuteAffected": "キュート・あざとい",
+          "powerfulShout": "パワフル・シャウト"
+        }
+      },
+      "groove": {
+        "label": "ボーカルグルーブ",
+        "hint": "ボーカルメロディのリズム感・ノリを設定します。",
+        "options": {
+          "straight": "ストレート",
+          "offBeat": "オフビート",
+          "swing": "スウィング",
+          "syncopated": "シンコペ",
+          "driving16th": "ドライビング16分",
+          "bouncy8th": "バウンシー8分"
+        }
       }
     }
   },
@@ -442,6 +617,28 @@
     },
     "11": {
       "description": "クラシックな悲しいマイナー進行"
+    }
+  },
+  "share": {
+    "shareOnX": "Xでシェア",
+    "copyUrl": "URLをコピー",
+    "copied": "コピーしました！トラックを聴いてメロディ生成に進んでください",
+    "xShare": "この楽曲をXでシェア",
+    "tweetBgm": "MIDI SketchでBGMを作成しました！",
+    "tweetVocal": "MIDI Sketchでボーカルメロディを作成しました！"
+  },
+  "preview": {
+    "infoText": "MIDI Sketchで作成。AIを使わずアルゴリズムで生成。音符単位で編集可能なMIDIファイルを出力します。",
+    "summary": {
+      "style": "スタイル",
+      "chord": "コード",
+      "key": "キー",
+      "bpm": "BPM",
+      "length": "長さ",
+      "options": "オプション",
+      "type": "タイプ",
+      "drums": "ドラム",
+      "arpeggio": "アルペジオ"
     }
   }
 }

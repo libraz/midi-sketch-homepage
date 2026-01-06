@@ -94,6 +94,8 @@ export interface SongConfig {
     vocalRestRatio: number;
     /** Allow extreme leaps for vocaloid-style melodies */
     vocalAllowExtremLeap: boolean;
+    /** Vocal style preset: 0=Auto, 1=Standard, 2=Vocaloid, etc. */
+    vocalStyle: number;
     /** Arrangement growth: 0=LayerAdd, 1=RegisterAdd */
     arrangementGrowth: number;
     /** Sync arpeggio with chord changes (default=true) */
@@ -104,6 +106,12 @@ export interface SongConfig {
     motifFixedProgression: boolean;
     /** Max chord count (0=no limit, 2-8) */
     motifMaxChordCount: number;
+    /** Melodic complexity: 0=Simple, 1=Standard, 2=Complex */
+    melodicComplexity: number;
+    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong */
+    hookIntensity: number;
+    /** Vocal groove feel: 0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th */
+    vocalGroove: number;
 }
 /**
  * Vocal regeneration parameters
@@ -117,6 +125,8 @@ export interface VocalParams {
     vocalHigh: number;
     /** Vocal attitude: 0=Clean, 1=Expressive, 2=Raw */
     vocalAttitude: number;
+    /** Vocal style preset: 0=Auto, 1=Standard, 2=Vocaloid, etc. */
+    vocalStyle?: number;
     /** Note density (0-200, where 0=use style default, 70=standard, 100=idol, 150=vocaloid) */
     vocalNoteDensity?: number;
     /** Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth) */
@@ -229,6 +239,40 @@ export declare const ArrangementGrowth: {
 export declare const MotifRepeatScope: {
     readonly FullSong: 0;
     readonly Section: 1;
+};
+export declare const MelodicComplexity: {
+    readonly Simple: 0;
+    readonly Standard: 1;
+    readonly Complex: 2;
+};
+export declare const HookIntensity: {
+    readonly Off: 0;
+    readonly Light: 1;
+    readonly Normal: 2;
+    readonly Strong: 3;
+};
+export declare const VocalGrooveFeel: {
+    readonly Straight: 0;
+    readonly OffBeat: 1;
+    readonly Swing: 2;
+    readonly Syncopated: 3;
+    readonly Driving16th: 4;
+    readonly Bouncy8th: 5;
+};
+export declare const VocalStylePreset: {
+    readonly Auto: 0;
+    readonly Standard: 1;
+    readonly Vocaloid: 2;
+    readonly UltraVocaloid: 3;
+    readonly Idol: 4;
+    readonly Ballad: 5;
+    readonly Rock: 6;
+    readonly CityPop: 7;
+    readonly Anime: 8;
+    readonly BrightKira: 9;
+    readonly CoolSynth: 10;
+    readonly CuteAffected: 11;
+    readonly PowerfulShout: 12;
 };
 /**
  * Initialize the WASM module

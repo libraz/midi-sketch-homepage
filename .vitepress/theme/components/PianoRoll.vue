@@ -527,6 +527,7 @@ const progressPercent = computed(() => {
               v-for="(note, noteIndex) in track.notes"
               :key="`${track.name}-${noteIndex}`"
               class="note-bar"
+              :class="{ 'note-bar--vocal': track.name === 'Vocal' }"
               :style="{
                 left: `${tickToX(note.start)}px`,
                 top: `${noteToY(note.note)}%`,
@@ -1208,6 +1209,12 @@ const progressPercent = computed(() => {
     0 1px 3px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  z-index: 1;
+}
+
+/* Vocal notes appear on top of other tracks */
+.note-bar--vocal {
+  z-index: 10;
 }
 
 .note-bar:hover {
