@@ -119,9 +119,24 @@ function download() {
   midisketch.downloadMidi(midiData.value, 'midi-sketch.mid')
 }
 
-function regenerate() {
+async function regenerate() {
+  // Save current position and playing state before regenerating
+  const wasPlaying = isPlaying.value
+  const wasPaused = isPaused.value
+  const savedTick = currentTick.value
+
+  // Stop playback completely to clear scheduled audio and reset isPaused
+  if (wasPlaying || wasPaused) {
+    stop()
+  }
+
   store.config.seed = Math.floor(Math.random() * 0xFFFFFFFF)
-  generate()
+  await generate()
+
+  // Resume playback from saved position with new data
+  if (wasPlaying && eventData.value) {
+    await play(eventData.value, savedTick)
+  }
 }
 
 async function regenerateMelody() {
