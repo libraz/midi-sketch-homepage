@@ -629,6 +629,11 @@
   },
   "preview": {
     "infoText": "Made with MIDI Sketch. Algorithmically generated, no AI. Download as MIDI - edit every note.",
+    "errors": {
+      "noHash": "Invalid share URL",
+      "parseFailed": "Failed to parse URL. The URL may be corrupted.",
+      "invalidSeed": "Invalid share URL. Missing seed."
+    },
     "summary": {
       "style": "Style",
       "chord": "Chord",

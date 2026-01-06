@@ -136,18 +136,21 @@ onMounted(async () => {
   // Parse URL hash
   const hash = window.location.hash
   if (!hash) {
-    error.value = lang.value === 'ja'
-      ? '無効なシェアURLです'
-      : 'Invalid share URL'
+    error.value = t('preview.errors.noHash')
     isLoading.value = false
     return
   }
 
   decoded.value = decodeShareUrl(hash)
   if (!decoded.value) {
-    error.value = lang.value === 'ja'
-      ? 'URLの解析に失敗しました。URLが破損している可能性があります。'
-      : 'Failed to parse URL. The URL may be corrupted.'
+    error.value = t('preview.errors.parseFailed')
+    isLoading.value = false
+    return
+  }
+
+  // Validate seed (0 is invalid)
+  if (!decoded.value.config.seed) {
+    error.value = t('preview.errors.invalidSeed')
     isLoading.value = false
     return
   }

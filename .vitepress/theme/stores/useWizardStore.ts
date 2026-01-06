@@ -278,9 +278,19 @@ export function useWizardStore() {
   }
 
   // Reset specific config keys to their default values
+  // For song-image-dependent values, use the current song image's defaults
   function resetConfigKeys(keys: (keyof WizardConfig)[]) {
+    const image = currentSongImage.value
     for (const key of keys) {
-      (config as any)[key] = DEFAULT_CONFIG[key]
+      if (key === 'bpm') {
+        // Use the selected song image's default BPM
+        config.bpm = image?.tempoRange.default ?? DEFAULT_CONFIG.bpm
+      } else if (key === 'chordProgressionId') {
+        // Use the selected song image's first recommended chord
+        config.chordProgressionId = image?.recommendedChords[0] ?? DEFAULT_CONFIG.chordProgressionId
+      } else {
+        (config as any)[key] = DEFAULT_CONFIG[key]
+      }
     }
   }
 

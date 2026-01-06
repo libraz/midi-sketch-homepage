@@ -222,7 +222,10 @@ async function generate(overrideSeed?: number) {
     }
 
     // Use override seed if provided, otherwise use store seed or generate new one
-    const seed = overrideSeed ?? store.config.seed ?? Math.floor(Math.random() * 0xFFFFFFFF)
+    // Note: use || instead of ?? to treat 0 as invalid seed
+    const seed = overrideSeed || store.config.seed || Math.floor(Math.random() * 0xFFFFFFFF)
+    // Always save the seed back to store so it can be shared
+    store.config.seed = seed
 
     instance.generateFromConfig({
       stylePresetId: store.config.stylePresetId,

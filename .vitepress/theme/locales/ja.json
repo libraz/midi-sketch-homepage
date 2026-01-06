@@ -629,6 +629,11 @@
   },
   "preview": {
     "infoText": "MIDI Sketchで作成。AIを使わずアルゴリズムで生成。音符単位で編集可能なMIDIファイルを出力します。",
+    "errors": {
+      "noHash": "無効なシェアURLです",
+      "parseFailed": "URLの解析に失敗しました。URLが破損している可能性があります。",
+      "invalidSeed": "無効なシェアURLです。シードが含まれていません。"
+    },
     "summary": {
       "style": "スタイル",
       "chord": "コード",

@@ -232,9 +232,15 @@ function fromBase36(str: string): Uint8Array {
     num = num >> 8n
   }
 
-  // Ensure we have enough bytes for our data
+  // Ensure we have exactly TOTAL_BYTES
+  // Pad with leading zeros if too short
   while (bytes.length < TOTAL_BYTES) {
     bytes.unshift(0)
+  }
+
+  // Truncate leading bytes if too long (can happen with certain base36 values)
+  if (bytes.length > TOTAL_BYTES) {
+    bytes.splice(0, bytes.length - TOTAL_BYTES)
   }
 
   return new Uint8Array(bytes)
