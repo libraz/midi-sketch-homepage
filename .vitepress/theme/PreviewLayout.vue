@@ -151,6 +151,24 @@ onMounted(async () => {
 
     const config = decoded.value.config
 
+    // Validate vocalAttitude for the style
+    const stylePresets = midisketch.getStylePresets()
+    const stylePreset = stylePresets.find((p: any) => p.id === config.stylePresetId)
+    let validatedVocalAttitude = config.vocalAttitude ?? 0
+    if (stylePreset) {
+      const allowedAttitudes = stylePreset.allowedAttitudes
+      const attitudeFlag = 1 << validatedVocalAttitude
+      if ((allowedAttitudes & attitudeFlag) === 0) {
+        // Find first allowed attitude for this style
+        for (let i = 0; i < 3; i++) {
+          if ((allowedAttitudes & (1 << i)) !== 0) {
+            validatedVocalAttitude = i
+            break
+          }
+        }
+      }
+    }
+
     // Generate BGM first
     instance.generateFromConfig({
       stylePresetId: config.stylePresetId ?? 3,
@@ -159,7 +177,7 @@ onMounted(async () => {
       seed: config.seed ?? 0,
       chordProgressionId: config.chordProgressionId ?? 0,
       formId: config.formId ?? 5,
-      vocalAttitude: config.vocalAttitude ?? 0,
+      vocalAttitude: validatedVocalAttitude,
       drumsEnabled: config.drumsEnabled ?? true,
       arpeggioEnabled: config.arpeggioEnabled ?? false,
       arpeggioPattern: config.arpeggioPattern ?? 0,
@@ -205,7 +223,7 @@ onMounted(async () => {
         seed: config.seed ?? 0,
         vocalLow: config.vocalLow ?? 57,
         vocalHigh: config.vocalHigh ?? 79,
-        vocalAttitude: config.vocalAttitude ?? 0,
+        vocalAttitude: validatedVocalAttitude,
         vocalStyle: config.vocalStyle ?? 0,
         melodyTemplate: config.melodyTemplate ?? 0
       })
@@ -363,7 +381,7 @@ onUnmounted(() => {
           <!-- Info Section -->
           <div class="preview-card__info">
             <p class="info-text">{{ t('preview.infoText') }}</p>
-            <a v-if="!isMobile" :href="localePath('/')" class="try-link">
+            <a :href="localePath('/')" class="try-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
               </svg>

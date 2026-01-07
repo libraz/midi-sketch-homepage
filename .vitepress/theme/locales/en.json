@@ -648,7 +648,8 @@
     "copied": "Copied! Listen to the track and proceed to melody generation",
     "xShare": "Share this track on X",
     "tweetBgm": "I created a BGM track with MIDI Sketch!",
-    "tweetVocal": "I created a vocal melody with MIDI Sketch!"
+    "tweetVocal": "I created a vocal melody with MIDI Sketch!",
+    "tapToSelect": "Tap to select, then copy"
   },
   "preview": {
     "infoText": "Made with MIDI Sketch. Algorithmically generated, no AI. Download as MIDI - edit every note.",

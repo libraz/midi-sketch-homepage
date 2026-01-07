@@ -52,30 +52,35 @@ onMounted(async () => {
   }
 })
 
-async function generate() {
+function generate() {
   if (!instance) return
 
   isGenerating.value = true
   error.value = null
   midiData.value = null
+  info.value = ''
 
-  try {
-    // Generate using simple params
-    instance.generate({
-      structureId: selectedStyle.value % structures.value.length,
-      moodId: selectedStyle.value,
-      key: selectedKey.value,
-      seed: Math.floor(Math.random() * 0xFFFFFFFF)
-    })
+  // Use setTimeout to allow UI to update before blocking WASM call
+  setTimeout(() => {
+    try {
+      // Create config from selected style preset
+      const config = midisketch.createDefaultConfig(selectedStyle.value)
+      config.key = selectedKey.value
+      config.seed = Math.floor(Math.random() * 0xFFFFFFFF)
 
-    midiData.value = instance.getMidi()
-    const events = instance.getEvents()
-    info.value = `${events.totalBars} bars, ${events.bpm} BPM, ${events.tracks?.length || 0} tracks`
-  } catch (e: any) {
-    error.value = e.message
-  } finally {
-    isGenerating.value = false
-  }
+      // Generate using config-based API
+      instance.generateFromConfig(config)
+
+      midiData.value = instance.getMidi()
+      const events = instance.getEvents()
+      const totalBars = events.sections?.reduce((sum: number, s: any) => sum + (s.bars || 0), 0) || 0
+      info.value = `${totalBars} bars, ${events.bpm} BPM, ${events.tracks?.length || 0} tracks`
+    } catch (e: any) {
+      error.value = e.message
+    } finally {
+      isGenerating.value = false
+    }
+  }, 10)
 }
 
 function download() {

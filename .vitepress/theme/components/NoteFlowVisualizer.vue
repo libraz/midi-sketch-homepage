@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 
 interface Note {
   pitch: number
@@ -22,12 +22,10 @@ interface EventData {
 }
 
 interface ProcessedNote {
-  id: string
   pitch: number
   velocity: number
   startTick: number
   duration: number
-  trackIndex: number
   trackName: string
 }
 
@@ -38,586 +36,515 @@ const props = defineProps<{
   bpm: number
 }>()
 
-// Transition state for smooth idle -> playing
-const isTransitioning = ref(false)
-const showNotes = ref(false)
+// Canvas refs
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+let ctx: CanvasRenderingContext2D | null = null
+let animationFrame: number | null = null
+let dpr = 1
 
-// Watch for play state changes
+// State
+const showNotes = ref(false)
+let cachedNotes: ProcessedNote[] = []
+let pitchMin = 48
+let pitchMax = 84
+let playheadOpacity = 0
+let idleOpacity = 1
+
+// Track colors - cyberpunk neon palette
+const TRACK_COLORS: Record<string, { main: string; glow: string }> = {
+  Vocal: { main: '#E879F9', glow: 'rgba(232, 121, 249, 0.6)' },
+  Melody: { main: '#E879F9', glow: 'rgba(232, 121, 249, 0.6)' },
+  Chord: { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.6)' },
+  Chords: { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.6)' },
+  Bass: { main: '#7C3AED', glow: 'rgba(124, 58, 237, 0.6)' },
+  Drums: { main: '#C084FC', glow: 'rgba(192, 132, 252, 0.6)' },
+  Arpeggio: { main: '#818CF8', glow: 'rgba(129, 140, 248, 0.6)' },
+  Aux: { main: '#F472B6', glow: 'rgba(244, 114, 182, 0.6)' },
+}
+const DEFAULT_COLOR = { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.6)' }
+
+// Layout constants
+const PIANO_WIDTH = 45
+const HEADER_HEIGHT = 0
+const PIXELS_PER_TICK = 0.08
+const VISIBLE_WINDOW = 4800 // ticks visible ahead of playhead
+
+// Watch play state
 watch(() => props.isPlaying, (playing) => {
   if (playing) {
-    // Start transition animation
-    isTransitioning.value = true
-    // Delay showing notes for buildup effect
-    setTimeout(() => {
-      showNotes.value = true
-    }, 400)
-    // End transition
-    setTimeout(() => {
-      isTransitioning.value = false
-    }, 600)
+    setTimeout(() => { showNotes.value = true }, 200)
   } else {
     showNotes.value = false
-    isTransitioning.value = false
   }
 })
 
-// Purple-themed track colors
-const TRACK_COLORS: Record<string, { main: string; glow: string }> = {
-  Melody: { main: '#E879F9', glow: 'rgba(232, 121, 249, 0.8)' },  // Fuchsia
-  Vocal: { main: '#E879F9', glow: 'rgba(232, 121, 249, 0.8)' },   // Fuchsia
-  Chords: { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.8)' },   // Purple
-  Chord: { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.8)' },    // Purple
-  Bass: { main: '#7C3AED', glow: 'rgba(124, 58, 237, 0.8)' },     // Violet
-  Drums: { main: '#C084FC', glow: 'rgba(192, 132, 252, 0.8)' },   // Light Purple
-  Arpeggio: { main: '#818CF8', glow: 'rgba(129, 140, 248, 0.8)' }, // Indigo
-}
-
-const DEFAULT_COLOR = { main: '#A855F7', glow: 'rgba(168, 85, 247, 0.8)' }
-
-// Timing constants
-const LOOK_BEHIND = 240    // Show recently passed notes briefly
-const LOOK_AHEAD = 2880    // 6 beats ahead for dramatic runway
-
-// Process all notes
-const allNotes = computed<ProcessedNote[]>(() => {
-  if (!props.events?.tracks) return []
+// Process notes when events change
+watch(() => props.events, (events) => {
+  if (!events?.tracks) {
+    cachedNotes = []
+    return
+  }
 
   const notes: ProcessedNote[] = []
-  props.events.tracks.forEach((track, trackIndex) => {
-    if (!track.notes) return
-    track.notes.forEach((note, noteIndex) => {
+  let min = 127, max = 0
+
+  for (const track of events.tracks) {
+    if (!track.notes || track.name === 'Drums') continue
+    for (const note of track.notes) {
       notes.push({
-        id: `${track.name}-${noteIndex}`,
         pitch: note.pitch,
         velocity: note.velocity,
         startTick: note.start_ticks,
         duration: note.duration_ticks,
-        trackIndex,
         trackName: track.name
       })
-    })
-  })
-  return notes.sort((a, b) => a.startTick - b.startTick)
-})
-
-// Dynamic pitch range from actual data
-const pitchRange = computed(() => {
-  if (!allNotes.value.length) return { min: 48, max: 84 }
-
-  let min = 127, max = 0
-  for (const note of allNotes.value) {
-    if (note.pitch < min) min = note.pitch
-    if (note.pitch > max) max = note.pitch
+      if (note.pitch < min) min = note.pitch
+      if (note.pitch > max) max = note.pitch
+    }
   }
 
-  // Add padding
-  return {
-    min: Math.max(0, min - 4),
-    max: Math.min(127, max + 4)
-  }
-})
+  cachedNotes = notes
+  pitchMin = Math.max(0, min - 2)
+  pitchMax = Math.min(127, max + 2)
+}, { immediate: true })
 
-// Visible notes
-const visibleNotes = computed(() => {
-  const tick = props.currentTick || 0
-  return allNotes.value.filter(note => {
-    const noteEnd = note.startTick + note.duration
-    return note.startTick <= tick + LOOK_AHEAD && noteEnd >= tick - LOOK_BEHIND
-  }).slice(0, 150) // Limit for performance
-})
+// Setup canvas
+function setupCanvas() {
+  const canvas = canvasRef.value
+  if (!canvas) return
 
-// Calculate note style - true 3D positioning
-function getNoteStyle(note: ProcessedNote) {
-  const tick = props.currentTick || 0
-  const tickDiff = note.startTick - tick
-
-  // Z depth: 0 = at playhead, 1 = far horizon
-  const zDepth = Math.max(-0.15, Math.min(1, tickDiff / LOOK_AHEAD))
-
-  // X position: spread across lanes based on pitch
-  const range = pitchRange.value
-  const pitchNorm = (note.pitch - range.min) / (range.max - range.min)
-  // Create 5 virtual lanes for cleaner spread
-  const lane = Math.floor(pitchNorm * 5)
-  const laneOffset = (pitchNorm * 5) % 1
-  const xPercent = 10 + (lane * 18) + (laneOffset * 12) // 10-90% range
-
-  // Y position: follows the runway perspective (higher = further away)
-  // Maps zDepth 0->1 to bottom 5%->85% of the runway
-  const yPercent = 5 + zDepth * 80
-
-  // Get color
-  const colorSet = TRACK_COLORS[note.trackName] || DEFAULT_COLOR
-
-  // Scale by depth - more dramatic
-  const scale = Math.max(0.15, 1 - zDepth * 0.85)
-
-  // Opacity fades with distance
-  const opacity = zDepth < 0 ? 0.4 : Math.max(0.25, 1 - zDepth * 0.75)
-
-  // Height: taller bars for longer notes and higher velocity
-  const baseHeight = 24 + (note.velocity / 127) * 30
-  const durationBonus = Math.min(20, (note.duration / 480) * 10)
-  const height = baseHeight + durationBonus
-
-  return {
-    '--x': `${xPercent}%`,
-    '--y': `${yPercent}%`,
-    '--scale': scale,
-    '--opacity': opacity,
-    '--height': `${height}px`,
-    '--color': colorSet.main,
-    '--glow': colorSet.glow,
-    '--blur': `${Math.max(0, zDepth * 1.5)}px`,
-    '--past': zDepth < 0 ? 1 : 0
+  dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
+  ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.scale(dpr, dpr)
   }
 }
 
-// Idle animation
-const idlePhase = ref(0)
-let animationFrame: number | null = null
+// Draw background with subtle grid
+function drawBackground(w: number, h: number) {
+  if (!ctx) return
 
-function updateIdleAnimation() {
-  idlePhase.value = (Date.now() / 800) % (Math.PI * 4)
-  animationFrame = requestAnimationFrame(updateIdleAnimation)
+  // Deep dark background
+  ctx.fillStyle = '#08080c'
+  ctx.fillRect(0, 0, w, h)
+
+  // Subtle gradient overlay
+  const grad = ctx.createLinearGradient(0, 0, 0, h)
+  grad.addColorStop(0, 'rgba(139, 92, 246, 0.03)')
+  grad.addColorStop(0.5, 'transparent')
+  grad.addColorStop(1, 'rgba(124, 58, 237, 0.02)')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, w, h)
+}
+
+// Draw piano keys on left side
+function drawPianoKeys(w: number, h: number) {
+  if (!ctx) return
+
+  const pitchRange = pitchMax - pitchMin + 1
+  const noteHeight = h / pitchRange
+
+  // Piano background
+  ctx.fillStyle = '#0c0c14'
+  ctx.fillRect(0, 0, PIANO_WIDTH, h)
+
+  // Draw each key
+  for (let i = 0; i <= pitchRange; i++) {
+    const pitch = pitchMax - i
+    const y = i * noteHeight
+    const noteName = pitch % 12
+    const isBlack = [1, 3, 6, 8, 10].includes(noteName)
+
+    if (isBlack) {
+      ctx.fillStyle = '#1a1a24'
+      ctx.fillRect(0, y, PIANO_WIDTH - 8, noteHeight)
+    } else {
+      ctx.fillStyle = '#252532'
+      ctx.fillRect(0, y, PIANO_WIDTH, noteHeight)
+    }
+
+    // Key border
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.1)'
+    ctx.lineWidth = 0.5
+    ctx.beginPath()
+    ctx.moveTo(0, y + noteHeight)
+    ctx.lineTo(PIANO_WIDTH, y + noteHeight)
+    ctx.stroke()
+
+    // Note label for C notes
+    if (noteName === 0) {
+      const octave = Math.floor(pitch / 12) - 1
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+      ctx.font = '9px "JetBrains Mono", monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(`C${octave}`, PIANO_WIDTH / 2, y + noteHeight / 2 + 3)
+    }
+  }
+
+  // Right edge glow
+  const edgeGrad = ctx.createLinearGradient(PIANO_WIDTH - 2, 0, PIANO_WIDTH + 4, 0)
+  edgeGrad.addColorStop(0, 'rgba(139, 92, 246, 0.3)')
+  edgeGrad.addColorStop(1, 'transparent')
+  ctx.fillStyle = edgeGrad
+  ctx.fillRect(PIANO_WIDTH - 2, 0, 6, h)
+}
+
+// Draw horizontal grid lines
+function drawGrid(w: number, h: number, scrollX: number) {
+  if (!ctx) return
+
+  const pitchRange = pitchMax - pitchMin + 1
+  const noteHeight = h / pitchRange
+  const rollX = PIANO_WIDTH
+
+  // Horizontal pitch lines
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.08)'
+  ctx.lineWidth = 0.5
+
+  for (let i = 0; i <= pitchRange; i++) {
+    const y = i * noteHeight
+    ctx.beginPath()
+    ctx.moveTo(rollX, y)
+    ctx.lineTo(w, y)
+    ctx.stroke()
+  }
+
+  // Vertical beat lines
+  const ppq = props.events?.division || 480
+  const ticksPerBeat = ppq
+  const ticksPerBar = ppq * 4
+  const startTick = Math.floor(scrollX / PIXELS_PER_TICK / ticksPerBeat) * ticksPerBeat
+
+  for (let tick = startTick; tick < startTick + VISIBLE_WINDOW * 2; tick += ticksPerBeat) {
+    const x = rollX + (tick * PIXELS_PER_TICK) - scrollX
+    if (x < rollX || x > w) continue
+
+    const isBar = tick % ticksPerBar === 0
+    ctx.strokeStyle = isBar ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.06)'
+    ctx.lineWidth = isBar ? 1 : 0.5
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, h)
+    ctx.stroke()
+  }
+}
+
+// Draw notes
+function drawNotes(w: number, h: number, scrollX: number, currentTick: number) {
+  if (!ctx || !showNotes.value) return
+
+  const pitchRange = pitchMax - pitchMin + 1
+  const noteHeight = h / pitchRange
+  const rollX = PIANO_WIDTH
+
+  // Calculate visible tick range
+  const visibleStartTick = scrollX / PIXELS_PER_TICK
+  const visibleEndTick = visibleStartTick + (w - rollX) / PIXELS_PER_TICK
+
+  for (const note of cachedNotes) {
+    const noteEnd = note.startTick + note.duration
+
+    // Skip if not visible
+    if (noteEnd < visibleStartTick || note.startTick > visibleEndTick) continue
+
+    const x = rollX + (note.startTick * PIXELS_PER_TICK) - scrollX
+    const noteWidth = Math.max(2, note.duration * PIXELS_PER_TICK)
+    const y = (pitchMax - note.pitch) * noteHeight
+    const barHeight = noteHeight - 1
+
+    // Skip if off screen
+    if (x + noteWidth < rollX || x > w) continue
+
+    const colors = TRACK_COLORS[note.trackName] || DEFAULT_COLOR
+    const isActive = currentTick >= note.startTick && currentTick < noteEnd
+    const isPast = currentTick > noteEnd
+
+    ctx.save()
+
+    // Clip to roll area
+    ctx.beginPath()
+    ctx.rect(rollX, 0, w - rollX, h)
+    ctx.clip()
+
+    // Glow effect for active notes
+    if (isActive) {
+      ctx.shadowColor = colors.glow
+      ctx.shadowBlur = 15
+    }
+
+    // Note body
+    const alpha = isPast ? 0.4 : (isActive ? 1 : 0.75)
+    ctx.globalAlpha = alpha
+
+    // Gradient fill
+    const noteGrad = ctx.createLinearGradient(x, y, x, y + barHeight)
+    noteGrad.addColorStop(0, lightenColor(colors.main, isActive ? 30 : 15))
+    noteGrad.addColorStop(0.5, colors.main)
+    noteGrad.addColorStop(1, darkenColor(colors.main, 20))
+    ctx.fillStyle = noteGrad
+
+    // Rounded rectangle
+    const radius = Math.min(3, barHeight / 2)
+    ctx.beginPath()
+    ctx.roundRect(x, y, noteWidth, barHeight, radius)
+    ctx.fill()
+
+    // Top highlight
+    if (!isPast) {
+      ctx.globalAlpha = 0.4
+      const highlightGrad = ctx.createLinearGradient(x, y, x, y + barHeight * 0.4)
+      highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.5)')
+      highlightGrad.addColorStop(1, 'transparent')
+      ctx.fillStyle = highlightGrad
+      ctx.beginPath()
+      ctx.roundRect(x, y, noteWidth, barHeight * 0.4, [radius, radius, 0, 0])
+      ctx.fill()
+    }
+
+    ctx.restore()
+  }
+}
+
+// Draw playhead with fade support
+function drawPlayhead(w: number, h: number, scrollX: number, currentTick: number) {
+  if (!ctx || currentTick <= 0 || playheadOpacity <= 0) return
+
+  const rollX = PIANO_WIDTH
+  const x = rollX + (currentTick * PIXELS_PER_TICK) - scrollX
+
+  if (x < rollX || x > w) return
+
+  ctx.save()
+  ctx.globalAlpha = playheadOpacity
+  ctx.beginPath()
+  ctx.rect(rollX, 0, w - rollX, h)
+  ctx.clip()
+
+  // Playhead glow
+  const glowGrad = ctx.createLinearGradient(x - 20, 0, x + 20, 0)
+  glowGrad.addColorStop(0, 'transparent')
+  glowGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.15)')
+  glowGrad.addColorStop(1, 'transparent')
+  ctx.fillStyle = glowGrad
+  ctx.fillRect(x - 20, 0, 40, h)
+
+  // Playhead line
+  ctx.strokeStyle = '#EC4899'
+  ctx.lineWidth = 2
+  ctx.shadowColor = 'rgba(236, 72, 153, 0.8)'
+  ctx.shadowBlur = 8
+  ctx.beginPath()
+  ctx.moveTo(x, 0)
+  ctx.lineTo(x, h)
+  ctx.stroke()
+
+  // Top marker
+  ctx.fillStyle = '#EC4899'
+  ctx.beginPath()
+  ctx.moveTo(x - 6, 0)
+  ctx.lineTo(x + 6, 0)
+  ctx.lineTo(x, 8)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.restore()
+}
+
+// Draw idle state - original style with animated bars
+function drawIdle(w: number, h: number, time: number) {
+  if (!ctx || idleOpacity <= 0) return
+
+  ctx.save()
+  ctx.globalAlpha = idleOpacity
+
+  const centerX = w / 2
+  const centerY = h * 0.45
+
+  // Ambient glow
+  const glowGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 150)
+  glowGrad.addColorStop(0, 'rgba(168, 85, 247, 0.12)')
+  glowGrad.addColorStop(0.5, 'rgba(124, 58, 237, 0.06)')
+  glowGrad.addColorStop(1, 'transparent')
+  ctx.fillStyle = glowGrad
+  ctx.fillRect(0, 0, w, h)
+
+  // Animated equalizer bars
+  const barCount = 7
+  const barWidth = 14
+  const barGap = 10
+  const totalWidth = barCount * barWidth + (barCount - 1) * barGap
+  const startX = centerX - totalWidth / 2
+  const baseY = centerY + 40
+
+  for (let i = 0; i < barCount; i++) {
+    const phase = (time / 800) + (i * 0.6)
+    const heightPercent = 25 + Math.sin(phase) * 20 + Math.sin(phase * 1.5) * 15
+    const height = heightPercent * 0.9
+
+    const x = startX + i * (barWidth + barGap)
+    const y = baseY - height
+
+    // Purple spectrum gradient
+    const hue = 270 + (i / barCount) * 20
+    const lightness = 60 + (i / barCount) * 15
+    const color = `hsl(${hue}, 75%, ${lightness}%)`
+
+    // Bar glow
+    ctx.shadowColor = `hsla(${hue}, 75%, ${lightness}%, 0.6)`
+    ctx.shadowBlur = 18
+
+    // Bar gradient (top bright, bottom transparent)
+    const barGrad = ctx.createLinearGradient(0, y, 0, baseY)
+    barGrad.addColorStop(0, color)
+    barGrad.addColorStop(1, 'transparent')
+    ctx.fillStyle = barGrad
+
+    // Draw rounded bar
+    ctx.beginPath()
+    ctx.roundRect(x, y, barWidth, height, [7, 7, 2, 2])
+    ctx.fill()
+  }
+
+  // READY label
+  ctx.shadowBlur = 15
+  ctx.shadowColor = 'rgba(168, 85, 247, 0.6)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+  ctx.font = '700 14px "JetBrains Mono", monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText('R E A D Y', centerX, baseY + 35)
+
+  ctx.shadowBlur = 0
+  ctx.restore()
+}
+
+// Draw CRT scanline effect
+function drawScanlines(w: number, h: number) {
+  if (!ctx) return
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.03)'
+  for (let y = 0; y < h; y += 3) {
+    ctx.fillRect(0, y, w, 1)
+  }
+}
+
+// Color utilities
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.slice(1), 16)
+  const r = Math.min(255, (num >> 16) + Math.round(2.55 * percent))
+  const g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round(2.55 * percent))
+  const b = Math.min(255, (num & 0x0000FF) + Math.round(2.55 * percent))
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.slice(1), 16)
+  const r = Math.max(0, (num >> 16) - Math.round(2.55 * percent))
+  const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(2.55 * percent))
+  const b = Math.max(0, (num & 0x0000FF) - Math.round(2.55 * percent))
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+// Main render loop
+function render() {
+  if (!ctx || !canvasRef.value) {
+    animationFrame = requestAnimationFrame(render)
+    return
+  }
+
+  const canvas = canvasRef.value
+  const w = canvas.width / dpr
+  const h = canvas.height / dpr
+  const time = Date.now()
+  const currentTick = props.currentTick || 0
+
+  // Animate opacity transitions (different speeds)
+  const playheadFadeSpeed = 0.05  // Slower for playhead/notes
+  const idleFadeSpeed = 0.12      // Faster for READY bars
+  const targetPlayheadOpacity = showNotes.value ? 1 : 0
+  const targetIdleOpacity = showNotes.value ? 0 : 1
+  playheadOpacity += (targetPlayheadOpacity - playheadOpacity) * playheadFadeSpeed
+  idleOpacity += (targetIdleOpacity - idleOpacity) * idleFadeSpeed
+
+  // Clamp small values to 0 for performance
+  if (playheadOpacity < 0.01) playheadOpacity = 0
+  if (idleOpacity < 0.01) idleOpacity = 0
+  if (playheadOpacity > 0.99) playheadOpacity = 1
+  if (idleOpacity > 0.99) idleOpacity = 1
+
+  // Calculate scroll position (keep playhead at 30% from left)
+  const rollWidth = w - PIANO_WIDTH
+  const scrollX = Math.max(0, (currentTick * PIXELS_PER_TICK) - rollWidth * 0.3)
+
+  // Clear and draw layers
+  drawBackground(w, h)
+  drawGrid(w, h, scrollX)
+  drawNotes(w, h, scrollX, currentTick)
+  drawPlayhead(w, h, scrollX, currentTick)
+  drawPianoKeys(w, h)
+  drawIdle(w, h, time)
+  drawScanlines(w, h)
+
+  animationFrame = requestAnimationFrame(render)
 }
 
 onMounted(() => {
-  animationFrame = requestAnimationFrame(updateIdleAnimation)
+  setupCanvas()
+  window.addEventListener('resize', setupCanvas)
+  animationFrame = requestAnimationFrame(render)
 })
 
 onUnmounted(() => {
   if (animationFrame) cancelAnimationFrame(animationFrame)
-})
-
-// Generate idle bars with wave pattern
-const idleBars = computed(() => {
-  const bars = []
-  const count = 7
-  for (let i = 0; i < count; i++) {
-    const phase = idlePhase.value + (i * 0.6)
-    const height = 25 + Math.sin(phase) * 20 + Math.sin(phase * 1.5) * 15
-    // Purple spectrum: 270 (violet) to 290 (fuchsia)
-    const hue = 270 + (i / count) * 20
-    const lightness = 60 + (i / count) * 15
-    bars.push({
-      id: i,
-      height: `${height}%`,
-      color: `hsl(${hue}, 75%, ${lightness}%)`,
-      glow: `hsla(${hue}, 75%, ${lightness}%, 0.6)`,
-      delay: i * 0.08
-    })
-  }
-  return bars
+  window.removeEventListener('resize', setupCanvas)
 })
 </script>
 
 <template>
-  <div class="visualizer" :class="{
-    'visualizer--playing': isPlaying,
-    'visualizer--transitioning': isTransitioning
-  }">
-    <!-- Ambient background effects -->
-    <div class="visualizer__ambient">
-      <div class="ambient__gradient"></div>
-      <div class="ambient__stars"></div>
-      <div class="ambient__scanlines"></div>
-    </div>
-
-    <!-- 3D Stage -->
-    <div class="visualizer__stage">
-      <!-- Runway floor with notes inside (same perspective) -->
-      <div class="stage__runway">
-        <div class="runway__grid"></div>
-        <div class="runway__horizon"></div>
-
-        <!-- Notes inside runway for correct perspective -->
-        <template v-if="showNotes && currentTick > 0">
-          <div
-            v-for="note in visibleNotes"
-            :key="note.id"
-            class="note"
-            :style="getNoteStyle(note)"
-          >
-            <div class="note__bar"></div>
-          </div>
-        </template>
-
-        <!-- Hit zone inside runway -->
-        <div class="runway__hitzone"></div>
-      </div>
-
-      <!-- Idle state with morph animation -->
-      <div class="stage__idle" :class="{ 'stage__idle--morphing': isTransitioning || isPlaying }">
-        <div class="idle__bars">
-          <div
-            v-for="bar in idleBars"
-            :key="bar.id"
-            class="idle__bar"
-            :style="{
-              '--height': bar.height,
-              '--color': bar.color,
-              '--glow': bar.glow,
-              '--delay': `${bar.delay}s`,
-              '--index': bar.id
-            }"
-          ></div>
-        </div>
-        <div class="idle__label">READY</div>
-      </div>
-    </div>
-
+  <div class="piano-roll-viz">
+    <canvas ref="canvasRef" class="piano-roll-viz__canvas"></canvas>
+    <div class="piano-roll-viz__vignette"></div>
   </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-.visualizer {
-  --primary: #A855F7;
-  --secondary: #E879F9;
-  --accent: #C084FC;
-  --surface: #0a0a12;
-
+.piano-roll-viz {
   position: relative;
   width: 100%;
   height: 240px;
-  background: var(--surface);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  font-family: 'Orbitron', sans-serif;
+  background: #08080c;
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.2),
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 60px rgba(139, 92, 246, 0.03);
 }
 
-/* Ambient background */
-.visualizer__ambient {
+.piano-roll-viz__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.piano-roll-viz__vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.ambient__gradient {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168, 85, 247, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-    linear-gradient(180deg, #0a0a12 0%, #110a1a 100%);
-}
-
-.ambient__stars {
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 70% 40%, rgba(168, 85, 247, 0.6) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 30% 80%, rgba(232, 121, 249, 0.5) 0%, transparent 100%);
-}
-
-.ambient__scanlines {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0px,
-    transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
-  );
-  opacity: 0.5;
-}
-
-/* 3D Stage */
-.visualizer__stage {
-  position: absolute;
-  inset: 0;
-  perspective: 500px;
-  perspective-origin: 50% 65%;
-}
-
-/* Runway floor */
-.stage__runway {
-  position: absolute;
-  left: 5%;
-  right: 5%;
-  bottom: 0;
-  height: 75%;
-  transform: rotateX(75deg);
-  transform-origin: bottom center;
-  transform-style: preserve-3d;
-}
-
-.runway__grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      transparent 0%,
-      transparent calc(20% - 1px),
-      rgba(168, 85, 247, 0.3) calc(20% - 1px),
-      rgba(168, 85, 247, 0.3) 20%
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(168, 85, 247, 0.15) 0px,
-      rgba(168, 85, 247, 0.15) 1px,
-      transparent 1px,
-      transparent 40px
-    );
-  mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
-  animation: gridScroll 2s linear infinite;
-}
-
-.visualizer--playing .runway__grid {
-  animation-duration: 0.8s;
-}
-
-@keyframes gridScroll {
-  from { background-position-y: 0; }
-  to { background-position-y: 40px; }
-}
-
-.runway__horizon {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg,
+  background: radial-gradient(
+    ellipse 80% 80% at 50% 50%,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 20%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(255, 255, 255, 0.3) 80%,
-    transparent 100%
+    rgba(8, 8, 12, 0.4) 100%
   );
-  filter: blur(0.5px);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
-/* Hit zone inside runway */
-.runway__hitzone {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 5%;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(232, 121, 249, 0.5) 10%,
-    rgba(232, 121, 249, 1) 50%,
-    rgba(232, 121, 249, 0.5) 90%,
-    transparent 100%
-  );
-  box-shadow:
-    0 0 15px rgba(232, 121, 249, 0.8),
-    0 0 40px rgba(168, 85, 247, 0.4);
-  z-index: 5;
-}
-
-/* Individual note - inside runway, follows perspective */
-.note {
-  position: absolute;
-  left: var(--x);
-  bottom: var(--y);
-  transform: translateX(-50%) scale(var(--scale));
-  opacity: var(--opacity);
-  filter: blur(var(--blur));
-  transition: none;
-  will-change: transform, opacity, bottom;
-  z-index: 10;
-}
-
-.note__bar {
-  width: 10px;
-  height: var(--height);
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--color), white 30%) 0%,
-    var(--color) 40%,
-    color-mix(in srgb, var(--color), black 20%) 100%
-  );
-  border-radius: 5px;
-  box-shadow:
-    0 0 12px var(--glow),
-    0 0 25px var(--glow),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-  position: relative;
-}
-
-.note__bar::before {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 2px;
-  right: 2px;
-  height: 25%;
-  background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    transparent 100%
-  );
-  border-radius: 3px;
-}
-
-/* Idle state - positioned above runway */
-.stage__idle {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 15%;
-  bottom: 35%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  z-index: 20;
-  transition: opacity 0.5s ease;
-}
-
-.idle__bars {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 10px;
-  height: 80px;
-  position: relative;
-}
-
-.idle__bar {
-  width: 14px;
-  height: var(--height);
-  background: linear-gradient(180deg, var(--color) 0%, transparent 100%);
-  border-radius: 7px 7px 2px 2px;
-  box-shadow: 0 0 18px var(--glow);
-  animation: barPulse 1.5s ease-in-out infinite;
-  animation-delay: var(--delay);
-  transition:
-    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-    width 0.5s ease,
-    height 0.5s ease,
-    opacity 0.4s ease,
-    border-radius 0.4s ease;
-  transition-delay: calc(var(--index) * 0.03s);
-}
-
-@keyframes barPulse {
-  0%, 100% { transform: scaleY(1); filter: brightness(1); }
-  50% { transform: scaleY(0.75); filter: brightness(0.85); }
-}
-
-.idle__label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.4em;
-  color: rgba(255, 255, 255, 0.5);
-  text-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
-  margin-top: 0.5rem;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Morphing state - bars transform to runway */
-.stage__idle--morphing {
-  pointer-events: none;
-}
-
-.stage__idle--morphing .idle__bars {
-  gap: 0;
-}
-
-.stage__idle--morphing .idle__bar {
-  animation: none;
-  width: 60px;
-  height: 4px !important;
-  border-radius: 2px;
-  opacity: 0;
-  transform:
-    translateY(120px)
-    translateX(calc((var(--index) - 3) * 40px))
-    scaleX(2);
-  box-shadow: 0 0 25px var(--glow);
-}
-
-.stage__idle--morphing .idle__label {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.8);
-}
-
-/* Transitioning state - speed up grid */
-.visualizer--transitioning .runway__grid {
-  animation-duration: 0.4s;
-}
-
-.visualizer--transitioning .runway__hitzone {
-  animation: hitzoneFlash 0.5s ease-out;
-}
-
-@keyframes hitzoneFlash {
-  0% {
-    box-shadow:
-      0 0 15px rgba(232, 121, 249, 0.8),
-      0 0 40px rgba(168, 85, 247, 0.4);
-  }
-  50% {
-    box-shadow:
-      0 0 40px rgba(232, 121, 249, 1),
-      0 0 80px rgba(232, 121, 249, 0.8),
-      0 0 120px rgba(168, 85, 247, 0.5);
-  }
-  100% {
-    box-shadow:
-      0 0 15px rgba(232, 121, 249, 0.8),
-      0 0 40px rgba(168, 85, 247, 0.4);
-  }
-}
-
-/* Responsive */
 @media (max-width: 640px) {
-  .visualizer {
-    height: 200px;
-  }
-
-  .visualizer__stage {
-    perspective: 400px;
-  }
-
-  .stage__idle {
-    top: 12%;
-    bottom: 40%;
-  }
-
-  .idle__bars {
-    gap: 6px;
-    height: 60px;
-  }
-
-  .idle__bar {
-    width: 10px;
-  }
-
-  .idle__label {
-    font-size: 0.75rem;
-  }
-
-  .stage__idle--morphing .idle__bar {
-    width: 40px;
-    transform:
-      translateY(100px)
-      translateX(calc((var(--index) - 3) * 30px))
-      scaleX(1.5);
-  }
-
-  .note__bar {
-    width: 8px;
-  }
-
-  .hud__bpm {
-    padding: 6px 10px;
-  }
-
-  .bpm__value {
-    font-size: 1rem;
+  .piano-roll-viz {
+    height: 180px;
   }
 }
 </style>

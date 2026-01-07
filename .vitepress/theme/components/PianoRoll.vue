@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
 const { t } = useI18n()
@@ -28,13 +28,6 @@ interface Section {
   end_seconds: number
 }
 
-function getNoteValue(note: Note, key: 'pitch' | 'start' | 'duration'): number {
-  if (key === 'pitch') return note.pitch ?? note.note ?? 60
-  if (key === 'start') return note.start_ticks ?? note.start ?? 0
-  if (key === 'duration') return note.duration_ticks ?? note.duration ?? 480
-  return 0
-}
-
 interface EventData {
   bpm: number
   ppq: number
@@ -43,6 +36,13 @@ interface EventData {
     notes: Note[]
   }[]
   sections?: Section[]
+}
+
+function getNoteValue(note: Note, key: 'pitch' | 'start' | 'duration'): number {
+  if (key === 'pitch') return note.pitch ?? note.note ?? 60
+  if (key === 'start') return note.start_ticks ?? note.start ?? 0
+  if (key === 'duration') return note.duration_ticks ?? note.duration ?? 480
+  return 0
 }
 
 const props = defineProps<{
@@ -56,38 +56,15 @@ const emit = defineEmits<{
   instrumentChange: [payload: { track: string; instrument: 'piano' | 'guitar' }]
 }>()
 
-// Instrument selection for Chords track
-const chordsInstrument = ref<'piano' | 'guitar'>('piano')
-
-function toggleChordsInstrument() {
-  chordsInstrument.value = chordsInstrument.value === 'piano' ? 'guitar' : 'piano'
-  emit('instrumentChange', { track: 'Chords', instrument: chordsInstrument.value })
-}
-
-function handleSectionClick(section: Section) {
-  const tick = section.start_ticks ?? section.startTick
-  emit('seek', tick)
-}
-
-// Track colors by name for consistent coloring
+// Track colors
 const TRACK_COLOR_MAP: Record<string, string> = {
-  'Vocal': '#8B5CF6',   // Purple - Main melody
-  'Aux': '#FBBF24',     // Yellow/Amber - Sub melody/pad
-  'Chord': '#EC4899',   // Pink - Chords
-  'Bass': '#10B981',    // Green - Bass
-  'Motif': '#F97316',   // Orange - Motif
-  'Arpeggio': '#3B82F6', // Blue - Arpeggio
+  'Vocal': '#8B5CF6',
+  'Aux': '#FBBF24',
+  'Chord': '#EC4899',
+  'Bass': '#10B981',
+  'Motif': '#F97316',
+  'Arpeggio': '#3B82F6',
 }
-
-// Fallback colors for unknown tracks
-const TRACK_COLORS = [
-  '#8B5CF6', // Purple
-  '#A855F7', // Violet
-  '#EC4899', // Pink
-  '#10B981', // Green
-  '#F59E0B', // Orange
-  '#3B82F6', // Blue
-]
 
 const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }> = {
   Intro: { bg: 'rgba(59, 130, 246, 0.15)', glow: '#3B82F6', text: '#93C5FD' },
@@ -101,269 +78,404 @@ const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }>
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
-const notesAreaRef = ref<HTMLElement | null>(null)
+// Canvas refs
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const containerRef = ref<HTMLElement | null>(null)
+const sectionTimelineRef = ref<HTMLElement | null>(null)
+
+// State
 const scrollLeft = ref(0)
+const canvasWidth = ref(800)
+const canvasHeight = ref(180)
+const dpr = ref(1)
 
-function getTrackNotes(track: any): Note[] {
-  return track.notes || track.events || []
-}
+// Instrument selection
+const chordsInstrument = ref<'piano' | 'guitar'>('piano')
 
+// Computed values
 const noteRange = computed(() => {
   if (!props.events?.tracks) return { min: 48, max: 84 }
-
-  let min = 127
-  let max = 0
-
+  let min = 127, max = 0
   for (const track of props.events.tracks) {
     if (track.name === 'Drums') continue
-    const notes = getTrackNotes(track)
+    const notes = track.notes || []
     for (const note of notes) {
       const pitch = getNoteValue(note, 'pitch')
       if (pitch < min) min = pitch
       if (pitch > max) max = pitch
     }
   }
-
-  if (min > max) {
-    return { min: 48, max: 84 }
-  }
-
-  return {
-    min: Math.max(0, min - 2),
-    max: Math.min(127, max + 2)
-  }
+  if (min > max) return { min: 48, max: 84 }
+  return { min: Math.max(0, min - 2), max: Math.min(127, max + 2) }
 })
 
 const timeRange = computed(() => {
   if (!props.events?.tracks) return { max: 1920 }
-
   let max = 0
   for (const track of props.events.tracks) {
-    const notes = getTrackNotes(track)
+    const notes = track.notes || []
     for (const note of notes) {
-      const start = getNoteValue(note, 'start')
-      const duration = getNoteValue(note, 'duration')
-      const end = start + duration
+      const end = getNoteValue(note, 'start') + getNoteValue(note, 'duration')
       if (end > max) max = end
     }
   }
-
-  return { max: max + 480 }
+  return { max: Math.min(max + 480, 1000000) }
 })
 
-const visibleTracks = computed(() => {
-  if (!props.events?.tracks) return []
-
-  return props.events.tracks
-    .filter(t => t.name !== 'Drums')
-    .map(t => {
-      const rawNotes = t.notes || t.events || []
-      const normalizedNotes = rawNotes.map((n: Note) => ({
-        note: getNoteValue(n, 'pitch'),
-        start: getNoteValue(n, 'start'),
-        duration: getNoteValue(n, 'duration'),
-        velocity: n.velocity
-      }))
-      return {
-        ...t,
-        notes: normalizedNotes
-      }
-    })
-    .filter(t => t.notes.length > 0) // Only show tracks with notes
-})
-
-const sections = computed(() => {
-  return props.events?.sections || []
-})
-
-function noteToY(note: number): number {
-  const range = noteRange.value.max - noteRange.value.min
-  const normalized = (noteRange.value.max - note) / range
-  return normalized * 100
-}
-
-function tickToX(tick: number): number {
-  const ppq = props.events?.ppq || 480
-  return (tick / (4 * ppq)) * 200
-}
-
-function durationToWidth(duration: number): number {
-  const ppq = props.events?.ppq || 480
-  return (duration / (4 * ppq)) * 200
-}
-
-const noteHeight = computed(() => {
-  const range = noteRange.value.max - noteRange.value.min
-  return 100 / (range + 1)
-})
+const ppq = computed(() => props.events?.ppq || 480)
 
 const totalWidth = computed(() => {
-  return tickToX(timeRange.value.max)
+  return (timeRange.value.max / (4 * ppq.value)) * 200
 })
 
-const pianoKeys = computed(() => {
-  const keys = []
-  for (let note = noteRange.value.max; note >= noteRange.value.min; note--) {
-    const octave = Math.floor(note / 12) - 1
-    const noteName = NOTE_NAMES[note % 12]
-    const isBlack = noteName.includes('#') || noteName.includes('b')
-    keys.push({
-      note,
-      name: `${noteName}${octave}`,
-      isBlack
-    })
+const sections = computed(() => props.events?.sections || [])
+
+// Conversion functions
+function tickToX(tick: number): number {
+  return (tick / (4 * ppq.value)) * 200
+}
+
+function xToTick(x: number): number {
+  return (x / 200) * 4 * ppq.value
+}
+
+function noteToY(note: number, height: number): number {
+  const range = noteRange.value.max - noteRange.value.min
+  return ((noteRange.value.max - note) / range) * height
+}
+
+function getNoteHeight(height: number): number {
+  const range = noteRange.value.max - noteRange.value.min
+  return height / (range + 1)
+}
+
+// Current position info
+const currentBar = computed(() => {
+  if (!props.currentTick || !props.events) return 1
+  return Math.floor(props.currentTick / (4 * ppq.value)) + 1
+})
+
+const currentBeat = computed(() => {
+  if (!props.currentTick || !props.events) return 1
+  const barTicks = 4 * ppq.value
+  return Math.floor((props.currentTick % barTicks) / ppq.value) + 1
+})
+
+const activeSection = computed(() => {
+  if (!props.currentTick || !sections.value.length) return null
+  for (const section of sections.value) {
+    const start = section.start_ticks ?? section.startTick
+    const end = section.end_ticks ?? section.endTick
+    if (props.currentTick >= start && props.currentTick < end) return section
   }
-  return keys
+  return null
 })
 
-const gridLines = computed(() => {
-  const lines = []
-  const ppq = props.events?.ppq || 480
-  const barTicks = 4 * ppq
-  const bars = Math.ceil(timeRange.value.max / barTicks)
+// Time formatting
+function ticksToSeconds(ticks: number): number {
+  if (!props.events) return 0
+  const bpm = props.events.bpm || 120
+  return ticks * (60 / bpm / ppq.value)
+}
 
-  for (let i = 0; i <= bars; i++) {
-    lines.push({
-      x: tickToX(i * barTicks),
-      bar: i + 1
-    })
-  }
-  return lines
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  const cs = Math.floor((seconds % 1) * 100)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${cs.toString().padStart(2, '0')}`
+}
+
+const currentTimeFormatted = computed(() => formatTime(ticksToSeconds(props.currentTick || 0)))
+const totalTimeFormatted = computed(() => formatTime(ticksToSeconds(timeRange.value.max)))
+const totalBars = computed(() => sections.value.reduce((sum, s) => sum + s.bars, 0))
+const progressPercent = computed(() => {
+  if (!props.currentTick || !timeRange.value.max) return 0
+  return Math.min(100, (props.currentTick / timeRange.value.max) * 100)
 })
 
-function getTrackColor(trackName: string, trackIndex: number): string {
-  return TRACK_COLOR_MAP[trackName] || TRACK_COLORS[trackIndex % TRACK_COLORS.length]
+// Visible tracks for legend
+const visibleTracks = computed(() => {
+  if (!props.events?.tracks) return []
+  return props.events.tracks.filter(t => t.name !== 'Drums' && t.notes?.length > 0)
+})
+
+function getTrackColor(trackName: string): string {
+  return TRACK_COLOR_MAP[trackName] || '#8B5CF6'
 }
 
 function getSectionColor(type: string) {
   return SECTION_COLORS[type] || SECTION_COLORS['A']
 }
 
-function handleScroll(e: Event) {
-  const target = e.target as HTMLElement
-  scrollLeft.value = target.scrollLeft
-}
-
-const playheadX = computed(() => {
-  if (!props.currentTick) return 0
-  return tickToX(props.currentTick)
-})
-
-// Current bar calculation
-const currentBar = computed(() => {
-  if (!props.currentTick || !props.events) return 1
-  const ppq = props.events.ppq || 480
-  const barTicks = 4 * ppq
-  return Math.floor(props.currentTick / barTicks) + 1
-})
-
-// Current beat within bar
-const currentBeat = computed(() => {
-  if (!props.currentTick || !props.events) return 1
-  const ppq = props.events.ppq || 480
-  const barTicks = 4 * ppq
-  const ticksInBar = props.currentTick % barTicks
-  return Math.floor(ticksInBar / ppq) + 1
-})
-
-// Active section
-const activeSection = computed(() => {
-  if (!props.currentTick || !sections.value.length) return null
-
-  for (const section of sections.value) {
-    const startTick = section.start_ticks ?? section.startTick
-    const endTick = section.end_ticks ?? section.endTick
-    if (props.currentTick >= startTick && props.currentTick < endTick) {
-      return section
-    }
-  }
-  return null
-})
-
-// Also sync section timeline scroll with notes area
-const sectionTimelineRef = ref<HTMLElement | null>(null)
-
-// Auto-scroll to keep playhead centered during playback
-watch(() => props.currentTick, (tick) => {
-  // If tick is 0 or undefined, scroll to beginning
-  if (!tick || tick === 0) {
-    if (notesAreaRef.value) notesAreaRef.value.scrollLeft = 0
-    if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = 0
-    return
-  }
-
-  // Only auto-scroll during playback
-  if (!props.isPlaying) return
-
-  const playheadPos = tickToX(tick)
-
-  // Scroll notes area
-  if (notesAreaRef.value) {
-    const containerWidth = notesAreaRef.value.clientWidth
-    const targetScrollPos = playheadPos - containerWidth * 0.3
-    notesAreaRef.value.scrollLeft = Math.max(0, targetScrollPos)
-  }
-
-  // Scroll section timeline
-  if (sectionTimelineRef.value) {
-    const containerWidth = sectionTimelineRef.value.clientWidth
-    const targetScrollPos = playheadPos - containerWidth * 0.3
-    sectionTimelineRef.value.scrollLeft = Math.max(0, targetScrollPos)
-  }
-})
-
-// Reset scroll only when currentTick goes to 0 (rewind)
-// Don't reset on pause - keep the current scroll position
-
-// Get section display name with i18n
 function getSectionDisplayName(section: Section): string {
   const key = `pianoRoll.sections.${section.type}`
   const translated = t(key)
-  // If translation not found (returns the key), use the original name
   return translated === key ? section.name : translated
 }
 
-// Total bars in song
-const totalBars = computed(() => {
-  if (!sections.value.length) return 0
-  return sections.value.reduce((sum, s) => sum + s.bars, 0)
-})
+// Canvas drawing
+let animationFrameId: number | null = null
 
-// Time calculation helpers
-function ticksToSeconds(ticks: number): number {
-  if (!props.events) return 0
-  const bpm = props.events.bpm || 120
-  const ppq = props.events.ppq || 480
-  // seconds = ticks * (60 / bpm / ppq)
-  return ticks * (60 / bpm / ppq)
+// Rounded rectangle helper (polyfill for older browsers)
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (w < 2 * r) r = w / 2
+  if (h < 2 * r) r = h / 2
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
 }
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  const centisecs = Math.floor((seconds % 1) * 100)
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${centisecs.toString().padStart(2, '0')}`
+function draw() {
+  const canvas = canvasRef.value
+  const ctx = canvas?.getContext('2d')
+  if (!canvas || !ctx || !props.events) return
+
+  const width = canvasWidth.value
+  const height = canvasHeight.value
+
+  // Clear
+  ctx.clearRect(0, 0, width * dpr.value, height * dpr.value)
+  ctx.save()
+  ctx.scale(dpr.value, dpr.value)
+
+  // Background
+  ctx.fillStyle = 'rgba(12, 12, 18, 0.95)'
+  ctx.fillRect(0, 0, width, height)
+
+  // Draw horizontal grid lines (pitch lanes)
+  const noteH = getNoteHeight(height)
+  for (let note = noteRange.value.min; note <= noteRange.value.max; note++) {
+    const y = noteToY(note, height)
+    const noteName = NOTE_NAMES[note % 12]
+    const isBlack = noteName.includes('#') || noteName.includes('b')
+
+    ctx.fillStyle = isBlack ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.02)'
+    ctx.fillRect(0, y, width, noteH)
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'
+    ctx.beginPath()
+    ctx.moveTo(0, y + noteH)
+    ctx.lineTo(width, y + noteH)
+    ctx.stroke()
+  }
+
+  // Draw vertical grid lines (bars)
+  const barTicks = 4 * ppq.value
+  const startBar = Math.floor(xToTick(scrollLeft.value) / barTicks)
+  const endBar = Math.ceil(xToTick(scrollLeft.value + width) / barTicks)
+
+  for (let bar = startBar; bar <= endBar; bar++) {
+    const x = tickToX(bar * barTicks) - scrollLeft.value
+    if (x < 0 || x > width) continue
+
+    ctx.strokeStyle = bar % 4 === 0 ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.1)'
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, height)
+    ctx.stroke()
+
+    // Bar numbers
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+    ctx.font = '10px JetBrains Mono, monospace'
+    ctx.fillText(String(bar + 1), x + 4, 12)
+  }
+
+  // Draw notes
+  const tracks = props.events.tracks.filter(t => t.name !== 'Drums')
+
+  // Sort tracks so Vocal is on top
+  const sortedTracks = [...tracks].sort((a, b) => {
+    if (a.name === 'Vocal') return 1
+    if (b.name === 'Vocal') return -1
+    if (a.name === 'Aux') return 1
+    if (b.name === 'Aux') return -1
+    return 0
+  })
+
+  for (const track of sortedTracks) {
+    const color = getTrackColor(track.name)
+    const notes = track.notes || []
+
+    for (const note of notes) {
+      const pitch = getNoteValue(note, 'pitch')
+      const start = getNoteValue(note, 'start')
+      const duration = getNoteValue(note, 'duration')
+
+      const x = tickToX(start) - scrollLeft.value
+      const noteWidth = tickToX(duration)
+
+      // Skip if not visible
+      if (x + noteWidth < 0 || x > width) continue
+
+      const y = noteToY(pitch, height)
+      const opacity = 0.6 + (note.velocity / 127) * 0.4
+
+      // Draw note with rounded corners
+      ctx.fillStyle = color
+      ctx.globalAlpha = opacity
+      drawRoundRect(ctx, x, y + 1, Math.max(2, noteWidth - 1), noteH - 2, 2)
+      ctx.fill()
+
+      // Highlight for top tracks
+      if (track.name === 'Vocal' || track.name === 'Aux') {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+        ctx.lineWidth = 0.5
+        ctx.stroke()
+      }
+    }
+  }
+  ctx.globalAlpha = 1
+
+  // Draw playhead
+  if (props.currentTick && props.currentTick > 0) {
+    const playheadX = tickToX(props.currentTick) - scrollLeft.value
+
+    if (playheadX >= 0 && playheadX <= width) {
+      // Glow
+      const gradient = ctx.createLinearGradient(playheadX - 10, 0, playheadX + 10, 0)
+      gradient.addColorStop(0, 'transparent')
+      gradient.addColorStop(0.5, 'rgba(236, 72, 153, 0.3)')
+      gradient.addColorStop(1, 'transparent')
+      ctx.fillStyle = gradient
+      ctx.fillRect(playheadX - 10, 0, 20, height)
+
+      // Line
+      ctx.strokeStyle = '#EC4899'
+      ctx.lineWidth = 2
+      ctx.shadowColor = '#EC4899'
+      ctx.shadowBlur = 8
+      ctx.beginPath()
+      ctx.moveTo(playheadX, 0)
+      ctx.lineTo(playheadX, height)
+      ctx.stroke()
+      ctx.shadowBlur = 0
+    }
+  }
+
+  ctx.restore()
 }
 
-// Current time in seconds
-const currentTimeSeconds = computed(() => {
-  if (!props.currentTick) return 0
-  return ticksToSeconds(props.currentTick)
+function startAnimation() {
+  draw()
+  if (props.isPlaying) {
+    animationFrameId = requestAnimationFrame(startAnimation)
+  }
+}
+
+function stopAnimation() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+}
+
+// Handle scroll
+function handleScroll(e: Event) {
+  const target = e.target as HTMLElement
+  scrollLeft.value = target.scrollLeft
+  if (!props.isPlaying) draw()
+}
+
+// Handle canvas click for seeking
+function handleCanvasClick(e: MouseEvent) {
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  const rect = canvas.getBoundingClientRect()
+  const x = e.clientX - rect.left + scrollLeft.value
+  const tick = xToTick(x)
+  emit('seek', Math.max(0, tick))
+}
+
+// Section click
+function handleSectionClick(section: Section) {
+  const tick = section.start_ticks ?? section.startTick
+  emit('seek', tick)
+}
+
+// Setup canvas size
+function setupCanvas() {
+  const canvas = canvasRef.value
+  const container = containerRef.value
+  if (!canvas || !container) return
+
+  dpr.value = window.devicePixelRatio || 1
+  const rect = container.getBoundingClientRect()
+
+  // Use container dimensions with fallback
+  const width = rect.width || 800
+  const height = rect.height || 180
+
+  canvasWidth.value = width
+  canvasHeight.value = height
+
+  canvas.width = width * dpr.value
+  canvas.height = height * dpr.value
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+
+  draw()
+}
+
+// Auto-scroll during playback
+watch(() => props.currentTick, (tick) => {
+  if (!tick || tick === 0) {
+    scrollLeft.value = 0
+    if (containerRef.value) containerRef.value.scrollLeft = 0
+    if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = 0
+    draw()
+    return
+  }
+
+  if (!props.isPlaying) return
+
+  const playheadPos = tickToX(tick)
+  const containerWidth = canvasWidth.value
+
+  // Scroll to keep playhead at 30% from left
+  const targetScroll = playheadPos - containerWidth * 0.3
+  const newScrollLeft = Math.max(0, targetScroll)
+
+  scrollLeft.value = newScrollLeft
+  if (containerRef.value) containerRef.value.scrollLeft = newScrollLeft
+  if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = newScrollLeft
 })
 
-// Total duration in seconds
-const totalTimeSeconds = computed(() => {
-  return ticksToSeconds(timeRange.value.max)
+// Watch isPlaying for animation
+watch(() => props.isPlaying, (playing) => {
+  if (playing) {
+    startAnimation()
+  } else {
+    stopAnimation()
+    draw()
+  }
 })
 
-// Formatted time strings
-const currentTimeFormatted = computed(() => formatTime(currentTimeSeconds.value))
-const totalTimeFormatted = computed(() => formatTime(totalTimeSeconds.value))
+// Watch events for redraw
+watch(() => props.events, () => {
+  nextTick(() => {
+    setupCanvas()
+  })
+}, { deep: true })
 
-// Progress percentage for overview
-const progressPercent = computed(() => {
-  if (!props.currentTick || !timeRange.value.max) return 0
-  return Math.min(100, (props.currentTick / timeRange.value.max) * 100)
+// Watch currentTick for redraw when not playing
+watch(() => props.currentTick, () => {
+  if (!props.isPlaying) draw()
+})
+
+// Lifecycle
+onMounted(() => {
+  setupCanvas()
+  window.addEventListener('resize', setupCanvas)
+})
+
+onUnmounted(() => {
+  stopAnimation()
+  window.removeEventListener('resize', setupCanvas)
 })
 </script>
 
@@ -371,7 +483,6 @@ const progressPercent = computed(() => {
   <div class="piano-roll">
     <!-- Transport Bar -->
     <div class="transport-bar">
-      <!-- Position Module -->
       <div class="transport-module transport-module--position">
         <div class="module-cell">
           <span class="cell-label">BAR</span>
@@ -381,7 +492,6 @@ const progressPercent = computed(() => {
         </div>
       </div>
 
-      <!-- Time Module -->
       <div class="transport-module transport-module--time">
         <div class="module-cell">
           <span class="cell-label">TIME</span>
@@ -393,7 +503,6 @@ const progressPercent = computed(() => {
         </div>
       </div>
 
-      <!-- Section Module -->
       <div class="transport-module transport-module--section">
         <div
           v-if="activeSection"
@@ -411,7 +520,6 @@ const progressPercent = computed(() => {
         </div>
       </div>
 
-      <!-- Info Module -->
       <div class="transport-module transport-module--info">
         <div class="info-item">
           <span class="info-label">SIG</span>
@@ -428,14 +536,13 @@ const progressPercent = computed(() => {
       </div>
     </div>
 
-    <!-- Song Structure Overview -->
+    <!-- Structure Overview -->
     <div v-if="sections.length" class="structure-overview">
       <div class="structure-label">
         <span class="structure-label__text">Structure</span>
         <span class="structure-label__bars">{{ totalBars }} bars</span>
       </div>
       <div class="structure-bar">
-        <!-- Section blocks -->
         <div
           v-for="(section, index) in sections"
           :key="`overview-${index}`"
@@ -452,20 +559,14 @@ const progressPercent = computed(() => {
           <span class="structure-section__name">{{ getSectionDisplayName(section) }}</span>
           <span class="structure-section__bars">{{ section.bars }}</span>
         </div>
-
-        <!-- Progress indicator -->
-        <div
-          class="structure-progress"
-          :style="{ left: `${progressPercent}%` }"
-        >
+        <div class="structure-progress" :style="{ left: `${progressPercent}%` }">
           <div class="structure-progress__line"></div>
-          <div class="structure-progress__glow"></div>
         </div>
       </div>
     </div>
 
     <!-- Section Timeline -->
-    <div class="section-timeline" ref="sectionTimelineRef">
+    <div class="section-timeline" ref="sectionTimelineRef" @scroll="handleScroll">
       <div class="section-track" :style="{ width: `${totalWidth}px` }">
         <div
           v-for="(section, index) in sections"
@@ -484,83 +585,37 @@ const progressPercent = computed(() => {
           <span class="section-block__name">{{ getSectionDisplayName(section) }}</span>
           <span class="section-block__bars">{{ section.bars }}bars</span>
         </div>
-
-        <!-- Section Playhead -->
         <div
           v-if="currentTick && currentTick > 0"
           class="section-playhead"
-          :style="{ left: `${playheadX}px` }"
+          :style="{ left: `${tickToX(currentTick)}px` }"
         />
       </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Canvas Piano Roll -->
     <div class="roll-container">
       <!-- Piano Keys -->
       <div class="piano-keys">
         <div
-          v-for="key in pianoKeys"
-          :key="key.note"
+          v-for="note in (noteRange.max - noteRange.min + 1)"
+          :key="noteRange.max - note + 1"
           class="piano-key"
-          :class="{ 'piano-key--black': key.isBlack }"
-          :style="{ height: `${noteHeight}%` }"
+          :class="{ 'piano-key--black': NOTE_NAMES[(noteRange.max - note + 1) % 12].includes('#') || NOTE_NAMES[(noteRange.max - note + 1) % 12].includes('b') }"
+          :style="{ height: `${100 / (noteRange.max - noteRange.min + 1)}%` }"
         >
-          <span class="piano-key__label">{{ key.name }}</span>
+          <span class="piano-key__label">{{ NOTE_NAMES[(noteRange.max - note + 1) % 12] }}{{ Math.floor((noteRange.max - note + 1) / 12) - 1 }}</span>
         </div>
       </div>
 
-      <!-- Notes Area -->
-      <div class="notes-area" ref="notesAreaRef" @scroll="handleScroll">
-        <div class="notes-canvas" :style="{ width: `${totalWidth}px` }">
-          <!-- Grid Lines -->
-          <div
-            v-for="line in gridLines"
-            :key="line.bar"
-            class="grid-line"
-            :style="{ left: `${line.x}px` }"
-          >
-            <span class="grid-line__label">{{ line.bar }}</span>
-          </div>
-
-          <!-- Horizontal Grid Lines -->
-          <div
-            v-for="key in pianoKeys"
-            :key="`h-${key.note}`"
-            class="h-grid-line"
-            :class="{ 'h-grid-line--black': key.isBlack }"
-            :style="{
-              top: `${noteToY(key.note)}%`,
-              height: `${noteHeight}%`
-            }"
+      <!-- Canvas Container -->
+      <div class="canvas-container" ref="containerRef" @scroll="handleScroll">
+        <div class="canvas-scroll-area" :style="{ width: `${totalWidth}px` }">
+          <canvas
+            ref="canvasRef"
+            class="notes-canvas"
+            @click="handleCanvasClick"
           />
-
-          <!-- Notes -->
-          <template v-for="(track, trackIndex) in visibleTracks" :key="track.name">
-            <div
-              v-for="(note, noteIndex) in track.notes"
-              :key="`${track.name}-${noteIndex}`"
-              class="note-bar"
-              :class="{ 'note-bar--vocal': track.name === 'Vocal', 'note-bar--aux': track.name === 'Aux' }"
-              :style="{
-                left: `${tickToX(note.start)}px`,
-                top: `${noteToY(note.note)}%`,
-                width: `${Math.max(2, durationToWidth(note.duration))}px`,
-                height: `${noteHeight}%`,
-                '--note-color': getTrackColor(track.name, trackIndex),
-                opacity: 0.6 + (note.velocity / 127) * 0.4
-              }"
-            />
-          </template>
-
-          <!-- Playhead -->
-          <div
-            v-if="currentTick && currentTick > 0"
-            class="playhead"
-            :style="{ left: `${playheadX}px` }"
-          >
-            <div class="playhead-glow"></div>
-            <div class="playhead-line"></div>
-          </div>
         </div>
       </div>
     </div>
@@ -568,20 +623,12 @@ const progressPercent = computed(() => {
     <!-- Track Legend -->
     <div class="track-legend">
       <div class="legend-tracks">
-        <div
-          v-for="(track, index) in visibleTracks"
-          :key="track.name"
-          class="legend-item"
-        >
-          <span
-            class="legend-color"
-            :style="{ backgroundColor: getTrackColor(track.name, index) }"
-          />
+        <div v-for="track in visibleTracks" :key="track.name" class="legend-item">
+          <span class="legend-color" :style="{ backgroundColor: getTrackColor(track.name) }" />
           <span class="legend-name">{{ track.name }}</span>
         </div>
       </div>
 
-      <!-- Instrument Toggle for Chord Track (right side) -->
       <div class="instrument-toggle">
         <span class="instrument-toggle__label">Chord</span>
         <div class="instrument-toggle__buttons">
@@ -619,7 +666,6 @@ const progressPercent = computed(() => {
   --text-primary: #FAFAFA;
   --text-secondary: rgba(250, 250, 250, 0.5);
 
-  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -627,19 +673,13 @@ const progressPercent = computed(() => {
   border-radius: 16px;
   overflow: hidden;
   font-family: 'Outfit', sans-serif;
-
-  /* Subtle noise texture */
-  background-image:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-blend-mode: overlay;
 }
 
-/* Transport Bar - Unified Module Design */
+/* Transport Bar */
 .transport-bar {
   display: flex;
   align-items: stretch;
   gap: 1px;
-  padding: 0;
   background: rgba(0, 0, 0, 0.4);
   border-bottom: 1px solid var(--border);
 }
@@ -662,11 +702,8 @@ const progressPercent = computed(() => {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.transport-module:last-child::after {
-  display: none;
-}
+.transport-module:last-child::after { display: none; }
 
-/* Module Cell - Unified display container */
 .module-cell {
   display: flex;
   align-items: center;
@@ -675,9 +712,6 @@ const progressPercent = computed(() => {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 6px;
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.4),
-    0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .cell-label {
@@ -693,7 +727,6 @@ const progressPercent = computed(() => {
 .cell-value {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 .cell-value--primary {
@@ -712,10 +745,8 @@ const progressPercent = computed(() => {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--accent);
-  margin: 0 1px;
 }
 
-/* Time Display */
 .time-display {
   display: flex;
   align-items: baseline;
@@ -727,27 +758,21 @@ const progressPercent = computed(() => {
   font-size: 1rem;
   font-weight: 600;
   color: #4ADE80;
-  letter-spacing: 0.02em;
   text-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
 }
 
 .time-divider {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
-  font-weight: 500;
   color: rgba(255, 255, 255, 0.25);
-  margin: 0 2px;
 }
 
 .time-total {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
-  font-weight: 500;
   color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.02em;
 }
 
-/* Section Indicator */
 .transport-module--section {
   flex: 1;
   justify-content: center;
@@ -793,7 +818,6 @@ const progressPercent = computed(() => {
   background: var(--section-color, var(--accent));
   border-radius: 50%;
   animation: section-pulse 1.2s ease-in-out infinite;
-  box-shadow: 0 0 6px var(--section-color, var(--accent));
 }
 
 @keyframes section-pulse {
@@ -802,14 +826,11 @@ const progressPercent = computed(() => {
 }
 
 .section-label {
-  font-family: 'Outfit', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--section-text, var(--text-primary));
-  letter-spacing: 0.01em;
 }
 
-/* Info Module */
 .transport-module--info {
   display: flex;
   align-items: center;
@@ -830,7 +851,6 @@ const progressPercent = computed(() => {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.3);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .info-value {
@@ -868,13 +888,11 @@ const progressPercent = computed(() => {
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 
 .structure-label__bars {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
-  font-weight: 500;
   color: rgba(255, 255, 255, 0.3);
 }
 
@@ -897,49 +915,15 @@ const progressPercent = computed(() => {
   padding: 0 4px;
   background: var(--section-bg);
   border-right: 1px solid rgba(0, 0, 0, 0.3);
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  min-width: 0;
   cursor: pointer;
+  transition: filter 0.2s;
 }
 
-.structure-section:hover {
-  filter: brightness(1.2);
-}
-
-.structure-section:last-child {
-  border-right: none;
-}
-
-.structure-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.structure-section::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--section-color);
-  opacity: 0.5;
-  transition: opacity 0.3s ease;
-}
+.structure-section:hover { filter: brightness(1.2); }
+.structure-section:last-child { border-right: none; }
 
 .structure-section--active {
   background: linear-gradient(135deg, var(--section-bg), rgba(255, 255, 255, 0.08));
-  box-shadow: inset 0 0 20px -8px var(--section-color);
-}
-
-.structure-section--active::after {
-  opacity: 1;
-  box-shadow: 0 0 8px var(--section-color);
 }
 
 .structure-section__name {
@@ -949,15 +933,12 @@ const progressPercent = computed(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  line-height: 1.2;
 }
 
 .structure-section__bars {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.55rem;
   color: rgba(255, 255, 255, 0.3);
-  line-height: 1;
 }
 
 .structure-progress {
@@ -968,7 +949,6 @@ const progressPercent = computed(() => {
   transform: translateX(-50%);
   z-index: 10;
   pointer-events: none;
-  transition: left 0.05s linear;
 }
 
 .structure-progress__line {
@@ -976,21 +956,7 @@ const progressPercent = computed(() => {
   inset: 0;
   background: #EC4899;
   border-radius: 1px;
-}
-
-.structure-progress__glow {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  left: -6px;
-  right: -6px;
-  background: radial-gradient(ellipse at center, rgba(236, 72, 153, 0.6) 0%, transparent 70%);
-  animation: progress-glow 1s ease-in-out infinite;
-}
-
-@keyframes progress-glow {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
 }
 
 /* Section Timeline */
@@ -1004,16 +970,13 @@ const progressPercent = computed(() => {
   margin-left: 48px;
 }
 
-.section-timeline::-webkit-scrollbar {
-  display: none;
-}
+.section-timeline::-webkit-scrollbar { display: none; }
 
 .section-track {
   position: relative;
   height: 100%;
   padding: 6px 0;
 }
-
 
 .section-block {
   position: absolute;
@@ -1026,14 +989,12 @@ const progressPercent = computed(() => {
   background: var(--section-bg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .section-block:hover {
   filter: brightness(1.2);
-  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .section-block::before {
@@ -1050,16 +1011,7 @@ const progressPercent = computed(() => {
 .section-block--active {
   background: linear-gradient(135deg, var(--section-bg), rgba(255, 255, 255, 0.05));
   border-color: var(--section-glow);
-  box-shadow:
-    0 0 20px -4px var(--section-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: scale(1.02);
-  z-index: 10;
-}
-
-.section-block--active::before {
-  opacity: 1;
-  box-shadow: 0 0 12px var(--section-glow);
+  box-shadow: 0 0 20px -4px var(--section-glow);
 }
 
 .section-block__name {
@@ -1073,7 +1025,6 @@ const progressPercent = computed(() => {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.35);
-  white-space: nowrap;
 }
 
 .section-playhead {
@@ -1101,21 +1052,17 @@ const progressPercent = computed(() => {
 /* Roll Container */
 .roll-container {
   position: relative;
-  flex: 1;
-  min-height: 180px;
+  height: 180px;
+  display: flex;
 }
 
 .piano-keys {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
   width: 48px;
   display: flex;
   flex-direction: column;
   background: linear-gradient(90deg, rgba(25, 25, 35, 0.98) 0%, rgba(20, 20, 28, 0.95) 100%);
   border-right: 1px solid var(--border);
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .piano-key {
@@ -1126,12 +1073,10 @@ const progressPercent = computed(() => {
   background: linear-gradient(90deg, #e8e8e8, #d4d4d4);
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
-  transition: background 0.1s ease;
 }
 
 .piano-key--black {
   background: linear-gradient(90deg, #2a2a2a, #1f1f1f);
-  border-bottom-color: rgba(0, 0, 0, 0.3);
 }
 
 .piano-key--black .piano-key__label {
@@ -1145,140 +1090,37 @@ const progressPercent = computed(() => {
   color: rgba(0, 0, 0, 0.45);
 }
 
-.notes-area {
-  position: absolute;
-  top: 0;
-  left: 48px;
-  right: 0;
-  bottom: 0;
+.canvas-container {
+  flex: 1;
+  height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-.notes-area::-webkit-scrollbar {
+.canvas-container::-webkit-scrollbar {
   height: 6px;
 }
 
-.notes-area::-webkit-scrollbar-track {
+.canvas-container::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.notes-area::-webkit-scrollbar-thumb {
+.canvas-container::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
 }
 
-.notes-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.canvas-scroll-area {
+  height: 100%;
+  position: relative;
 }
 
 .notes-canvas {
-  position: relative;
+  position: sticky;
+  left: 0;
+  top: 0;
   height: 100%;
-  min-width: 400px;
-}
-
-.grid-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(139, 92, 246, 0.1);
-  pointer-events: none;
-}
-
-.grid-line:nth-child(4n+1) {
-  background: rgba(139, 92, 246, 0.2);
-}
-
-.grid-line__label {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 500;
-  color: rgba(250, 250, 250, 0.3);
-}
-
-.h-grid-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.015);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
-  pointer-events: none;
-}
-
-.h-grid-line--black {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.note-bar {
-  position: absolute;
-  background: var(--note-color);
-  border-radius: 3px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  z-index: 1;
-}
-
-/* Vocal notes appear on top of other tracks */
-.note-bar--vocal {
-  z-index: 10;
-}
-
-/* Aux notes appear just below vocal */
-.note-bar--aux {
-  z-index: 9;
-  opacity: 0.7;
-}
-
-.note-bar:hover {
-  transform: scaleY(1.1);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 12px var(--note-color);
-  z-index: 5;
-}
-
-.playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.playhead-glow {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -8px;
-  width: 18px;
-  background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.3), transparent);
-  animation: playhead-pulse 0.5s ease-in-out infinite;
-}
-
-@keyframes playhead-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-.playhead-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: linear-gradient(180deg, #EC4899 0%, #F472B6 50%, #EC4899 100%);
-  box-shadow:
-    0 0 8px rgba(236, 72, 153, 0.8),
-    0 0 16px rgba(236, 72, 153, 0.4);
+  cursor: pointer;
 }
 
 /* Track Legend */
@@ -1296,7 +1138,6 @@ const progressPercent = computed(() => {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  align-items: center;
 }
 
 .legend-item {
@@ -1316,10 +1157,8 @@ const progressPercent = computed(() => {
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-secondary);
-  letter-spacing: 0.02em;
 }
 
-/* Instrument Toggle - Hardware-inspired switch */
 .instrument-toggle {
   display: flex;
   align-items: center;
@@ -1333,7 +1172,6 @@ const progressPercent = computed(() => {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .instrument-toggle__buttons {
@@ -1341,9 +1179,6 @@ const progressPercent = computed(() => {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.4),
-    0 1px 0 rgba(255, 255, 255, 0.03);
   overflow: hidden;
 }
 
@@ -1355,10 +1190,8 @@ const progressPercent = computed(() => {
   height: 26px;
   background: transparent;
   border: none;
-  border-radius: 0;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: all 0.2s;
 }
 
 .instrument-btn + .instrument-btn {
@@ -1371,33 +1204,15 @@ const progressPercent = computed(() => {
 
 .instrument-btn--active {
   background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(139, 92, 246, 0.2) 100%);
-  box-shadow:
-    0 0 8px rgba(236, 72, 153, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.instrument-btn--active::before {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 2px;
-  background: #EC4899;
-  border-radius: 1px;
-  box-shadow: 0 0 6px rgba(236, 72, 153, 0.8);
 }
 
 .instrument-icon {
   font-size: 0.85rem;
-  line-height: 1;
   filter: grayscale(0.3);
-  transition: filter 0.2s ease;
 }
 
 .instrument-btn--active .instrument-icon {
-  filter: grayscale(0) drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+  filter: grayscale(0);
 }
 
 .instrument-btn:not(.instrument-btn--active) .instrument-icon {
@@ -1406,145 +1221,19 @@ const progressPercent = computed(() => {
 
 /* Responsive */
 @media (max-width: 640px) {
-  .transport-bar {
-    flex-wrap: wrap;
-  }
-
-  .transport-module {
-    padding: 0.5rem 0.625rem;
-  }
-
-  .transport-module--position,
-  .transport-module--time {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .transport-module--section {
-    order: 4;
-    flex-basis: 100%;
-    justify-content: center;
-  }
-
-  .transport-module--info {
-    order: 3;
-    gap: 0.5rem;
-  }
-
-  .module-cell {
-    padding: 0.25rem 0.5rem;
-    gap: 0.25rem;
-  }
-
-  .cell-label {
-    font-size: 0.45rem;
-  }
-
-  .cell-value--primary {
-    font-size: 0.95rem;
-  }
-
-  .cell-value--secondary {
-    font-size: 0.75rem;
-  }
-
-  .time-current {
-    font-size: 0.85rem;
-  }
-
-  .time-total {
-    font-size: 0.7rem;
-  }
-
-  .section-indicator {
-    padding: 0.25rem 0.625rem;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-  }
-
-  .info-item {
-    min-width: 28px;
-  }
-
-  .info-label {
-    font-size: 0.4rem;
-  }
-
-  .info-value {
-    font-size: 0.7rem;
-  }
-
-  .structure-overview {
-    padding: 0.5rem 0.75rem;
-    gap: 0.5rem;
-  }
-
-  .structure-label {
-    min-width: 50px;
-  }
-
-  .structure-label__text {
-    font-size: 0.5rem;
-  }
-
-  .structure-label__bars {
-    font-size: 0.6rem;
-  }
-
-  .structure-bar {
-    height: 28px;
-  }
-
-  .structure-section__name {
-    font-size: 0.55rem;
-  }
-
-  .structure-section__bars {
-    display: none;
-  }
-
-  .section-timeline {
-    height: 36px;
-    margin-left: 36px;
-  }
-
-  .section-block {
-    padding: 0 8px;
-  }
-
-  .section-block__name {
-    font-size: 0.65rem;
-  }
-
-  .section-block__bars {
-    display: none;
-  }
-
-  .roll-container {
-    min-height: 140px;
-  }
-
-  .piano-keys {
-    width: 36px;
-  }
-
-  .notes-area {
-    left: 36px;
-  }
-
-  .piano-key__label {
-    font-size: 0.45rem;
-  }
-
-  .track-legend {
-    gap: 0.625rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .legend-name {
-    font-size: 0.6rem;
-  }
+  .transport-bar { flex-wrap: wrap; }
+  .transport-module { padding: 0.5rem 0.625rem; }
+  .transport-module--position { flex: 0 0 auto; }
+  .transport-module--time { flex: 1 1 60%; }
+  .transport-module--info { order: 3; flex: 0 0 auto; gap: 0.5rem; }
+  .transport-module--section { order: 4; flex: 1 1 50%; }
+  .cell-value--primary { font-size: 0.95rem; }
+  .time-current { font-size: 0.85rem; }
+  .section-timeline { height: 36px; margin-left: 36px; }
+  .roll-container { height: 140px; }
+  .piano-keys { width: 36px; }
+  .piano-key__label { font-size: 0.45rem; }
+  .structure-overview { padding-left: 0; padding-right: 0; }
+  .structure-label { display: none; }
 }
 </style>

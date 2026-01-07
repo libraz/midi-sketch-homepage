@@ -732,5 +732,9 @@ const rangeBarStyle = computed(() => {
   .style-buttons {
     grid-template-columns: repeat(3, 1fr);
   }
+
+  .compact-btns--grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

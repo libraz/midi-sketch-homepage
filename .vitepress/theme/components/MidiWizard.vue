@@ -613,11 +613,11 @@ onMounted(() => {
   }
 
   .noir-wizard__content {
-    padding: 0 1rem;
+    padding: 0;
   }
 
   .noir-wizard__panel {
-    padding: 1.25rem;
+    padding: 1.25rem 0;
     border-radius: 16px;
   }
 

@@ -12,6 +12,56 @@
  * const midiData = sketch.getMidi();
  * ```
  */
+/**
+ * Config validation error codes
+ */
+export const ConfigError = {
+    OK: 0,
+    InvalidStyle: 1,
+    InvalidChord: 2,
+    InvalidForm: 3,
+    InvalidAttitude: 4,
+    InvalidVocalRange: 5,
+    InvalidBpm: 6,
+    DurationTooShort: 7,
+    InvalidModulation: 8,
+    InvalidKey: 9,
+    InvalidCompositionStyle: 10,
+    InvalidArpeggioPattern: 11,
+    InvalidArpeggioSpeed: 12,
+    InvalidVocalStyle: 13,
+    InvalidMelodyTemplate: 14,
+    InvalidMelodicComplexity: 15,
+    InvalidHookIntensity: 16,
+    InvalidVocalGroove: 17,
+    InvalidCallDensity: 18,
+    InvalidIntroChant: 19,
+    InvalidMixPattern: 20,
+    InvalidMotifRepeatScope: 21,
+    InvalidArrangementGrowth: 22,
+    InvalidModulationTiming: 23,
+};
+/**
+ * Custom error class for MidiSketch configuration errors
+ */
+export class MidiSketchConfigError extends Error {
+    constructor(code, nativeMessage) {
+        super(`MidiSketch config error [${code}]: ${nativeMessage}`);
+        this.name = 'MidiSketchConfigError';
+        this.code = code;
+        this.nativeMessage = nativeMessage;
+    }
+}
+/**
+ * Custom error class for MidiSketch generation errors
+ */
+export class MidiSketchGenerationError extends Error {
+    constructor(code, message) {
+        super(message);
+        this.name = 'MidiSketchGenerationError';
+        this.code = code;
+    }
+}
 // Vocal attitude constants
 export const VocalAttitude = {
     Clean: 0,
@@ -179,6 +229,7 @@ export async function init(options) {
             'number',
             'number',
         ]),
+        configErrorString: m.cwrap('midisketch_config_error_string', 'string', ['number']),
     };
 }
 /**
@@ -349,6 +400,97 @@ export function createDefaultConfig(styleId) {
     };
 }
 /**
+ * Validate a song config before generation.
+ * Returns the error code (0 = OK, non-zero = error).
+ * Use getConfigErrorMessage() to get human-readable error message.
+ */
+export function validateConfig(config) {
+    const a = getApi();
+    const m = getModule();
+    const configPtr = allocSongConfigStatic(m, config);
+    try {
+        return a.validateConfig(configPtr);
+    }
+    finally {
+        m._free(configPtr);
+    }
+}
+/**
+ * Get human-readable error message for a config error code.
+ */
+export function getConfigErrorMessage(errorCode) {
+    const a = getApi();
+    return a.configErrorString(errorCode);
+}
+// Helper function to allocate SongConfig without class context
+function allocSongConfigStatic(m, config) {
+    const ptr = m._malloc(52);
+    const view = new DataView(m.HEAPU8.buffer);
+    // Basic settings (offset 0-11)
+    view.setUint8(ptr + 0, config.stylePresetId ?? 0);
+    view.setUint8(ptr + 1, config.key ?? 0);
+    view.setUint16(ptr + 2, config.bpm ?? 0, true);
+    view.setUint32(ptr + 4, config.seed ?? 0, true);
+    view.setUint8(ptr + 8, config.chordProgressionId ?? 0);
+    view.setUint8(ptr + 9, config.formId ?? 0);
+    view.setUint8(ptr + 10, config.vocalAttitude ?? 0);
+    view.setUint8(ptr + 11, config.drumsEnabled !== false ? 1 : 0);
+    // Arpeggio settings (offset 12-16)
+    view.setUint8(ptr + 12, config.arpeggioEnabled ? 1 : 0);
+    view.setUint8(ptr + 13, config.arpeggioPattern ?? 0);
+    view.setUint8(ptr + 14, config.arpeggioSpeed ?? 1);
+    view.setUint8(ptr + 15, config.arpeggioOctaveRange ?? 2);
+    view.setUint8(ptr + 16, config.arpeggioGate ?? 80);
+    // Vocal settings (offset 17-19)
+    view.setUint8(ptr + 17, config.vocalLow ?? 55);
+    view.setUint8(ptr + 18, config.vocalHigh ?? 74);
+    view.setUint8(ptr + 19, config.skipVocal ? 1 : 0);
+    // Humanization (offset 20-22)
+    view.setUint8(ptr + 20, config.humanize ? 1 : 0);
+    view.setUint8(ptr + 21, config.humanizeTiming ?? 50);
+    view.setUint8(ptr + 22, config.humanizeVelocity ?? 50);
+    // Chord extensions (offset 23-28)
+    view.setUint8(ptr + 23, config.chordExtSus ? 1 : 0);
+    view.setUint8(ptr + 24, config.chordExt7th ? 1 : 0);
+    view.setUint8(ptr + 25, config.chordExt9th ? 1 : 0);
+    view.setUint8(ptr + 26, config.chordExtSusProb ?? 20);
+    view.setUint8(ptr + 27, config.chordExt7thProb ?? 30);
+    view.setUint8(ptr + 28, config.chordExt9thProb ?? 25);
+    // Composition style (offset 29)
+    view.setUint8(ptr + 29, config.compositionStyle ?? 0);
+    // Reserved + padding (offset 30-31)
+    view.setUint8(ptr + 30, 0);
+    view.setUint8(ptr + 31, 0);
+    // Duration (offset 32-33)
+    view.setUint16(ptr + 32, config.targetDurationSeconds ?? 0, true);
+    // Modulation settings (offset 34-35)
+    view.setUint8(ptr + 34, config.modulationTiming ?? 0);
+    view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
+    // SE/Call settings (offset 36-41)
+    view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
+    view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
+    view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
+    view.setUint8(ptr + 39, config.introChant ?? 0);
+    view.setUint8(ptr + 40, config.mixPattern ?? 0);
+    view.setUint8(ptr + 41, config.callDensity ?? 2);
+    // Vocal style settings (offset 42-43)
+    view.setUint8(ptr + 42, config.vocalStyle ?? 0);
+    view.setUint8(ptr + 43, config.melodyTemplate ?? 0);
+    // Arrangement settings (offset 44)
+    view.setUint8(ptr + 44, config.arrangementGrowth ?? 0);
+    // Arpeggio sync settings (offset 45)
+    view.setUint8(ptr + 45, config.arpeggioSyncChord !== false ? 1 : 0);
+    // Motif settings (offset 46-48)
+    view.setUint8(ptr + 46, config.motifRepeatScope ?? 0);
+    view.setUint8(ptr + 47, config.motifFixedProgression !== false ? 1 : 0);
+    view.setUint8(ptr + 48, config.motifMaxChordCount ?? 4);
+    // Melodic complexity and hook control (offset 49-51)
+    view.setUint8(ptr + 49, config.melodicComplexity ?? 1);
+    view.setUint8(ptr + 50, config.hookIntensity ?? 2);
+    view.setUint8(ptr + 51, config.vocalGroove ?? 0);
+    return ptr;
+}
+/**
  * MidiSketch instance for MIDI generation
  */
 export class MidiSketch {
@@ -361,6 +503,8 @@ export class MidiSketch {
     }
     /**
      * Generate MIDI from a SongConfig
+     * @throws {MidiSketchConfigError} If config validation fails
+     * @throws {MidiSketchGenerationError} If generation fails for other reasons
      */
     generateFromConfig(config) {
         const a = getApi();
@@ -369,7 +513,18 @@ export class MidiSketch {
         try {
             const result = a.generateFromConfig(this.handle, configPtr);
             if (result !== 0) {
-                throw new Error(`Generation failed with error code: ${result}`);
+                // Error code 1 = INVALID_PARAM, which includes config validation errors
+                // Try to get detailed error message
+                const errorMessage = a.configErrorString(result);
+                if (result === 1) {
+                    // Config validation error - get more specific error from validation
+                    const validationResult = a.validateConfig(configPtr);
+                    if (validationResult !== 0) {
+                        const validationMessage = a.configErrorString(validationResult);
+                        throw new MidiSketchConfigError(validationResult, validationMessage);
+                    }
+                }
+                throw new MidiSketchGenerationError(result, `Generation failed: ${errorMessage}`);
             }
         }
         finally {
@@ -380,6 +535,7 @@ export class MidiSketch {
      * Regenerate only the vocal track with the given parameters.
      * BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
      * Use after generateFromConfig with skipVocal=true.
+     * @throws {MidiSketchGenerationError} If regeneration fails
      */
     regenerateVocal(params) {
         const a = getApi();
@@ -388,7 +544,7 @@ export class MidiSketch {
         try {
             const result = a.regenerateVocal(this.handle, paramsPtr);
             if (result !== 0) {
-                throw new Error(`Vocal regeneration failed with error code: ${result}`);
+                throw new MidiSketchGenerationError(result, `Vocal regeneration failed with error code: ${result}`);
             }
         }
         finally {

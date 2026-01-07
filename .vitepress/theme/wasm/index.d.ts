@@ -13,6 +13,54 @@
  * ```
  */
 /**
+ * Config validation error codes
+ */
+export declare const ConfigError: {
+    readonly OK: 0;
+    readonly InvalidStyle: 1;
+    readonly InvalidChord: 2;
+    readonly InvalidForm: 3;
+    readonly InvalidAttitude: 4;
+    readonly InvalidVocalRange: 5;
+    readonly InvalidBpm: 6;
+    readonly DurationTooShort: 7;
+    readonly InvalidModulation: 8;
+    readonly InvalidKey: 9;
+    readonly InvalidCompositionStyle: 10;
+    readonly InvalidArpeggioPattern: 11;
+    readonly InvalidArpeggioSpeed: 12;
+    readonly InvalidVocalStyle: 13;
+    readonly InvalidMelodyTemplate: 14;
+    readonly InvalidMelodicComplexity: 15;
+    readonly InvalidHookIntensity: 16;
+    readonly InvalidVocalGroove: 17;
+    readonly InvalidCallDensity: 18;
+    readonly InvalidIntroChant: 19;
+    readonly InvalidMixPattern: 20;
+    readonly InvalidMotifRepeatScope: 21;
+    readonly InvalidArrangementGrowth: 22;
+    readonly InvalidModulationTiming: 23;
+};
+export type ConfigErrorCode = (typeof ConfigError)[keyof typeof ConfigError];
+/**
+ * Custom error class for MidiSketch configuration errors
+ */
+export declare class MidiSketchConfigError extends Error {
+    /** Numeric error code */
+    readonly code: ConfigErrorCode;
+    /** Human-readable error message from native library */
+    readonly nativeMessage: string;
+    constructor(code: number, nativeMessage: string);
+}
+/**
+ * Custom error class for MidiSketch generation errors
+ */
+export declare class MidiSketchGenerationError extends Error {
+    /** Numeric error code */
+    readonly code: number;
+    constructor(code: number, message: string);
+}
+/**
  * Song configuration for style-based generation
  */
 export interface SongConfig {
@@ -309,6 +357,16 @@ export declare function getFormsByStyle(styleId: number): number[];
  */
 export declare function createDefaultConfig(styleId: number): SongConfig;
 /**
+ * Validate a song config before generation.
+ * Returns the error code (0 = OK, non-zero = error).
+ * Use getConfigErrorMessage() to get human-readable error message.
+ */
+export declare function validateConfig(config: SongConfig): ConfigErrorCode;
+/**
+ * Get human-readable error message for a config error code.
+ */
+export declare function getConfigErrorMessage(errorCode: ConfigErrorCode): string;
+/**
  * MidiSketch instance for MIDI generation
  */
 export declare class MidiSketch {
@@ -316,12 +374,15 @@ export declare class MidiSketch {
     constructor();
     /**
      * Generate MIDI from a SongConfig
+     * @throws {MidiSketchConfigError} If config validation fails
+     * @throws {MidiSketchGenerationError} If generation fails for other reasons
      */
     generateFromConfig(config: SongConfig): void;
     /**
      * Regenerate only the vocal track with the given parameters.
      * BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
      * Use after generateFromConfig with skipVocal=true.
+     * @throws {MidiSketchGenerationError} If regeneration fails
      */
     regenerateVocal(params: VocalParams): void;
     /**

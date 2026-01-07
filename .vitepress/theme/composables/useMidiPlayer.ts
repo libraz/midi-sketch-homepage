@@ -166,8 +166,16 @@ export function useMidiPlayer() {
     bpm = eventData.bpm || 120
     ppq = eventData.ppq || 480
 
-    // Calculate total duration and schedule notes from the given tick
+    // Calculate total duration from sections (most reliable)
     let maxTick = 0
+
+    // Get end tick from last section if available
+    if (eventData.sections && eventData.sections.length > 0) {
+      const lastSection = eventData.sections[eventData.sections.length - 1]
+      const sectionEndTick = lastSection.end_ticks ?? lastSection.endTick ?? 0
+      maxTick = sectionEndTick
+    }
+
     const offsetSeconds = ticksToSeconds(fromTick)
     startTime = audioContext.currentTime - offsetSeconds
 
@@ -182,7 +190,10 @@ export function useMidiPlayer() {
         const durationTicks = getNoteValue(note, 'duration')
         const endTick = startTicks + durationTicks
 
-        if (endTick > maxTick) maxTick = endTick
+        // Only update maxTick from notes if sections not available
+        if (!eventData.sections?.length && endTick > maxTick) {
+          maxTick = endTick
+        }
 
         // Skip notes that are before the current position
         if (endTick <= fromTick) continue
@@ -235,6 +246,7 @@ export function useMidiPlayer() {
     currentTick.value = fromTick
 
     // Auto-stop after playback ends
+    const totalDurationSeconds = ticksToSeconds(maxTick)
     const remainingSeconds = ticksToSeconds(maxTick - fromTick)
     stopTimeout = setTimeout(() => {
       stop()
@@ -247,7 +259,8 @@ export function useMidiPlayer() {
       const elapsed = audioContext.currentTime - startTime
       currentTick.value = secondsToTicks(elapsed)
 
-      if (currentTick.value >= duration.value) {
+      // Check both tick-based and time-based conditions for stopping
+      if (currentTick.value >= duration.value || elapsed >= totalDurationSeconds + 0.1) {
         stop()
         return
       }

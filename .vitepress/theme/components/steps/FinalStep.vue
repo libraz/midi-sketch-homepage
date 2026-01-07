@@ -1356,6 +1356,10 @@ function handleRewind() {
 }
 
 @media (max-width: 640px) {
+  .piano-roll-header {
+    padding: 0 1rem;
+  }
+
   .download-btn {
     padding: 1rem 1.5rem;
     font-size: 1rem;

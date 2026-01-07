@@ -648,7 +648,8 @@
     "copied": "コピーしました！トラックを聴いてメロディ生成に進んでください",
     "xShare": "この楽曲をXでシェア",
     "tweetBgm": "MIDI SketchでBGMを作成しました！",
-    "tweetVocal": "MIDI Sketchでボーカルメロディを作成しました！"
+    "tweetVocal": "MIDI Sketchでボーカルメロディを作成しました！",
+    "tapToSelect": "タップして選択、コピー"
   },
   "preview": {
     "infoText": "MIDI Sketchで作成。AIを使わずアルゴリズムで生成。音符単位で編集可能なMIDIファイルを出力します。",

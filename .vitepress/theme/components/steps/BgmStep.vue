@@ -990,6 +990,10 @@ function downloadMidi() {
 }
 
 @media (max-width: 640px) {
+  .piano-roll-header {
+    padding: 0 1rem;
+  }
+
   .summary-item {
     flex-direction: column;
     align-items: flex-start;
