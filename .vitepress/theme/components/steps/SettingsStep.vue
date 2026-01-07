@@ -1068,24 +1068,35 @@ const callDensityOptions = [
   gap: 0.75rem;
 }
 
+/* Compact BPM Display - Tighter LED Panel */
 .bpm-display--compact {
-  gap: 0.75rem;
+  gap: 0.625rem;
   justify-content: center;
+  padding: 0.5rem 0.875rem;
+  border-radius: 6px;
 }
 
 .bpm-display--compact .bpm-display__value {
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
-/* Compact Metronome */
+.bpm-display--compact .bpm-display__unit {
+  font-size: 0.6rem;
+}
+
+/* Compact Metronome - Smaller LED housing */
 .metronome--compact {
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
 }
 
 .metronome--compact .metronome__dot {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
+}
+
+.metronome--compact .metronome__ring {
+  inset: 2px;
 }
 
 /* BPM Range Warning - Industrial/DAW aesthetic */
@@ -1168,27 +1179,47 @@ const callDensityOptions = [
   }
 }
 
-/* Compact Tempo Presets */
+/* Compact Tempo Presets - Mobile Optimized Synth Strip */
 .tempo-presets--compact {
-  gap: 0.375rem;
-  flex-wrap: wrap;
+  gap: 0;
+  flex-wrap: nowrap;
+  padding: 2px;
+  border-radius: 8px;
 }
 
 .tempo-preset--compact {
-  width: auto;
-  min-width: 50px;
-  padding: 0.4rem 0.6rem;
+  min-width: 52px;
+  padding: 0.55rem 0.65rem 0.4rem;
   flex-direction: row;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  border-radius: 6px;
+}
+
+/* Adjust LED for compact horizontal layout */
+.tempo-preset--compact::before {
+  top: 50%;
+  left: 5px;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 3px;
 }
 
 .tempo-preset--compact .tempo-preset__bpm {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  padding-left: 2px;
 }
 
 .tempo-preset--compact .tempo-preset__star {
-  position: static;
-  font-size: 0.6rem;
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  left: auto;
+  bottom: auto;
+  font-size: 0.45rem;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Piano Keyboard */
@@ -1615,123 +1646,160 @@ const callDensityOptions = [
   gap: 1rem;
 }
 
+/* ============================================
+   BPM Display - Vintage Synthesizer LED Readout
+   ============================================ */
 .bpm-display {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 0.875rem;
+  /* Recessed LED panel container */
+  padding: 0.625rem 1rem;
+  background:
+    linear-gradient(180deg,
+      rgba(8, 8, 12, 0.95) 0%,
+      rgba(12, 12, 18, 0.9) 50%,
+      rgba(8, 8, 12, 0.95) 100%);
+  border: 1px solid rgba(40, 40, 55, 0.6);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-/* Metronome Visualizer */
+/* Metronome - Hardware LED Indicator */
 .metronome {
   --beat-duration: 0.5s;
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* LED housing */
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .metronome__dot {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%);
+  background: radial-gradient(circle at 30% 30%, #C4B5FD 0%, #8B5CF6 60%, #6D28D9 100%);
   box-shadow:
-    0 0 20px rgba(139, 92, 246, 0.6),
-    0 0 40px rgba(139, 92, 246, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-  animation: metronomePulse var(--beat-duration) ease-in-out infinite;
+    0 0 8px rgba(139, 92, 246, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  animation: ledBlink var(--beat-duration) ease-out infinite;
   z-index: 2;
 }
 
 .metronome__ring {
   position: absolute;
-  inset: 0;
+  inset: 3px;
   border-radius: 50%;
-  border: 2px solid rgba(139, 92, 246, 0.4);
-  animation: metronomeRing var(--beat-duration) ease-out infinite;
+  border: 1px solid transparent;
+  animation: ledRingPulse var(--beat-duration) ease-out infinite;
+  pointer-events: none;
 }
 
-.metronome__ring--delayed {
-  animation-delay: calc(var(--beat-duration) * 0.5);
-  opacity: 0.5;
-}
-
-@keyframes metronomePulse {
+@keyframes ledBlink {
   0%, 100% {
-    transform: scale(1);
+    opacity: 0.4;
     box-shadow:
-      0 0 20px rgba(139, 92, 246, 0.6),
-      0 0 40px rgba(139, 92, 246, 0.3),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      0 0 4px rgba(139, 92, 246, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 1px rgba(255, 255, 255, 0.1);
   }
-  15% {
-    transform: scale(1.3);
+  8% {
+    opacity: 1;
     box-shadow:
-      0 0 30px rgba(139, 92, 246, 0.8),
-      0 0 60px rgba(139, 92, 246, 0.5),
-      0 0 80px rgba(236, 72, 153, 0.2),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      0 0 10px rgba(139, 92, 246, 0.8),
+      0 0 20px rgba(139, 92, 246, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px rgba(255, 255, 255, 0.3);
   }
-  30% {
-    transform: scale(1);
+  25% {
+    opacity: 0.5;
   }
 }
 
-@keyframes metronomeRing {
+@keyframes ledRingPulse {
   0% {
-    transform: scale(0.4);
-    opacity: 0.8;
-    border-color: rgba(139, 92, 246, 0.6);
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: scale(1);
+  }
+  20% {
+    border-color: rgba(139, 92, 246, 0.2);
+    transform: scale(1.1);
   }
   100% {
-    transform: scale(1.8);
-    opacity: 0;
-    border-color: rgba(139, 92, 246, 0);
+    border-color: transparent;
+    transform: scale(1);
   }
 }
 
 .bpm-display__text {
   display: flex;
   align-items: baseline;
-  gap: 0.375rem;
+  gap: 0.25rem;
 }
 
+/* 7-Segment LED Display Style */
 .bpm-display__value {
   --beat-duration: 0.5s;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.5rem;
-  color: #FAFAFA;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #C4B5FD;
   line-height: 1;
-  text-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
-  animation: bpmPulse var(--beat-duration) ease-in-out infinite;
+  letter-spacing: 0.02em;
+  /* LED glow effect */
+  text-shadow:
+    0 0 10px rgba(139, 92, 246, 0.6),
+    0 0 20px rgba(139, 92, 246, 0.3),
+    0 0 2px rgba(196, 181, 253, 0.8);
+  animation: ledValuePulse var(--beat-duration) ease-out infinite;
+  /* Slight blur for LED authenticity */
+  filter: blur(0.2px);
 }
 
-@keyframes bpmPulse {
+@keyframes ledValuePulse {
   0%, 100% {
-    text-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+    text-shadow:
+      0 0 10px rgba(139, 92, 246, 0.5),
+      0 0 20px rgba(139, 92, 246, 0.2),
+      0 0 2px rgba(196, 181, 253, 0.6);
+    opacity: 0.9;
+  }
+  8% {
+    text-shadow:
+      0 0 12px rgba(139, 92, 246, 0.8),
+      0 0 25px rgba(139, 92, 246, 0.4),
+      0 0 3px rgba(196, 181, 253, 1);
     opacity: 1;
   }
-  15% {
-    text-shadow:
-      0 0 50px rgba(139, 92, 246, 0.5),
-      0 0 80px rgba(236, 72, 153, 0.3);
-    opacity: 1;
+  25% {
+    opacity: 0.92;
   }
 }
 
 .bpm-display__unit {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(250, 250, 250, 0.4);
-  letter-spacing: 0.1em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(139, 92, 246, 0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-left: 0.125rem;
+  /* Match LED style */
+  text-shadow: 0 0 4px rgba(139, 92, 246, 0.3);
 }
 
 .bpm-slider-wrap {
@@ -1939,10 +2007,65 @@ const callDensityOptions = [
   z-index: 4;
 }
 
-/* BPM value outside indicator */
+/* BPM value outside recommended range - Amber LED warning */
 .bpm-display__value--outside {
-  color: #F59E0B !important;
-  text-shadow: 0 0 40px rgba(245, 158, 11, 0.4) !important;
+  color: #FCD34D !important;
+  text-shadow:
+    0 0 10px rgba(251, 191, 36, 0.7),
+    0 0 20px rgba(245, 158, 11, 0.4),
+    0 0 2px rgba(252, 211, 77, 0.9) !important;
+  animation: ledValuePulseWarning var(--beat-duration) ease-out infinite !important;
+}
+
+@keyframes ledValuePulseWarning {
+  0%, 100% {
+    text-shadow:
+      0 0 10px rgba(251, 191, 36, 0.6),
+      0 0 20px rgba(245, 158, 11, 0.3),
+      0 0 2px rgba(252, 211, 77, 0.7);
+    opacity: 0.9;
+  }
+  8% {
+    text-shadow:
+      0 0 12px rgba(251, 191, 36, 0.9),
+      0 0 25px rgba(245, 158, 11, 0.5),
+      0 0 3px rgba(252, 211, 77, 1);
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.92;
+  }
+}
+
+/* Metronome LED also turns amber when outside range */
+.bpm-display:has(.bpm-display__value--outside) .metronome__dot {
+  background: radial-gradient(circle at 30% 30%, #FDE68A 0%, #FBBF24 60%, #D97706 100%);
+  box-shadow:
+    0 0 8px rgba(251, 191, 36, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  animation: ledBlinkWarning var(--beat-duration) ease-out infinite;
+}
+
+@keyframes ledBlinkWarning {
+  0%, 100% {
+    opacity: 0.4;
+    box-shadow:
+      0 0 4px rgba(251, 191, 36, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  }
+  8% {
+    opacity: 1;
+    box-shadow:
+      0 0 10px rgba(251, 191, 36, 0.8),
+      0 0 20px rgba(245, 158, 11, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  }
+  25% {
+    opacity: 0.5;
+  }
 }
 
 .bpm-slider {
@@ -2072,10 +2195,36 @@ const callDensityOptions = [
   color: rgba(250, 250, 250, 0.35);
 }
 
+/* ============================================
+   Tempo Presets - Vintage Synth LED Panel
+   ============================================ */
 .tempo-presets {
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0;
+  /* Unified hardware strip container */
+  background:
+    linear-gradient(180deg,
+      rgba(15, 15, 22, 0.95) 0%,
+      rgba(20, 20, 30, 0.9) 50%,
+      rgba(12, 12, 18, 0.95) 100%);
+  border: 1px solid rgba(60, 60, 80, 0.4);
+  border-radius: 10px;
+  padding: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+  /* Subtle CRT scan-line effect */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
 }
 
 .tempo-preset {
@@ -2083,67 +2232,206 @@ const callDensityOptions = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 0.5rem 0;
-  width: 70px;
-  background: rgba(30, 30, 42, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.12);
-  border-radius: 8px;
+  justify-content: center;
+  gap: 0;
+  padding: 0.65rem 0.9rem 0.5rem;
+  min-width: 60px;
+  background:
+    linear-gradient(180deg,
+      rgba(35, 35, 50, 0.8) 0%,
+      rgba(25, 25, 38, 0.9) 100%);
+  border: none;
+  border-radius: 7px;
   cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Tactile 3D button depth */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  /* LED indicator pseudo-element */
+  overflow: visible;
+}
+
+/* LED indicator dot */
+.tempo-preset::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(80, 80, 100, 0.4);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
 }
 
+/* Divider between buttons */
+.tempo-preset:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(60, 60, 80, 0.5) 30%,
+    rgba(60, 60, 80, 0.5) 70%,
+    transparent 100%);
+}
+
 .tempo-preset:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  background: rgba(40, 40, 55, 0.7);
+  background:
+    linear-gradient(180deg,
+      rgba(45, 45, 65, 0.9) 0%,
+      rgba(35, 35, 50, 0.95) 100%);
 }
 
+.tempo-preset:hover::before {
+  background: rgba(139, 92, 246, 0.3);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.2),
+    0 0 4px rgba(139, 92, 246, 0.3);
+}
+
+/* Active state - LED fully lit */
 .tempo-preset--active {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: var(--step-accent);
-  box-shadow: 0 0 16px -4px rgba(139, 92, 246, 0.4);
+  background:
+    linear-gradient(180deg,
+      rgba(139, 92, 246, 0.12) 0%,
+      rgba(100, 60, 180, 0.08) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(139, 92, 246, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 0 20px -4px rgba(139, 92, 246, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.tempo-preset--default {
-  border-color: rgba(251, 191, 36, 0.25);
+.tempo-preset--active::before {
+  background: radial-gradient(circle, #A78BFA 0%, #8B5CF6 100%);
+  box-shadow:
+    0 0 6px 1px rgba(139, 92, 246, 0.7),
+    0 0 12px 2px rgba(139, 92, 246, 0.4),
+    inset 0 0 2px rgba(255, 255, 255, 0.3);
+  animation: ledPulse 2s ease-in-out infinite;
 }
 
-.tempo-preset--default:not(.tempo-preset--active) {
-  background: rgba(251, 191, 36, 0.05);
+@keyframes ledPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px 1px rgba(139, 92, 246, 0.7),
+      0 0 12px 2px rgba(139, 92, 246, 0.4),
+      inset 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 8px 2px rgba(139, 92, 246, 0.9),
+      0 0 16px 4px rgba(139, 92, 246, 0.5),
+      inset 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* Default/recommended preset - amber LED tint */
+.tempo-preset--default::before {
+  background: rgba(251, 191, 36, 0.25);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.2),
+    0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.tempo-preset--default:not(.tempo-preset--active):hover::before {
+  background: rgba(251, 191, 36, 0.5);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.2),
+    0 0 6px rgba(251, 191, 36, 0.4);
+}
+
+/* When default IS active, use purple LED */
+.tempo-preset--default.tempo-preset--active::before {
+  background: radial-gradient(circle, #C4B5FD 0%, #A78BFA 100%);
+  box-shadow:
+    0 0 6px 1px rgba(167, 139, 250, 0.8),
+    0 0 12px 2px rgba(139, 92, 246, 0.5),
+    inset 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Active press effect */
+.tempo-preset:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 1px rgba(0, 0, 0, 0.3);
 }
 
 .tempo-preset__bpm {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: rgba(250, 250, 250, 0.85);
   line-height: 1;
+  letter-spacing: -0.02em;
+  transition: all 0.15s ease;
+  /* Subtle text shadow for depth */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.tempo-preset:hover .tempo-preset__bpm {
+  color: #FAFAFA;
 }
 
 .tempo-preset--active .tempo-preset__bpm {
-  color: var(--step-accent);
+  color: #C4B5FD;
+  text-shadow:
+    0 0 8px rgba(139, 92, 246, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .tempo-preset__label {
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.6rem;
-  font-weight: 500;
-  color: rgba(250, 250, 250, 0.5);
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.35);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
 }
 
 .tempo-preset--active .tempo-preset__label {
-  color: rgba(139, 92, 246, 0.7);
+  color: rgba(167, 139, 250, 0.6);
 }
 
+/* Star indicator - now a small badge */
 .tempo-preset__star {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  bottom: -2px;
+  right: -2px;
   font-size: 0.5rem;
   color: #FBBF24;
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
+  background: rgba(20, 20, 30, 0.95);
+  border-radius: 4px;
+  padding: 1px 3px;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(251, 191, 36, 0.6);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(251, 191, 36, 0.2);
+  opacity: 0.9;
+  transition: all 0.2s ease;
+}
+
+.tempo-preset:hover .tempo-preset__star {
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+}
+
+.tempo-preset--active .tempo-preset__star {
+  background: rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(139, 92, 246, 0.3);
 }
 
 /* Advanced Settings Section */

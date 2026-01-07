@@ -2,7 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
-import { useChordPlayer } from '../../composables/useChordPlayer'
+import { useChordPlayer, warmupChordPlayer } from '../../composables/useChordPlayer'
 import { chordProgressions, chordDegreeColors } from '../../data/chordColors'
 import { songImages } from '../../data/songImages'
 
@@ -10,6 +10,7 @@ const { t } = useI18n()
 const store = useWizardStore()
 const { isPlaying, currentChordIndex, playChord, playProgression, stop } = useChordPlayer()
 const playingChordId = ref<number | null>(null)
+const clickedBadgeKey = ref<string | null>(null)
 
 // WASM module for getting valid progressions
 let midisketch: any = null
@@ -133,9 +134,13 @@ function transposeToKey(degree: string, key: number): string {
 
 function selectChord(id: number) {
   store.selectChordProgression(id)
+  // Warmup audio on first interaction
+  warmupChordPlayer()
 }
 
 async function togglePlay(id: number) {
+  // Ensure audio is warmed up
+  await warmupChordPlayer()
   const chord = chordProgressions.find(c => c.id === id)
   if (!chord) return
 
@@ -150,6 +155,19 @@ async function togglePlay(id: number) {
     playingChordId.value = id
     await playProgression(chord.display, store.config.key, store.config.bpm)
   }
+}
+
+async function handleBadgeClick(chordId: number, index: number, degree: string) {
+  await warmupChordPlayer()
+  const key = `${chordId}-${index}`
+  clickedBadgeKey.value = key
+  playChord(degree, store.config.key)
+  // Reset after animation
+  setTimeout(() => {
+    if (clickedBadgeKey.value === key) {
+      clickedBadgeKey.value = null
+    }
+  }, 500)
 }
 </script>
 
@@ -202,9 +220,12 @@ async function togglePlay(id: number) {
               v-for="(item, index) in parseDegreesToColors(chord.display)"
               :key="index"
               class="chord-badge"
-              :class="{ 'chord-badge--playing': playingChordId === chord.id && currentChordIndex === index }"
+              :class="{
+                'chord-badge--playing': playingChordId === chord.id && currentChordIndex === index,
+                'chord-badge--clicked': clickedBadgeKey === `${chord.id}-${index}`
+              }"
               :style="{ backgroundColor: item.color }"
-              @click.stop="playChord(item.degree, store.config.key)"
+              @click.stop="handleBadgeClick(chord.id, index, item.degree)"
             >
               <span class="chord-badge__note">{{ transposeToKey(item.degree, store.config.key) }}</span>
               <span class="chord-badge__degree">{{ item.degree }}</span>
@@ -265,9 +286,12 @@ async function togglePlay(id: number) {
               v-for="(item, index) in parseDegreesToColors(chord.display)"
               :key="index"
               class="chord-badge"
-              :class="{ 'chord-badge--playing': playingChordId === chord.id && currentChordIndex === index }"
+              :class="{
+                'chord-badge--playing': playingChordId === chord.id && currentChordIndex === index,
+                'chord-badge--clicked': clickedBadgeKey === `${chord.id}-${index}`
+              }"
               :style="{ backgroundColor: item.color }"
-              @click.stop="playChord(item.degree, store.config.key)"
+              @click.stop="handleBadgeClick(chord.id, index, item.degree)"
             >
               <span class="chord-badge__note">{{ transposeToKey(item.degree, store.config.key) }}</span>
               <span class="chord-badge__degree">{{ item.degree }}</span>
@@ -417,6 +441,37 @@ async function togglePlay(id: number) {
   padding: 1.25rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Ambient glow layer */
+.chord-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 100% 80% at 50% 120%,
+    rgba(139, 92, 246, 0.15),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* Ripple container */
+.chord-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
 }
 
 .chord-card:hover {
@@ -424,14 +479,62 @@ async function togglePlay(id: number) {
   transform: translateY(-2px);
 }
 
+.chord-card:hover::before {
+  opacity: 1;
+}
+
+/* Active press effect */
+.chord-card:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+.chord-card:active::after {
+  animation: ripple-expand 0.6s ease-out;
+}
+
+@keyframes ripple-expand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 400px;
+    height: 400px;
+    opacity: 0;
+  }
+}
+
 .chord-card--selected {
   border-color: var(--step-accent);
   border-width: 2px;
-  background: rgba(139, 92, 246, 0.15);
-  box-shadow:
-    0 0 0 4px rgba(139, 92, 246, 0.15),
-    0 0 32px -8px rgba(139, 92, 246, 0.4);
-  transform: translateY(-2px);
+  background: rgba(139, 92, 246, 0.12);
+  animation: selected-glow 2s ease-in-out infinite;
+}
+
+.chord-card--selected::before {
+  opacity: 1;
+  background: radial-gradient(
+    ellipse 120% 100% at 50% 100%,
+    rgba(139, 92, 246, 0.25),
+    transparent 60%
+  );
+}
+
+@keyframes selected-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(139, 92, 246, 0.15),
+      0 0 24px -4px rgba(139, 92, 246, 0.3),
+      inset 0 0 20px -10px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(139, 92, 246, 0.2),
+      0 0 36px -4px rgba(139, 92, 246, 0.4),
+      inset 0 0 30px -10px rgba(139, 92, 246, 0.3);
+  }
 }
 
 .chord-card--recommended {
@@ -439,12 +542,59 @@ async function togglePlay(id: number) {
 }
 
 .chord-card--playing {
-  animation: card-pulse 1s ease-in-out infinite;
+  border-color: var(--step-accent);
+  animation: playing-pulse 0.8s ease-in-out infinite, playing-border 1.6s linear infinite;
 }
 
-@keyframes card-pulse {
-  0%, 100% { box-shadow: 0 0 24px -4px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 0 40px -4px rgba(139, 92, 246, 0.5); }
+.chord-card--playing::before {
+  opacity: 1;
+  animation: playing-glow 0.8s ease-in-out infinite;
+}
+
+@keyframes playing-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px rgba(139, 92, 246, 0.3),
+      0 0 30px -4px rgba(139, 92, 246, 0.5),
+      0 0 60px -8px rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(139, 92, 246, 0.4),
+      0 0 50px -4px rgba(139, 92, 246, 0.6),
+      0 0 80px -8px rgba(139, 92, 246, 0.4);
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes playing-glow {
+  0%, 100% {
+    background: radial-gradient(
+      ellipse 100% 80% at 50% 120%,
+      rgba(139, 92, 246, 0.3),
+      transparent 60%
+    );
+  }
+  50% {
+    background: radial-gradient(
+      ellipse 120% 100% at 50% 100%,
+      rgba(139, 92, 246, 0.5),
+      transparent 70%
+    );
+  }
+}
+
+@keyframes playing-border {
+  0% {
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+  50% {
+    border-color: rgba(236, 72, 153, 0.6);
+  }
+  100% {
+    border-color: rgba(139, 92, 246, 0.6);
+  }
 }
 
 .chord-card__star {
@@ -472,8 +622,8 @@ async function togglePlay(id: number) {
 }
 
 .chord-card__play {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -481,20 +631,76 @@ async function togglePlay(id: number) {
   border: 1px solid rgba(139, 92, 246, 0.25);
   border-radius: 50%;
   color: var(--step-accent);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ring pulse effect */
+.chord-card__play::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--step-accent);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
 }
 
 .chord-card__play:hover {
-  background: rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.3);
   transform: scale(1.1);
+  box-shadow: 0 0 20px -4px rgba(139, 92, 246, 0.5);
+}
+
+.chord-card__play:hover::before {
+  opacity: 0.5;
+  transform: scale(1);
+}
+
+.chord-card__play:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
 }
 
 .chord-card__play--active {
-  background: var(--step-accent);
+  background: linear-gradient(135deg, var(--step-accent), #EC4899);
   color: white;
-  box-shadow: 0 0 16px -2px rgba(139, 92, 246, 0.6);
+  border-color: transparent;
+  animation: play-active-pulse 0.6s ease-in-out infinite;
+}
+
+.chord-card__play--active::before {
+  animation: play-ring-expand 1s ease-out infinite;
+}
+
+@keyframes play-active-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(139, 92, 246, 0.4),
+      0 0 20px -2px rgba(139, 92, 246, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(139, 92, 246, 0.2),
+      0 0 30px -2px rgba(236, 72, 153, 0.6);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes play-ring-expand {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
 }
 
 .chord-flow {
@@ -569,25 +775,62 @@ async function togglePlay(id: number) {
   filter: brightness(1.15);
 }
 
-.chord-badge--playing {
-  transform: translateY(-3px) scale(1.08);
+.chord-badge--playing,
+.chord-badge--clicked {
+  transform: translateY(-4px) scale(1.12);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-    0 12px 32px 6px rgba(255, 255, 255, 0.15),
-    0 0 0 2px rgba(255, 255, 255, 0.2);
-  filter: brightness(1.25);
-  animation: badge-glow 0.6s ease-out;
+    0 8px 24px 4px rgba(255, 255, 255, 0.2),
+    0 0 0 3px rgba(255, 255, 255, 0.3),
+    0 0 40px 4px currentColor;
+  filter: brightness(1.3) saturate(1.2);
+  animation: badge-playing 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10;
 }
 
-@keyframes badge-glow {
+/* Outer ring effect for playing/clicked badge */
+.chord-badge--playing::after,
+.chord-badge--clicked::after {
+  content: '♪';
+  position: absolute;
+  right: auto;
+  left: 50%;
+  top: -12px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: white;
+  text-shadow: 0 0 8px currentColor;
+  animation: note-float 0.6s ease-out forwards;
+}
+
+@keyframes badge-playing {
   0% {
-    transform: translateY(-4px) scale(1.1);
-    filter: brightness(1.2);
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: translateY(-6px) scale(1.18);
+    filter: brightness(1.4) saturate(1.3);
   }
   100% {
-    transform: translateY(-4px) scale(1.05);
-    filter: brightness(1);
+    transform: translateY(-4px) scale(1.12);
+    filter: brightness(1.3) saturate(1.2);
+  }
+}
+
+@keyframes note-float {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-16px) scale(0.8);
   }
 }
 

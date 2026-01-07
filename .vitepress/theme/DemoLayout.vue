@@ -86,8 +86,10 @@ const otherLocales = computed(() =>
   --demo-text-muted: rgba(255, 255, 255, 0.35);
 
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--demo-bg);
   display: flex;
+  overscroll-behavior: none;
   flex-direction: column;
   font-family: 'Instrument Sans', -apple-system, sans-serif;
 }

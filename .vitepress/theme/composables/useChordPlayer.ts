@@ -57,6 +57,36 @@ function parseProgression(display: string): string[] {
 
 let synth: Tone.PolySynth | null = null
 let currentSequence: Tone.Part | null = null
+let isWarmedUp = false
+
+// Warmup function - call on first user interaction to prevent latency
+export async function warmupChordPlayer() {
+  if (isWarmedUp) return
+
+  try {
+    await Tone.start()
+
+    if (!synth) {
+      synth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: {
+          type: 'triangle'
+        },
+        envelope: {
+          attack: 0.02,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 0.8
+        }
+      }).toDestination()
+
+      synth.volume.value = -12
+    }
+
+    isWarmedUp = true
+  } catch (e) {
+    console.warn('Failed to warmup chord player:', e)
+  }
+}
 
 export function useChordPlayer() {
   const isPlaying = ref(false)
@@ -80,6 +110,7 @@ export function useChordPlayer() {
     }).toDestination()
 
     synth.volume.value = -12
+    isWarmedUp = true
 
     return synth
   }

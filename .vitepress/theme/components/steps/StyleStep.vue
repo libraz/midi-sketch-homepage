@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { songImages, songImageCategories } from '../../data/songImages'
+import { warmupChordPlayer } from '../../composables/useChordPlayer'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -15,6 +16,8 @@ const filteredImages = computed(() => {
 
 function selectStyle(id: string) {
   store.selectSongImage(id)
+  // Pre-warmup audio for chord preview in next step
+  warmupChordPlayer()
 }
 
 function getCategoryIcon(id: string): string {
@@ -100,7 +103,7 @@ function getStyleIcon(category: string): string {
         </div>
 
         <!-- BPM Badge (fixed position) -->
-        <span class="style-card__bpm">♩ {{ image.tempoRange.default }}</span>
+        <span class="style-card__bpm">BPM {{ image.tempoRange.min }}-{{ image.tempoRange.max }}</span>
 
         <!-- Selection Indicator -->
         <div class="style-card__check" v-if="store.config.songImageId === image.id">
@@ -189,6 +192,9 @@ function getStyleIcon(category: string): string {
 
 .style-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
   background: rgba(20, 20, 28, 0.6);
   border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: 16px;
@@ -221,15 +227,17 @@ function getStyleIcon(category: string): string {
   opacity: 0.15;
 }
 
-.style-card--selected {
+.style-card--selected,
+.style-card--selected:hover {
   border-color: var(--card-accent, #8B5CF6);
   background: rgba(139, 92, 246, 0.08);
   box-shadow:
-    0 0 0 1px var(--card-accent, #8B5CF6),
+    0 0 0 2px var(--card-accent, #8B5CF6),
     0 0 40px -8px var(--card-accent, rgba(139, 92, 246, 0.4));
 }
 
-.style-card--selected .style-card__glow {
+.style-card--selected .style-card__glow,
+.style-card--selected:hover .style-card__glow {
   opacity: 0.25;
 }
 
@@ -267,22 +275,22 @@ function getStyleIcon(category: string): string {
 .style-card__tagline {
   font-size: 0.85rem;
   color: rgba(250, 250, 250, 0.55);
-  margin: 0 0 1rem;
+  margin: 0;
   line-height: 1.4;
 }
 
 .style-card__bpm {
   position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: 0.75rem;
+  right: 0.75rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
-  padding: 0.25rem 0.625rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  color: rgba(250, 250, 250, 0.45);
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
   z-index: 1;
 }
 

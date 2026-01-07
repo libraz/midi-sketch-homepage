@@ -2,6 +2,11 @@
    MIDI Sketch Design System
    ========================================= */
 
+/* --- Mobile Overscroll Fix --- */
+html, body {
+  overscroll-behavior: none;
+}
+
 /* --- Design Tokens --- */
 :root {
   /* Core Colors */

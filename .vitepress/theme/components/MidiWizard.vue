@@ -129,6 +129,7 @@ onMounted(() => {
     <!-- Navigation Footer -->
     <footer class="noir-wizard__nav">
       <button
+        v-if="store.currentStep.value > 1"
         class="noir-btn noir-btn--ghost"
         :disabled="!store.canGoBack.value"
         @click="handleBack"
@@ -136,6 +137,7 @@ onMounted(() => {
         <span class="noir-btn__icon">←</span>
         <span>{{ t('wizard.nav.back') }}</span>
       </button>
+      <div v-else class="noir-btn--placeholder"></div>
 
       <div class="noir-wizard__step-indicator">
         <span class="noir-wizard__step-current">{{ store.currentStep.value }}</span>

@@ -1,31 +1,31 @@
-// Modern, cohesive color palette with depth
-// Colors are designed to work harmoniously together while maintaining distinction
+// Midnight Gems - Jewel-tone palette for noir dark UI
+// Rich, luminous colors that glow against #07070A background
 export const chordDegreeColors: Record<string, string> = {
-  // Major degrees - Refined, modern palette
-  'I': '#6366F1',    // Indigo - Tonic (stable, home) - primary
-  'II': '#10B981',   // Emerald - Supertonic - fresh
-  'III': '#A855F7',  // Purple - Mediant - mystical
-  'IV': '#F59E0B',   // Amber - Subdominant (warm)
-  'V': '#EF4444',    // Red - Dominant (tension)
-  'VI': '#3B82F6',   // Blue - Submediant
-  'VII': '#64748B',  // Slate - Leading tone
+  // Major degrees - Jewel tones with subtle glow
+  'I': '#9F7AEA',    // Amethyst - Tonic (home, stability)
+  'II': '#C4856A',   // Copper Rose - Supertonic (earthy warmth)
+  'III': '#A578B8',  // Mauve Crystal - Mediant (mysterious)
+  'IV': '#D4915D',   // Amber Topaz - Subdominant (warm comfort)
+  'V': '#5BA8BE',    // Sapphire Cyan - Dominant (tension, pull)
+  'VI': '#6B8FC4',   // Moonstone Blue - Submediant (depth)
+  'VII': '#8690A5',  // Twilight Steel - Leading tone (transitional)
 
   // Minor degrees - Deeper, richer variants
-  'i': '#4F46E5',    // Deep Indigo
-  'ii': '#059669',   // Deep Emerald
-  'iii': '#9333EA',  // Deep Purple
-  'iv': '#D97706',   // Deep Amber
-  'v': '#DC2626',    // Deep Red
-  'vi': '#2563EB',   // Deep Blue
-  'vii': '#475569',  // Deep Slate
+  'i': '#7C5CBF',    // Deep Amethyst
+  'ii': '#9A7058',   // Dark Copper
+  'iii': '#8B5DA3',  // Deep Orchid
+  'iv': '#B87A4A',   // Burnt Amber
+  'v': '#4A8FA3',    // Deep Teal
+  'vi': '#5478A8',   // Ocean Depths
+  'vii': '#6B7280',  // Charcoal
 
-  // Alterations - Distinctive accent colors
-  'bII': '#06B6D4',  // Cyan - Neapolitan
-  'bIII': '#C026D3', // Fuchsia variant
-  'bVI': '#7C3AED',  // Violet variant
-  'bVII': '#8B5CF6', // Light Violet
-  '#IV': '#FBBF24',  // Yellow
-  '#iv': '#F59E0B',  // Amber
+  // Alterations - Accent jewels
+  'bII': '#5AAFB8',  // Aquamarine - Neapolitan
+  'bIII': '#B86EA8', // Rhodolite
+  'bVI': '#8B6BBF',  // Tanzanite
+  'bVII': '#9A85C4', // Iolite
+  '#IV': '#C9A45D',  // Citrine
+  '#iv': '#B8944D',  // Dark Citrine
 }
 
 export function getChordGradient(degrees: string[]): string {
