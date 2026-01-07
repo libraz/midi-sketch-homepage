@@ -99,10 +99,7 @@ graph TD
     skipVocal["skipVocal=false"] --> vocalLow["vocalLow / vocalHigh"]
     skipVocal --> vocalAttitude
     skipVocal --> vocalStyle
-    skipVocal --> vocalNoteDensity
-    skipVocal --> vocalMinNoteDivision
-    skipVocal --> vocalRestRatio
-    skipVocal --> vocalAllowExtremLeap
+    skipVocal --> melodyTemplate
     skipVocal --> melodicComplexity
     skipVocal --> hookIntensity
     skipVocal --> vocalGroove
@@ -112,6 +109,25 @@ graph TD
 |-----------|-------------------|
 | `skipVocal=false` | All vocal-related options |
 | `skipVocal=true` | All vocal options are ignored |
+
+### 1.7 MelodyTemplate Selection
+
+```mermaid
+graph TD
+    melodyTemplate["melodyTemplate (0=Auto)"] --> |"!= 0"| MT["Use specified template"]
+    melodyTemplate --> |"= 0"| VS["Use vocalStyle mapping"]
+    VS --> VSM["VocalStylePreset → MelodyTemplate"]
+```
+
+| vocalStyle | Default Template |
+|------------|-----------------|
+| Standard (1) | PlateauTalk (1) |
+| Vocaloid (2) | RunUpTarget (2) |
+| Idol (4) | PlateauTalk (1) |
+| Ballad (5) | SparseAnchor (5) |
+| Rock (6) | RunUpTarget (2) |
+| CityPop (7) | PlateauTalk (1) |
+| Anime (8) | HookRepeat (4) |
 
 ---
 
@@ -148,8 +164,7 @@ graph TD
 |--------|---------------|----------|
 | `bpm` | `0` | Use style preset's default BPM |
 | `seed` | `0` | Auto-generate random seed |
-| `vocalNoteDensity` | `0` | Use style preset's default |
-| `vocalMinNoteDivision` | `0` | Use style preset's default (usually 8=eighth) |
+| `melodyTemplate` | `0` | Use VocalStylePreset's default template |
 | `targetDurationSeconds` | `0` | Use structure pattern from `formId` |
 
 ### Flowchart
@@ -271,21 +286,27 @@ flowchart TD
 
 Certain parameters automatically configure internal values when set.
 
-### 6.1 VocalStylePreset → Multiple Parameters
+### 6.1 VocalStylePreset → MelodyTemplate
 
-Setting `vocalStyle` automatically configures these internal parameters:
+Setting `vocalStyle` automatically selects a `MelodyTemplate`:
 
-| vocalStyle | Auto-configured Parameters |
-|------------|---------------------------|
-| `Vocaloid (2)` | `min_note_division=16`, `sixteenth_note_ratio≥0.5`, `note_density≥1.2`, `syncopation_prob=0.4`, `allow_bar_crossing=true`, `long_note_ratio=0.1`, `max_leap_interval=14`, `vocal_rest_ratio=0.05` |
-| `UltraVocaloid (3)` | `min_note_division=32`, `note_density=2.5`, **`vocal_allow_extreme_leap=true`**, `long_note_ratio=0.0`, `max_leap_interval=24`, `vocal_rest_ratio=0.0` |
-| `Idol (4)` | `min_note_division=8`, `sixteenth_note_ratio=0.15`, `note_density=0.8`, `long_note_ratio=0.25`, `hook_repetition=true`, `chorus_long_tones=true`, `max_leap_interval=7`, `vocal_rest_ratio=0.15` |
-| `Ballad (5)` | `min_note_division=4`, `sixteenth_note_ratio=0.0`, `note_density=0.4`, `long_note_ratio=0.5`, `chorus_long_tones=true`, `max_leap_interval=5`, `vocal_rest_ratio=0.25` |
-| `Rock (6)` | `min_note_division=8`, `note_density=0.7`, `long_note_ratio=0.3`, `hook_repetition=true`, `chorus_register_shift=7`, `max_leap_interval=9`, `syncopation_prob=0.25`, `allow_bar_crossing=true` |
-| `CityPop (7)` | `min_note_division=8`, `note_density=0.6`, `syncopation_prob=0.35`, `allow_bar_crossing=true`, `tension_usage=0.4`, `max_leap_interval=7` |
-| `Anime (8)` | `min_note_division=8`, `note_density=0.85`, `hook_repetition=true`, `chorus_long_tones=true`, `chorus_density_modifier=1.15`, `max_leap_interval=10`, `syncopation_prob=0.25`, `allow_bar_crossing=true` |
+| vocalStyle | MelodyTemplate | Key Characteristics |
+|------------|----------------|---------------------|
+| `Auto (0)` | Section-based | Verse=PlateauTalk, Chorus=RunUpTarget |
+| `Standard (1)` | PlateauTalk (1) | plateau_ratio=0.40, balanced |
+| `Vocaloid (2)` | RunUpTarget (2) | High density, wide leaps |
+| `UltraVocaloid (3)` | RunUpTarget (2) | Extreme density (32nd notes) |
+| `Idol (4)` | PlateauTalk (1) | High 16th ratio, hooks |
+| `Ballad (5)` | SparseAnchor (5) | Long notes, sparse |
+| `Rock (6)` | RunUpTarget (2) | Register shift |
+| `CityPop (7)` | PlateauTalk (1) | Groovy, syncopated |
+| `Anime (8)` | HookRepeat (4) | Hook-heavy |
+| `BrightKira (9)` | HookRepeat (4) | High register |
+| `CoolSynth (10)` | PlateauTalk (1) | Electronic |
+| `CuteAffected (11)` | HookRepeat (4) | Playful |
+| `PowerfulShout (12)` | RunUpTarget (2) | Intense |
 
-**Important**: If you explicitly set `vocalNoteDensity` or `vocalMinNoteDivision`, those values take priority.
+**Important**: If you explicitly set `melodyTemplate` to a non-zero value, it overrides the VocalStylePreset default.
 
 ### 6.2 MelodicComplexity → Multiple Parameters
 
@@ -362,11 +383,8 @@ flowchart TD
     subgraph Vocal["Vocal (skipVocal=false)"]
         vocalAttitude
         vocalStyle["vocalStyle (0=Auto)"]
+        melodyTemplate["melodyTemplate (0=Auto)"]
         vocalRange["vocalLow / vocalHigh"]
-        vocalNoteDensity["vocalNoteDensity (0=default)"]
-        vocalMinNoteDivision["vocalMinNoteDivision (0=default)"]
-        vocalRestRatio
-        vocalAllowExtremLeap
         melodicComplexity
         hookIntensity
         vocalGroove

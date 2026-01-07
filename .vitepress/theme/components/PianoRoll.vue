@@ -69,12 +69,24 @@ function handleSectionClick(section: Section) {
   emit('seek', tick)
 }
 
+// Track colors by name for consistent coloring
+const TRACK_COLOR_MAP: Record<string, string> = {
+  'Vocal': '#8B5CF6',   // Purple - Main melody
+  'Aux': '#FBBF24',     // Yellow/Amber - Sub melody/pad
+  'Chord': '#EC4899',   // Pink - Chords
+  'Bass': '#10B981',    // Green - Bass
+  'Motif': '#F97316',   // Orange - Motif
+  'Arpeggio': '#3B82F6', // Blue - Arpeggio
+}
+
+// Fallback colors for unknown tracks
 const TRACK_COLORS = [
-  '#8B5CF6', // Purple - Melody
-  '#EC4899', // Pink - Chords
-  '#10B981', // Green - Bass
-  '#F59E0B', // Orange - Arpeggio
-  '#3B82F6', // Blue - Drums
+  '#8B5CF6', // Purple
+  '#A855F7', // Violet
+  '#EC4899', // Pink
+  '#10B981', // Green
+  '#F59E0B', // Orange
+  '#3B82F6', // Blue
 ]
 
 const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }> = {
@@ -157,6 +169,7 @@ const visibleTracks = computed(() => {
         notes: normalizedNotes
       }
     })
+    .filter(t => t.notes.length > 0) // Only show tracks with notes
 })
 
 const sections = computed(() => {
@@ -218,8 +231,8 @@ const gridLines = computed(() => {
   return lines
 })
 
-function getTrackColor(trackIndex: number): string {
-  return TRACK_COLORS[trackIndex % TRACK_COLORS.length]
+function getTrackColor(trackName: string, trackIndex: number): string {
+  return TRACK_COLOR_MAP[trackName] || TRACK_COLORS[trackIndex % TRACK_COLORS.length]
 }
 
 function getSectionColor(type: string) {
@@ -527,13 +540,13 @@ const progressPercent = computed(() => {
               v-for="(note, noteIndex) in track.notes"
               :key="`${track.name}-${noteIndex}`"
               class="note-bar"
-              :class="{ 'note-bar--vocal': track.name === 'Vocal' }"
+              :class="{ 'note-bar--vocal': track.name === 'Vocal', 'note-bar--aux': track.name === 'Aux' }"
               :style="{
                 left: `${tickToX(note.start)}px`,
                 top: `${noteToY(note.note)}%`,
                 width: `${Math.max(2, durationToWidth(note.duration))}px`,
                 height: `${noteHeight}%`,
-                '--note-color': getTrackColor(trackIndex),
+                '--note-color': getTrackColor(track.name, trackIndex),
                 opacity: 0.6 + (note.velocity / 127) * 0.4
               }"
             />
@@ -562,7 +575,7 @@ const progressPercent = computed(() => {
         >
           <span
             class="legend-color"
-            :style="{ backgroundColor: getTrackColor(index) }"
+            :style="{ backgroundColor: getTrackColor(track.name, index) }"
           />
           <span class="legend-name">{{ track.name }}</span>
         </div>
@@ -1215,6 +1228,12 @@ const progressPercent = computed(() => {
 /* Vocal notes appear on top of other tracks */
 .note-bar--vocal {
   z-index: 10;
+}
+
+/* Aux notes appear just below vocal */
+.note-bar--aux {
+  z-index: 9;
+  opacity: 0.7;
 }
 
 .note-bar:hover {

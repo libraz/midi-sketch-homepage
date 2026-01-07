@@ -96,10 +96,7 @@ graph TD
     skipVocal["skipVocal=false"] --> vocalLow["vocalLow / vocalHigh"]
     skipVocal --> vocalAttitude
     skipVocal --> vocalStyle
-    skipVocal --> vocalNoteDensity
-    skipVocal --> vocalMinNoteDivision
-    skipVocal --> vocalRestRatio
-    skipVocal --> vocalAllowExtremLeap
+    skipVocal --> melodyTemplate
     skipVocal --> melodicComplexity
     skipVocal --> hookIntensity
     skipVocal --> vocalGroove
@@ -109,6 +106,25 @@ graph TD
 |------|------------------|
 | `skipVocal=false` | すべてのvocal関連オプション |
 | `skipVocal=true` | vocal関連オプションは全て無視 |
+
+### 1.7 MelodyTemplate選択
+
+```mermaid
+graph TD
+    melodyTemplate["melodyTemplate (0=Auto)"] --> |"!= 0"| MT["指定テンプレートを使用"]
+    melodyTemplate --> |"= 0"| VS["vocalStyleマッピングを使用"]
+    VS --> VSM["VocalStylePreset → MelodyTemplate"]
+```
+
+| vocalStyle | デフォルトテンプレート |
+|------------|-----------------|
+| Standard (1) | PlateauTalk (1) |
+| Vocaloid (2) | RunUpTarget (2) |
+| Idol (4) | PlateauTalk (1) |
+| Ballad (5) | SparseAnchor (5) |
+| Rock (6) | RunUpTarget (2) |
+| CityPop (7) | PlateauTalk (1) |
+| Anime (8) | HookRepeat (4) |
 
 ---
 
@@ -145,8 +161,7 @@ graph TD
 |------------|--------|------|
 | `bpm` | `0` | スタイルプリセットのデフォルトBPMを使用 |
 | `seed` | `0` | ランダムシードを自動生成 |
-| `vocalNoteDensity` | `0` | スタイルプリセットのデフォルトを使用 |
-| `vocalMinNoteDivision` | `0` | スタイルプリセットのデフォルト(通常8=eighth)を使用 |
+| `melodyTemplate` | `0` | VocalStylePresetのデフォルトテンプレートを使用 |
 | `targetDurationSeconds` | `0` | `formId`で指定した構造パターンを使用 |
 
 ### フローチャート
@@ -227,11 +242,10 @@ flowchart TD
 {
   stylePresetId: 16,  // vocaloid preset
   compositionStyle: 0,
-  vocalNoteDensity: 150,
-  vocalMinNoteDivision: 16,
-  vocalAllowExtremLeap: true,
+  vocalStyle: 2,      // Vocaloid
+  melodyTemplate: 2,  // RunUpTarget (YOASOBI風)
   arpeggioEnabled: true,
-  arpeggioSpeed: 1  // Sixteenth
+  arpeggioSpeed: 1    // Sixteenth
 }
 ```
 
@@ -303,11 +317,8 @@ flowchart TD
 | `introChant` | `intro_chant` | uint8 | 0 |
 | `mixPattern` | `mix_pattern` | uint8 | 0 |
 | `callDensity` | `call_density` | uint8 | 2 |
-| `vocalNoteDensity` | `vocal_note_density` | uint8 | 0 |
-| `vocalMinNoteDivision` | `vocal_min_note_division` | uint8 | 0 |
-| `vocalRestRatio` | `vocal_rest_ratio` | uint8 | 15 |
-| `vocalAllowExtremLeap` | `vocal_allow_extreme_leap` | bool | false |
 | `vocalStyle` | `vocal_style` | uint8 | 0 |
+| `melodyTemplate` | `melody_template` | uint8 | 0 |
 | `arrangementGrowth` | `arrangement_growth` | uint8 | 0 |
 | `motifRepeatScope` | `motif_repeat_scope` | uint8 | 0 |
 | `motifFixedProgression` | `motif_fixed_progression` | bool | true |
@@ -337,11 +348,8 @@ flowchart TD
     subgraph Vocal["Vocal (skipVocal=false)"]
         vocalAttitude
         vocalStyle["vocalStyle (0=Auto)"]
+        melodyTemplate["melodyTemplate (0=Auto)"]
         vocalRange["vocalLow / vocalHigh"]
-        vocalNoteDensity["vocalNoteDensity (0=default)"]
-        vocalMinNoteDivision["vocalMinNoteDivision (0=default)"]
-        vocalRestRatio
-        vocalAllowExtremLeap
         melodicComplexity
         hookIntensity
         vocalGroove
@@ -388,25 +396,27 @@ flowchart TD
 
 特定のパラメータを設定すると、内部で他のパラメータが自動的に設定/変更される関係です。
 
-### 8.1 VocalStylePreset → 複数パラメータ
+### 8.1 VocalStylePreset → MelodyTemplate
 
-`vocalStyle`を設定すると、以下のパラメータが内部で自動設定されます:
+`vocalStyle`を設定すると、`MelodyTemplate`が自動選択されます：
 
-| vocalStyle | 自動設定されるパラメータ |
-|------------|-------------------------|
-| `Vocaloid (1)` | `min_note_division=16`, `sixteenth_note_ratio≥0.5`, `note_density≥1.2`, `syncopation_prob=0.4`, `allow_bar_crossing=true`, `long_note_ratio=0.1`, `max_leap_interval=14`, `vocal_rest_ratio=0.05` |
-| `UltraVocaloid (2)` | `min_note_division=32`, `note_density=2.5`, **`vocal_allow_extreme_leap=true`**, `long_note_ratio=0.0`, `max_leap_interval=24`, `vocal_rest_ratio=0.0` |
-| `Idol (3)` | `min_note_division=8`, `sixteenth_note_ratio=0.15`, `note_density=0.8`, `long_note_ratio=0.25`, `hook_repetition=true`, `chorus_long_tones=true`, `max_leap_interval=7`, `vocal_rest_ratio=0.15` |
-| `Ballad (4)` | `min_note_division=4`, `sixteenth_note_ratio=0.0`, `note_density=0.4`, `long_note_ratio=0.5`, `chorus_long_tones=true`, `max_leap_interval=5`, `vocal_rest_ratio=0.25` |
-| `Rock (5)` | `min_note_division=8`, `note_density=0.7`, `long_note_ratio=0.3`, `hook_repetition=true`, `chorus_register_shift=7`, `max_leap_interval=9`, `syncopation_prob=0.25`, `allow_bar_crossing=true` |
-| `CityPop (6)` | `min_note_division=8`, `note_density=0.6`, `syncopation_prob=0.35`, `allow_bar_crossing=true`, `tension_usage=0.4`, `max_leap_interval=7` |
-| `Anime (7)` | `min_note_division=8`, `note_density=0.85`, `hook_repetition=true`, `chorus_long_tones=true`, `chorus_density_modifier=1.15`, `max_leap_interval=10`, `syncopation_prob=0.25`, `allow_bar_crossing=true` |
-| `BrightKira (9)` | `min_note_division=8`, `note_density=0.85`, `chorus_register_shift=7`, `max_leap_interval=10` |
-| `CoolSynth (10)` | `min_note_division=16`, `sixteenth_note_ratio=0.35`, `chorus_long_tones=false`, `max_leap_interval=7` |
-| `CuteAffected (11)` | `min_note_division=8`, `long_note_ratio=0.3`, `chorus_register_shift=5`, `max_leap_interval=8`, `syncopation_prob=0.1` |
-| `PowerfulShout (12)` | `min_note_division=4`, `sixteenth_note_ratio=0.05`, `note_density=0.6`, `long_note_ratio=0.5`, `chorus_density_modifier=1.3`, `max_leap_interval=12` |
+| vocalStyle | MelodyTemplate | 主な特性 |
+|------------|----------------|----------|
+| `Auto (0)` | セクション依存 | Verse=PlateauTalk、Chorus=RunUpTarget |
+| `Standard (1)` | PlateauTalk (1) | plateau_ratio=0.40、バランス型 |
+| `Vocaloid (2)` | RunUpTarget (2) | 高密度、広い跳躍 |
+| `UltraVocaloid (3)` | RunUpTarget (2) | 超高密度（32分音符） |
+| `Idol (4)` | PlateauTalk (1) | 高16分率、フック |
+| `Ballad (5)` | SparseAnchor (5) | ロングノート、スパース |
+| `Rock (6)` | RunUpTarget (2) | 音域シフト |
+| `CityPop (7)` | PlateauTalk (1) | グルービー、シンコペ |
+| `Anime (8)` | HookRepeat (4) | フック重視 |
+| `BrightKira (9)` | HookRepeat (4) | 高音域 |
+| `CoolSynth (10)` | PlateauTalk (1) | エレクトロニック |
+| `CuteAffected (11)` | HookRepeat (4) | プレイフル |
+| `PowerfulShout (12)` | RunUpTarget (2) | 激しい |
 
-**重要**: ユーザーが明示的に`vocalNoteDensity`または`vocalMinNoteDivision`を設定した場合、その値が優先されます。
+**重要**: `melodyTemplate`を非0の値で明示的に設定すると、VocalStylePresetのデフォルトを上書きします。
 
 ### 8.2 MelodicComplexity → 複数パラメータ
 

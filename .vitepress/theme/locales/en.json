@@ -300,6 +300,28 @@
     },
     "advanced": {
       "toggle": "Advanced Settings",
+      "melodyTemplate": {
+        "label": "Melody Type",
+        "description": "Select a melodic shape pattern. Each pattern creates a distinct musical character",
+        "options": {
+          "auto": "Auto",
+          "autoDesc": "Automatically select based on section and style",
+          "plateauTalk": "Plateau Talk",
+          "plateauTalkDesc": "Talk-sing style with same-note retention (NewJeans, Billie Eilish)",
+          "runUpTarget": "Run Up Target",
+          "runUpTargetDesc": "Ascending melody building to target pitch (YOASOBI, Ado)",
+          "downResolve": "Down Resolve",
+          "downResolveDesc": "Descending resolution, good for B-sections",
+          "hookRepeat": "Hook Repeat",
+          "hookRepeatDesc": "Short catchy hooks with high repetition (TikTok, K-POP)",
+          "sparseAnchor": "Sparse Anchor",
+          "sparseAnchorDesc": "Sparse anchored notes with breathing room (Official髭男dism)",
+          "callResponse": "Call Response",
+          "callResponseDesc": "Duet-style call and response patterns",
+          "jumpAccent": "Jump Accent",
+          "jumpAccentDesc": "Emotional peaks with dramatic interval jumps"
+        }
+      },
       "vocalRange": {
         "label": "Vocal Range",
         "description": "Set the pitch range for the melody",
@@ -434,6 +456,7 @@
       "title": "Current Settings",
       "vocalRange": "Range",
       "vocalStyle": "Style",
+      "melodyTemplate": "Melody Type",
       "vocalGroove": "Groove",
       "complexity": "Complexity",
       "hook": "Hook Intensity",

@@ -86,16 +86,10 @@ export interface SongConfig {
     mixPattern: number;
     /** Call density: 0=None, 1=Minimal, 2=Standard, 3=Intense */
     callDensity: number;
-    /** Note density (0-200, where 0=use style default, 70=standard, 100=idol, 150=vocaloid) */
-    vocalNoteDensity: number;
-    /** Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth) */
-    vocalMinNoteDivision: number;
-    /** Rest ratio (0-50, percentage of phrase rest time) */
-    vocalRestRatio: number;
-    /** Allow extreme leaps for vocaloid-style melodies */
-    vocalAllowExtremLeap: boolean;
     /** Vocal style preset: 0=Auto, 1=Standard, 2=Vocaloid, etc. */
     vocalStyle: number;
+    /** Melody template: 0=Auto, 1=PlateauTalk, 2=RunUpTarget, etc. */
+    melodyTemplate: number;
     /** Arrangement growth: 0=LayerAdd, 1=RegisterAdd */
     arrangementGrowth: number;
     /** Sync arpeggio with chord changes (default=true) */
@@ -127,14 +121,16 @@ export interface VocalParams {
     vocalAttitude: number;
     /** Vocal style preset: 0=Auto, 1=Standard, 2=Vocaloid, etc. */
     vocalStyle?: number;
-    /** Note density (0-200, where 0=use style default, 70=standard, 100=idol, 150=vocaloid) */
-    vocalNoteDensity?: number;
-    /** Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth) */
-    vocalMinNoteDivision?: number;
-    /** Rest ratio (0-50, percentage of phrase rest time) */
-    vocalRestRatio?: number;
-    /** Allow extreme leaps for vocaloid-style melodies */
-    vocalAllowExtremLeap?: boolean;
+    /** Melody template: 0=Auto, 1=PlateauTalk, 2=RunUpTarget, etc. */
+    melodyTemplate?: number;
+    /** Melodic complexity: 0=Simple, 1=Standard, 2=Complex */
+    melodicComplexity?: number;
+    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong */
+    hookIntensity?: number;
+    /** Vocal groove feel: 0=Straight, 1=OffBeat, 2=Swing, etc. */
+    vocalGroove?: number;
+    /** Composition style: 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven */
+    compositionStyle?: number;
 }
 /**
  * Preset information

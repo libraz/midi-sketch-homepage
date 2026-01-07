@@ -8,13 +8,23 @@
 midi-sketch/
 ├── src/
 │   ├── core/              # コア生成エンジン
+│   │   ├── pitch_utils.h/cpp      # ピッチ操作（テッシトゥーラ、音程）
+│   │   ├── chord_utils.h/cpp      # コード操作（コードトーン）
+│   │   ├── melody_templates.h/cpp # 7つのメロディテンプレート定義
+│   │   ├── harmony_context.h/cpp  # トラック間衝突検出
+│   │   ├── generator.h/cpp        # 中央オーケストレーター
+│   │   └── types.h                # 型定義（約780行）
 │   ├── midi/              # MIDI出力（SMF Type 1）
 │   ├── track/             # トラック生成器
+│   │   ├── vocal.cpp              # ボーカル調整（約470行）
+│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約520行）
+│   │   ├── aux_track.cpp          # Aux副旋律（約440行）
+│   │   └── ...                    # その他のトラック生成器
 │   ├── analysis/          # 不協和音分析
 │   ├── preset/            # プリセット定義
 │   ├── midisketch.h       # 公開C++ API
-│   └── midisketch_c.h     # C API（WASMインターフェース）
-├── tests/                 # Google Testスイート
+│   └── midisketch_c.h     # C API（WASMインターフェース、約360行）
+├── tests/                 # Google Testスイート（619+テスト）
 ├── dist/                  # WASM配布物
 └── demo/                  # ブラウザデモ
 ```
@@ -49,6 +59,7 @@ private:
   void generateBass();
   void generateChord();
   void generateVocal();
+  void generateAux();         // NEW: Aux副旋律生成
   void generateDrums();
   void generateMotif();
   void generateArpeggio();
@@ -59,17 +70,18 @@ private:
 
 ### Songコンテナ
 
-生成された全データを保持：
+生成された全データを保持（8トラック）：
 
 ```cpp
 struct Song {
   Arrangement arrangement;     // セクション配置
-  MidiTrack vocal;            // チャンネル 0
-  MidiTrack chord;            // チャンネル 1
-  MidiTrack bass;             // チャンネル 2
-  MidiTrack motif;            // チャンネル 3
-  MidiTrack arpeggio;         // チャンネル 4
-  MidiTrack drums;            // チャンネル 9
+  MidiTrack vocal;            // チャンネル 0 - 主旋律
+  MidiTrack aux;              // チャンネル 5 - 副旋律（NEW）
+  MidiTrack chord;            // チャンネル 2 - 和声
+  MidiTrack bass;             // チャンネル 3 - ベース
+  MidiTrack motif;            // チャンネル 4 - BackgroundMotifスタイル
+  MidiTrack arpeggio;         // チャンネル 5 - SynthDrivenスタイル
+  MidiTrack drums;            // チャンネル 9 - リズム
   MidiTrack se;               // チャンネル 15（マーカー）
 };
 ```
@@ -173,7 +185,7 @@ std::mt19937 rng(seed);  // 同じシード = 同じ出力
 
 Emscripten経由でWebAssemblyにコンパイル：
 
-- **出力**: 約80KB WASM + 約17KB JSグルー
+- **出力**: 約155KB WASM + 約37KB JS（ラッパー + グルー）
 - **外部依存なし**: 純粋なC++17
 - **ES6モジュール**: モジュラーJavaScriptラッパー
 

@@ -300,6 +300,28 @@
     },
     "advanced": {
       "toggle": "詳細設定",
+      "melodyTemplate": {
+        "label": "メロディタイプ",
+        "description": "メロディの形状パターンを選択。パターンごとに異なる音楽的特徴を持ちます",
+        "options": {
+          "auto": "自動",
+          "autoDesc": "セクションとスタイルに応じて自動選択",
+          "plateauTalk": "プラトートーク",
+          "plateauTalkDesc": "トークシング風、同音保持が高い（NewJeans、Billie Eilish風）",
+          "runUpTarget": "ランアップターゲット",
+          "runUpTargetDesc": "上昇系メロディ、目標音に向かって構築（YOASOBI、Ado風）",
+          "downResolve": "ダウンリゾルブ",
+          "downResolveDesc": "下降解決型、Bメロに適している",
+          "hookRepeat": "フックリピート",
+          "hookRepeatDesc": "短いキャッチーなフックの反復（TikTok、K-POP風）",
+          "sparseAnchor": "スパースアンカー",
+          "sparseAnchorDesc": "疎なアンカーノート、呼吸感のある（Official髭男dism風）",
+          "callResponse": "コールレスポンス",
+          "callResponseDesc": "デュエット風の掛け合いパターン",
+          "jumpAccent": "ジャンプアクセント",
+          "jumpAccentDesc": "感情的なピーク、ドラマチックな跳躍"
+        }
+      },
       "vocalRange": {
         "label": "ボーカル音域",
         "description": "メロディの音域を設定します",
@@ -434,6 +456,7 @@
       "title": "現在の設定",
       "vocalRange": "音域",
       "vocalStyle": "スタイル",
+      "melodyTemplate": "メロディタイプ",
       "vocalGroove": "グルーブ",
       "complexity": "複雑度",
       "hook": "フック強度",

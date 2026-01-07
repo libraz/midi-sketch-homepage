@@ -29,8 +29,7 @@ const BGM_AFFECTING_KEYS: (keyof WizardConfig)[] = [
 // Config keys that affect Vocal generation (Step 6)
 const VOCAL_AFFECTING_KEYS: (keyof WizardConfig)[] = [
   'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
-  'vocalNoteDensity', 'vocalMinNoteDivision', 'vocalRestRatio', 'vocalAllowExtremLeap',
-  'vocalGroove'
+  'melodyTemplate', 'vocalGroove'
 ]
 
 // ============================================
@@ -56,8 +55,7 @@ const STEP3_KEYS: (keyof WizardConfig)[] = [
 // Step 5: Melody/Vocal settings
 const STEP5_KEYS: (keyof WizardConfig)[] = [
   'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
-  'vocalNoteDensity', 'vocalMinNoteDivision', 'vocalRestRatio', 'vocalAllowExtremLeap',
-  'vocalGroove'
+  'melodyTemplate', 'vocalGroove'
 ]
 
 export interface WizardConfig {
@@ -103,12 +101,8 @@ export interface WizardConfig {
   introChant: number // 0=None, 1=Gachikoi, 2=Shouting
   mixPattern: number // 0=None, 1=Standard, 2=Tiger
   callDensity: number // 0=None, 1=Minimal, 2=Standard, 3=Intense
-  // Vocal detail settings
-  vocalNoteDensity: number // 0-200 (0=style default, 70=standard, 100=idol, 150=vocaloid)
-  vocalMinNoteDivision: number // 0=default, 4=quarter, 8=eighth, 16=sixteenth
-  vocalRestRatio: number // 0-50 (percentage of phrase rest time)
-  vocalRestRatioMode: number // 0=Auto (follow vocalStyle), 1=Custom (use slider value)
-  vocalAllowExtremLeap: number // 0=Auto (follow vocalStyle), 1=On, 2=Off
+  // Melody template (0=Auto, 1-7=specific template)
+  melodyTemplate: number // 0=Auto, 1=PlateauTalk, 2=RunUpTarget, 3=DownResolve, 4=HookRepeat, 5=SparseAnchor, 6=CallResponse, 7=JumpAccent
   // Arrangement settings
   arrangementGrowth: number // 0=LayerAdd, 1=RegisterAdd
   // Arpeggio sync settings
@@ -174,12 +168,8 @@ const DEFAULT_CONFIG: WizardConfig = {
   introChant: 0,
   mixPattern: 0,
   callDensity: 2,
-  // Vocal detail
-  vocalNoteDensity: 0,
-  vocalMinNoteDivision: 0,
-  vocalRestRatio: 20,
-  vocalRestRatioMode: 0, // 0=Auto
-  vocalAllowExtremLeap: 0, // 0=Auto
+  // Melody template (0=Auto, 1-7=specific template)
+  melodyTemplate: 0,
   // Arrangement
   arrangementGrowth: 0,
   // Motif
@@ -262,7 +252,8 @@ export function useWizardStore() {
   function prevStep() {
     if (canGoBack.value) {
       const newStep = currentStep.value - 1
-      clearStepsAfter(newStep)
+      // Going back exactly one step: preserve settings
+      clearStepsAfter(newStep, true)
       currentStep.value = newStep
     }
   }
@@ -271,7 +262,10 @@ export function useWizardStore() {
     if (step >= 1 && step <= totalSteps) {
       // If going backwards, clear settings for steps after the target
       if (step < currentStep.value) {
-        clearStepsAfter(step)
+        const stepsBack = currentStep.value - step
+        // Preserve settings only if going back exactly one step
+        const preserveSettings = stepsBack === 1
+        clearStepsAfter(step, preserveSettings)
       }
       currentStep.value = step
     }
@@ -294,31 +288,32 @@ export function useWizardStore() {
     }
   }
 
-  // Clear settings for steps after the given step
-  // When going back to step N, settings for steps >= N are reset to defaults
-  function clearStepsAfter(step: number) {
-    // Reset settings for the target step and all steps after it
-    if (step <= 1) {
-      // Going back to step 1: reset step 2, 3, 5 settings
-      resetConfigKeys(STEP2_KEYS)
-      resetConfigKeys(STEP3_KEYS)
-      resetConfigKeys(STEP5_KEYS)
-    } else if (step <= 2) {
-      // Going back to step 2: reset step 2, 3, 5 settings
-      resetConfigKeys(STEP2_KEYS)
-      resetConfigKeys(STEP3_KEYS)
-      resetConfigKeys(STEP5_KEYS)
-    } else if (step <= 3) {
-      // Going back to step 3: reset step 3, 5 settings
-      resetConfigKeys(STEP3_KEYS)
-      resetConfigKeys(STEP5_KEYS)
-    } else if (step <= 5) {
-      // Going back to step 4 or 5: reset step 5 settings
-      resetConfigKeys(STEP5_KEYS)
+  // Clear settings for steps after the given step (only when jumping multiple steps)
+  // When going back exactly one step, settings are preserved
+  // When going back 2+ steps, intermediate step settings are reset
+  function clearStepsAfter(step: number, preserveSettings: boolean = false) {
+    // Reset settings only if not preserving (i.e., jumping multiple steps back)
+    if (!preserveSettings) {
+      if (step <= 1) {
+        // Going back to step 1: reset step 2, 3, 5 settings
+        resetConfigKeys(STEP2_KEYS)
+        resetConfigKeys(STEP3_KEYS)
+        resetConfigKeys(STEP5_KEYS)
+      } else if (step <= 2) {
+        // Going back to step 2: reset step 3, 5 settings
+        resetConfigKeys(STEP3_KEYS)
+        resetConfigKeys(STEP5_KEYS)
+      } else if (step <= 3) {
+        // Going back to step 3: reset step 5 settings
+        resetConfigKeys(STEP5_KEYS)
+      } else if (step <= 4) {
+        // Going back to step 4: reset step 5 settings
+        resetConfigKeys(STEP5_KEYS)
+      }
+      // Step 5, 6: no settings to reset
     }
-    // Step 6: no settings to reset
 
-    // Invalidate generation results
+    // Always invalidate generation results
     if (step <= 4) {
       invalidateStep(4)
     } else if (step <= 5) {

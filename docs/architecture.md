@@ -8,13 +8,23 @@ This document explains the internal architecture of [MIDI Sketch](https://github
 midi-sketch/
 ├── src/
 │   ├── core/              # Core generation engine
+│   │   ├── pitch_utils.h/cpp      # Pitch operations (tessitura, intervals)
+│   │   ├── chord_utils.h/cpp      # Chord operations (chord tones)
+│   │   ├── melody_templates.h/cpp # 7 melody template definitions
+│   │   ├── harmony_context.h/cpp  # Inter-track collision detection
+│   │   ├── generator.h/cpp        # Central orchestrator
+│   │   └── types.h                # Type definitions (~780 lines)
 │   ├── midi/              # MIDI output (SMF Type 1)
 │   ├── track/             # Track generators
+│   │   ├── vocal.cpp              # Vocal coordination (~470 lines)
+│   │   ├── melody_designer.cpp    # Template-driven melody (~520 lines)
+│   │   ├── aux_track.cpp          # Aux sub-melody (~440 lines)
+│   │   └── ...                    # Other track generators
 │   ├── analysis/          # Dissonance analysis
 │   ├── preset/            # Preset definitions
 │   ├── midisketch.h       # Public C++ API
-│   └── midisketch_c.h     # C API (WASM interface)
-├── tests/                 # Google Test suite
+│   └── midisketch_c.h     # C API (WASM interface, ~360 lines)
+├── tests/                 # Google Test suite (619+ tests)
 ├── dist/                  # WASM distribution
 └── demo/                  # Browser demo
 ```
@@ -49,6 +59,7 @@ private:
   void generateBass();
   void generateChord();
   void generateVocal();
+  void generateAux();         // NEW: Aux sub-melody generation
   void generateDrums();
   void generateMotif();
   void generateArpeggio();
@@ -59,17 +70,18 @@ private:
 
 ### Song Container
 
-Holds all generated data:
+Holds all generated data (8 tracks):
 
 ```cpp
 struct Song {
   Arrangement arrangement;     // Section layout
-  MidiTrack vocal;            // Channel 0
-  MidiTrack chord;            // Channel 1
-  MidiTrack bass;             // Channel 2
-  MidiTrack motif;            // Channel 3
-  MidiTrack arpeggio;         // Channel 4
-  MidiTrack drums;            // Channel 9
+  MidiTrack vocal;            // Channel 0 - Main melody
+  MidiTrack aux;              // Channel 5 - Sub-melody (NEW)
+  MidiTrack chord;            // Channel 2 - Harmony
+  MidiTrack bass;             // Channel 3 - Foundation
+  MidiTrack motif;            // Channel 4 - BackgroundMotif style
+  MidiTrack arpeggio;         // Channel 5 - SynthDriven style
+  MidiTrack drums;            // Channel 9 - Rhythm
   MidiTrack se;               // Channel 15 (markers)
 };
 ```
@@ -173,7 +185,7 @@ When seed is 0, current clock time is used for randomization.
 
 The library compiles to WebAssembly via Emscripten:
 
-- **Output**: ~80KB WASM + ~17KB JS glue
+- **Output**: ~155KB WASM + ~37KB JS (wrapper + glue)
 - **No external dependencies**: Pure C++17
 - **ES6 module**: Modular JavaScript wrapper
 

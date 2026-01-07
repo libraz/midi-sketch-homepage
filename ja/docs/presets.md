@@ -195,25 +195,43 @@ flowchart LR
 | Expressive | テンション、タイミング変動 | エモーショナル、ダイナミック |
 | Raw | 非コードトーン、境界破壊 | エッジー、モダン |
 
+## メロディテンプレート
+
+**テンプレート駆動**アプローチでコアメロディ動作を定義する7つのメロディテンプレート：
+
+| ID | 名前 | Plateau | 最大ステップ | 用途 |
+|----|------|---------|----------|----------|
+| 0 | Auto | - | - | VocalStylePreset基準で選択 |
+| 1 | PlateauTalk | 0.65 | 2 | NewJeans、Billie Eilish（トークシング） |
+| 2 | RunUpTarget | 0.20 | 4 | YOASOBI、Ado（上昇ラン） |
+| 3 | DownResolve | 0.30 | 3 | Bセクション、プリコーラス |
+| 4 | HookRepeat | 0.40 | 3 | TikTok、K-POPフック |
+| 5 | SparseAnchor | 0.50 | 2 | バラード、Official髭男dism |
+| 6 | CallResponse | - | - | デュエットパターン |
+| 7 | JumpAccent | - | - | 感情的ピーク |
+
+- **Plateau ratio**: 同じピッチに留まる確率（0.0-1.0）
+- **Max step**: 半音単位の最大メロディ音程
+
 ## ボーカルスタイルプリセット
 
-メロディ特性を定義する13のボーカルスタイルプリセット：
+メロディテンプレートを自動選択する13のボーカルスタイルプリセット：
 
-| ID | 名前 | 最小音符 | 音符密度 | 最大跳躍 | 特徴 |
-|----|------|----------|----------|----------|------|
-| 0 | Auto | - | - | - | スタイルに基づいて自動選択 |
-| 1 | Standard | 8分 | 0.7 | 7 | バランスの取れたポップボーカル |
-| 2 | Vocaloid | 16分 | 1.2+ | 14 | 高速、広い跳躍、シンコペ |
-| 3 | UltraVocaloid | 32分 | 2.5 | 24 | 超高速、非常に広い跳躍 |
-| 4 | Idol | 8分 | 0.8 | 7 | キャッチーなフック、サビでロングトーン |
-| 5 | Ballad | 4分 | 0.4 | 5 | スロー、持続音 |
-| 6 | Rock | 8分 | 0.7 | 9 | パワフル、サビで音域シフト |
-| 7 | CityPop | 8分 | 0.6 | 7 | ジャジー、シンコペ、テンションノート |
-| 8 | Anime | 8分 | 0.85 | 10 | ダイナミックフック、小節またぎ |
-| 9 | BrightKira | 8分 | 0.85 | 10 | 高音域、煌びやか |
-| 10 | CoolSynth | 16分 | - | 7 | エレクトロニック、正確なタイミング |
-| 11 | CuteAffected | 8分 | - | 8 | プレイフル、適度な音域シフト |
-| 12 | PowerfulShout | 4分 | 0.6 | 12 | 激しい、サビ高密度 |
+| ID | 名前 | テンプレート | 特徴 |
+|----|------|----------|-----------|
+| 0 | Auto | セクション依存 | Verse=PlateauTalk、Chorus=RunUpTarget |
+| 1 | Standard | PlateauTalk | バランスの取れたポップボーカル |
+| 2 | Vocaloid | RunUpTarget | 高速、広い跳躍 |
+| 3 | UltraVocaloid | RunUpTarget | 超高速（32分音符） |
+| 4 | Idol | PlateauTalk | キャッチーなフック、高16分率 |
+| 5 | Ballad | SparseAnchor | スロー、持続音 |
+| 6 | Rock | RunUpTarget | パワフル、音域シフト |
+| 7 | CityPop | PlateauTalk | ジャジー、グルービー |
+| 8 | Anime | HookRepeat | フック重視 |
+| 9 | BrightKira | HookRepeat | 高音域 |
+| 10 | CoolSynth | PlateauTalk | エレクトロニック |
+| 11 | CuteAffected | HookRepeat | プレイフル、キュート |
+| 12 | PowerfulShout | RunUpTarget | 激しい、シャウト系 |
 
 ### ボーカルスタイルカテゴリ
 

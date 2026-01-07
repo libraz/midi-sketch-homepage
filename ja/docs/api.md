@@ -126,12 +126,9 @@ sketch.generateFromConfig({
   vocalHigh: 74,              // ボーカル音域上限 (MIDI ノート番号)
   skipVocal: false,           // ボーカル生成をスキップ (BGM先行ワークフロー用)
 
-  // ボーカル詳細設定
-  vocalNoteDensity: 0,        // 音符密度 (0=スタイルデフォルト, 70=標準, 100=アイドル, 150=ボカロ)
-  vocalMinNoteDivision: 0,    // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
-  vocalRestRatio: 0,          // 休符率 (0-50, フレーズ休止時間の割合)
-  vocalAllowExtremLeap: false, // 広い跳躍を許可 (ボカロスタイル用)
+  // ボーカルスタイル設定
   vocalStyle: 0,              // ボーカルスタイルプリセット (0=自動, 1-12=特定プリセット)
+  melodyTemplate: 0,          // メロディテンプレート (0=自動, 1-7=特定テンプレート)
   melodicComplexity: 1,       // メロディ複雑さ (0=シンプル, 1=標準, 2=複雑)
   hookIntensity: 2,           // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング)
   vocalGroove: 0,             // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング, 3=シンコペ, 4=16分ドライブ, 5=バウンス8分)
@@ -179,7 +176,7 @@ sketch.generateFromConfig({
 
 ### `regenerateVocal(params)`
 
-ボーカルトラックのみを再生成します。BGM トラック（コード、ベース、ドラム、アルペジオ）は変更されません。
+ボーカルトラック（およびAuxトラック）のみを再生成します。BGM トラック（コード、ベース、ドラム、アルペジオ）は変更されません。
 BGM先行ワークフローでは `generateFromConfig()` の `skipVocal: true` と組み合わせて使用します。
 
 ```javascript
@@ -191,10 +188,11 @@ sketch.regenerateVocal({
 
   // オプション: ボーカル生成の微調整
   vocalStyle: 0,               // ボーカルスタイルプリセット (0=自動, 1-12=特定プリセット)
-  vocalNoteDensity: 100,       // 音符密度 (0=スタイルデフォルト, 70=標準, 100=アイドル, 150=ボカロ)
-  vocalMinNoteDivision: 8,     // 最小音符分割 (0=デフォルト, 4=4分, 8=8分, 16=16分)
-  vocalRestRatio: 20,          // 休符率 (0-50, フレーズ休止時間の割合)
-  vocalAllowExtremLeap: false, // 広い跳躍を許可 (ボカロスタイル用)
+  melodyTemplate: 0,           // メロディテンプレート (0=自動, 1-7=特定テンプレート)
+  melodicComplexity: 1,        // メロディ複雑さ (0=シンプル, 1=標準, 2=複雑)
+  hookIntensity: 2,            // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング)
+  vocalGroove: 0,              // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング等)
+  compositionStyle: 0,         // 作曲スタイル (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
 })
 ```
 
@@ -331,6 +329,19 @@ VocalStylePreset.BrightKira    // 9 - ブライト/キラキラ (高音域、煌
 VocalStylePreset.CoolSynth     // 10 - クールシンセ (エレクトロニック、正確)
 VocalStylePreset.CuteAffected  // 11 - キュート/あざとい (プレイフル)
 VocalStylePreset.PowerfulShout // 12 - パワフルシャウト (激しい)
+```
+
+### `MelodyTemplate`
+
+```javascript
+MelodyTemplate.Auto         // 0 - VocalStylePresetに基づいて自動選択
+MelodyTemplate.PlateauTalk  // 1 - 同音保持率が高い (NewJeans、Billie Eilish)
+MelodyTemplate.RunUpTarget  // 2 - ターゲットに向かって上昇 (YOASOBI、Ado)
+MelodyTemplate.DownResolve  // 3 - 下降解決 (Bセクション)
+MelodyTemplate.HookRepeat   // 4 - 短いフック反復 (TikTok、K-POP)
+MelodyTemplate.SparseAnchor // 5 - 疎なアンカー音 (バラード)
+MelodyTemplate.CallResponse // 6 - デュエット風コールアンドレスポンス
+MelodyTemplate.JumpAccent   // 7 - 感情的ピークの跳躍
 ```
 
 ### `MelodicComplexity`

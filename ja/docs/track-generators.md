@@ -4,21 +4,27 @@
 
 ## トラック概要
 
+MIDI Sketchは8つのトラックを異なるMIDIチャンネルに生成します：
+
 ```mermaid
 flowchart TB
-    subgraph Rhythm ["リズムセクション"]
-        Bass["ベース (Ch 2)"]
-        Drums["ドラム (Ch 9)"]
+    subgraph Melody ["メロディレイヤー"]
+        Vocal["ボーカル (Ch 0)"]
+        Aux["Aux (Ch 5)"]
     end
 
     subgraph Harmony ["ハーモニー"]
-        Chord["コード (Ch 1)"]
+        Chord["コード (Ch 2)"]
     end
 
-    subgraph Melody ["メロディレイヤー"]
-        Vocal["ボーカル (Ch 0)"]
-        Motif["モチーフ (Ch 3)"]
-        Arpeggio["アルペジオ (Ch 4)"]
+    subgraph Rhythm ["リズムセクション"]
+        Bass["ベース (Ch 3)"]
+        Drums["ドラム (Ch 9)"]
+    end
+
+    subgraph Synth ["シンセレイヤー"]
+        Motif["モチーフ (Ch 4)"]
+        Arpeggio["アルペジオ (Ch 5)"]
     end
 
     subgraph Markers ["マーカー"]
@@ -26,11 +32,49 @@ flowchart TB
     end
 ```
 
+### チャンネル割り当て
+
+| トラック | チャンネル | プログラム | 役割 |
+|----------|---------|---------|------|
+| Vocal | 0 | Piano (0) | 主旋律 |
+| Aux | 5 | Pad (89) | 副旋律サポート |
+| Chord | 2 | E.Piano (4) | 和声バッキング |
+| Bass | 3 | E.Bass (33) | ベース |
+| Motif | 4 | Synth (81) | BackgroundMotifスタイル |
+| Arpeggio | 5 | Synth (81) | SynthDrivenスタイル |
+| Drums | 9 | GMドラム | リズム |
+| SE | 15 | - | セクションマーカー |
+
 ## ボーカルトラック
 
-**ソース:** `src/track/vocal.cpp`（約900行）
+**ソース:** `src/track/vocal.cpp`（約470行）、`src/track/melody_designer.cpp`（約520行）
 
-音楽理論的制約を持つメロディ生成を担当する最も複雑な生成器。
+ボーカルシステムは**テンプレート駆動型メロディデザイナー**を使用し、予測可能でスタイルに正確なメロディを生成します。
+
+### アーキテクチャ
+
+ボーカル生成は2つのコンポーネントに分割されています：
+
+1. **MelodyDesigner**（`melody_designer.cpp`）- テンプレート駆動のピッチ選択
+2. **Vocal Generator**（`vocal.cpp`）- セクション構造と調整
+
+### メロディテンプレート
+
+7つのメロディテンプレートがメロディ特性を定義：
+
+| ID | 名前 | Plateau | 最大ステップ | 用途 |
+|----|------|---------|----------|----------|
+| 0 | Auto | - | - | VocalStyle基準で選択 |
+| 1 | PlateauTalk | 0.65 | 2 | NewJeans、Billie Eilishスタイル |
+| 2 | RunUpTarget | 0.20 | 4 | YOASOBI、Adoスタイル |
+| 3 | DownResolve | 0.30 | 3 | Bセクション、プリコーラス |
+| 4 | HookRepeat | 0.40 | 3 | TikTok、K-POPフック |
+| 5 | SparseAnchor | 0.50 | 2 | Official髭男dism、バラード |
+| 6 | CallResponse | - | - | デュエットパターン |
+| 7 | JumpAccent | - | - | 感情的ピーク |
+
+- **Plateau ratio**: 同じピッチに留まる確率（高いほど繰り返しが多い）
+- **Max step**: 半音単位の最大音程（低いほど滑らか）
 
 ### 生成フロー
 
@@ -38,36 +82,30 @@ flowchart TB
 flowchart TD
     A[セクション開始] --> B{フレーズキャッシュ確認}
     B -->|キャッシュあり| C[フレーズ取得]
-    B -->|新規| D[フレーズ生成]
-    D --> E[キャッシュに保存]
-    C --> F[ボイスリーディング適用]
-    E --> F
-    F --> G[拍分析]
-    G --> H{強拍?}
-    H -->|はい| I[コードトーン優先]
-    H -->|いいえ| J[テンションを許可]
-    I --> K[ボーカルアティチュード適用]
-    J --> K
-    K --> L[音域クランプ]
-    L --> M[トラックに追加]
+    B -->|新規| D[MelodyTemplate選択]
+    D --> E[MelodyDesigner.generatePhrase]
+    E --> F[キャッシュに保存]
+    C --> G[ボイスリーディング適用]
+    F --> G
+    G --> H[HarmonyContext.getSafePitch]
+    H --> I[音域クランプ]
+    I --> J[トラックに追加]
 ```
 
-### ピッチ選択アルゴリズム
+### ピッチ選択（4択のみ）
+
+MelodyDesignerはピッチ選択を4つのオプションに制限：
 
 ```cpp
-// 強拍（1、3拍目）の優先順位
-1. ルート音（最高優先度）
-2. 5度
-3. 3度
-4. 7度（コードに含まれる場合）
-5. 9度（コードに含まれる場合）
-
-// 弱拍では許可
-- パッシングトーン（順次進行）
-- ネイバートーン（元の音に戻る）
-- サスペンション（2度下降で解決）
-- アンティシペーション（早めの到着）
+enum class PitchChoice {
+    Same,       // 現在のピッチに留まる（plateau_ratio）
+    StepUp,     // +1半音
+    StepDown,   // -1半音
+    TargetStep  // ターゲット方向へ±2（テンプレートにターゲットがある場合）
+};
 ```
+
+この制約されたアプローチにより、より自然で歌いやすいメロディが生成されます。
 
 ### ボーカルアティチュード
 
@@ -96,6 +134,53 @@ struct VocalRange {
     uint8_t high = 79;  // G5
 };
 ```
+
+---
+
+## Auxトラック
+
+**ソース:** `src/track/aux_track.cpp`（約440行）
+
+Aux（補助）トラックは主旋律に対する**副旋律サポート**を提供します。対旋律ではなく、主旋律を強化する「知覚制御レイヤー」です。
+
+### 目的
+
+| 役割 | 説明 |
+|------|------|
+| 中毒性 | パルスループで繰り返しのキャッチーなパターンを生成 |
+| 身体性 | グルーブアクセントで体が動く感覚を追加 |
+| 安定感 | フレーズ終端で解決感を提供 |
+| 構造認識 | セクション境界の認識を支援 |
+
+### Aux機能
+
+5つの補助機能が利用可能：
+
+| ID | 機能 | 説明 |
+|----|----------|------|
+| A | PulseLoop | 同音または固定音程の繰り返しパターン |
+| B | TargetHint | コードトーンで主旋律のターゲットを暗示 |
+| C | GrooveAccent | スタッカートでリズミックなアクセント |
+| D | PhraseTail | フレーズ終端の下降解決 |
+| E | EmotionalPad | 長い持続音のコードトーン |
+
+### テンプレート → Auxマッピング
+
+各メロディテンプレートは適切なaux機能を自動選択：
+
+| テンプレート | Aux機能 | 理由 |
+|----------|---------------|--------|
+| PlateauTalk | A（PulseLoop） | Ice Cream/ミニマルスタイル |
+| RunUpTarget | B + D | YOASOBI上昇→解決 |
+| HookRepeat | A + C | TikTok繰り返しフック |
+| SparseAnchor | E + D | バラードの感情サポート |
+
+### 生成制約
+
+- 常にボーカルの**後**に生成（衝突回避）
+- ボーカルより狭い音域（50-70%）
+- 低いベロシティ（0.5-0.8×ボーカル）
+- HarmonyContextでボーカルとの不協和音を回避
 
 ---
 
@@ -408,8 +493,9 @@ uint8_t calculateVelocity(
 | トラック | バランス | 備考 |
 |----------|----------|------|
 | Vocal | 1.00 | リード楽器 |
+| Aux | 0.50-0.80 | 副旋律サポート |
 | Chord | 0.75 | サポート |
-| Bass | 0.85 | 基盤 |
+| Bass | 0.85 | ベース |
 | Drums | 0.90 | タイミングドライバー |
 | Motif | 0.70 | バックグラウンド |
 | Arpeggio | 0.85 | 中レベル |

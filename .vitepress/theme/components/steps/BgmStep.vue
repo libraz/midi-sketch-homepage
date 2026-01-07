@@ -8,6 +8,7 @@ import { useSeedHistory } from '../../composables/useSeedHistory'
 import { songImages } from '../../data/songImages'
 import { chordProgressions } from '../../data/chordColors'
 import { KEY_NAMES } from '../../utils/midiUtils'
+import { devLog } from '../../utils/devLog'
 import PianoRoll from '../PianoRoll.vue'
 import ShareButtons from '../ShareButtons.vue'
 
@@ -81,35 +82,6 @@ const currentSongImage = computed(() =>
 const currentChord = computed(() =>
   chordProgressions.find(c => c.id === store.config.chordProgressionId)
 )
-
-// Compute effective vocalAllowExtremLeap boolean value
-// 0=Auto (follow vocalStyle), 1=On, 2=Off
-const effectiveVocalAllowExtremLeap = computed(() => {
-  const setting = store.config.vocalAllowExtremLeap
-  if (setting === 1) return true  // On
-  if (setting === 2) return false // Off
-  // Auto: UltraVocaloid (3) implies extreme leap
-  return store.config.vocalStyle === 3
-})
-
-// Compute effective vocalRestRatio value
-// 0=Auto (follow vocalStyle), 1=Custom (use slider)
-const vocalStyleRestRatioMap: Record<number, number> = {
-  0: 15,  // Auto - use moderate default
-  1: 15,  // Standard
-  2: 5,   // Vocaloid
-  3: 0,   // UltraVocaloid
-  4: 15,  // Idol
-  5: 25,  // Ballad
-  6: 15, 7: 15, 8: 15, 9: 15, 10: 15, 11: 15, 12: 15
-}
-
-const effectiveVocalRestRatio = computed(() => {
-  if (store.config.vocalRestRatioMode === 1) {
-    return store.config.vocalRestRatio
-  }
-  return vocalStyleRestRatioMap[store.config.vocalStyle] ?? 15
-})
 
 // Build advanced settings summary
 const advancedSummary = computed(() => {
@@ -227,7 +199,7 @@ async function generate(overrideSeed?: number) {
     // Always save the seed back to store so it can be shared
     store.config.seed = seed
 
-    instance.generateFromConfig({
+    const bgmConfig = {
       stylePresetId: store.config.stylePresetId,
       key: store.config.key,
       bpm: store.config.bpm,
@@ -264,11 +236,8 @@ async function generate(overrideSeed?: number) {
       introChant: store.config.introChant,
       mixPattern: store.config.mixPattern,
       callDensity: store.config.callDensity,
-      // Vocal detail settings
-      vocalNoteDensity: store.config.vocalNoteDensity,
-      vocalMinNoteDivision: store.config.vocalMinNoteDivision,
-      vocalRestRatio: effectiveVocalRestRatio.value,
-      vocalAllowExtremLeap: effectiveVocalAllowExtremLeap.value,
+      // Melody template setting
+      melodyTemplate: store.config.melodyTemplate,
       // Arrangement settings
       arrangementGrowth: store.config.arrangementGrowth,
       // Arpeggio sync settings
@@ -277,7 +246,11 @@ async function generate(overrideSeed?: number) {
       motifRepeatScope: store.config.motifRepeatScope,
       motifFixedProgression: store.config.motifFixedProgression,
       motifMaxChordCount: store.config.motifMaxChordCount
-    })
+    }
+
+    devLog('BGM generateFromConfig', bgmConfig)
+
+    instance.generateFromConfig(bgmConfig)
 
     eventData.value = safeGetEvents(instance)
 
@@ -285,6 +258,7 @@ async function generate(overrideSeed?: number) {
     store.setBgmGenerated(true)
   } catch (e: any) {
     error.value = e.message
+    devLog('BGM Generate Error', e.message)
   } finally {
     isGenerating.value = false
   }

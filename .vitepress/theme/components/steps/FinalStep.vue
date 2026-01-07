@@ -6,6 +6,7 @@ import { useMidiPlayer } from '../../composables/useMidiPlayer'
 import { useMidiRegeneration } from '../../composables/useMidiRegeneration'
 import { useSeedHistory } from '../../composables/useSeedHistory'
 import { midiToNoteName } from '../../utils/midiUtils'
+import { devLog } from '../../utils/devLog'
 import PianoRoll from '../PianoRoll.vue'
 import ShareButtons from '../ShareButtons.vue'
 
@@ -90,64 +91,17 @@ const midiData = ref<Uint8Array | null>(null)
 const eventData = ref<any>(null)
 const isAdvancedOpen = ref(false)
 
-// Note density presets
-const densityPresets = [
-  { key: 'default', value: 0 },
-  { key: 'standard', value: 70 },
-  { key: 'idol', value: 100 },
-  { key: 'vocaloid', value: 150 }
-]
-
-// Min note division options
-const noteDivisionOptions = [
+// Melody template options (matching MelodyStep)
+const melodyTemplateOptions = [
   { key: 'auto', value: 0 },
-  { key: 'quarter', value: 4 },
-  { key: 'eighth', value: 8 },
-  { key: 'sixteenth', value: 16 }
+  { key: 'plateauTalk', value: 1 },
+  { key: 'runUpTarget', value: 2 },
+  { key: 'downResolve', value: 3 },
+  { key: 'hookRepeat', value: 4 },
+  { key: 'sparseAnchor', value: 5 },
+  { key: 'callResponse', value: 6 },
+  { key: 'jumpAccent', value: 7 }
 ]
-
-// Get display value for density
-const densityDisplayValue = computed(() => {
-  if (store.config.vocalNoteDensity === 0) return t('finalStep.vocalDetail.density.default')
-  return store.config.vocalNoteDensity
-})
-
-// Compute effective vocalAllowExtremLeap boolean value
-// 0=Auto (follow vocalStyle), 1=On, 2=Off
-const effectiveVocalAllowExtremLeap = computed(() => {
-  const setting = store.config.vocalAllowExtremLeap
-  if (setting === 1) return true  // On
-  if (setting === 2) return false // Off
-  // Auto: UltraVocaloid (3) implies extreme leap
-  return store.config.vocalStyle === 3
-})
-
-// Compute effective vocalRestRatio value
-// 0=Auto (follow vocalStyle), 1=Custom (use slider)
-const vocalStyleRestRatioMap: Record<number, number> = {
-  0: 15,  // Auto - use moderate default
-  1: 15,  // Standard
-  2: 5,   // Vocaloid: 0.05
-  3: 0,   // UltraVocaloid: 0%
-  4: 15,  // Idol: 0.15
-  5: 25,  // Ballad: 0.25
-  6: 15,  // Rock
-  7: 15,  // CityPop
-  8: 15,  // Anime
-  9: 15,  // BrightKira
-  10: 15, // CoolSynth
-  11: 15, // CuteAffected
-  12: 15, // PowerfulShout
-}
-
-const effectiveVocalRestRatio = computed(() => {
-  if (store.config.vocalRestRatioMode === 1) {
-    // Custom mode: use slider value
-    return store.config.vocalRestRatio
-  }
-  // Auto mode: use vocalStyle default
-  return vocalStyleRestRatioMap[store.config.vocalStyle] ?? 15
-})
 
 let midisketch: any = null
 let instance: any = null
@@ -182,17 +136,22 @@ onMounted(async () => {
 async function generateWithSeed(seed: number) {
   if (!instance) return
 
-  instance.regenerateVocal({
+  const vocalParams = {
     seed,
     vocalLow: store.config.vocalLow,
     vocalHigh: store.config.vocalHigh,
     vocalAttitude: store.config.vocalAttitude,
-    vocalNoteDensity: store.config.vocalNoteDensity,
-    vocalMinNoteDivision: store.config.vocalMinNoteDivision,
-    vocalRestRatio: effectiveVocalRestRatio.value,
-    vocalAllowExtremLeap: effectiveVocalAllowExtremLeap.value,
-    vocalStyle: store.config.vocalStyle
-  })
+    vocalStyle: store.config.vocalStyle,
+    melodyTemplate: store.config.melodyTemplate,
+    melodicComplexity: store.config.melodicComplexity,
+    hookIntensity: store.config.hookIntensity,
+    vocalGroove: store.config.vocalGroove,
+    compositionStyle: store.config.compositionStyle
+  }
+
+  devLog('Vocal regenerateVocal', vocalParams)
+
+  instance.regenerateVocal(vocalParams)
 
   midiData.value = instance.getMidi()
   eventData.value = safeGetEvents(instance)
@@ -215,6 +174,7 @@ async function generateMelody() {
     await generateWithSeed(initialSeed)
   } catch (e: any) {
     error.value = e.message
+    devLog('Vocal Generate Error', e.message)
   } finally {
     isGenerating.value = false
   }
@@ -296,15 +256,12 @@ function handleRewind() {
           <span class="summary-value">{{ store.config.vocalStyle === 0 ? t('finalStep.summary.auto') : t(`melodyStep.advanced.vocalStyle.options.${vocalStyleOptions[store.config.vocalStyle - 1]?.key || 'auto'}`) }}</span>
         </div>
         <div class="summary-row">
+          <span class="summary-label">{{ t('finalStep.summary.melodyTemplate') }}</span>
+          <span class="summary-value">{{ t(`melodyStep.advanced.melodyTemplate.options.${melodyTemplateOptions[store.config.melodyTemplate]?.key || 'auto'}`) }}</span>
+        </div>
+        <div class="summary-row">
           <span class="summary-label">{{ t('finalStep.summary.vocalGroove') }}</span>
           <span class="summary-value">{{ t(`melodyStep.advanced.vocalGroove.options.${vocalGrooveOptions[store.config.vocalGroove]?.key || 'straight'}`) }}</span>
-        </div>
-        <div v-if="store.config.vocalStyle !== 0 || store.config.vocalGroove !== 0" class="implicit-info">
-          <span class="implicit-info__icon">ℹ</span>
-          <span class="implicit-info__text">
-            {{ store.config.vocalStyle !== 0 ? t('finalStep.summary.noteFromStyle') : '' }}
-            {{ store.config.vocalGroove !== 0 ? t('finalStep.summary.noteFromGroove') : '' }}
-          </span>
         </div>
       </div>
 
@@ -357,172 +314,6 @@ function handleRewind() {
           </div>
         </div>
         <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" />
-      </div>
-
-      <!-- Vocal Detail Settings Console -->
-      <div class="vocal-console" :class="{ 'vocal-console--open': isAdvancedOpen }">
-        <button class="vocal-console__header" @click="isAdvancedOpen = !isAdvancedOpen">
-          <div class="vocal-console__title">
-            <span class="vocal-console__icon">🎤</span>
-            <span>{{ t('finalStep.vocalDetail.title') }}</span>
-          </div>
-          <span class="vocal-console__chevron" :class="{ 'vocal-console__chevron--open': isAdvancedOpen }">▼</span>
-        </button>
-
-        <Transition name="panel-expand">
-          <div v-if="isAdvancedOpen" class="vocal-console__panel">
-            <!-- Note Density -->
-            <div class="vocal-setting">
-              <div class="vocal-setting__header">
-                <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.density.label') }}</label>
-                <span class="vocal-setting__value">{{ densityDisplayValue }}</span>
-              </div>
-              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.density.hint') }}</p>
-
-              <div class="density-presets">
-                <button
-                  v-for="preset in densityPresets"
-                  :key="preset.key"
-                  class="density-preset"
-                  :class="{ 'density-preset--active': store.config.vocalNoteDensity === preset.value }"
-                  @click="store.config.vocalNoteDensity = preset.value"
-                >
-                  {{ t(`finalStep.vocalDetail.density.presets.${preset.key}`) }}
-                </button>
-              </div>
-
-              <div class="slider-wrap">
-                <input
-                  type="range"
-                  v-model.number="store.config.vocalNoteDensity"
-                  min="0"
-                  max="200"
-                  class="vocal-slider"
-                />
-                <div class="slider-track">
-                  <div class="slider-fill" :style="{ width: `${(store.config.vocalNoteDensity / 200) * 100}%` }"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Min Note Division -->
-            <div class="vocal-setting">
-              <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.division.label') }}</label>
-              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.division.hint') }}</p>
-
-              <div class="division-buttons">
-                <button
-                  v-for="opt in noteDivisionOptions"
-                  :key="opt.key"
-                  class="division-btn"
-                  :class="{ 'division-btn--active': store.config.vocalMinNoteDivision === opt.value }"
-                  @click="store.config.vocalMinNoteDivision = opt.value"
-                >
-                  <span class="division-btn__icon">{{ opt.value === 0 ? '⟳' : '♩' }}</span>
-                  <span class="division-btn__label">{{ t(`finalStep.vocalDetail.division.options.${opt.key}`) }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Rest Ratio -->
-            <div class="vocal-setting">
-              <div class="vocal-setting__header">
-                <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.rest.label') }}</label>
-                <span class="vocal-setting__value">{{ effectiveVocalRestRatio }}%</span>
-              </div>
-              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.rest.hint') }}</p>
-
-              <!-- Auto/Custom Toggle -->
-              <div class="rest-mode-selector">
-                <button
-                  class="rest-mode-btn"
-                  :class="{ 'rest-mode-btn--active': store.config.vocalRestRatioMode === 0 }"
-                  @click="store.config.vocalRestRatioMode = 0"
-                >
-                  <span class="rest-mode-btn__icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 6V3L8 7l4 4V8c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 14c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 9.74A7.93 7.93 0 004 14c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-                    </svg>
-                  </span>
-                  <span class="rest-mode-btn__label">{{ t('finalStep.vocalDetail.rest.options.auto') }}</span>
-                </button>
-                <button
-                  class="rest-mode-btn"
-                  :class="{ 'rest-mode-btn--active': store.config.vocalRestRatioMode === 1 }"
-                  @click="store.config.vocalRestRatioMode = 1"
-                >
-                  <span class="rest-mode-btn__icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                    </svg>
-                  </span>
-                  <span class="rest-mode-btn__label">{{ t('finalStep.vocalDetail.rest.options.custom') }}</span>
-                </button>
-              </div>
-
-              <!-- Slider (only visible in Custom mode) -->
-              <Transition name="slider-expand">
-                <div v-if="store.config.vocalRestRatioMode === 1" class="slider-wrap slider-wrap--with-margin">
-                  <input
-                    type="range"
-                    v-model.number="store.config.vocalRestRatio"
-                    min="0"
-                    max="50"
-                    class="vocal-slider"
-                  />
-                  <div class="slider-track">
-                    <div class="slider-fill" :style="{ width: `${(store.config.vocalRestRatio / 50) * 100}%` }"></div>
-                  </div>
-                </div>
-              </Transition>
-            </div>
-
-            <!-- Extreme Leap Selector -->
-            <div class="vocal-setting">
-              <label class="vocal-setting__label">{{ t('finalStep.vocalDetail.extremeLeap.label') }}</label>
-              <p class="vocal-setting__hint">{{ t('finalStep.vocalDetail.extremeLeap.hint') }}</p>
-
-              <div class="leap-selector">
-                <button
-                  class="leap-btn"
-                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 0 }"
-                  @click="store.config.vocalAllowExtremLeap = 0"
-                >
-                  <span class="leap-btn__icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 6V3L8 7l4 4V8c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 14c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 9.74A7.93 7.93 0 004 14c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-                    </svg>
-                  </span>
-                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.auto') }}</span>
-                </button>
-                <button
-                  class="leap-btn"
-                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 1 }"
-                  @click="store.config.vocalAllowExtremLeap = 1"
-                >
-                  <span class="leap-btn__icon leap-btn__icon--on">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                  </span>
-                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.on') }}</span>
-                </button>
-                <button
-                  class="leap-btn"
-                  :class="{ 'leap-btn--active': store.config.vocalAllowExtremLeap === 2 }"
-                  @click="store.config.vocalAllowExtremLeap = 2"
-                >
-                  <span class="leap-btn__icon leap-btn__icon--off">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                  </span>
-                  <span class="leap-btn__label">{{ t('finalStep.vocalDetail.extremeLeap.options.off') }}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </Transition>
       </div>
 
       <!-- Actions -->

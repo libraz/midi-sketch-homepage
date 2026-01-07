@@ -4,21 +4,27 @@ This document details each track generator in [MIDI Sketch](https://github.com/l
 
 ## Track Overview
 
+MIDI Sketch generates 8 tracks across different MIDI channels:
+
 ```mermaid
 flowchart TB
-    subgraph Rhythm ["Rhythm Section"]
-        Bass["Bass (Ch 2)"]
-        Drums["Drums (Ch 9)"]
+    subgraph Melody ["Melody Layer"]
+        Vocal["Vocal (Ch 0)"]
+        Aux["Aux (Ch 5)"]
     end
 
     subgraph Harmony ["Harmony"]
-        Chord["Chord (Ch 1)"]
+        Chord["Chord (Ch 2)"]
     end
 
-    subgraph Melody ["Melody Layer"]
-        Vocal["Vocal (Ch 0)"]
-        Motif["Motif (Ch 3)"]
-        Arpeggio["Arpeggio (Ch 4)"]
+    subgraph Rhythm ["Rhythm Section"]
+        Bass["Bass (Ch 3)"]
+        Drums["Drums (Ch 9)"]
+    end
+
+    subgraph Synth ["Synth Layer"]
+        Motif["Motif (Ch 4)"]
+        Arpeggio["Arpeggio (Ch 5)"]
     end
 
     subgraph Markers ["Markers"]
@@ -26,11 +32,49 @@ flowchart TB
     end
 ```
 
+### Channel Assignment
+
+| Track | Channel | Program | Role |
+|-------|---------|---------|------|
+| Vocal | 0 | Piano (0) | Main melody |
+| Aux | 5 | Pad (89) | Sub-melody support |
+| Chord | 2 | E.Piano (4) | Harmonic backing |
+| Bass | 3 | E.Bass (33) | Harmonic foundation |
+| Motif | 4 | Synth (81) | BackgroundMotif style |
+| Arpeggio | 5 | Synth (81) | SynthDriven style |
+| Drums | 9 | GM Drums | Rhythm |
+| SE | 15 | - | Section markers |
+
 ## Vocal Track
 
-**Source:** `src/track/vocal.cpp` (~900 lines)
+**Source:** `src/track/vocal.cpp` (~470 lines), `src/track/melody_designer.cpp` (~520 lines)
 
-The most complex generator, handling melody creation with music theory constraints.
+The vocal system uses a **template-driven melody designer** for predictable, stylistically-accurate melody generation.
+
+### Architecture
+
+The vocal generation is split into two components:
+
+1. **MelodyDesigner** (`melody_designer.cpp`) - Template-driven pitch selection
+2. **Vocal Generator** (`vocal.cpp`) - Section structure and coordination
+
+### Melody Templates
+
+7 melody templates define melodic characteristics:
+
+| ID | Name | Plateau | Max Step | Use Case |
+|----|------|---------|----------|----------|
+| 0 | Auto | - | - | VocalStyle-based selection |
+| 1 | PlateauTalk | 0.65 | 2 | NewJeans, Billie Eilish style |
+| 2 | RunUpTarget | 0.20 | 4 | YOASOBI, Ado style |
+| 3 | DownResolve | 0.30 | 3 | B-section, pre-chorus |
+| 4 | HookRepeat | 0.40 | 3 | TikTok, K-POP hooks |
+| 5 | SparseAnchor | 0.50 | 2 | Official髭男dism, ballad |
+| 6 | CallResponse | - | - | Duet patterns |
+| 7 | JumpAccent | - | - | Emotional peaks |
+
+- **Plateau ratio**: Probability of staying on the same pitch (higher = more repetitive)
+- **Max step**: Maximum interval in semitones (lower = smoother)
 
 ### Generation Flow
 
@@ -38,36 +82,30 @@ The most complex generator, handling melody creation with music theory constrain
 flowchart TD
     A[Start Section] --> B{Check phrase cache}
     B -->|Cached| C[Retrieve phrase]
-    B -->|New| D[Generate phrase]
-    D --> E[Cache phrase]
-    C --> F[Apply voice leading]
-    E --> F
-    F --> G[Beat analysis]
-    G --> H{Strong beat?}
-    H -->|Yes| I[Chord tone priority]
-    H -->|No| J[Allow tensions]
-    I --> K[Apply vocal attitude]
-    J --> K
-    K --> L[Range clamp]
-    L --> M[Add to track]
+    B -->|New| D[Select MelodyTemplate]
+    D --> E[MelodyDesigner.generatePhrase]
+    E --> F[Cache phrase]
+    C --> G[Apply voice leading]
+    F --> G
+    G --> H[HarmonyContext.getSafePitch]
+    H --> I[Range clamp]
+    I --> J[Add to track]
 ```
 
-### Pitch Selection Algorithm
+### Pitch Selection (4 Choices Only)
+
+The MelodyDesigner limits pitch selection to 4 options:
 
 ```cpp
-// Priority for strong beats (1, 3)
-1. Root note (highest priority)
-2. Fifth
-3. Third
-4. Seventh (if chord has it)
-5. Ninth (if chord has it)
-
-// Weak beats allow
-- Passing tones (stepwise motion)
-- Neighbor tones (return to original)
-- Suspensions (resolve down by step)
-- Anticipations (early arrival)
+enum class PitchChoice {
+    Same,       // Stay on current pitch (plateau_ratio)
+    StepUp,     // +1 semitone
+    StepDown,   // -1 semitone
+    TargetStep  // ±2 toward target (if template has target)
+};
 ```
+
+This constrained approach produces more natural, singable melodies.
 
 ### Vocal Attitudes
 
@@ -96,6 +134,53 @@ struct VocalRange {
     uint8_t high = 79;  // G5
 };
 ```
+
+---
+
+## Aux Track
+
+**Source:** `src/track/aux_track.cpp` (~440 lines)
+
+The Aux (auxiliary) track provides **sub-melody support** for the main vocal. It's not a counter-melody, but a "perceptual control layer" that enhances the main melody.
+
+### Purpose
+
+| Role | Description |
+|------|-------------|
+| Addictiveness | Pulse loops create repetitive, catchy patterns |
+| Physicality | Groove accents add body movement feel |
+| Stability | Phrase tails provide resolution |
+| Structure | Helps listeners perceive section boundaries |
+
+### Aux Functions
+
+5 auxiliary functions are available:
+
+| ID | Function | Description |
+|----|----------|-------------|
+| A | PulseLoop | Repetitive same-pitch or fixed-interval patterns |
+| B | TargetHint | Hints at vocal target with chord tones |
+| C | GrooveAccent | Rhythmic accents with staccato |
+| D | PhraseTail | End-of-phrase descending resolution |
+| E | EmotionalPad | Long sustained chord tones |
+
+### Template → Aux Mapping
+
+Each melody template automatically selects appropriate aux functions:
+
+| Template | Aux Functions | Reason |
+|----------|---------------|--------|
+| PlateauTalk | A (PulseLoop) | Ice Cream / minimal style |
+| RunUpTarget | B + D | YOASOBI ascending then resolving |
+| HookRepeat | A + C | TikTok repetitive hooks |
+| SparseAnchor | E + D | Ballad emotional support |
+
+### Generation Constraints
+
+- Always generated **after** vocal (to avoid collisions)
+- Narrower range than vocal (50-70% of vocal range)
+- Lower velocity (0.5-0.8× vocal velocity)
+- Uses HarmonyContext to avoid dissonance with vocal
 
 ---
 
@@ -407,6 +492,7 @@ uint8_t calculateVelocity(
 | Track | Balance | Notes |
 |-------|---------|-------|
 | Vocal | 1.00 | Lead instrument |
+| Aux | 0.50-0.80 | Sub-melody support |
 | Chord | 0.75 | Supporting |
 | Bass | 0.85 | Foundation |
 | Drums | 0.90 | Timing driver |

@@ -52,26 +52,6 @@ const {
   play
 } = player
 
-// Computed vocalRestRatio based on vocalStyle
-const vocalStyleRestRatioMap: Record<number, number> = {
-  0: 15, 1: 15, 2: 5, 3: 0, 4: 15, 5: 25,
-  6: 15, 7: 15, 8: 15, 9: 15, 10: 15, 11: 15, 12: 15
-}
-
-function getEffectiveVocalRestRatio(config: any): number {
-  if (config.vocalRestRatioMode === 1) {
-    return config.vocalRestRatio
-  }
-  return vocalStyleRestRatioMap[config.vocalStyle] ?? 15
-}
-
-function getEffectiveVocalAllowExtremLeap(config: any): boolean {
-  const setting = config.vocalAllowExtremLeap
-  if (setting === 1) return true
-  if (setting === 2) return false
-  return config.vocalStyle === 3 // UltraVocaloid
-}
-
 // Summary info - main row (compact items)
 const summaryInfo = computed(() => {
   if (!decoded.value) return []
@@ -207,10 +187,7 @@ onMounted(async () => {
       introChant: config.introChant ?? 0,
       mixPattern: config.mixPattern ?? 0,
       callDensity: config.callDensity ?? 2,
-      vocalNoteDensity: config.vocalNoteDensity ?? 0,
-      vocalMinNoteDivision: config.vocalMinNoteDivision ?? 0,
-      vocalRestRatio: getEffectiveVocalRestRatio(config),
-      vocalAllowExtremLeap: getEffectiveVocalAllowExtremLeap(config),
+      melodyTemplate: config.melodyTemplate ?? 0,
       arrangementGrowth: config.arrangementGrowth ?? 0,
       arpeggioSyncChord: config.arpeggioSyncChord ?? true,
       motifRepeatScope: config.motifRepeatScope ?? 0,
@@ -229,11 +206,8 @@ onMounted(async () => {
         vocalLow: config.vocalLow ?? 57,
         vocalHigh: config.vocalHigh ?? 79,
         vocalAttitude: config.vocalAttitude ?? 0,
-        vocalNoteDensity: config.vocalNoteDensity ?? 0,
-        vocalMinNoteDivision: config.vocalMinNoteDivision ?? 0,
-        vocalRestRatio: getEffectiveVocalRestRatio(config),
-        vocalAllowExtremLeap: getEffectiveVocalAllowExtremLeap(config),
-        vocalStyle: config.vocalStyle ?? 0
+        vocalStyle: config.vocalStyle ?? 0,
+        melodyTemplate: config.melodyTemplate ?? 0
       })
     }
 

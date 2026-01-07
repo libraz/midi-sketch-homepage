@@ -126,12 +126,9 @@ sketch.generateFromConfig({
   vocalHigh: 74,              // Vocal range upper bound (MIDI note)
   skipVocal: false,           // Skip vocal generation (for BGM-first workflow)
 
-  // Vocal detail settings
-  vocalNoteDensity: 0,        // Note density (0=style default, 70=standard, 100=idol, 150=vocaloid)
-  vocalMinNoteDivision: 0,    // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
-  vocalRestRatio: 0,          // Rest ratio (0-50, percentage of phrase rest time)
-  vocalAllowExtremLeap: false, // Allow extreme leaps for vocaloid-style melodies
+  // Vocal style settings
   vocalStyle: 0,              // Vocal style preset (0=Auto, 1-12=specific presets)
+  melodyTemplate: 0,          // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,       // Melody complexity (0=Simple, 1=Standard, 2=Complex)
   hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
   vocalGroove: 0,             // Groove feel (0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th)
@@ -179,7 +176,7 @@ sketch.generateFromConfig({
 
 ### `regenerateVocal(params)`
 
-Regenerate only the vocal track. BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
+Regenerate only the vocal track (and Aux track). BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
 Use after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
 
 ```javascript
@@ -191,10 +188,11 @@ sketch.regenerateVocal({
 
   // Optional: Fine-tune vocal generation
   vocalStyle: 0,               // Vocal style preset (0=Auto, 1-12=specific presets)
-  vocalNoteDensity: 100,       // Note density (0=style default, 70=standard, 100=idol, 150=vocaloid)
-  vocalMinNoteDivision: 8,     // Min note division (0=default, 4=quarter, 8=eighth, 16=sixteenth)
-  vocalRestRatio: 20,          // Rest ratio (0-50, percentage of phrase rest time)
-  vocalAllowExtremLeap: false, // Allow extreme leaps for vocaloid-style melodies
+  melodyTemplate: 0,           // Melody template (0=Auto, 1-7=specific templates)
+  melodicComplexity: 1,        // Melody complexity (0=Simple, 1=Standard, 2=Complex)
+  hookIntensity: 2,            // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
+  vocalGroove: 0,              // Groove feel (0=Straight, 1=OffBeat, 2=Swing, etc.)
+  compositionStyle: 0,         // Composition style (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
 })
 ```
 
@@ -331,6 +329,19 @@ VocalStylePreset.BrightKira    // 9 - Bright/kira-kira (high, sparkling)
 VocalStylePreset.CoolSynth     // 10 - Cool synth (electronic, precise)
 VocalStylePreset.CuteAffected  // 11 - Cute/affected (playful)
 VocalStylePreset.PowerfulShout // 12 - Powerful shout (intense)
+```
+
+### `MelodyTemplate`
+
+```javascript
+MelodyTemplate.Auto         // 0 - Auto-select based on VocalStylePreset
+MelodyTemplate.PlateauTalk  // 1 - High same-pitch ratio (NewJeans, Billie Eilish)
+MelodyTemplate.RunUpTarget  // 2 - Ascending toward target (YOASOBI, Ado)
+MelodyTemplate.DownResolve  // 3 - Descending resolution (B-section)
+MelodyTemplate.HookRepeat   // 4 - Short repeated hooks (TikTok, K-POP)
+MelodyTemplate.SparseAnchor // 5 - Sparse anchor notes (Ballad)
+MelodyTemplate.CallResponse // 6 - Duet-style call and response
+MelodyTemplate.JumpAccent   // 7 - Emotional peak jumps
 ```
 
 ### `MelodicComplexity`

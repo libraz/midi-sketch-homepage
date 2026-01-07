@@ -195,25 +195,43 @@ flowchart LR
 | Expressive | Tensions, timing variation | Emotional, dynamic |
 | Raw | Non-chord tones, boundary breaking | Edgy, modern |
 
+## Melody Templates
+
+7 melody templates define the core melodic behavior using a **template-driven** approach:
+
+| ID | Name | Plateau | Max Step | Use Case |
+|----|------|---------|----------|----------|
+| 0 | Auto | - | - | VocalStylePreset-based selection |
+| 1 | PlateauTalk | 0.65 | 2 | NewJeans, Billie Eilish (talk-sing) |
+| 2 | RunUpTarget | 0.20 | 4 | YOASOBI, Ado (ascending runs) |
+| 3 | DownResolve | 0.30 | 3 | B-section, pre-chorus |
+| 4 | HookRepeat | 0.40 | 3 | TikTok, K-POP hooks |
+| 5 | SparseAnchor | 0.50 | 2 | Ballad, Official髭男dism |
+| 6 | CallResponse | - | - | Duet patterns |
+| 7 | JumpAccent | - | - | Emotional peaks |
+
+- **Plateau ratio**: Probability of staying on the same pitch (0.0-1.0)
+- **Max step**: Maximum melodic interval in semitones
+
 ## Vocal Style Presets
 
-13 vocal style presets that define melodic characteristics:
+13 vocal style presets that automatically select melody templates:
 
-| ID | Name | Min Division | Note Density | Max Leap | Character |
-|----|------|--------------|--------------|----------|-----------|
-| 0 | Auto | - | - | - | Auto-select based on style |
-| 1 | Standard | 8th | 0.7 | 7 | Balanced pop vocal |
-| 2 | Vocaloid | 16th | 1.2+ | 14 | Fast, wide leaps, syncopated |
-| 3 | UltraVocaloid | 32nd | 2.5 | 24 | Extreme speed, very wide leaps |
-| 4 | Idol | 8th | 0.8 | 7 | Catchy hooks, long chorus tones |
-| 5 | Ballad | Quarter | 0.4 | 5 | Slow, sustained notes |
-| 6 | Rock | 8th | 0.7 | 9 | Powerful, chorus register shift |
-| 7 | CityPop | 8th | 0.6 | 7 | Jazzy, syncopated, tension notes |
-| 8 | Anime | 8th | 0.85 | 10 | Dynamic hooks, bar-crossing |
-| 9 | BrightKira | 8th | 0.85 | 10 | High register, sparkling |
-| 10 | CoolSynth | 16th | - | 7 | Electronic, precise timing |
-| 11 | CuteAffected | 8th | - | 8 | Playful, moderate register shift |
-| 12 | PowerfulShout | Quarter | 0.6 | 12 | Intense, high chorus density |
+| ID | Name | Template | Character |
+|----|------|----------|-----------|
+| 0 | Auto | Section-based | Verse=PlateauTalk, Chorus=RunUpTarget |
+| 1 | Standard | PlateauTalk | Balanced pop vocal |
+| 2 | Vocaloid | RunUpTarget | Fast, wide leaps |
+| 3 | UltraVocaloid | RunUpTarget | Extreme speed (32nd notes) |
+| 4 | Idol | PlateauTalk | Catchy hooks, high 16th |
+| 5 | Ballad | SparseAnchor | Slow, sustained |
+| 6 | Rock | RunUpTarget | Powerful, register shift |
+| 7 | CityPop | PlateauTalk | Jazzy, groovy |
+| 8 | Anime | HookRepeat | Dynamic hooks |
+| 9 | BrightKira | HookRepeat | High register |
+| 10 | CoolSynth | PlateauTalk | Electronic, precise |
+| 11 | CuteAffected | HookRepeat | Playful, cute |
+| 12 | PowerfulShout | RunUpTarget | Intense, shout-y |
 
 ### Vocal Style Categories
 

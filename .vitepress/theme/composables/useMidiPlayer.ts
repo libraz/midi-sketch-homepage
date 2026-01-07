@@ -66,6 +66,7 @@ interface EventData {
 let audioContext: AudioContext | null = null
 let piano: any = null
 let guitar: any = null
+let pad: any = null  // For Aux track
 let drums: any = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
@@ -95,7 +96,7 @@ export function useMidiPlayer() {
 
   async function init() {
     // Already initialized
-    if (isInitialized && piano && guitar && drums) {
+    if (isInitialized && piano && guitar && pad && drums) {
       globalIsReady.value = true
       return
     }
@@ -113,15 +114,17 @@ export function useMidiPlayer() {
       try {
         audioContext = new AudioContext()
 
-        // Load piano, guitar, and drums in parallel
-        const [loadedPiano, loadedGuitar, loadedDrums] = await Promise.all([
+        // Load piano, guitar, pad, and drums in parallel
+        const [loadedPiano, loadedGuitar, loadedPad, loadedDrums] = await Promise.all([
           new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
           new Soundfont(audioContext, { instrument: 'distortion_guitar' }).load,
+          new Soundfont(audioContext, { instrument: 'pad_2_warm' }).load,  // For Aux track
           new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
         ])
 
         piano = loadedPiano
         guitar = loadedGuitar
+        pad = loadedPad
         drums = loadedDrums
         isInitialized = true
         globalIsReady.value = true
@@ -206,10 +209,13 @@ export function useMidiPlayer() {
               })
             }
           } else if (!isDrumTrack) {
-            // Select instrument based on track settings
-            const instrument = (track.name === 'Chord' && trackInstruments.value.Chord === 'guitar' && guitar)
-              ? guitar
-              : piano
+            // Select instrument based on track name
+            let instrument = piano
+            if (track.name === 'Aux' && pad) {
+              instrument = pad
+            } else if (track.name === 'Chord' && trackInstruments.value.Chord === 'guitar' && guitar) {
+              instrument = guitar
+            }
 
             // Play melodic sound with selected instrument
             instrument.start({
@@ -275,6 +281,9 @@ export function useMidiPlayer() {
     if (guitar) {
       guitar.stop()
     }
+    if (pad) {
+      pad.stop()
+    }
     if (drums) {
       drums.stop()
     }
@@ -319,6 +328,9 @@ export function useMidiPlayer() {
     }
     if (guitar) {
       guitar.stop()
+    }
+    if (pad) {
+      pad.stop()
     }
     if (drums) {
       drums.stop()

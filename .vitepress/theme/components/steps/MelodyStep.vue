@@ -7,8 +7,17 @@ import { midiToNoteName } from '../../utils/midiUtils'
 const { t } = useI18n()
 const store = useWizardStore()
 
-// Note: vocalRestRatio and vocalAllowExtremLeap are now computed at WASM call time
-// based on their respective mode settings (Auto/Custom, Auto/On/Off)
+// Melody template options (new WASM parameter)
+const melodyTemplateOptions = [
+  { key: 'auto', value: 0, icon: '🔮' },
+  { key: 'plateauTalk', value: 1, icon: '💭' },
+  { key: 'runUpTarget', value: 2, icon: '🎯' },
+  { key: 'downResolve', value: 3, icon: '📉' },
+  { key: 'hookRepeat', value: 4, icon: '🔁' },
+  { key: 'sparseAnchor', value: 5, icon: '🎵' },
+  { key: 'callResponse', value: 6, icon: '🎤' },
+  { key: 'jumpAccent', value: 7, icon: '⚡' }
+]
 
 const vocalAttitudeOptions = [
   { key: 'clean', value: 0 },
@@ -105,6 +114,32 @@ const rangeBarStyle = computed(() => {
 
     <!-- Melody Settings -->
     <div class="melody-settings">
+        <!-- Melody Template (NEW - primary setting) -->
+        <section class="setting-section setting-section--featured">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">🎹</span>
+            <span>{{ t('melodyStep.advanced.melodyTemplate.label') }}</span>
+          </h3>
+          <p class="setting-description">{{ t('melodyStep.advanced.melodyTemplate.description') }}</p>
+
+          <div class="compact-btns compact-btns--grid compact-btns--melody-template">
+            <button
+              v-for="opt in melodyTemplateOptions"
+              :key="opt.key"
+              class="compact-btn"
+              :class="{ 'compact-btn--active': store.config.melodyTemplate === opt.value }"
+              @click="store.config.melodyTemplate = opt.value"
+            >
+              <span class="compact-btn__icon">{{ opt.icon }}</span>
+              <span>{{ t(`melodyStep.advanced.melodyTemplate.options.${opt.key}`) }}</span>
+            </button>
+          </div>
+          <!-- Show description only for selected template -->
+          <div v-if="store.config.melodyTemplate !== 0" class="selected-desc">
+            <span class="selected-desc__text">{{ t(`melodyStep.advanced.melodyTemplate.options.${melodyTemplateOptions.find(o => o.value === store.config.melodyTemplate)?.key}Desc`) }}</span>
+          </div>
+        </section>
+
         <!-- Vocal Range -->
         <section class="setting-section">
           <h3 class="setting-label">
@@ -329,6 +364,12 @@ const rangeBarStyle = computed(() => {
   border: 1px solid rgba(236, 72, 153, 0.1);
   border-radius: 16px;
   padding: 1.25rem;
+}
+
+/* Featured section with subtle highlight */
+.setting-section--featured {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(20, 20, 28, 0.5) 100%);
+  border-color: rgba(236, 72, 153, 0.2);
 }
 
 .setting-label {
@@ -594,6 +635,17 @@ const rangeBarStyle = computed(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
+}
+
+/* 4-column grid for melody template (8 items) */
+.compact-btns--melody-template {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 480px) {
+  .compact-btns--melody-template {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .compact-btn {

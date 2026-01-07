@@ -18,7 +18,9 @@ onMounted(() => {
   isMobile.value = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 })
 
-const shareUrl = computed(() => generateShareUrl(store.config, props.shareType))
+const shareUrl = computed(() => {
+  return generateShareUrl(store.config, props.shareType)
+})
 
 async function copyUrl() {
   try {

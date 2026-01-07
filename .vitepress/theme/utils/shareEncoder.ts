@@ -10,7 +10,9 @@
 import type { WizardConfig } from '../stores/useWizardStore'
 
 // Version prefix for future compatibility
-const VERSION = 1
+// V1: Original schema with vocalNoteDensity, vocalMinNoteDivision, vocalRestRatio, etc.
+// V2: Replaced with melodyTemplate (0-7)
+const VERSION = 2
 
 // Share types
 export type ShareType = 'bgm' | 'vocal'
@@ -87,11 +89,7 @@ const FIELD_SCHEMA: FieldDef[] = [
   ['vocalHigh', 7, 36],       // 36-96 → 0-60 (MIDI note)
   ['vocalAttitude', 2],       // 0-2
   ['vocalStyle', 4],          // 0-12
-  ['vocalNoteDensity', 8],    // 0-200
-  ['vocalMinNoteDivision', 5], // 0, 4, 8, 16 → encoded as raw
-  ['vocalRestRatio', 6],      // 0-50
-  ['vocalRestRatioMode', 1],  // 0-1
-  ['vocalAllowExtremLeap', 2], // 0-2
+  ['melodyTemplate', 3],      // 0-7
   ['vocalGroove', 3],         // 0-5
 ]
 
@@ -267,8 +265,8 @@ export function encodeShareUrl(config: WizardConfig, shareType: ShareType): stri
       value = Math.max(0, value - offset)
     }
 
-    // Clamp to max bits
-    const maxValue = (1 << bits) - 1
+    // Clamp to max bits (handle 32-bit overflow in JavaScript)
+    const maxValue = bits >= 32 ? 0xFFFFFFFF : (1 << bits) - 1
     value = Math.min(value, maxValue)
 
     writer.write(value, bits)
