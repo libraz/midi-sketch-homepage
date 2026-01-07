@@ -491,10 +491,16 @@ const callDensityOptions = [
                   <span class="bpm-display__value" :class="{ 'bpm-display__value--outside': !isInRecommendedRange }" :style="{ '--beat-duration': `${beatDuration}s` }">{{ store.config.bpm }}</span>
                   <span class="bpm-display__unit">BPM</span>
                 </div>
-                <Transition name="zone-badge">
-                  <span v-if="!isInRecommendedRange" class="bpm-zone-badge bpm-zone-badge--compact">
-                    <span class="bpm-zone-badge__icon">⚠</span>
-                  </span>
+
+                <!-- BPM Range Warning - absolute positioned -->
+                <Transition name="bpm-warning">
+                  <div v-if="!isInRecommendedRange" class="bpm-range-warning">
+                    <div class="bpm-range-warning__indicator"></div>
+                    <span class="bpm-range-warning__text">
+                      {{ store.config.bpm < recommendedMin ? t('settingsStep.tempo.belowRange') : t('settingsStep.tempo.aboveRange') }}
+                    </span>
+                    <span class="bpm-range-warning__hint">{{ recommendedMin }}–{{ recommendedMax }}</span>
+                  </div>
                 </Transition>
               </div>
 
@@ -1064,7 +1070,6 @@ const callDensityOptions = [
 
 .bpm-display--compact {
   gap: 0.75rem;
-  flex-wrap: wrap;
   justify-content: center;
 }
 
@@ -1083,10 +1088,84 @@ const callDensityOptions = [
   height: 12px;
 }
 
-/* Compact Zone Badge */
-.bpm-zone-badge--compact {
-  margin-left: 0.5rem;
-  padding: 0.2rem 0.4rem;
+/* BPM Range Warning - Industrial/DAW aesthetic */
+.bpm-range-warning {
+  position: absolute;
+  bottom: -5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.bpm-range-warning__indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #F59E0B;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+  animation: warningPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.bpm-range-warning__text {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #FBBF24;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bpm-range-warning__hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(251, 191, 36, 0.5);
+  padding-left: 0.375rem;
+  border-left: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+/* Warning transition */
+.bpm-warning-enter-active {
+  animation: warningSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bpm-warning-leave-active {
+  animation: warningSlideOut 0.2s ease-in forwards;
+}
+
+@keyframes warningSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes warningSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px) scale(0.95);
+  }
 }
 
 /* Compact Tempo Presets */
@@ -1537,6 +1616,7 @@ const callDensityOptions = [
 }
 
 .bpm-display {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1857,43 +1937,6 @@ const callDensityOptions = [
   opacity: 0;
   cursor: pointer;
   z-index: 4;
-}
-
-/* Zone badge */
-.bpm-zone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-left: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
-  font-size: 0.7rem;
-  color: #F59E0B;
-}
-
-.bpm-zone-badge__icon {
-  font-size: 0.65rem;
-}
-
-.bpm-zone-badge__text {
-  font-family: 'Instrument Sans', sans-serif;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* Zone badge transition */
-.zone-badge-enter-active,
-.zone-badge-leave-active {
-  transition: all 0.25s ease;
-}
-
-.zone-badge-enter-from,
-.zone-badge-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
 }
 
 /* BPM value outside indicator */
