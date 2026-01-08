@@ -377,7 +377,7 @@ export function createDefaultConfig(styleId) {
         modulationSemitones: view.getInt8(retPtr + 35),
         // SE/Call settings (offset 36-41)
         seEnabled: view.getUint8(retPtr + 36) !== 0,
-        callEnabled: view.getUint8(retPtr + 37) !== 0,
+        callSetting: view.getUint8(retPtr + 37),
         callNotesEnabled: view.getUint8(retPtr + 38) !== 0,
         introChant: view.getUint8(retPtr + 39),
         mixPattern: view.getUint8(retPtr + 40),
@@ -468,7 +468,7 @@ function allocSongConfigStatic(m, config) {
     view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
     // SE/Call settings (offset 36-41)
     view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
-    view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
+    view.setUint8(ptr + 37, config.callSetting ?? 0); // 0=Auto, 1=Enabled, 2=Disabled
     view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
     view.setUint8(ptr + 39, config.introChant ?? 0);
     view.setUint8(ptr + 40, config.mixPattern ?? 0);
@@ -646,7 +646,7 @@ export class MidiSketch {
         view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
         // SE/Call settings (offset 36-41)
         view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
-        view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
+        view.setUint8(ptr + 37, config.callSetting ?? 0); // 0=Auto, 1=Enabled, 2=Disabled
         view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
         view.setUint8(ptr + 39, config.introChant ?? 0);
         view.setUint8(ptr + 40, config.mixPattern ?? 0);

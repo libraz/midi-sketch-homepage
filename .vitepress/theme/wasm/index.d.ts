@@ -124,8 +124,8 @@ export interface SongConfig {
     modulationSemitones: number;
     /** Enable SE track */
     seEnabled: boolean;
-    /** Enable call feature */
-    callEnabled: boolean;
+    /** Call setting: 0=Auto (style-based), 1=Enabled, 2=Disabled */
+    callSetting: number;
     /** Output calls as notes */
     callNotesEnabled: boolean;
     /** Intro chant: 0=None, 1=Gachikoi, 2=Shouting */
