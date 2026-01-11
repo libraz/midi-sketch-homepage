@@ -259,61 +259,51 @@ onUnmounted(() => {
 
 <style scoped>
 .key-selector {
-  --accent-color: var(--step-accent, #8B5CF6);
-  --accent-rgb: var(--accent-rgb-value, 139, 92, 246);
+  --accent-color: var(--section-accent, var(--step-accent, #8B5CF6));
+  --accent-rgb: var(--section-accent-rgb, 139, 92, 246);
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 320px;
+  max-width: 240px;
   margin: 0 auto;
 }
 
-/* Piano Keyboard */
+/* Piano Keyboard - Realistic design */
 .piano-keyboard {
   position: relative;
-  height: 140px;
-  margin-bottom: 1.25rem;
-  border-radius: 12px;
+  height: 120px;
+  margin-bottom: 0.75rem;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(20, 20, 28, 0.6) 0%, rgba(15, 15, 22, 0.8) 100%);
-  border: 1px solid rgba(var(--accent-rgb), 0.15);
-  padding: 12px 8px 8px;
+  background: #1a1a1a;
+  border: 2px solid #0a0a0a;
+  padding: 0;
   transition: opacity 0.3s ease;
   flex-shrink: 0;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .piano-keyboard--compact {
-  height: 120px;
-  margin-bottom: 0.75rem;
-  padding: 8px 6px 6px;
-  border-radius: 10px;
+  height: 100px;
+  margin-bottom: 0.5rem;
 }
 
 .piano-keyboard--compact .piano-key--white {
-  border-radius: 0 0 5px 5px;
   padding-bottom: 4px;
 }
 
 .piano-keyboard--compact .piano-key__label {
   font-size: 0.55rem;
-  bottom: 3px;
 }
 
 .piano-keyboard--compact .piano-key--black {
-  width: 22px;
-  height: calc(60% + 6px);
-  border-radius: 0 0 3px 3px;
+  width: 18px;
+  height: 58%;
 }
 
 .piano-keyboard--compact .piano-key--black .piano-key__label {
   font-size: 0.45rem;
-  bottom: 2px;
-}
-
-.piano-keyboard--compact .piano-black-keys {
-  top: 6px;
-  left: 6px;
-  right: 6px;
 }
 
 .piano-keyboard--loading .piano-white-keys,
@@ -332,9 +322,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  background: rgba(15, 15, 22, 0.7);
+  background: rgba(15, 15, 22, 0.85);
   backdrop-filter: blur(4px);
-  border-radius: 12px;
 }
 
 .piano-loading__spinner {
@@ -363,18 +352,20 @@ onUnmounted(() => {
 
 .piano-white-keys {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   height: 100%;
   position: relative;
   z-index: 1;
+  padding: 0 1px;
+  background: #1a1a1a;
 }
 
 .piano-black-keys {
   position: absolute;
-  top: 12px;
-  left: 8px;
-  right: 8px;
-  height: 48%;
+  top: 0;
+  left: 1px;
+  right: 1px;
+  height: 60%;
   z-index: 2;
   pointer-events: none;
 }
@@ -382,86 +373,140 @@ onUnmounted(() => {
 .piano-key {
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.08s ease;
   position: relative;
   overflow: hidden;
 }
 
+/* White Keys - Realistic */
 .piano-key--white {
   flex: 1;
   height: 100%;
-  background: linear-gradient(180deg, #FAFAFA 0%, #F0F0F0 60%, #E8E8E8 100%);
-  border-radius: 0 0 8px 8px;
+  background: linear-gradient(
+    180deg,
+    #fcfcfc 0%,
+    #f8f8f8 2%,
+    #f5f5f5 10%,
+    #f0f0f0 50%,
+    #e8e8e8 90%,
+    #e0e0e0 100%
+  );
+  border-left: 1px solid #d0d0d0;
+  border-right: 1px solid #c8c8c8;
+  border-bottom: 1px solid #b0b0b0;
   box-shadow:
-    inset 0 -4px 8px rgba(0, 0, 0, 0.1),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+    inset 0 -2px 0 #d8d8d8,
+    inset 0 -4px 3px rgba(0, 0, 0, 0.05),
+    0 2px 3px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
+}
+
+.piano-key--white:first-child {
+  border-left: none;
+}
+
+.piano-key--white:last-child {
+  border-right: none;
 }
 
 .piano-key--white:hover {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F8F8F8 60%, #F0F0F0 100%);
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fafafa 2%,
+    #f8f8f8 10%,
+    #f5f5f5 50%,
+    #f0f0f0 90%,
+    #e8e8e8 100%
+  );
   box-shadow:
-    inset 0 -4px 8px rgba(0, 0, 0, 0.08),
-    0 6px 16px rgba(0, 0, 0, 0.35),
-    0 0 20px rgba(var(--accent-rgb), 0.15),
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    inset 0 -2px 0 #e0e0e0,
+    inset 0 -4px 3px rgba(0, 0, 0, 0.03),
+    0 2px 8px rgba(var(--accent-rgb), 0.2),
+    0 2px 3px rgba(0, 0, 0, 0.15);
 }
 
 .piano-key--white:active {
-  transform: translateY(1px);
+  background: linear-gradient(
+    180deg,
+    #f0f0f0 0%,
+    #e8e8e8 10%,
+    #e5e5e5 50%,
+    #e0e0e0 90%,
+    #d8d8d8 100%
+  );
   box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 -1px 0 #d0d0d0;
+  transform: translateY(1px);
 }
 
 .piano-key--white.piano-key--selected {
-  background: linear-gradient(180deg, #C4B5FD 0%, #A78BFA 40%, #8B5CF6 100%);
+  background: linear-gradient(
+    180deg,
+    #d8b4fe 0%,
+    #c084fc 10%,
+    #a855f7 50%,
+    #9333ea 90%,
+    #7e22ce 100%
+  );
+  border-color: #7e22ce;
   box-shadow:
-    inset 0 -4px 8px rgba(0, 0, 0, 0.1),
-    0 4px 24px rgba(var(--accent-rgb), 0.5),
-    0 0 40px rgba(var(--accent-rgb), 0.3),
-    0 1px 0 rgba(255, 255, 255, 0.4) inset;
+    inset 0 -2px 0 #a855f7,
+    inset 0 -4px 3px rgba(0, 0, 0, 0.1),
+    0 0 20px rgba(var(--accent-rgb), 0.5),
+    0 2px 3px rgba(0, 0, 0, 0.2);
 }
 
 .piano-key--white.piano-key--selected .piano-key__label {
   color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .piano-key--white.piano-key--playing {
-  animation: keyPulse 0.8s ease-in-out infinite;
+  animation: keyPulse 0.6s ease-in-out infinite;
 }
 
 @keyframes keyPulse {
   0%, 100% {
     box-shadow:
-      inset 0 -4px 8px rgba(0, 0, 0, 0.1),
-      0 4px 24px rgba(var(--accent-rgb), 0.5),
-      0 0 40px rgba(var(--accent-rgb), 0.3);
+      inset 0 -2px 0 #a855f7,
+      0 0 20px rgba(var(--accent-rgb), 0.5),
+      0 2px 3px rgba(0, 0, 0, 0.2);
   }
   50% {
     box-shadow:
-      inset 0 -4px 8px rgba(0, 0, 0, 0.1),
-      0 4px 32px rgba(var(--accent-rgb), 0.7),
-      0 0 60px rgba(var(--accent-rgb), 0.5);
+      inset 0 -2px 0 #a855f7,
+      0 0 35px rgba(var(--accent-rgb), 0.7),
+      0 2px 3px rgba(0, 0, 0, 0.2);
   }
 }
 
+/* Black Keys - Realistic */
 .piano-key--black {
   position: absolute;
-  width: 24px;
+  width: 22px;
   height: 100%;
-  background: linear-gradient(180deg, #2A2A35 0%, #1A1A22 50%, #0F0F15 100%);
-  border-radius: 0 0 4px 4px;
+  background: linear-gradient(
+    180deg,
+    #3a3a3a 0%,
+    #2a2a2a 5%,
+    #1a1a1a 40%,
+    #151515 80%,
+    #0a0a0a 100%
+  );
+  border: none;
+  border-left: 1px solid #2a2a2a;
+  border-right: 1px solid #1a1a1a;
   box-shadow:
-    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 -1px 0 #2a2a2a,
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 3px 5px rgba(0, 0, 0, 0.6),
+    0 5px 10px rgba(0, 0, 0, 0.4);
   pointer-events: auto;
   display: flex;
   align-items: flex-end;
@@ -470,28 +515,49 @@ onUnmounted(() => {
 }
 
 .piano-key--black:hover {
-  background: linear-gradient(180deg, #3A3A45 0%, #2A2A32 50%, #1A1A22 100%);
+  background: linear-gradient(
+    180deg,
+    #454545 0%,
+    #353535 5%,
+    #252525 40%,
+    #1a1a1a 80%,
+    #0f0f0f 100%
+  );
   box-shadow:
-    inset 0 -3px 6px rgba(0, 0, 0, 0.3),
-    0 6px 14px rgba(0, 0, 0, 0.6),
-    0 0 16px rgba(var(--accent-rgb), 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    inset 0 -1px 0 #353535,
+    inset 1px 0 0 rgba(255, 255, 255, 0.08),
+    0 3px 5px rgba(0, 0, 0, 0.6),
+    0 5px 12px rgba(var(--accent-rgb), 0.15),
+    0 5px 10px rgba(0, 0, 0, 0.4);
 }
 
 .piano-key--black:active {
-  transform: translateY(1px);
+  background: linear-gradient(
+    180deg,
+    #2a2a2a 0%,
+    #1a1a1a 20%,
+    #0f0f0f 60%,
+    #0a0a0a 100%
+  );
   box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.5),
-    0 2px 6px rgba(0, 0, 0, 0.3);
+    inset 0 3px 6px rgba(0, 0, 0, 0.6),
+    0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .piano-key--black.piano-key--selected {
-  background: linear-gradient(180deg, #7C3AED 0%, #6D28D9 50%, #5B21B6 100%);
+  background: linear-gradient(
+    180deg,
+    #9333ea 0%,
+    #7e22ce 10%,
+    #6b21a8 40%,
+    #581c87 80%,
+    #4c1d95 100%
+  );
   box-shadow:
-    inset 0 -3px 6px rgba(0, 0, 0, 0.2),
-    0 4px 20px rgba(var(--accent-rgb), 0.6),
-    0 0 30px rgba(var(--accent-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    inset 0 -1px 0 #7e22ce,
+    inset 1px 0 0 rgba(255, 255, 255, 0.1),
+    0 0 15px rgba(var(--accent-rgb), 0.6),
+    0 3px 5px rgba(0, 0, 0, 0.5);
 }
 
 .piano-key--black.piano-key--selected .piano-key__label {
@@ -499,35 +565,36 @@ onUnmounted(() => {
 }
 
 .piano-key--black.piano-key--playing {
-  animation: keyPulseBlack 0.8s ease-in-out infinite;
+  animation: keyPulseBlack 0.6s ease-in-out infinite;
 }
 
 @keyframes keyPulseBlack {
   0%, 100% {
     box-shadow:
-      inset 0 -3px 6px rgba(0, 0, 0, 0.2),
-      0 4px 20px rgba(var(--accent-rgb), 0.6),
-      0 0 30px rgba(var(--accent-rgb), 0.4);
+      inset 0 -1px 0 #7e22ce,
+      0 0 15px rgba(var(--accent-rgb), 0.6),
+      0 3px 5px rgba(0, 0, 0, 0.5);
   }
   50% {
     box-shadow:
-      inset 0 -3px 6px rgba(0, 0, 0, 0.2),
-      0 4px 28px rgba(var(--accent-rgb), 0.8),
-      0 0 50px rgba(var(--accent-rgb), 0.6);
+      inset 0 -1px 0 #7e22ce,
+      0 0 28px rgba(var(--accent-rgb), 0.8),
+      0 3px 5px rgba(0, 0, 0, 0.5);
   }
 }
 
 .piano-key__label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #1A1A22;
-  transition: color 0.15s ease;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  transition: color 0.1s ease;
+  letter-spacing: -0.02em;
 }
 
 .piano-key--black .piano-key__label {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* Key Info */
@@ -536,12 +603,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
 .key-info__value {
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--accent-color);
 }

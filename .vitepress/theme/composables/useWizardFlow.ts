@@ -173,7 +173,7 @@ export const FLOW_STEPS: Record<FlowType, string[]> = {
     'vocalSettings',   // 5: Configure vocal parameters
     'vocalGeneration', // 6: Generate vocal track
     'bgmSettings',     // 7: Configure BGM parameters
-    'bgmGeneration'    // 8: Generate accompaniment
+    'bgmGeneration'    // 8: Generate accompaniment (final step)
   ],
   'bgm-only': [
     'style',           // 1: Select song image/style

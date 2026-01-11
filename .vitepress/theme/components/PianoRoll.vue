@@ -57,6 +57,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   seek: [tick: number]
   instrumentChange: [payload: { track: string; instrument: 'piano' | 'guitar' }]
+  trackMuteChange: [payload: { track: string; muted: boolean }]
 }>()
 
 // Track colors
@@ -67,6 +68,7 @@ const TRACK_COLOR_MAP: Record<string, string> = {
   'Bass': '#10B981',
   'Motif': '#F97316',
   'Arpeggio': '#3B82F6',
+  'SE': '#F472B6',
 }
 
 const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }> = {
@@ -95,6 +97,21 @@ const dpr = ref(1)
 
 // Instrument selection
 const chordsInstrument = ref<'piano' | 'guitar'>('piano')
+
+// Track mute state (SE is muted by default)
+const mutedTracks = ref<Record<string, boolean>>({
+  SE: true
+})
+
+function isTrackMuted(trackName: string): boolean {
+  return mutedTracks.value[trackName] ?? false
+}
+
+function toggleTrackMute(trackName: string) {
+  const newMuted = !isTrackMuted(trackName)
+  mutedTracks.value[trackName] = newMuted
+  emit('trackMuteChange', { track: trackName, muted: newMuted })
+}
 
 // Computed values
 const noteRange = computed(() => {
@@ -238,6 +255,7 @@ const visibleTracks = computed(() => {
   return props.events.tracks.filter(t => t.name !== 'Drums' && t.notes?.length > 0)
 })
 
+
 function getTrackColor(trackName: string): string {
   return TRACK_COLOR_MAP[trackName] || '#8B5CF6'
 }
@@ -371,7 +389,7 @@ function draw() {
 
   // Draw playhead
   if (props.currentTick && props.currentTick > 0) {
-    const playheadX = tickToX(props.currentTick) - scrollLeft.value
+    const playheadX = Math.round(tickToX(props.currentTick) - scrollLeft.value)
 
     if (playheadX >= 0 && playheadX <= width) {
       // Glow
@@ -685,34 +703,40 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Track Legend -->
-    <div class="track-legend">
-      <div class="legend-tracks">
-        <div v-for="track in visibleTracks" :key="track.name" class="legend-item">
-          <span class="legend-color" :style="{ backgroundColor: getTrackColor(track.name) }" />
-          <span class="legend-name">{{ track.name }}</span>
-        </div>
+    <!-- Track Mixer -->
+    <div class="track-mixer">
+      <div class="mixer-tracks">
+        <button
+          v-for="track in visibleTracks"
+          :key="track.name"
+          class="mixer-track"
+          :class="{ 'mixer-track--muted': isTrackMuted(track.name) }"
+          :style="{ '--track-color': getTrackColor(track.name) }"
+          @click="toggleTrackMute(track.name)"
+        >
+          <span class="mixer-track__indicator"></span>
+          <span class="mixer-track__name">{{ track.name }}</span>
+          <span class="mixer-track__status">{{ isTrackMuted(track.name) ? 'M' : '' }}</span>
+        </button>
       </div>
 
-      <div class="instrument-toggle">
-        <span class="instrument-toggle__label">Chord</span>
-        <div class="instrument-toggle__buttons">
+      <div class="mixer-divider"></div>
+
+      <div class="instrument-select">
+        <span class="instrument-select__label">Chord</span>
+        <div class="instrument-select__buttons">
           <button
             class="instrument-btn"
             :class="{ 'instrument-btn--active': chordsInstrument === 'piano' }"
             @click="chordsInstrument = 'piano'; emit('instrumentChange', { track: 'Chord', instrument: 'piano' })"
             title="Piano"
-          >
-            <span class="instrument-icon">🎹</span>
-          </button>
+          >🎹</button>
           <button
             class="instrument-btn"
             :class="{ 'instrument-btn--active': chordsInstrument === 'guitar' }"
             @click="chordsInstrument = 'guitar'; emit('instrumentChange', { track: 'Chord', instrument: 'guitar' })"
-            title="Electric Guitar"
-          >
-            <span class="instrument-icon">🎸</span>
-          </button>
+            title="Guitar"
+          >🎸</button>
         </div>
       </div>
     </div>
@@ -1094,6 +1118,7 @@ onUnmounted(() => {
   z-index: 20;
   pointer-events: none;
   box-shadow: 0 0 6px rgba(236, 72, 153, 0.6);
+  transform: translateX(-50%);
 }
 
 /* Section Timeline */
@@ -1172,6 +1197,7 @@ onUnmounted(() => {
   background: #EC4899;
   z-index: 20;
   pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .section-playhead::before {
@@ -1260,61 +1286,109 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* Track Legend */
-.track-legend {
+/* Track Mixer */
+.track-mixer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  padding: 0.625rem 1rem;
-  background: linear-gradient(180deg, rgba(20, 20, 28, 0.9) 0%, rgba(25, 25, 35, 0.95) 100%);
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(180deg, rgba(18, 18, 24, 0.95) 0%, rgba(22, 22, 30, 0.98) 100%);
   border-top: 1px solid var(--border);
 }
 
-.legend-tracks {
+.mixer-tracks {
   display: flex;
-  gap: 1rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
+  flex: 1;
 }
 
-.legend-item {
+.mixer-track {
   display: flex;
   align-items: center;
   gap: 0.375rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
-.legend-color {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  box-shadow: 0 0 6px currentColor;
+.mixer-track:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.legend-name {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+.mixer-track__indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--track-color);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--track-color);
+  transition: all 0.15s ease;
 }
 
-.instrument-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
+.mixer-track--muted .mixer-track__indicator {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
 }
 
-.instrument-toggle__label {
+.mixer-track__name {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.6rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: color 0.15s ease;
+}
+
+.mixer-track--muted .mixer-track__name {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.mixer-track__status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #EF4444;
+  min-width: 0.7rem;
+  text-align: center;
+}
+
+.mixer-track--muted {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.mixer-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.instrument-select {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.instrument-select__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
 }
 
-.instrument-toggle__buttons {
+.instrument-select__buttons {
   display: flex;
   background: rgba(0, 0, 0, 0.4);
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
@@ -1323,37 +1397,28 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 26px;
+  width: 28px;
+  height: 24px;
   background: transparent;
   border: none;
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
+  opacity: 0.4;
 }
 
 .instrument-btn + .instrument-btn {
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .instrument-btn:hover {
   background: rgba(255, 255, 255, 0.06);
+  opacity: 0.7;
 }
 
 .instrument-btn--active {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(139, 92, 246, 0.2) 100%);
-}
-
-.instrument-icon {
-  font-size: 0.85rem;
-  filter: grayscale(0.3);
-}
-
-.instrument-btn--active .instrument-icon {
-  filter: grayscale(0);
-}
-
-.instrument-btn:not(.instrument-btn--active) .instrument-icon {
-  opacity: 0.5;
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+  opacity: 1;
 }
 
 /* Responsive */

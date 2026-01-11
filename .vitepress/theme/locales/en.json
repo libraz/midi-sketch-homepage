@@ -89,6 +89,7 @@
     "preview": "Vocal Preview",
     "regenerate": "Regenerate Vocal",
     "regenerated": "Regenerated",
+    "download": "Download MIDI",
     "nextHint": "If you like it, click \"Next\" to proceed to BGM settings",
     "summary": {
       "vocalStyle": "Vocal Style",
@@ -521,6 +522,7 @@
     "rewind": "Rewind",
     "download": "Download MIDI",
     "regenerateVocal": "Regenerate Vocal",
+    "regenerateBgm": "Regenerate Accompaniment",
     "regenerated": "Regenerated",
     "hint": "Go back to change settings if you're not satisfied",
     "undo": "Undo",

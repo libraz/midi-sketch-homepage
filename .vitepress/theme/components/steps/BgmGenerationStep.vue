@@ -36,7 +36,8 @@ const {
   preload,
   stop,
   play,
-  setTrackInstrument
+  setTrackInstrument,
+  setTrackMuted
 } = player
 
 const {
@@ -65,6 +66,15 @@ function handleSeek(tick: number) {
 
 function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
   setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
+  }
+}
+
+function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
+  setTrackMuted(payload.track, payload.muted)
   if (isPlaying.value && eventData.value) {
     const currentPos = currentTick.value
     stop()
@@ -239,8 +249,8 @@ function downloadMidi() {
   <div class="bgm-generation-step">
     <!-- Header -->
     <StepHeader
-      :title="t('bgmGenerationStep.title')"
-      :subtitle="t('bgmGenerationStep.subtitle')"
+      :title="isVocalFirst ? t('finalStep.title') : t('bgmGenerationStep.title')"
+      :subtitle="isVocalFirst ? t('finalStep.subtitle') : t('bgmGenerationStep.subtitle')"
     />
 
     <!-- Settings Summary -->
@@ -252,7 +262,7 @@ function downloadMidi() {
       :is-generating="isGenerating"
       :error="error"
       :loading-text="t('bgmStep.loading')"
-      :generating-text="t('bgmGenerationStep.generating')"
+      :generating-text="isVocalFirst ? t('finalStep.generating') : t('bgmGenerationStep.generating')"
     />
 
     <!-- Result Panel -->
@@ -267,16 +277,17 @@ function downloadMidi() {
         :is-soundfont-loading="isSoundfontLoading"
         :is-soundfont-ready="isSoundfontReady"
         :just-regenerated="justRegenerated"
-        :title="t('bgmGenerationStep.preview')"
-        :regenerated-text="t('bgmGenerationStep.regenerated')"
+        :title="isVocalFirst ? t('finalStep.preview') : t('bgmGenerationStep.preview')"
+        :regenerated-text="isVocalFirst ? t('finalStep.regenerated') : t('bgmGenerationStep.regenerated')"
         :loading-audio-text="t('bgmStep.result.loadingAudio')"
-        :rewind-title="t('bgmStep.result.rewind')"
+        :rewind-title="isVocalFirst ? t('finalStep.rewind') : t('bgmStep.result.rewind')"
         :chord-progression="chordProgressionDisplay"
         :music-key="store.config.key"
         @seek="handleSeek"
         @toggle-play="togglePlay"
         @rewind="handleRewind"
         @instrument-change="handleInstrumentChange"
+        @track-mute-change="handleTrackMuteChange"
       />
 
       <div class="result-actions">
@@ -285,9 +296,9 @@ function downloadMidi() {
           :can-undo="canUndoBgm"
           :can-redo="canRedoBgm"
           :is-generating="isGenerating"
-          :label="t('bgmGenerationStep.regenerate')"
-          :undo-title="t('bgmStep.result.undo')"
-          :redo-title="t('bgmStep.result.redo')"
+          :label="isVocalFirst ? t('finalStep.regenerateBgm') : t('bgmGenerationStep.regenerate')"
+          :undo-title="isVocalFirst ? t('finalStep.undo') : t('bgmStep.result.undo')"
+          :redo-title="isVocalFirst ? t('finalStep.redo') : t('bgmStep.result.redo')"
           color="blue"
           @regenerate="regenerate"
           @undo="undoGeneration"
@@ -296,8 +307,8 @@ function downloadMidi() {
 
         <!-- Download Button -->
         <DownloadButton
-          :label="t('bgmGenerationStep.download')"
-          color="purple"
+          :label="isVocalFirst ? t('finalStep.download') : t('bgmGenerationStep.download')"
+          color="green"
           @download="downloadMidi"
         />
 
@@ -306,7 +317,7 @@ function downloadMidi() {
       </div>
 
       <!-- Hint -->
-      <p class="result-hint">{{ t('bgmGenerationStep.hint') }}</p>
+      <p class="result-hint">{{ isVocalFirst ? t('finalStep.hint') : t('bgmGenerationStep.hint') }}</p>
     </div>
   </div>
 </template>

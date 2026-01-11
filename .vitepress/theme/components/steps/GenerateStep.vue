@@ -10,7 +10,7 @@ import PianoRoll from '../PianoRoll.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
-const { isPlaying, isPaused, currentTick, duration, play, stop, setTrackInstrument } = useMidiPlayer()
+const { isPlaying, isPaused, currentTick, duration, play, stop, setTrackInstrument, setTrackMuted } = useMidiPlayer()
 
 function handleSeek(tick: number) {
   stop()
@@ -21,6 +21,15 @@ function handleSeek(tick: number) {
 
 function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
   setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
+  }
+}
+
+function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
+  setTrackMuted(payload.track, payload.muted)
   if (isPlaying.value && eventData.value) {
     const currentPos = currentTick.value
     stop()
@@ -73,6 +82,7 @@ onMounted(async () => {
     const wasmPath = new URL('../../wasm/midisketch.wasm', import.meta.url).href
     await midisketch.init({ wasmPath })
     instance = new midisketch.MidiSketch()
+    store.libVersion.value = midisketch.getVersion()
     isLoading.value = false
   } catch (e: any) {
     error.value = e.message
@@ -245,7 +255,7 @@ async function togglePlay() {
               <span class="play-btn__text">{{ isPlaying ? t('generateStep.result.stop') : t('generateStep.result.play') }}</span>
             </button>
           </div>
-          <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" />
+          <PianoRoll :events="eventData" :current-tick="currentTick" :is-playing="isPlaying" @seek="handleSeek" @instrument-change="handleInstrumentChange" @track-mute-change="handleTrackMuteChange" />
         </div>
 
         <div class="result-actions">

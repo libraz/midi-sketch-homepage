@@ -1,9 +1,30 @@
 <script setup lang="ts">
 import MidiWizard from './components/MidiWizard.vue'
 import { useData } from 'vitepress'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import wasmMeta from './wasm/meta.json'
+import { useWizardStore } from './stores/useWizardStore'
 
 const { lang } = useData()
+const store = useWizardStore()
+
+// WASM version info
+const wasmHash = computed(() => wasmMeta.md5.slice(0, 7))
+
+// Initialize WASM and get version on mount
+onMounted(async () => {
+  if (typeof window === 'undefined') return
+  if (store.libVersion.value) return // Already initialized
+
+  try {
+    const wasm = await import('./wasm/index.js')
+    const wasmPath = new URL('./wasm/midisketch.wasm', import.meta.url).href
+    await wasm.init({ wasmPath })
+    store.libVersion.value = wasm.getVersion()
+  } catch (e) {
+    console.warn('Failed to initialize WASM:', e)
+  }
+})
 
 // Locale configuration for multi-language support
 const locales = {
@@ -69,6 +90,10 @@ const otherLocales = computed(() =>
             <span>{{ locale.shortLabel }}</span>
           </a>
         </template>
+        <span class="demo-page__divider">·</span>
+        <span class="demo-page__version" :title="`WASM Build: ${wasmMeta.md5}`">
+          midi-sketch lib {{ store.libVersion || '...' }} {{ wasmHash }}
+        </span>
       </div>
     </footer>
   </div>
@@ -241,6 +266,15 @@ const otherLocales = computed(() =>
 .demo-page__lang-switch {
   font-weight: 600;
   letter-spacing: 0.05em;
+}
+
+.demo-page__version {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 0.7rem;
+  color: var(--demo-text-muted);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+  cursor: help;
 }
 
 /* Hide VitePress chrome */

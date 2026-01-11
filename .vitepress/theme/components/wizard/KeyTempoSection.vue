@@ -5,6 +5,7 @@ import { useWizardStore } from '../../stores/useWizardStore'
 import { songImages } from '../../data/songImages'
 import KeySelector from './KeySelector.vue'
 import BpmControl from './BpmControl.vue'
+import ModulationPanel from './ModulationPanel.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -25,34 +26,40 @@ const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 
 <template>
   <section class="key-tempo-section" :class="`key-tempo-section--${accentColor || 'purple'}`">
     <div class="key-tempo-stack">
-      <!-- Key Selector -->
-      <div class="key-panel">
-        <h3 class="setting-label">
-          <span class="setting-label__icon">&#9839;</span>
-          <span>{{ t('settingsStep.key.label') }}</span>
-        </h3>
-        <KeySelector
-          v-model="store.config.key"
-          @update:model-value="store.setKey($event)"
-        />
+      <!-- Key & Tempo Row -->
+      <div class="key-tempo-row">
+        <!-- Key Selector -->
+        <div class="key-panel">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">&#9839;</span>
+            <span>{{ t('settingsStep.key.label') }}</span>
+          </h3>
+          <KeySelector
+            v-model="store.config.key"
+            @update:model-value="store.setKey($event)"
+          />
+        </div>
+
+        <!-- Vertical Divider -->
+        <div class="key-tempo-divider-vertical"></div>
+
+        <!-- Tempo Panel -->
+        <div class="tempo-panel">
+          <h3 class="setting-label">
+            <span class="setting-label__icon">&#9833;</span>
+            <span>{{ t('settingsStep.tempo.label') }}</span>
+          </h3>
+          <BpmControl
+            v-model="store.config.bpm"
+            :recommended-min="recommendedMin"
+            :recommended-max="recommendedMax"
+            @update:model-value="store.setBpm($event)"
+          />
+        </div>
       </div>
 
-      <!-- Divider -->
-      <div class="key-tempo-divider"></div>
-
-      <!-- Tempo Panel -->
-      <div class="tempo-panel">
-        <h3 class="setting-label">
-          <span class="setting-label__icon">&#9833;</span>
-          <span>{{ t('settingsStep.tempo.label') }}</span>
-        </h3>
-        <BpmControl
-          v-model="store.config.bpm"
-          :recommended-min="recommendedMin"
-          :recommended-max="recommendedMax"
-          @update:model-value="store.setBpm($event)"
-        />
-      </div>
+      <!-- Modulation Panel -->
+      <ModulationPanel />
     </div>
   </section>
 </template>
@@ -60,18 +67,22 @@ const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 
 <style scoped>
 .key-tempo-section {
   --section-accent: #8B5CF6;
+  --section-accent-rgb: 139, 92, 246;
 }
 
 .key-tempo-section--purple {
   --section-accent: #8B5CF6;
+  --section-accent-rgb: 139, 92, 246;
 }
 
 .key-tempo-section--pink {
   --section-accent: #EC4899;
+  --section-accent-rgb: 236, 72, 153;
 }
 
 .key-tempo-section--blue {
   --section-accent: #60A5FA;
+  --section-accent-rgb: 96, 165, 250;
 }
 
 .key-tempo-stack {
@@ -80,18 +91,35 @@ const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 
   gap: 1.5rem;
 }
 
-.key-panel,
-.tempo-panel {
+/* Horizontal row for Key & Tempo */
+.key-tempo-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.key-panel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.key-tempo-divider {
-  width: 100%;
-  height: 1px;
+.tempo-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Vertical divider between key and tempo */
+.key-tempo-divider-vertical {
+  width: 1px;
+  align-self: stretch;
   background: linear-gradient(
-    90deg,
+    180deg,
     transparent 0%,
     color-mix(in srgb, var(--section-accent) 25%, transparent) 20%,
     color-mix(in srgb, var(--section-accent) 25%, transparent) 80%,
@@ -113,5 +141,26 @@ const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 
 .setting-label__icon {
   font-size: 1.1rem;
   color: var(--section-accent);
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 640px) {
+  .key-tempo-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .key-tempo-divider-vertical {
+    width: 100%;
+    height: 1px;
+    align-self: auto;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--section-accent) 25%, transparent) 20%,
+      color-mix(in srgb, var(--section-accent) 25%, transparent) 80%,
+      transparent 100%
+    );
+  }
 }
 </style>

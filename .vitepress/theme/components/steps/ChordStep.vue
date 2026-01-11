@@ -28,6 +28,7 @@ onMounted(async () => {
     const wasmPath = new URL('../../wasm/midisketch.wasm', import.meta.url).href
     await mod.init({ wasmPath })
     isWasmLoaded.value = true
+    store.libVersion.value = mod.getVersion()
     updateValidProgressions()
   } catch {
     // WASM load failed, fall back to showing all progressions
@@ -337,7 +338,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.25rem;
   padding: 0.5rem;
-  margin: -0.5rem;
+  margin: 1rem -0.5rem -0.5rem -0.5rem;
 }
 
 .chord-card {

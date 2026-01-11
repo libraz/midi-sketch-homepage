@@ -13,6 +13,7 @@ import { devLog } from '../../utils/devLog'
 import { parseChordProgression, generateChordTimings, type ChordTiming } from '../../utils/chordUtils'
 import GenerationPreview from '../wizard/GenerationPreview.vue'
 import RegenerateCard from '../wizard/RegenerateCard.vue'
+import DownloadButton from '../wizard/DownloadButton.vue'
 import SettingsSummary from '../wizard/SettingsSummary.vue'
 import GenerationState from '../wizard/GenerationState.vue'
 import StepHeader from '../wizard/StepHeader.vue'
@@ -33,7 +34,8 @@ const {
   preload,
   stop,
   play,
-  setTrackInstrument
+  setTrackInstrument,
+  setTrackMuted
 } = player
 
 const {
@@ -69,6 +71,15 @@ function handleSeek(tick: number) {
 
 function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
   setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos, playOptions.value)
+  }
+}
+
+function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
+  setTrackMuted(payload.track, payload.muted)
   if (isPlaying.value && eventData.value) {
     const currentPos = currentTick.value
     stop()
@@ -242,6 +253,17 @@ async function togglePlay() {
 function handleRewind() {
   rewind()
 }
+
+function downloadMidi() {
+  const now = new Date()
+  const timestamp = now.getFullYear().toString() +
+    (now.getMonth() + 1).toString().padStart(2, '0') +
+    now.getDate().toString().padStart(2, '0') + '_' +
+    now.getHours().toString().padStart(2, '0') +
+    now.getMinutes().toString().padStart(2, '0') +
+    now.getSeconds().toString().padStart(2, '0')
+  midiGen.downloadMidi(`midi-sketch-vocal-${timestamp}.mid`)
+}
 </script>
 
 <template>
@@ -287,6 +309,7 @@ function handleRewind() {
         @toggle-play="togglePlay"
         @rewind="handleRewind"
         @instrument-change="handleInstrumentChange"
+        @track-mute-change="handleTrackMuteChange"
       />
 
       <div class="result-actions">
@@ -302,6 +325,13 @@ function handleRewind() {
           @regenerate="regenerate"
           @undo="undoGeneration"
           @redo="redoGeneration"
+        />
+
+        <!-- Download Button -->
+        <DownloadButton
+          :label="t('vocalGenerationStep.download')"
+          color="green"
+          @download="downloadMidi"
         />
       </div>
 

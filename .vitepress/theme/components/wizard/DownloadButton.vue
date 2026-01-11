@@ -3,7 +3,7 @@
 defineProps<{
   label: string
   disabled?: boolean
-  color?: 'purple' | 'green'
+  color?: 'purple' | 'green' | 'pink' | 'orange'
 }>()
 
 // Emits
@@ -102,6 +102,38 @@ const emit = defineEmits<{
   transform: translateY(-2px);
   box-shadow:
     0 8px 24px -4px rgba(16, 185, 129, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.download-btn--pink {
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  box-shadow:
+    0 4px 16px -4px rgba(236, 72, 153, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.download-btn--pink:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px -4px rgba(236, 72, 153, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.download-btn--orange {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  box-shadow:
+    0 4px 16px -4px rgba(249, 115, 22, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.download-btn--orange:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px -4px rgba(249, 115, 22, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }

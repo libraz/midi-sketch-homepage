@@ -91,6 +91,11 @@ const trackInstruments = ref<Record<string, 'piano' | 'guitar'>>({
   Chord: 'piano'
 })
 
+// Track mute settings (SE track is muted by default)
+const trackMuted = ref<Record<string, boolean>>({
+  SE: true
+})
+
 export interface PlayOptions {
   chordTimings?: ChordTiming[]
   musicKey?: number
@@ -233,6 +238,9 @@ export function useMidiPlayer() {
     }
 
     for (const track of eventData.tracks) {
+      // Skip muted tracks (SE track is muted by default)
+      if (trackMuted.value[track.name]) continue
+
       // Check by name or MIDI channel 10 (index 9)
       const isDrumTrack = track.name === 'Drums' || (track as any).channel === 9
       const notes = track.notes || (track as any).events || []
@@ -413,6 +421,14 @@ export function useMidiPlayer() {
     trackInstruments.value[track] = instrument
   }
 
+  function setTrackMuted(track: string, muted: boolean) {
+    trackMuted.value[track] = muted
+  }
+
+  function isTrackMuted(track: string): boolean {
+    return trackMuted.value[track] ?? false
+  }
+
   function rewind() {
     stop()
   }
@@ -441,6 +457,8 @@ export function useMidiPlayer() {
     stop,
     rewind,
     seek,
-    setTrackInstrument
+    setTrackInstrument,
+    setTrackMuted,
+    isTrackMuted
   }
 }

@@ -58,7 +58,8 @@ const {
   stop,
   rewind,
   play,
-  setTrackInstrument
+  setTrackInstrument,
+  setTrackMuted
 } = player
 
 const {
@@ -89,6 +90,15 @@ function handleSeek(tick: number) {
 
 function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
   setTrackInstrument(payload.track, payload.instrument)
+  if (isPlaying.value && eventData.value) {
+    const currentPos = currentTick.value
+    stop()
+    play(eventData.value, currentPos)
+  }
+}
+
+function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
+  setTrackMuted(payload.track, payload.muted)
   if (isPlaying.value && eventData.value) {
     const currentPos = currentTick.value
     stop()
@@ -268,6 +278,7 @@ function handleRewind() {
         @toggle-play="togglePlay"
         @rewind="handleRewind"
         @instrument-change="handleInstrumentChange"
+        @track-mute-change="handleTrackMuteChange"
       />
 
       <!-- Actions -->

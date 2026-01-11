@@ -89,6 +89,7 @@
     "preview": "ボーカルプレビュー",
     "regenerate": "ボーカルを再生成",
     "regenerated": "再生成完了",
+    "download": "MIDIをダウンロード",
     "nextHint": "気に入ったら「次へ」でBGM設定に進みましょう",
     "summary": {
       "vocalStyle": "ボーカルスタイル",
@@ -521,6 +522,7 @@
     "rewind": "巻き戻し",
     "download": "MIDIをダウンロード",
     "regenerateVocal": "ボーカルを再生成",
+    "regenerateBgm": "BGMを再生成",
     "regenerated": "再生成完了",
     "hint": "気に入らない場合は「戻る」で設定を変更できます",
     "undo": "元に戻す",

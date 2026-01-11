@@ -174,6 +174,7 @@ const bgmGenerated = ref(false)
 const vocalGenerated = ref(false)
 const bgmVersion = ref(0)
 const vocalVersion = ref(0)
+const libVersion = ref<string | null>(null)
 
 const config = reactive<WizardConfig>({ ...DEFAULT_CONFIG })
 
@@ -238,15 +239,29 @@ function getStepsToReset(targetStep: number, fromStep: number): string[] {
 
 /**
  * Reset config values for specified steps to defaults
+ * @param stepIds - Step IDs to reset
+ * @param targetStepId - Target step ID (its keys should NOT be reset)
  */
-function resetStepConfigs(stepIds: string[]): void {
+function resetStepConfigs(stepIds: string[], targetStepId?: string): void {
   const keysToReset = new Set<keyof WizardConfig>()
+
+  // Get keys that should be preserved (from target step)
+  const keysToPreserve = new Set<string>()
+  if (targetStepId) {
+    const targetStepDef = STEP_DEFINITIONS[targetStepId]
+    if (targetStepDef?.affectingKeys) {
+      targetStepDef.affectingKeys.forEach(key => keysToPreserve.add(key))
+    }
+  }
 
   for (const stepId of stepIds) {
     const stepDef = STEP_DEFINITIONS[stepId]
     if (stepDef?.affectingKeys) {
       stepDef.affectingKeys.forEach(key => {
-        keysToReset.add(key as keyof WizardConfig)
+        // Don't reset keys that are in the target step
+        if (!keysToPreserve.has(key)) {
+          keysToReset.add(key as keyof WizardConfig)
+        }
       })
     }
   }
@@ -307,7 +322,8 @@ export function useWizardStore() {
     // 2つ以上前に戻る場合、スキップされるステップの設定をリセット
     if (step < oldStep - 1) {
       const stepsToReset = getStepsToReset(step, oldStep)
-      resetStepConfigs(stepsToReset)
+      const targetStepDef = wizardFlow.getStepByIndex(step)
+      resetStepConfigs(stepsToReset, targetStepDef?.id)
 
       // 生成ステップがリセット対象に含まれる場合、生成状態も無効化
       for (const stepId of stepsToReset) {
@@ -401,6 +417,7 @@ export function useWizardStore() {
     vocalGenerated,
     bgmVersion,
     vocalVersion,
+    libVersion,
     config,
 
     // Computed
