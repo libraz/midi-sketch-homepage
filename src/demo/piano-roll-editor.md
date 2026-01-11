@@ -4,7 +4,7 @@ title: Piano Roll Editor Demo
 ---
 
 <script setup>
-import PianoRollEditorDemo from '../.vitepress/theme/components/PianoRollEditorDemo.vue'
+import PianoRollEditorDemo from '@/components/PianoRollEditorDemo.vue'
 </script>
 
 # Piano Roll Editor - SafePAI Demo

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import { fileURLToPath, URL } from 'node:url'
 
 const siteUrl = 'https://midi-sketch.libraz.net'
 const githubUrl = 'https://github.com/libraz/midi-sketch'
@@ -117,6 +118,8 @@ const faqJsonLd = {
 }
 
 export default withMermaid(defineConfig({
+  srcDir: 'src',
+
   title: 'MIDI Sketch - Music Theory-Based Pop MIDI Generator',
   description: 'Auto-generate reproducible pop music MIDI based on music theory. Unlike AI audio generators, get editable MIDI data for your DAW. Drums, bass, chords, and melody ready to import.',
 
@@ -252,6 +255,12 @@ export default withMermaid(defineConfig({
   },
 
   vite: {
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./theme', import.meta.url)),
+        '@theme': fileURLToPath(new URL('./theme', import.meta.url))
+      }
+    },
     optimizeDeps: {
       exclude: ['midi-sketch']
     },
