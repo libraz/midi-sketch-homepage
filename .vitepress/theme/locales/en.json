@@ -5,6 +5,12 @@
     "steps": {
       "style": "Style",
       "chords": "Chords",
+      "flowSelection": "Track Type",
+      "vocalSettings": "Vocal Settings",
+      "vocalGeneration": "Vocal",
+      "bgmSettings": "BGM Settings",
+      "bgmGeneration": "BGM",
+      "final": "Complete",
       "keyTempo": "Key & Tempo",
       "bgm": "BGM",
       "melody": "Melody",
@@ -13,7 +19,9 @@
     "nav": {
       "back": "Back",
       "next": "Next",
-      "generateMelody": "Generate Melody"
+      "generateMelody": "Generate Melody",
+      "generateVocal": "Generate Vocal",
+      "generateBgm": "Generate BGM"
     }
   },
   "styleStep": {
@@ -32,6 +40,74 @@
     "recommended": "Recommended",
     "otherChords": "Other Chord Progressions",
     "recommendedFor": "Recommended for \"{style}\""
+  },
+  "keyTempoStep": {
+    "title": "Set Key & Tempo",
+    "subtitle": "Choose the key and tempo for your song"
+  },
+  "flowSelectionStep": {
+    "title": "What type of track do you want to create?",
+    "subtitle": "Choose between a track with vocals or an instrumental BGM",
+    "options": {
+      "vocalFirst": {
+        "title": "Track with Vocals",
+        "description": "Generate vocal melody first, then create BGM optimized for it",
+        "feature1": "Preview and adjust melody",
+        "feature2": "BGM optimized for vocals",
+        "feature3": "Perfect for songs with lyrics"
+      },
+      "bgmOnly": {
+        "title": "BGM Only",
+        "description": "Create an instrumental track without vocals",
+        "feature1": "For background music",
+        "feature2": "Motif or synth-driven composition",
+        "feature3": "For videos and games"
+      }
+    },
+    "compositionStyle": {
+      "label": "BGM Composition Style",
+      "description": "Select the composition style for your BGM",
+      "options": {
+        "melodyLead": "Melody Lead",
+        "melodyLeadDesc": "Main melody (no vocals) takes center stage",
+        "backgroundMotif": "Background Motif",
+        "backgroundMotifDesc": "Subtle repeating motifs to create atmosphere",
+        "synthDriven": "Synth Driven",
+        "synthDrivenDesc": "Electronic composition with synth and arpeggio"
+      },
+      "synthDrivenNote": "Arpeggio is automatically enabled with Synth Driven"
+    }
+  },
+  "vocalSettingsStep": {
+    "title": "Vocal Settings",
+    "subtitle": "Configure your vocal melody parameters"
+  },
+  "vocalGenerationStep": {
+    "title": "Vocal Generation",
+    "subtitle": "Generate and preview your vocal melody",
+    "generating": "Generating vocal...",
+    "preview": "Vocal Preview",
+    "regenerate": "Regenerate Vocal",
+    "regenerated": "Regenerated",
+    "nextHint": "If you like it, click \"Next\" to proceed to BGM settings",
+    "summary": {
+      "vocalStyle": "Vocal Style",
+      "melodyTemplate": "Melody Type"
+    }
+  },
+  "bgmSettingsStep": {
+    "title": "BGM Settings",
+    "subtitle": "Configure your backing track parameters"
+  },
+  "bgmGenerationStep": {
+    "title": "BGM Generation",
+    "subtitle": "Generate the backing track to complete your song",
+    "generating": "Generating BGM...",
+    "preview": "Final Preview",
+    "regenerate": "Regenerate BGM",
+    "regenerated": "Regenerated",
+    "download": "Download MIDI",
+    "hint": "Go back to change settings if you're not satisfied"
   },
   "settingsStep": {
     "title": "Set Key & Tempo",
@@ -653,6 +729,14 @@
   },
   "preview": {
     "infoText": "Made with MIDI Sketch. Algorithmically generated, no AI. Download as MIDI - edit every note.",
+    "generatingMusic": "Generating music...",
+    "loading": "Loading...",
+    "rewind": "Rewind",
+    "pause": "Pause",
+    "play": "Play",
+    "download": "Download",
+    "typeVocal": "BGM + Vocal",
+    "typeBgm": "BGM",
     "errors": {
       "noHash": "Invalid share URL",
       "parseFailed": "Failed to parse URL. The URL may be corrupted.",
@@ -669,5 +753,12 @@
       "drums": "Drums",
       "arpeggio": "Arpeggio"
     }
+  },
+  "midiDemo": {
+    "title": "MIDI Generation Demo",
+    "loadingWasm": "Loading WASM module...",
+    "generating": "Generating...",
+    "generate": "Generate MIDI",
+    "download": "Download"
   }
 }

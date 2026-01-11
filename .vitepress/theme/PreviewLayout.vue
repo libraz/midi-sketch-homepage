@@ -58,7 +58,7 @@ const summaryInfo = computed(() => {
   const config = decoded.value.config
 
   // Find songImage by stylePresetId
-  const style = songImages.find(s => s.stylePresetIds.includes(config.stylePresetId))
+  const style = songImages.find(s => s.stylePresetIds.includes(config.stylePresetId ?? 0))
   const styleName = style ? t(`songImages.${style.id}.name`) : '-'
 
   // Format duration
@@ -77,7 +77,7 @@ const summaryInfo = computed(() => {
     { label: t('preview.summary.bpm'), value: config.bpm || '-' },
     { label: t('preview.summary.length'), value: durationStr },
     { label: t('preview.summary.options'), value: optionsStr },
-    { label: t('preview.summary.type'), value: decoded.value.shareType === 'vocal' ? 'BGM + Vocal' : 'BGM' }
+    { label: t('preview.summary.type'), value: decoded.value.shareType === 'vocal' ? t('preview.typeVocal') : t('preview.typeBgm') }
   ]
 })
 
@@ -99,7 +99,7 @@ async function togglePlay() {
   if (!eventData.value) return
 
   if (isPlaying.value || isPaused.value) {
-    playerTogglePlay()
+    playerTogglePlay(eventData.value)
   } else {
     play(eventData.value)
   }
@@ -284,16 +284,14 @@ onUnmounted(() => {
             <span>MIDI Sketch</span>
           </div>
           <span class="preview-card__badge" v-if="decoded">
-            {{ decoded.shareType === 'vocal' ? 'BGM + Vocal' : 'BGM' }}
+            {{ decoded.shareType === 'vocal' ? t('preview.typeVocal') : t('preview.typeBgm') }}
           </span>
         </div>
 
         <!-- Loading State -->
         <div v-if="isLoading || isGenerating" class="preview-card__loading">
           <div class="preview-card__spinner"></div>
-          <p>{{ isGenerating
-            ? (lang === 'ja' ? '楽曲を生成中...' : 'Generating music...')
-            : (lang === 'ja' ? '読み込み中...' : 'Loading...') }}</p>
+          <p>{{ isGenerating ? t('preview.generatingMusic') : t('preview.loading') }}</p>
         </div>
 
         <!-- Error State -->
@@ -341,7 +339,7 @@ onUnmounted(() => {
               class="control-btn control-btn--rewind"
               @click="rewind"
               :disabled="!isSoundfontReady"
-              :title="lang === 'ja' ? '巻き戻し' : 'Rewind'"
+              :title="t('preview.rewind')"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
@@ -360,9 +358,7 @@ onUnmounted(() => {
               <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              <span>{{ isPlaying
-                ? (lang === 'ja' ? '一時停止' : 'Pause')
-                : (lang === 'ja' ? '再生' : 'Play') }}</span>
+              <span>{{ isPlaying ? t('preview.pause') : t('preview.play') }}</span>
             </button>
 
             <!-- Download Button (Desktop only) -->
@@ -374,7 +370,7 @@ onUnmounted(() => {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
               </svg>
-              <span>{{ lang === 'ja' ? 'ダウンロード' : 'Download' }}</span>
+              <span>{{ t('preview.download') }}</span>
             </button>
           </div>
 

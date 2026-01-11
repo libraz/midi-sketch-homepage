@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import { Soundfont, DrumMachine } from 'smplr'
+import { type ChordTiming, getRootMidiNote } from '../utils/chordUtils'
 
 // GM drum note number to Roland CR-8000 sample name mapping
 const GM_TO_DRUM: Record<number, string> = {
@@ -54,6 +55,14 @@ function getNoteValue(note: MidiNote, key: 'pitch' | 'start' | 'duration'): numb
   return 0
 }
 
+interface Section {
+  start_ticks?: number
+  startTick?: number
+  end_ticks?: number
+  endTick?: number
+  name?: string
+}
+
 interface EventData {
   bpm: number
   ppq: number
@@ -61,12 +70,14 @@ interface EventData {
     name: string
     notes: MidiNote[]
   }[]
+  sections?: Section[]
 }
 
 let audioContext: AudioContext | null = null
 let piano: any = null
 let guitar: any = null
 let pad: any = null  // For Aux track
+let bass: any = null  // For root note playback
 let drums: any = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
@@ -79,6 +90,12 @@ const globalIsReady = ref(false)
 const trackInstruments = ref<Record<string, 'piano' | 'guitar'>>({
   Chord: 'piano'
 })
+
+export interface PlayOptions {
+  chordTimings?: ChordTiming[]
+  musicKey?: number
+  playRootNotes?: boolean
+}
 
 export function useMidiPlayer() {
   const isPlaying = ref(false)
@@ -96,7 +113,7 @@ export function useMidiPlayer() {
 
   async function init() {
     // Already initialized
-    if (isInitialized && piano && guitar && pad && drums) {
+    if (isInitialized && piano && guitar && pad && bass && drums) {
       globalIsReady.value = true
       return
     }
@@ -114,17 +131,19 @@ export function useMidiPlayer() {
       try {
         audioContext = new AudioContext()
 
-        // Load piano, guitar, pad, and drums in parallel
-        const [loadedPiano, loadedGuitar, loadedPad, loadedDrums] = await Promise.all([
+        // Load piano, guitar, pad, bass, and drums in parallel
+        const [loadedPiano, loadedGuitar, loadedPad, loadedBass, loadedDrums] = await Promise.all([
           new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
           new Soundfont(audioContext, { instrument: 'distortion_guitar' }).load,
           new Soundfont(audioContext, { instrument: 'pad_2_warm' }).load,  // For Aux track
+          new Soundfont(audioContext, { instrument: 'acoustic_bass' }).load,  // For root notes
           new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
         ])
 
         piano = loadedPiano
         guitar = loadedGuitar
         pad = loadedPad
+        bass = loadedBass
         drums = loadedDrums
         isInitialized = true
         globalIsReady.value = true
@@ -149,7 +168,10 @@ export function useMidiPlayer() {
     return (seconds * bpm / 60) * ppq
   }
 
-  async function play(eventData: EventData, fromTick: number = 0) {
+  // Cached play options for resume
+  let cachedPlayOptions: PlayOptions = {}
+
+  async function play(eventData: EventData, fromTick: number = 0, options: PlayOptions = {}) {
     // Block playback if not ready
     if (!globalIsReady.value) {
       await init()
@@ -163,6 +185,7 @@ export function useMidiPlayer() {
     }
 
     cachedEventData = eventData
+    cachedPlayOptions = options
     bpm = eventData.bpm || 120
     ppq = eventData.ppq || 480
 
@@ -178,6 +201,36 @@ export function useMidiPlayer() {
 
     const offsetSeconds = ticksToSeconds(fromTick)
     startTime = audioContext.currentTime - offsetSeconds
+
+    // Play root notes if enabled
+    if (options.playRootNotes && options.chordTimings && bass) {
+      const musicKey = options.musicKey ?? 0
+      for (const timing of options.chordTimings) {
+        // Skip chords that end before fromTick
+        if (timing.endTick <= fromTick) continue
+
+        const rootNote = getRootMidiNote(musicKey, timing.chord.semitone, 2) // Octave 2 for bass
+        const startTicks = timing.startTick
+        const durationTicks = timing.endTick - timing.startTick
+
+        const startSeconds = ticksToSeconds(startTicks)
+        const durationSeconds = ticksToSeconds(durationTicks)
+
+        const adjustedStartSeconds = Math.max(0, startSeconds - offsetSeconds)
+        const adjustedDuration = startTicks < fromTick
+          ? durationSeconds - (offsetSeconds - startSeconds)
+          : durationSeconds
+
+        if (adjustedDuration > 0) {
+          bass.start({
+            note: rootNote,
+            velocity: 70,  // Moderate velocity for root notes
+            time: audioContext.currentTime + adjustedStartSeconds,
+            duration: Math.min(adjustedDuration, ticksToSeconds(ppq * 2))  // Max 2 beats duration
+          })
+        }
+      }
+    }
 
     for (const track of eventData.tracks) {
       // Check by name or MIDI channel 10 (index 9)
@@ -297,6 +350,9 @@ export function useMidiPlayer() {
     if (pad) {
       pad.stop()
     }
+    if (bass) {
+      bass.stop()
+    }
     if (drums) {
       drums.stop()
     }
@@ -304,10 +360,10 @@ export function useMidiPlayer() {
 
   async function resume() {
     if (!isPaused.value || !cachedEventData) return
-    await play(cachedEventData, pausedTick)
+    await play(cachedEventData, pausedTick, cachedPlayOptions)
   }
 
-  async function togglePlay(eventData: EventData) {
+  async function togglePlay(eventData: EventData, options: PlayOptions = {}) {
     // Block if still loading
     if (globalIsLoading.value) return
 
@@ -316,7 +372,7 @@ export function useMidiPlayer() {
     } else if (isPaused.value) {
       await resume()
     } else {
-      await play(eventData, 0)
+      await play(eventData, 0, options)
     }
   }
 
@@ -344,6 +400,9 @@ export function useMidiPlayer() {
     }
     if (pad) {
       pad.stop()
+    }
+    if (bass) {
+      bass.stop()
     }
     if (drums) {
       drums.stop()

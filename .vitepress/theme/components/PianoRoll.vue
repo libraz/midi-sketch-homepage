@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from '../composables/useI18n'
+import { parseChordProgression, generateChordTimings, getChordName, type ChordInfo, type ChordTiming } from '../utils/chordUtils'
 
 const { t } = useI18n()
 
@@ -49,6 +50,8 @@ const props = defineProps<{
   events: EventData | null
   currentTick?: number
   isPlaying?: boolean
+  chordProgression?: string  // e.g., "I - V - vi - IV"
+  musicKey?: number          // 0-11 (0=C)
 }>()
 
 const emit = defineEmits<{
@@ -82,6 +85,7 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 const sectionTimelineRef = ref<HTMLElement | null>(null)
+const chordTimelineRef = ref<HTMLElement | null>(null)
 
 // State
 const scrollLeft = ref(0)
@@ -129,6 +133,41 @@ const totalWidth = computed(() => {
 })
 
 const sections = computed(() => props.events?.sections || [])
+
+// Parse chord progression and generate timings
+const parsedChords = computed(() => {
+  if (!props.chordProgression) return []
+  return parseChordProgression(props.chordProgression)
+})
+
+const chordTimings = computed((): ChordTiming[] => {
+  if (parsedChords.value.length === 0 || sections.value.length === 0) return []
+
+  const sectionsWithTicks = sections.value.map(s => ({
+    startTick: s.start_ticks ?? s.startTick,
+    endTick: s.end_ticks ?? s.endTick,
+    bars: s.bars,
+    type: s.type
+  }))
+
+  return generateChordTimings({
+    chords: parsedChords.value,
+    sections: sectionsWithTicks,
+    ppq: ppq.value,
+    barsPerChord: 1
+  })
+})
+
+// Get current chord at playhead position
+const activeChord = computed(() => {
+  if (!props.currentTick || chordTimings.value.length === 0) return null
+  for (const timing of chordTimings.value) {
+    if (props.currentTick >= timing.startTick && props.currentTick < timing.endTick) {
+      return timing
+    }
+  }
+  return null
+})
 
 // Conversion functions
 function tickToX(tick: number): number {
@@ -427,6 +466,7 @@ watch(() => props.currentTick, (tick) => {
     scrollLeft.value = 0
     if (containerRef.value) containerRef.value.scrollLeft = 0
     if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = 0
+    if (chordTimelineRef.value) chordTimelineRef.value.scrollLeft = 0
     draw()
     return
   }
@@ -443,6 +483,7 @@ watch(() => props.currentTick, (tick) => {
   scrollLeft.value = newScrollLeft
   if (containerRef.value) containerRef.value.scrollLeft = newScrollLeft
   if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = newScrollLeft
+  if (chordTimelineRef.value) chordTimelineRef.value.scrollLeft = newScrollLeft
 })
 
 // Watch isPlaying for animation
@@ -562,6 +603,30 @@ onUnmounted(() => {
         <div class="structure-progress" :style="{ left: `${progressPercent}%` }">
           <div class="structure-progress__line"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Chord Timeline -->
+    <div v-if="chordTimings.length > 0" class="chord-timeline" ref="chordTimelineRef" @scroll="handleScroll">
+      <div class="chord-track" :style="{ width: `${totalWidth}px` }">
+        <div
+          v-for="(timing, index) in chordTimings"
+          :key="`chord-${index}`"
+          class="chord-block"
+          :class="{ 'chord-block--active': activeChord === timing }"
+          :style="{
+            left: `${tickToX(timing.startTick)}px`,
+            width: `${Math.max(20, tickToX(timing.endTick - timing.startTick) - 2)}px`
+          }"
+        >
+          <span class="chord-block__name">{{ getChordName(musicKey ?? 0, timing.chord) }}</span>
+          <span class="chord-block__degree">{{ timing.chord.displayName }}</span>
+        </div>
+        <div
+          v-if="currentTick && currentTick > 0"
+          class="chord-playhead"
+          :style="{ left: `${tickToX(currentTick)}px` }"
+        />
       </div>
     </div>
 
@@ -959,6 +1024,78 @@ onUnmounted(() => {
   box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
 }
 
+/* Chord Timeline */
+.chord-timeline {
+  height: 32px;
+  background: linear-gradient(180deg, rgba(20, 20, 28, 0.95) 0%, rgba(15, 15, 22, 0.9) 100%);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  margin-left: 48px;
+}
+
+.chord-timeline::-webkit-scrollbar { display: none; }
+
+.chord-track {
+  position: relative;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.chord-block {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 4px;
+  cursor: default;
+  transition: all 0.15s ease;
+  overflow: hidden;
+}
+
+.chord-block--active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 12px -2px rgba(139, 92, 246, 0.4);
+}
+
+.chord-block__name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #C4B5FD;
+  text-shadow: 0 0 8px rgba(196, 181, 253, 0.3);
+}
+
+.chord-block--active .chord-block__name {
+  color: #E9D5FF;
+  text-shadow: 0 0 10px rgba(233, 213, 255, 0.5);
+}
+
+.chord-block__degree {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.chord-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #EC4899;
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(236, 72, 153, 0.6);
+}
+
 /* Section Timeline */
 .section-timeline {
   height: 44px;
@@ -1229,6 +1366,9 @@ onUnmounted(() => {
   .transport-module--section { order: 4; flex: 1 1 50%; }
   .cell-value--primary { font-size: 0.95rem; }
   .time-current { font-size: 0.85rem; }
+  .chord-timeline { height: 28px; margin-left: 36px; }
+  .chord-block__name { font-size: 0.65rem; }
+  .chord-block__degree { display: none; }
   .section-timeline { height: 36px; margin-left: 36px; }
   .roll-container { height: 140px; }
   .piano-keys { width: 36px; }

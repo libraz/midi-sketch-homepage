@@ -2,9 +2,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import { useWizardStore } from '../stores/useWizardStore'
+import { useWizardFlow } from '../composables/useWizardFlow'
 import { useMidiPlayer } from '../composables/useMidiPlayer'
 import StyleStep from './steps/StyleStep.vue'
 import ChordStep from './steps/ChordStep.vue'
+import KeyTempoStep from './steps/KeyTempoStep.vue'
+import FlowSelectionStep from './steps/FlowSelectionStep.vue'
+import VocalSettingsStep from './steps/VocalSettingsStep.vue'
+import VocalGenerationStep from './steps/VocalGenerationStep.vue'
+import BgmSettingsStep from './steps/BgmSettingsStep.vue'
+import BgmGenerationStep from './steps/BgmGenerationStep.vue'
 import SettingsStep from './steps/SettingsStep.vue'
 import BgmStep from './steps/BgmStep.vue'
 import MelodyStep from './steps/MelodyStep.vue'
@@ -12,26 +19,70 @@ import FinalStep from './steps/FinalStep.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
+const { getStepByIndex, steps: flowSteps, isVocalFirst, isBgmOnly } = useWizardFlow()
 const { stop: stopPlayer } = useMidiPlayer()
 
-const steps = computed(() => [
-  { number: 1, label: t('wizard.steps.style'), icon: '✦' },
-  { number: 2, label: t('wizard.steps.chords'), icon: '♫' },
-  { number: 3, label: t('wizard.steps.keyTempo'), icon: '◈' },
-  { number: 4, label: t('wizard.steps.bgm'), icon: '♩' },
-  { number: 5, label: t('wizard.steps.melody'), icon: '♪' },
-  { number: 6, label: t('wizard.steps.complete'), icon: '✓' }
-])
+// Step icon mapping
+const stepIcons: Record<string, string> = {
+  style: '✦',
+  chord: '♫',
+  keyTempo: '♯',
+  flowSelection: '⚡',
+  vocalSettings: '♪',
+  vocalGeneration: '🎤',
+  bgmSettings: '◈',
+  bgmGeneration: '♩',
+  final: '✓'
+}
+
+// Dynamic steps based on flow type
+const steps = computed(() => {
+  return flowSteps.value.map((stepId, index) => ({
+    number: index + 1,
+    id: stepId,
+    label: t(`wizard.steps.${stepId === 'chord' ? 'chords' : stepId}`),
+    icon: stepIcons[stepId] || '◆'
+  }))
+})
+
+// Current step ID
+const currentStepId = computed(() => {
+  const stepDef = getStepByIndex(store.currentStep.value)
+  return stepDef?.id || 'style'
+})
 
 const isAnimating = ref(false)
 
 // Check if Next button should be enabled
 const canProceed = computed(() => {
-  if (store.currentStep.value === 4) {
-    // On BGM step, check if generation is complete
+  const stepDef = getStepByIndex(store.currentStep.value)
+  if (!stepDef) return false
+
+  // On vocal generation step, check if vocal is generated
+  if (stepDef.id === 'vocalGeneration') {
+    return store.vocalGenerated.value
+  }
+
+  // On BGM generation step, check if BGM is generated
+  if (stepDef.id === 'bgmGeneration') {
     return store.bgmGenerated.value
   }
+
   return store.canGoNext.value
+})
+
+// Get the appropriate Next button label
+const nextButtonLabel = computed(() => {
+  const stepDef = getStepByIndex(store.currentStep.value)
+  if (!stepDef) return t('wizard.nav.next')
+
+  if (stepDef.id === 'vocalSettings') {
+    return t('wizard.nav.generateVocal')
+  }
+  if (stepDef.id === 'bgmSettings') {
+    return t('wizard.nav.generateBgm')
+  }
+  return t('wizard.nav.next')
 })
 
 watch(() => store.currentStep.value, () => {
@@ -116,12 +167,22 @@ onMounted(() => {
     <main class="noir-wizard__content" :class="{ 'noir-wizard__content--animating': isAnimating }">
       <div class="noir-wizard__panel">
         <Transition name="noir-fade" mode="out-in">
-          <StyleStep v-if="store.currentStep.value === 1" :key="1" />
-          <ChordStep v-else-if="store.currentStep.value === 2" :key="2" />
-          <SettingsStep v-else-if="store.currentStep.value === 3" :key="3" />
-          <BgmStep v-else-if="store.currentStep.value === 4" :key="`bgm-${store.bgmVersion.value}`" />
-          <MelodyStep v-else-if="store.currentStep.value === 5" :key="5" />
-          <FinalStep v-else-if="store.currentStep.value === 6" :key="`final-${store.melodyVersion.value}`" />
+          <!-- Common steps -->
+          <StyleStep v-if="currentStepId === 'style'" :key="'style'" />
+          <ChordStep v-else-if="currentStepId === 'chord'" :key="'chord'" />
+          <KeyTempoStep v-else-if="currentStepId === 'keyTempo'" :key="'keyTempo'" />
+          <FlowSelectionStep v-else-if="currentStepId === 'flowSelection'" :key="'flowSelection'" />
+
+          <!-- Vocal-first flow steps -->
+          <VocalSettingsStep v-else-if="currentStepId === 'vocalSettings'" :key="'vocalSettings'" />
+          <VocalGenerationStep v-else-if="currentStepId === 'vocalGeneration'" :key="`vocalGeneration-${store.vocalVersion.value}`" />
+
+          <!-- BGM steps (both flows) -->
+          <BgmSettingsStep v-else-if="currentStepId === 'bgmSettings'" :key="'bgmSettings'" />
+          <BgmGenerationStep v-else-if="currentStepId === 'bgmGeneration'" :key="`bgmGeneration-${store.bgmVersion.value}`" />
+
+          <!-- BGM-only flow final step -->
+          <FinalStep v-else-if="currentStepId === 'final'" :key="'final'" />
         </Transition>
       </div>
     </main>
@@ -142,16 +203,16 @@ onMounted(() => {
       <div class="noir-wizard__step-indicator">
         <span class="noir-wizard__step-current">{{ store.currentStep.value }}</span>
         <span class="noir-wizard__step-divider">/</span>
-        <span class="noir-wizard__step-total">{{ store.totalSteps }}</span>
+        <span class="noir-wizard__step-total">{{ store.totalSteps.value }}</span>
       </div>
 
       <button
-        v-if="store.currentStep.value < store.totalSteps"
+        v-if="store.currentStep.value < store.totalSteps.value"
         class="noir-btn noir-btn--primary"
         :disabled="!canProceed"
         @click="handleNext"
       >
-        <span>{{ store.currentStep.value === 5 ? t('wizard.nav.generateMelody') : t('wizard.nav.next') }}</span>
+        <span>{{ nextButtonLabel }}</span>
         <span class="noir-btn__icon">→</span>
       </button>
       <div v-else class="noir-btn--placeholder"></div>

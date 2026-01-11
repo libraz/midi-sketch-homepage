@@ -11,7 +11,7 @@ interface PlayerMethods {
   isPaused: Ref<boolean>
   currentTick: Ref<number>
   stop: () => void
-  play: (eventData: any, startTick?: number) => Promise<void>
+  play: (eventData: any, startTick?: number, options?: any) => Promise<void>
 }
 
 /**
@@ -67,9 +67,9 @@ export function useMidiRegeneration(player: PlayerMethods) {
   /**
    * Restore playback from saved state after regeneration.
    */
-  async function restorePlayback(state: PlaybackState, eventData: any): Promise<void> {
+  async function restorePlayback(state: PlaybackState, eventData: any, playOptions?: any): Promise<void> {
     if (state.wasPlaying && eventData) {
-      await player.play(eventData, state.savedTick)
+      await player.play(eventData, state.savedTick, playOptions)
     }
   }
 
@@ -84,11 +84,13 @@ export function useMidiRegeneration(player: PlayerMethods) {
    *
    * @param regenerateFn - The async function that performs the actual regeneration
    * @param getEventData - Function to retrieve current event data after regeneration
+   * @param getPlayOptions - Optional function to retrieve play options for resuming playback
    * @returns The result of regenerateFn, or undefined if an error occurred
    */
   async function withPlaybackPreservation<T>(
     regenerateFn: () => Promise<T>,
-    getEventData: () => any
+    getEventData: () => any,
+    getPlayOptions?: () => any
   ): Promise<T | undefined> {
     // Save playback state
     const state = savePlaybackState()
@@ -105,7 +107,8 @@ export function useMidiRegeneration(player: PlayerMethods) {
       const result = await regenerateFn()
 
       // Restore playback if was playing
-      await restorePlayback(state, getEventData())
+      const playOptions = getPlayOptions?.()
+      await restorePlayback(state, getEventData(), playOptions)
 
       return result
     } catch (e: any) {

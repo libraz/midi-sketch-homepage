@@ -4,6 +4,9 @@ import { useI18n } from '../../composables/useI18n'
 import { useWizardStore } from '../../stores/useWizardStore'
 import { songImages, songImageCategories } from '../../data/songImages'
 import { warmupChordPlayer } from '../../composables/useChordPlayer'
+import StepHeader from '../wizard/StepHeader.vue'
+import CategoryChip from '../wizard/CategoryChip.vue'
+import type { CategoryItem } from '../wizard/CategoryChip.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -40,6 +43,16 @@ function getCategoryColor(id: string): string {
   return colors[id] || '#8B5CF6'
 }
 
+// Category items for CategoryChip component
+const categoryItems = computed<CategoryItem[]>(() =>
+  songImageCategories.map(cat => ({
+    id: cat.id,
+    label: t(`styleStep.categories.${cat.id}`),
+    icon: getCategoryIcon(cat.id),
+    color: getCategoryColor(cat.id)
+  }))
+)
+
 function getStyleIcon(category: string): string {
   const icons: Record<string, string> = {
     idol: '★',
@@ -55,25 +68,14 @@ function getStyleIcon(category: string): string {
 <template>
   <div class="style-step">
     <!-- Step Header -->
-    <header class="step-header">
-      <h2 class="step-header__title">{{ t('styleStep.title') }}</h2>
-      <p class="step-header__subtitle">{{ t('styleStep.subtitle') }}</p>
-    </header>
+    <StepHeader :title="t('styleStep.title')" :subtitle="t('styleStep.subtitle')" />
 
     <!-- Category Filter -->
-    <nav class="category-filter">
-      <button
-        v-for="category in songImageCategories"
-        :key="category.id"
-        class="category-chip"
-        :class="{ 'category-chip--active': store.config.activeCategory === category.id }"
-        :style="{ '--chip-color': getCategoryColor(category.id) }"
-        @click="store.setActiveCategory(category.id)"
-      >
-        <span class="category-chip__icon">{{ getCategoryIcon(category.id) }}</span>
-        <span class="category-chip__label">{{ t(`styleStep.categories.${category.id}`) }}</span>
-      </button>
-    </nav>
+    <CategoryChip
+      :items="categoryItems"
+      :active-id="store.config.activeCategory"
+      @select="store.setActiveCategory($event)"
+    />
 
     <!-- Style Cards Grid -->
     <div class="style-grid">
@@ -117,71 +119,7 @@ function getStyleIcon(category: string): string {
 <style scoped>
 .style-step {
   --step-accent: #8B5CF6;
-}
-
-.step-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.step-header__title {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #FAFAFA;
-  margin: 0 0 0.5rem;
-  letter-spacing: -0.02em;
-}
-
-.step-header__subtitle {
-  font-size: 0.9rem;
-  color: rgba(250, 250, 250, 0.5);
-  margin: 0;
-}
-
-.category-filter {
-  display: flex;
-  justify-content: center;
-  gap: 0.625rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.category-chip {
-  --chip-color: #8B5CF6;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-width: 7rem;
-  padding: 0.625rem 1rem;
-  background: color-mix(in srgb, var(--chip-color) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--chip-color) 25%, transparent);
-  border-radius: 100px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: color-mix(in srgb, var(--chip-color) 80%, #FAFAFA);
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.category-chip:hover {
-  background: color-mix(in srgb, var(--chip-color) 15%, transparent);
-  border-color: color-mix(in srgb, var(--chip-color) 40%, transparent);
-  color: #FAFAFA;
-}
-
-.category-chip--active {
-  background: color-mix(in srgb, var(--chip-color) 25%, transparent);
-  border-color: var(--chip-color);
-  color: #FAFAFA;
-  box-shadow: 0 0 24px -4px color-mix(in srgb, var(--chip-color) 50%, transparent);
-}
-
-.category-chip__icon {
-  font-size: 1rem;
-  filter: drop-shadow(0 0 4px var(--chip-color));
+  --accent-rgb: 139, 92, 246;
 }
 
 .style-grid {
@@ -318,28 +256,6 @@ function getStyleIcon(category: string): string {
 }
 
 @media (max-width: 640px) {
-  .step-header__title {
-    font-size: 1.25rem;
-  }
-
-  .category-filter {
-    gap: 0.375rem;
-  }
-
-  .category-chip {
-    min-width: auto;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .category-chip__label {
-    display: none;
-  }
-
-  .category-chip__icon {
-    font-size: 1.1rem;
-  }
-
   .style-grid {
     grid-template-columns: 1fr;
   }

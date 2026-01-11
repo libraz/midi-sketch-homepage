@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useData } from 'vitepress'
+import { ref, onMounted } from 'vue'
+import { useI18n } from './composables/useI18n'
 
-const { lang } = useData()
-const isJa = computed(() => lang.value === 'ja')
+const { t } = useI18n()
 
 const isLoading = ref(true)
 const isGenerating = ref(false)
@@ -91,10 +90,10 @@ function download() {
 
 <template>
   <div class="midi-demo">
-    <h3>{{ isJa ? 'MIDI 生成デモ' : 'MIDI Generation Demo' }}</h3>
+    <h3>{{ t('midiDemo.title') }}</h3>
 
     <div v-if="isLoading" class="loading">
-      {{ isJa ? 'WASM モジュールを読み込み中...' : 'Loading WASM module...' }}
+      {{ t('midiDemo.loadingWasm') }}
     </div>
 
     <div v-else-if="error" class="error">
@@ -116,13 +115,11 @@ function download() {
         </select>
 
         <button @click="generate" :disabled="isGenerating">
-          {{ isGenerating
-            ? (isJa ? '生成中...' : 'Generating...')
-            : (isJa ? 'MIDI を生成' : 'Generate MIDI') }}
+          {{ isGenerating ? t('midiDemo.generating') : t('midiDemo.generate') }}
         </button>
 
         <button v-if="midiData" @click="download">
-          {{ isJa ? 'ダウンロード' : 'Download' }}
+          {{ t('midiDemo.download') }}
         </button>
       </div>
 

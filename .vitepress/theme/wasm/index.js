@@ -62,6 +62,43 @@ export class MidiSketchGenerationError extends Error {
         this.code = code;
     }
 }
+// ============================================================================
+// Piano Roll Safety API Types
+// ============================================================================
+/**
+ * Note safety level for piano roll visualization
+ */
+export const NoteSafety = {
+    /** Green: chord tone, safe to use */
+    Safe: 0,
+    /** Yellow: tension, low register, or passing tone */
+    Warning: 1,
+    /** Red: dissonant or out of range */
+    Dissonant: 2,
+};
+/**
+ * Reason flags for note safety (bitfield, can be combined)
+ */
+export const NoteReason = {
+    None: 0,
+    // Positive reasons (green)
+    ChordTone: 1, // Chord tone (root, 3rd, 5th, 7th)
+    Tension: 2, // Tension (9th, 11th, 13th)
+    ScaleTone: 4, // Scale tone (not chord but in scale)
+    // Warning reasons (yellow)
+    LowRegister: 8, // Low register (below C4), may sound muddy
+    Tritone: 16, // Tritone interval (unstable except on V7)
+    LargeLeap: 32, // Large leap (6+ semitones from prev note)
+    // Dissonant reasons (red)
+    Minor2nd: 64, // Minor 2nd (1 semitone) collision
+    Major7th: 128, // Major 7th (11 semitones) collision
+    NonScale: 256, // Non-scale tone (chromatic)
+    PassingTone: 512, // Can be used as passing tone
+    // Out of range reasons (red)
+    OutOfRange: 1024, // Outside vocal range
+    TooHigh: 2048, // Too high to sing
+    TooLow: 4096, // Too low to sing
+};
 // Vocal attitude constants
 export const VocalAttitude = {
     Clean: 0,
@@ -189,7 +226,6 @@ export async function init(options) {
     api = {
         create: m.cwrap('midisketch_create', 'number', []),
         destroy: m.cwrap('midisketch_destroy', null, ['number']),
-        regenerateVocal: m.cwrap('midisketch_regenerate_vocal', 'number', ['number', 'number']),
         getMidi: m.cwrap('midisketch_get_midi', 'number', ['number']),
         freeMidi: m.cwrap('midisketch_free_midi', null, ['number']),
         getEvents: m.cwrap('midisketch_get_events', 'number', ['number']),
@@ -230,6 +266,41 @@ export async function init(options) {
             'number',
         ]),
         configErrorString: m.cwrap('midisketch_config_error_string', 'string', ['number']),
+        // Vocal-first generation APIs
+        generateVocal: m.cwrap('midisketch_generate_vocal', 'number', ['number', 'number']),
+        regenerateVocal: m.cwrap('midisketch_regenerate_vocal', 'number', ['number', 'number']),
+        generateAccompaniment: m.cwrap('midisketch_generate_accompaniment', 'number', ['number']),
+        generateAccompanimentWithConfig: m.cwrap('midisketch_generate_accompaniment_with_config', 'number', ['number', 'number']),
+        regenerateAccompaniment: m.cwrap('midisketch_regenerate_accompaniment', 'number', [
+            'number',
+            'number',
+        ]),
+        regenerateAccompanimentWithConfig: m.cwrap('midisketch_regenerate_accompaniment_with_config', 'number', ['number', 'number']),
+        generateWithVocal: m.cwrap('midisketch_generate_with_vocal', 'number', [
+            'number',
+            'number',
+        ]),
+        setVocalNotes: m.cwrap('midisketch_set_vocal_notes', 'number', [
+            'number',
+            'number',
+            'number',
+            'number',
+        ]),
+        // Piano Roll Safety API
+        getPianoRollSafety: m.cwrap('midisketch_get_piano_roll_safety', 'number', [
+            'number',
+            'number',
+            'number',
+            'number',
+        ]),
+        getPianoRollSafetyAt: m.cwrap('midisketch_get_piano_roll_safety_at', 'number', [
+            'number',
+            'number',
+        ]),
+        getPianoRollSafetyWithContext: m.cwrap('midisketch_get_piano_roll_safety_with_context', 'number', ['number', 'number', 'number']),
+        freePianoRollData: m.cwrap('midisketch_free_piano_roll_data', null, ['number']),
+        reasonToString: m.cwrap('midisketch_reason_to_string', 'string', ['number']),
+        collisionToString: m.cwrap('midisketch_collision_to_string', 'string', ['number']),
     };
 }
 /**
@@ -377,7 +448,7 @@ export function createDefaultConfig(styleId) {
         modulationSemitones: view.getInt8(retPtr + 35),
         // SE/Call settings (offset 36-41)
         seEnabled: view.getUint8(retPtr + 36) !== 0,
-        callSetting: view.getUint8(retPtr + 37),
+        callEnabled: view.getUint8(retPtr + 37) !== 0,
         callNotesEnabled: view.getUint8(retPtr + 38) !== 0,
         introChant: view.getUint8(retPtr + 39),
         mixPattern: view.getUint8(retPtr + 40),
@@ -468,7 +539,7 @@ function allocSongConfigStatic(m, config) {
     view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
     // SE/Call settings (offset 36-41)
     view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
-    view.setUint8(ptr + 37, config.callSetting ?? 0); // 0=Auto, 1=Enabled, 2=Disabled
+    view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
     view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
     view.setUint8(ptr + 39, config.introChant ?? 0);
     view.setUint8(ptr + 40, config.mixPattern ?? 0);
@@ -532,24 +603,245 @@ export class MidiSketch {
         }
     }
     /**
-     * Regenerate only the vocal track with the given parameters.
-     * BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
-     * Use after generateFromConfig with skipVocal=true.
-     * @throws {MidiSketchGenerationError} If regeneration fails
+     * Generate only the vocal track without accompaniment.
+     * Use for trial-and-error workflow: generate vocal, listen, regenerate if needed.
+     * Call generateAccompaniment() when satisfied with the vocal.
+     * @throws {MidiSketchConfigError} If config validation fails
+     * @throws {MidiSketchGenerationError} If generation fails
      */
-    regenerateVocal(params) {
+    generateVocal(config) {
         const a = getApi();
         const m = getModule();
-        const paramsPtr = this.allocVocalParams(m, params);
+        const configPtr = this.allocSongConfig(m, config);
         try {
-            const result = a.regenerateVocal(this.handle, paramsPtr);
+            const result = a.generateVocal(this.handle, configPtr);
+            if (result !== 0) {
+                const validationResult = a.validateConfig(configPtr);
+                if (validationResult !== 0) {
+                    const validationMessage = a.configErrorString(validationResult);
+                    throw new MidiSketchConfigError(validationResult, validationMessage);
+                }
+                throw new MidiSketchGenerationError(result, `Vocal generation failed with error code: ${result}`);
+            }
+        }
+        finally {
+            m._free(configPtr);
+        }
+    }
+    /**
+     * Regenerate vocal track with new configuration or seed.
+     * Keeps the same chord progression and structure.
+     * @param configOrSeed VocalConfig object or seed number (default: 0 = new random)
+     * @throws {MidiSketchGenerationError} If regeneration fails
+     */
+    regenerateVocal(configOrSeed = 0) {
+        const a = getApi();
+        const m = getModule();
+        let configPtr = 0;
+        if (typeof configOrSeed === 'number') {
+            // Seed only - create minimal config with just seed
+            configPtr = this.allocVocalConfig(m, { seed: configOrSeed });
+        }
+        else {
+            // Full config
+            configPtr = this.allocVocalConfig(m, configOrSeed);
+        }
+        try {
+            const result = a.regenerateVocal(this.handle, configPtr);
             if (result !== 0) {
                 throw new MidiSketchGenerationError(result, `Vocal regeneration failed with error code: ${result}`);
             }
         }
         finally {
-            m._free(paramsPtr);
+            m._free(configPtr);
         }
+    }
+    /**
+     * Generate accompaniment tracks for existing vocal.
+     * Must be called after generateVocal() or generateWithVocal().
+     * Generates: Aux → Bass → Chord → Drums (adapting to vocal).
+     * @param config Optional accompaniment configuration
+     * @throws {MidiSketchGenerationError} If generation fails
+     */
+    generateAccompaniment(config) {
+        const a = getApi();
+        if (config === undefined) {
+            const result = a.generateAccompaniment(this.handle);
+            if (result !== 0) {
+                throw new MidiSketchGenerationError(result, `Accompaniment generation failed with error code: ${result}`);
+            }
+        }
+        else {
+            const m = getModule();
+            const configPtr = this.allocAccompanimentConfig(m, config);
+            try {
+                const result = a.generateAccompanimentWithConfig(this.handle, configPtr);
+                if (result !== 0) {
+                    throw new MidiSketchGenerationError(result, `Accompaniment generation failed with error code: ${result}`);
+                }
+            }
+            finally {
+                m._free(configPtr);
+            }
+        }
+    }
+    /**
+     * Regenerate accompaniment tracks with a new seed or configuration.
+     * Keeps current vocal, regenerates all accompaniment tracks
+     * (Aux, Bass, Chord, Drums, etc.) with the specified seed/config.
+     * Must have existing vocal (call generateVocal() first).
+     * @param seedOrConfig Random seed (0 = auto-generate) or AccompanimentConfig
+     * @throws {MidiSketchGenerationError} If regeneration fails
+     */
+    regenerateAccompaniment(seedOrConfig = 0) {
+        const a = getApi();
+        if (typeof seedOrConfig === 'number') {
+            const result = a.regenerateAccompaniment(this.handle, seedOrConfig);
+            if (result !== 0) {
+                throw new MidiSketchGenerationError(result, `Accompaniment regeneration failed with error code: ${result}`);
+            }
+        }
+        else {
+            const m = getModule();
+            const configPtr = this.allocAccompanimentConfig(m, seedOrConfig);
+            try {
+                const result = a.regenerateAccompanimentWithConfig(this.handle, configPtr);
+                if (result !== 0) {
+                    throw new MidiSketchGenerationError(result, `Accompaniment regeneration failed with error code: ${result}`);
+                }
+            }
+            finally {
+                m._free(configPtr);
+            }
+        }
+    }
+    /**
+     * Allocate and populate AccompanimentConfig in WASM memory.
+     */
+    allocAccompanimentConfig(m, config) {
+        // MidiSketchAccompanimentConfig struct size: 28 bytes
+        const configPtr = m._malloc(28);
+        const view = new DataView(m.HEAPU8.buffer, configPtr, 28);
+        view.setUint32(0, config.seed ?? 0, true); // seed
+        view.setUint8(4, config.drumsEnabled !== false ? 1 : 0); // drums_enabled
+        view.setUint8(5, config.arpeggioEnabled ? 1 : 0); // arpeggio_enabled
+        view.setUint8(6, config.arpeggioPattern ?? 0); // arpeggio_pattern
+        view.setUint8(7, config.arpeggioSpeed ?? 1); // arpeggio_speed
+        view.setUint8(8, config.arpeggioOctaveRange ?? 2); // arpeggio_octave_range
+        view.setUint8(9, config.arpeggioGate ?? 80); // arpeggio_gate
+        view.setUint8(10, config.arpeggioSyncChord !== false ? 1 : 0); // arpeggio_sync_chord
+        view.setUint8(11, config.chordExtSus ? 1 : 0); // chord_ext_sus
+        view.setUint8(12, config.chordExt7th ? 1 : 0); // chord_ext_7th
+        view.setUint8(13, config.chordExt9th ? 1 : 0); // chord_ext_9th
+        view.setUint8(14, config.chordExtSusProb ?? 20); // chord_ext_sus_prob
+        view.setUint8(15, config.chordExt7thProb ?? 30); // chord_ext_7th_prob
+        view.setUint8(16, config.chordExt9thProb ?? 25); // chord_ext_9th_prob
+        view.setUint8(17, config.humanize ? 1 : 0); // humanize
+        view.setUint8(18, config.humanizeTiming ?? 50); // humanize_timing
+        view.setUint8(19, config.humanizeVelocity ?? 50); // humanize_velocity
+        view.setUint8(20, config.seEnabled !== false ? 1 : 0); // se_enabled
+        view.setUint8(21, config.callEnabled ? 1 : 0); // call_enabled
+        view.setUint8(22, config.callDensity ?? 2); // call_density
+        view.setUint8(23, config.introChant ?? 0); // intro_chant
+        view.setUint8(24, config.mixPattern ?? 0); // mix_pattern
+        view.setUint8(25, config.callNotesEnabled !== false ? 1 : 0); // call_notes_enabled
+        // Reserved padding
+        view.setUint8(26, 0);
+        view.setUint8(27, 0);
+        return configPtr;
+    }
+    /**
+     * Generate all tracks with vocal-first priority.
+     * Generation order: Vocal → Aux → Bass → Chord → Drums.
+     * Accompaniment adapts to vocal melody.
+     * @throws {MidiSketchConfigError} If config validation fails
+     * @throws {MidiSketchGenerationError} If generation fails
+     */
+    generateWithVocal(config) {
+        const a = getApi();
+        const m = getModule();
+        const configPtr = this.allocSongConfig(m, config);
+        try {
+            const result = a.generateWithVocal(this.handle, configPtr);
+            if (result !== 0) {
+                const validationResult = a.validateConfig(configPtr);
+                if (validationResult !== 0) {
+                    const validationMessage = a.configErrorString(validationResult);
+                    throw new MidiSketchConfigError(validationResult, validationMessage);
+                }
+                throw new MidiSketchGenerationError(result, `Generation failed with error code: ${result}`);
+            }
+        }
+        finally {
+            m._free(configPtr);
+        }
+    }
+    /**
+     * Set custom vocal notes for accompaniment generation.
+     *
+     * Initializes the song structure and chord progression from config,
+     * then replaces the vocal track with the provided notes.
+     * Call generateAccompaniment() after this to generate
+     * accompaniment tracks that fit the custom vocal melody.
+     *
+     * @param config Song configuration (for structure/chord setup)
+     * @param notes Array of note inputs representing the custom vocal
+     * @throws {MidiSketchConfigError} If config validation fails
+     * @throws {MidiSketchGenerationError} If operation fails
+     *
+     * @example
+     * ```typescript
+     * // Set custom vocal notes
+     * sketch.setVocalNotes(config, [
+     *   { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
+     *   { startTick: 480, duration: 480, pitch: 62, velocity: 100 },
+     * ]);
+     *
+     * // Generate accompaniment for the custom vocal
+     * sketch.generateAccompaniment();
+     *
+     * // Get the MIDI data
+     * const midi = sketch.getMidi();
+     * ```
+     */
+    setVocalNotes(config, notes) {
+        const a = getApi();
+        const m = getModule();
+        const configPtr = this.allocSongConfig(m, config);
+        const notesPtr = this.allocNoteInputArray(m, notes);
+        try {
+            const result = a.setVocalNotes(this.handle, configPtr, notesPtr, notes.length);
+            if (result !== 0) {
+                const validationResult = a.validateConfig(configPtr);
+                if (validationResult !== 0) {
+                    const validationMessage = a.configErrorString(validationResult);
+                    throw new MidiSketchConfigError(validationResult, validationMessage);
+                }
+                throw new MidiSketchGenerationError(result, `Set vocal notes failed with error code: ${result}`);
+            }
+        }
+        finally {
+            m._free(configPtr);
+            m._free(notesPtr);
+        }
+    }
+    /**
+     * Allocate and populate NoteInput array in WASM memory.
+     */
+    allocNoteInputArray(m, notes) {
+        // MidiSketchNoteInput struct size: 12 bytes (uint32 + uint32 + uint8 + uint8 + 2 padding)
+        const structSize = 12;
+        const ptr = m._malloc(notes.length * structSize);
+        const view = new DataView(m.HEAPU8.buffer);
+        for (let i = 0; i < notes.length; i++) {
+            const offset = ptr + i * structSize;
+            view.setUint32(offset + 0, notes[i].startTick, true); // start_tick
+            view.setUint32(offset + 4, notes[i].duration, true); // duration
+            view.setUint8(offset + 8, notes[i].pitch); // pitch
+            view.setUint8(offset + 9, notes[i].velocity); // velocity
+            // 2 bytes padding (10-11)
+        }
+        return ptr;
     }
     /**
      * Get the generated MIDI data
@@ -590,6 +882,146 @@ export class MidiSketch {
         finally {
             a.freeEvents(eventDataPtr);
         }
+    }
+    // ============================================================================
+    // Piano Roll Safety API
+    // ============================================================================
+    /**
+     * Get piano roll safety info for a single tick.
+     *
+     * Returns safety level, reason flags, and collision info for each MIDI note (0-127).
+     * Use this before placing custom vocal notes to see which notes are safe.
+     *
+     * @param tick Tick position to query
+     * @param prevPitch Previous note pitch for leap detection (optional, 255 if none)
+     * @returns Piano roll safety info for all 128 MIDI notes
+     *
+     * @example
+     * ```typescript
+     * // Get safety info at tick 0
+     * const info = sketch.getPianoRollSafetyAt(0);
+     *
+     * // Check if C4 (pitch 60) is safe
+     * if (info.safety[60] === NoteSafety.Safe) {
+     *   console.log('C4 is a chord tone, safe to use');
+     * }
+     *
+     * // Get recommended notes
+     * console.log('Recommended:', info.recommended);
+     * ```
+     */
+    getPianoRollSafetyAt(tick, prevPitch) {
+        const a = getApi();
+        const m = getModule();
+        const infoPtr = prevPitch !== undefined
+            ? a.getPianoRollSafetyWithContext(this.handle, tick, prevPitch)
+            : a.getPianoRollSafetyAt(this.handle, tick);
+        if (!infoPtr) {
+            throw new Error('Failed to get piano roll safety info. Generate MIDI first.');
+        }
+        return this.parsePianoRollInfo(m, infoPtr);
+    }
+    /**
+     * Get piano roll safety info for a range of ticks.
+     *
+     * Useful for visualizing safe notes over time in a piano roll editor.
+     *
+     * @param startTick Start tick
+     * @param endTick End tick
+     * @param step Step size in ticks (e.g., 120 for 16th notes, 480 for quarter notes)
+     * @returns Array of piano roll safety info for each step
+     *
+     * @example
+     * ```typescript
+     * // Get safety info for first 4 bars, sampled at 16th note resolution
+     * const infos = sketch.getPianoRollSafety(0, 1920 * 4, 120);
+     *
+     * for (const info of infos) {
+     *   console.log(`Tick ${info.tick}: chord degree ${info.chordDegree}`);
+     *   console.log('Recommended notes:', info.recommended);
+     * }
+     * ```
+     */
+    getPianoRollSafety(startTick, endTick, step) {
+        const a = getApi();
+        const m = getModule();
+        const dataPtr = a.getPianoRollSafety(this.handle, startTick, endTick, step);
+        if (!dataPtr) {
+            throw new Error('Failed to get piano roll safety data. Generate MIDI first.');
+        }
+        try {
+            // MidiSketchPianoRollData: { data: ptr, count: size_t }
+            const infoArrayPtr = m.HEAPU32[dataPtr >> 2];
+            const count = m.HEAPU32[(dataPtr + 4) >> 2];
+            const results = [];
+            const infoSize = 784; // sizeof(MidiSketchPianoRollInfo)
+            for (let i = 0; i < count; i++) {
+                const infoPtr = infoArrayPtr + i * infoSize;
+                results.push(this.parsePianoRollInfo(m, infoPtr));
+            }
+            return results;
+        }
+        finally {
+            a.freePianoRollData(dataPtr);
+        }
+    }
+    /**
+     * Convert reason flags to human-readable string.
+     *
+     * @param reason Reason flags from PianoRollInfo
+     * @returns Human-readable string like "ChordTone" or "LowRegister, Tritone"
+     */
+    reasonToString(reason) {
+        const a = getApi();
+        return a.reasonToString(reason);
+    }
+    /**
+     * Parse MidiSketchPianoRollInfo from WASM memory.
+     * @internal
+     */
+    parsePianoRollInfo(m, ptr) {
+        const view = new DataView(m.HEAPU8.buffer);
+        // Offsets from struct_layout_test.cpp:
+        // tick: 0, chord_degree: 4, current_key: 5, safety: 6, reason: 134,
+        // collision: 390, recommended: 774, recommended_count: 782
+        const tick = view.getUint32(ptr + 0, true);
+        const chordDegree = view.getInt8(ptr + 4);
+        const currentKey = view.getUint8(ptr + 5);
+        // Parse safety array (128 bytes at offset 6)
+        const safety = [];
+        for (let i = 0; i < 128; i++) {
+            safety.push(view.getUint8(ptr + 6 + i));
+        }
+        // Parse reason array (128 * 2 bytes at offset 134)
+        const reason = [];
+        for (let i = 0; i < 128; i++) {
+            reason.push(view.getUint16(ptr + 134 + i * 2, true));
+        }
+        // Parse collision array (128 * 3 bytes at offset 390)
+        const collision = [];
+        for (let i = 0; i < 128; i++) {
+            const collisionOffset = ptr + 390 + i * 3;
+            collision.push({
+                trackRole: view.getUint8(collisionOffset),
+                collidingPitch: view.getUint8(collisionOffset + 1),
+                intervalSemitones: view.getUint8(collisionOffset + 2),
+            });
+        }
+        // Parse recommended array (up to 8 bytes at offset 774)
+        const recommendedCount = view.getUint8(ptr + 782);
+        const recommended = [];
+        for (let i = 0; i < recommendedCount && i < 8; i++) {
+            recommended.push(view.getUint8(ptr + 774 + i));
+        }
+        return {
+            tick,
+            chordDegree,
+            currentKey,
+            safety,
+            reason,
+            collision,
+            recommended,
+        };
     }
     /**
      * Destroy the instance and free resources
@@ -646,7 +1078,7 @@ export class MidiSketch {
         view.setInt8(ptr + 35, config.modulationSemitones ?? 2);
         // SE/Call settings (offset 36-41)
         view.setUint8(ptr + 36, config.seEnabled !== false ? 1 : 0);
-        view.setUint8(ptr + 37, config.callSetting ?? 0); // 0=Auto, 1=Enabled, 2=Disabled
+        view.setUint8(ptr + 37, config.callEnabled ? 1 : 0);
         view.setUint8(ptr + 38, config.callNotesEnabled !== false ? 1 : 0);
         view.setUint8(ptr + 39, config.introChant ?? 0);
         view.setUint8(ptr + 40, config.mixPattern ?? 0);
@@ -668,20 +1100,26 @@ export class MidiSketch {
         view.setUint8(ptr + 51, config.vocalGroove ?? 0); // Default: Straight
         return ptr;
     }
-    allocVocalParams(m, params) {
-        const ptr = m._malloc(16); // 16 bytes (padded)
+    allocVocalConfig(m, config) {
+        const ptr = m._malloc(16); // MidiSketchVocalConfig size (16 bytes with padding)
         const view = new DataView(m.HEAPU8.buffer);
-        view.setUint32(ptr + 0, params.seed ?? 0, true);
-        view.setUint8(ptr + 4, params.vocalLow ?? 60);
-        view.setUint8(ptr + 5, params.vocalHigh ?? 79);
-        view.setUint8(ptr + 6, params.vocalAttitude ?? 0);
-        view.setUint8(ptr + 7, params.vocalStyle ?? 0);
-        view.setUint8(ptr + 8, params.melodyTemplate ?? 0);
-        view.setUint8(ptr + 9, params.melodicComplexity ?? 1); // Default: Standard
-        view.setUint8(ptr + 10, params.hookIntensity ?? 2); // Default: Normal
-        view.setUint8(ptr + 11, params.vocalGroove ?? 0); // Default: Straight
-        view.setUint8(ptr + 12, params.compositionStyle ?? 0); // Default: MelodyLead
-        // Padding bytes 13-15
+        // Layout: seed(4) + vocal_low(1) + vocal_high(1) + vocal_attitude(1)
+        //         + vocal_style(1) + melody_template(1) + melodic_complexity(1)
+        //         + hook_intensity(1) + vocal_groove(1) + composition_style(1)
+        //         + reserved(2) = 16 bytes
+        view.setUint32(ptr + 0, config.seed ?? 0, true);
+        view.setUint8(ptr + 4, config.vocalLow ?? 60);
+        view.setUint8(ptr + 5, config.vocalHigh ?? 79);
+        view.setUint8(ptr + 6, config.vocalAttitude ?? 0);
+        view.setUint8(ptr + 7, config.vocalStyle ?? 0);
+        view.setUint8(ptr + 8, config.melodyTemplate ?? 0);
+        view.setUint8(ptr + 9, config.melodicComplexity ?? 1); // Default: Standard
+        view.setUint8(ptr + 10, config.hookIntensity ?? 2); // Default: Normal
+        view.setUint8(ptr + 11, config.vocalGroove ?? 0); // Default: Straight
+        view.setUint8(ptr + 12, config.compositionStyle ?? 0);
+        view.setUint8(ptr + 13, 0); // Reserved
+        view.setUint8(ptr + 14, 0); // Reserved
+        view.setUint8(ptr + 15, 0); // Padding (explicit for clarity)
         return ptr;
     }
 }

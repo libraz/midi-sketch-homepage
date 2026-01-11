@@ -5,6 +5,12 @@
     "steps": {
       "style": "曲イメージ",
       "chords": "コード進行",
+      "flowSelection": "作成タイプ",
+      "vocalSettings": "ボーカル設定",
+      "vocalGeneration": "ボーカル生成",
+      "bgmSettings": "BGM設定",
+      "bgmGeneration": "BGM生成",
+      "final": "完成",
       "keyTempo": "キー & テンポ",
       "bgm": "BGM",
       "melody": "メロディ",
@@ -13,7 +19,9 @@
     "nav": {
       "back": "戻る",
       "next": "次へ",
-      "generateMelody": "メロディを生成"
+      "generateMelody": "メロディを生成",
+      "generateVocal": "ボーカルを生成",
+      "generateBgm": "BGMを生成"
     }
   },
   "styleStep": {
@@ -32,6 +40,74 @@
     "recommended": "おすすめ",
     "otherChords": "その他のコード進行",
     "recommendedFor": "「{style}」におすすめ"
+  },
+  "keyTempoStep": {
+    "title": "キーとテンポを設定",
+    "subtitle": "楽曲のキーとテンポを選択してください"
+  },
+  "flowSelectionStep": {
+    "title": "どんな楽曲を作成しますか？",
+    "subtitle": "ボーカルメロディ付きの楽曲か、BGMのみかを選択してください",
+    "options": {
+      "vocalFirst": {
+        "title": "ボーカル付き楽曲",
+        "description": "ボーカルメロディを先に生成し、それに合わせてBGMを作成します",
+        "feature1": "メロディを試聴しながら調整",
+        "feature2": "ボーカルに最適化されたBGM",
+        "feature3": "歌モノ楽曲に最適"
+      },
+      "bgmOnly": {
+        "title": "BGMのみ",
+        "description": "ボーカルなしのインストゥルメンタルトラックを作成します",
+        "feature1": "BGM・劇伴向け",
+        "feature2": "モチーフやシンセ主体の構成",
+        "feature3": "動画BGMやゲーム音楽に"
+      }
+    },
+    "compositionStyle": {
+      "label": "BGM作曲スタイル",
+      "description": "BGMの構成スタイルを選択します",
+      "options": {
+        "melodyLead": "メロディリード",
+        "melodyLeadDesc": "メインメロディ（ボーカル無し）を中心とした構成",
+        "backgroundMotif": "バックグラウンドモチーフ",
+        "backgroundMotifDesc": "控えめなモチーフの繰り返しで雰囲気を作る",
+        "synthDriven": "シンセドリブン",
+        "synthDrivenDesc": "シンセとアルペジオ主体のエレクトロニック構成"
+      },
+      "synthDrivenNote": "シンセドリブンではアルペジオが自動的に有効になります"
+    }
+  },
+  "vocalSettingsStep": {
+    "title": "ボーカル設定",
+    "subtitle": "ボーカルメロディのパラメータを調整します"
+  },
+  "vocalGenerationStep": {
+    "title": "ボーカル生成",
+    "subtitle": "ボーカルメロディを生成して試聴します",
+    "generating": "ボーカルを生成中...",
+    "preview": "ボーカルプレビュー",
+    "regenerate": "ボーカルを再生成",
+    "regenerated": "再生成完了",
+    "nextHint": "気に入ったら「次へ」でBGM設定に進みましょう",
+    "summary": {
+      "vocalStyle": "ボーカルスタイル",
+      "melodyTemplate": "メロディタイプ"
+    }
+  },
+  "bgmSettingsStep": {
+    "title": "BGM設定",
+    "subtitle": "バッキングトラックのパラメータを調整します"
+  },
+  "bgmGenerationStep": {
+    "title": "BGM生成",
+    "subtitle": "バッキングトラックを生成して完成させます",
+    "generating": "BGMを生成中...",
+    "preview": "完成プレビュー",
+    "regenerate": "BGMを再生成",
+    "regenerated": "再生成完了",
+    "download": "MIDIをダウンロード",
+    "hint": "気に入らない場合は「戻る」で設定を変更できます"
   },
   "settingsStep": {
     "title": "キー & テンポを設定",
@@ -653,6 +729,14 @@
   },
   "preview": {
     "infoText": "MIDI Sketchで作成。AIを使わずアルゴリズムで生成。音符単位で編集可能なMIDIファイルを出力します。",
+    "generatingMusic": "楽曲を生成中...",
+    "loading": "読み込み中...",
+    "rewind": "巻き戻し",
+    "pause": "一時停止",
+    "play": "再生",
+    "download": "ダウンロード",
+    "typeVocal": "BGM + ボーカル",
+    "typeBgm": "BGM",
     "errors": {
       "noHash": "無効なシェアURLです",
       "parseFailed": "URLの解析に失敗しました。URLが破損している可能性があります。",
@@ -669,5 +753,12 @@
       "drums": "ドラム",
       "arpeggio": "アルペジオ"
     }
+  },
+  "midiDemo": {
+    "title": "MIDI 生成デモ",
+    "loadingWasm": "WASM モジュールを読み込み中...",
+    "generating": "生成中...",
+    "generate": "MIDI を生成",
+    "download": "ダウンロード"
   }
 }

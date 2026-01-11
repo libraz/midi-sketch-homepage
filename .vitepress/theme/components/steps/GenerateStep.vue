@@ -10,7 +10,7 @@ import PianoRoll from '../PianoRoll.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
-const { isPlaying, currentTick, duration, play, stop, setTrackInstrument } = useMidiPlayer()
+const { isPlaying, isPaused, currentTick, duration, play, stop, setTrackInstrument } = useMidiPlayer()
 
 function handleSeek(tick: number) {
   stop()

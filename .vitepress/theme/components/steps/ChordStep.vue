@@ -5,6 +5,8 @@ import { useWizardStore } from '../../stores/useWizardStore'
 import { useChordPlayer, warmupChordPlayer } from '../../composables/useChordPlayer'
 import { chordProgressions, chordDegreeColors } from '../../data/chordColors'
 import { songImages } from '../../data/songImages'
+import StepHeader from '../wizard/StepHeader.vue'
+import SectionHeader from '../wizard/SectionHeader.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -174,20 +176,16 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 <template>
   <div class="chord-step">
     <!-- Header -->
-    <header class="step-header">
-      <h2 class="step-header__title">{{ t('chordStep.title') }}</h2>
-      <p class="step-header__subtitle">{{ t('chordStep.subtitle') }}</p>
-    </header>
+    <StepHeader :title="t('chordStep.title')" :subtitle="t('chordStep.subtitle')" />
 
     <!-- Recommended Section -->
     <section class="chord-section">
-      <div class="section-header">
-        <span class="section-header__icon">★</span>
-        <span class="section-header__title">{{ t('chordStep.recommended') }}</span>
-        <span v-if="currentSongImage" class="section-header__subtitle">
-          {{ t(`songImages.${currentSongImage.id}.name`) }}
-        </span>
-      </div>
+      <SectionHeader
+        icon="★"
+        :title="t('chordStep.recommended')"
+        :subtitle="currentSongImage ? t(`songImages.${currentSongImage.id}.name`) : undefined"
+        type="warning"
+      />
 
       <div class="chord-grid">
         <article
@@ -248,14 +246,13 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
     <!-- Other Chords Section (Collapsible) -->
     <section class="chord-section chord-section--other">
-      <button
-        class="section-toggle"
-        @click="showOtherChords = !showOtherChords"
-      >
-        <span class="section-toggle__icon">{{ showOtherChords ? '−' : '+' }}</span>
-        <span class="section-toggle__title">{{ t('chordStep.otherChords') }}</span>
-        <span class="section-toggle__count">({{ otherChords.length }})</span>
-      </button>
+      <SectionHeader
+        :title="t('chordStep.otherChords')"
+        :count="otherChords.length"
+        is-collapsible
+        :is-expanded="showOtherChords"
+        @toggle="showOtherChords = !showOtherChords"
+      />
 
       <div v-if="showOtherChords" class="chord-grid chord-grid--other">
         <article
@@ -317,26 +314,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 <style scoped>
 .chord-step {
   --step-accent: #8B5CF6;
+  --accent-rgb: 139, 92, 246;
   overflow: visible;
-}
-
-.step-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.step-header__title {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #FAFAFA;
-  margin: 0 0 0.5rem;
-}
-
-.step-header__subtitle {
-  font-size: 0.9rem;
-  color: rgba(250, 250, 250, 0.5);
-  margin: 0;
 }
 
 .chord-section {
@@ -346,78 +325,6 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
 .chord-section--other {
   margin-top: 1rem;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  border-radius: 12px;
-}
-
-.section-header__icon {
-  color: #F59E0B;
-  font-size: 1rem;
-}
-
-.section-header__title {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #FAFAFA;
-}
-
-.section-header__subtitle {
-  font-size: 0.8rem;
-  color: rgba(250, 250, 250, 0.5);
-  margin-left: auto;
-}
-
-.section-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.section-toggle:hover {
-  background: rgba(139, 92, 246, 0.08);
-  border-color: rgba(139, 92, 246, 0.2);
-}
-
-.section-toggle__icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(139, 92, 246, 0.15);
-  border-radius: 4px;
-  color: var(--step-accent);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.section-toggle__title {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
-}
-
-.section-toggle__count {
-  font-size: 0.75rem;
-  color: rgba(250, 250, 250, 0.4);
 }
 
 .chord-grid--other {
