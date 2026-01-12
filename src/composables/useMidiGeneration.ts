@@ -363,7 +363,7 @@ export function useMidiGeneration() {
       humanize: config.humanize,
       humanizeTiming: config.humanizeTiming,
       humanizeVelocity: config.humanizeVelocity,
-      seEnabled: true,
+      seEnabled: config.seEnabled,
       callEnabled: config.callEnabled,
       callDensity: config.callDensity,
       introChant: config.introChant,

@@ -62,6 +62,7 @@ export interface WizardConfig {
   modulationSemitones: number
 
   // SE/Call settings
+  seEnabled: boolean
   callEnabled: boolean
   callNotesEnabled: boolean
   introChant: number
@@ -143,6 +144,7 @@ const DEFAULT_CONFIG: WizardConfig = {
   modulationSemitones: 2,
 
   // SE/Call
+  seEnabled: true,
   callEnabled: false,
   callNotesEnabled: true,
   introChant: 0,

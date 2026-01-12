@@ -12,6 +12,7 @@ import type { WizardConfig } from '@/stores/useWizardStore'
 // Version prefix for future compatibility
 // V1: Original schema with vocalNoteDensity, vocalMinNoteDivision, vocalRestRatio, etc.
 // V2: Replaced with melodyTemplate (0-7)
+// V3: Added vocalSeed for vocal-first flow deterministic regeneration, added seEnabled
 const VERSION = 2
 
 // Share types
@@ -29,8 +30,9 @@ const FIELD_SCHEMA: FieldDef[] = [
   // version is handled separately
   ['shareType', 1],           // 0=bgm, 1=vocal
 
-  // Core (deterministic seed)
-  ['seed', 32],               // 0-0xFFFFFFFF
+  // Core (deterministic seeds)
+  ['seed', 32],               // 0-0xFFFFFFFF (BGM seed)
+  ['vocalSeed', 32],          // 0-0xFFFFFFFF (Vocal seed for vocal-first flow)
 
   // Style & Structure
   ['stylePresetId', 6],       // 0-63
@@ -63,6 +65,7 @@ const FIELD_SCHEMA: FieldDef[] = [
   ['modulationSemitones', 3], // 1-4 → 0-3
 
   // Call/SE
+  ['seEnabled', 1],
   ['callEnabled', 1],
   ['callNotesEnabled', 1],
   ['introChant', 2],          // 0-2
@@ -349,7 +352,7 @@ export function decodeShareUrl(hash: string): DecodedShare | null {
         const isBooleanField = [
           'drumsEnabled', 'arpeggioEnabled', 'arpeggioSyncChord',
           'chordExtSus', 'chordExt7th', 'chordExt9th',
-          'callEnabled', 'callNotesEnabled',
+          'seEnabled', 'callEnabled', 'callNotesEnabled',
           'motifFixedProgression', 'humanize'
         ].includes(key)
 

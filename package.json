@@ -8,7 +8,7 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "copy:wasm": "cp ../midi-sketch/dist/midisketch.wasm ../midi-sketch/dist/midisketch.js ../midi-sketch/dist/index.js ../midi-sketch/dist/index.d.ts src/wasm/ && sed -i '/^\\//# sourceMappingURL=/d' src/wasm/index.js && ./scripts/update-wasm-meta.sh"
+    "copy:wasm": "./scripts/copy-wasm.sh"
   },
   "devDependencies": {
     "vitepress": "^1.6.4",

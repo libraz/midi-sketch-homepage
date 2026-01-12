@@ -129,7 +129,11 @@ onMounted(async () => {
   }
 
   // Validate seed (0 is invalid)
-  if (!decoded.value.config.seed) {
+  // For vocal share, vocalSeed is required; for bgm share, seed is required
+  const requiredSeed = decoded.value.shareType === 'vocal'
+    ? decoded.value.config.vocalSeed
+    : decoded.value.config.seed
+  if (!requiredSeed) {
     error.value = t('preview.errors.invalidSeed')
     isLoading.value = false
     return
@@ -196,6 +200,7 @@ onMounted(async () => {
       chordExtSusProb: config.chordExtSusProb ?? 20,
       chordExt7thProb: config.chordExt7thProb ?? 30,
       chordExt9thProb: config.chordExt9thProb ?? 25,
+      seEnabled: config.seEnabled ?? true,
       compositionStyle: config.compositionStyle ?? 0,
       targetDurationSeconds: config.targetDurationSeconds ?? 150,
       modulationTiming: config.modulationTiming ?? 0,
@@ -217,15 +222,18 @@ onMounted(async () => {
       vocalGroove: config.vocalGroove ?? 0
     })
 
-    // If vocal share, regenerate vocal with seed
+    // If vocal share, regenerate vocal with vocalSeed
     if (decoded.value.shareType === 'vocal') {
       instance.regenerateVocal({
-        seed: config.seed ?? 0,
+        seed: config.vocalSeed ?? 0,
         vocalLow: config.vocalLow ?? 57,
         vocalHigh: config.vocalHigh ?? 79,
         vocalAttitude: validatedVocalAttitude,
         vocalStyle: config.vocalStyle ?? 0,
-        melodyTemplate: config.melodyTemplate ?? 0
+        melodyTemplate: config.melodyTemplate ?? 0,
+        melodicComplexity: config.melodicComplexity ?? 1,
+        hookIntensity: config.hookIntensity ?? 2,
+        vocalGroove: config.vocalGroove ?? 0
       })
     }
 
