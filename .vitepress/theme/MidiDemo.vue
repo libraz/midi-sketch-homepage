@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useI18n } from './composables/useI18n'
+import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
 
@@ -27,14 +27,14 @@ onMounted(async () => {
 
   try {
     // Dynamic import for client-side only
-    const wasmUrl = new URL('./wasm/midisketch.wasm', import.meta.url).href
-    const jsUrl = new URL('./wasm/midisketch.js', import.meta.url).href
+    const wasmUrl = new URL('@/wasm/midisketch.wasm', import.meta.url).href
+    const jsUrl = new URL('@/wasm/midisketch.js', import.meta.url).href
 
     // Import the module
-    midisketch = await import('./wasm/index.js')
+    midisketch = await import('@/wasm/index.js')
 
     // Initialize
-    const wasmPath = new URL('./wasm/midisketch.wasm', import.meta.url).href
+    const wasmPath = new URL('@/wasm/midisketch.wasm', import.meta.url).href
     await midisketch.init({ wasmPath })
 
     // Load presets

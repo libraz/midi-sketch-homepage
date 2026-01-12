@@ -17,12 +17,15 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@/*": [".vitepress/theme/*"]
+      "@/*": ["src/*"],
+      "@theme/*": [".vitepress/theme/*"]
     }
   },
   "include": [
     ".vitepress/**/*.ts",
-    ".vitepress/**/*.vue"
+    ".vitepress/**/*.vue",
+    "src/**/*.ts",
+    "src/**/*.vue"
   ],
   "exclude": [
     "node_modules",

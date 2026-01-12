@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import MidiWizard from './components/MidiWizard.vue'
+import MidiWizard from '@/components/MidiWizard.vue'
 import { useData } from 'vitepress'
 import { computed, onMounted } from 'vue'
-import wasmMeta from './wasm/meta.json'
-import { useWizardStore } from './stores/useWizardStore'
+import wasmMeta from '@/wasm/meta.json'
+import { useWizardStore } from '@/stores/useWizardStore'
 
 const { lang } = useData()
 const store = useWizardStore()
@@ -11,18 +11,29 @@ const store = useWizardStore()
 // WASM version info
 const wasmHash = computed(() => wasmMeta.md5.slice(0, 7))
 
-// Initialize WASM and get version on mount
-onMounted(async () => {
+// Initialize WASM lazily to avoid blocking page render
+async function initWasm() {
   if (typeof window === 'undefined') return
   if (store.libVersion.value) return // Already initialized
 
   try {
-    const wasm = await import('./wasm/index.js')
-    const wasmPath = new URL('./wasm/midisketch.wasm', import.meta.url).href
+    const wasm = await import('@/wasm/index.js')
+    const wasmPath = new URL('@/wasm/midisketch.wasm', import.meta.url).href
     await wasm.init({ wasmPath })
     store.libVersion.value = wasm.getVersion()
   } catch (e) {
     console.warn('Failed to initialize WASM:', e)
+  }
+}
+
+// Defer WASM initialization to after page render
+onMounted(() => {
+  // Use requestIdleCallback if available (not on iOS Safari), otherwise setTimeout
+  const ric = (window as any).requestIdleCallback
+  if (ric) {
+    ric(initWasm, { timeout: 2000 })
+  } else {
+    setTimeout(initWasm, 100)
   }
 })
 
@@ -68,7 +79,7 @@ const otherLocales = computed(() =>
 
     <!-- Minimal Footer -->
     <footer class="demo-page__footer">
-      <div class="demo-page__footer-inner">
+      <div class="demo-page__footer-links">
         <a
           href="https://github.com/libraz/midi-sketch"
           target="_blank"
@@ -90,9 +101,10 @@ const otherLocales = computed(() =>
             <span>{{ locale.shortLabel }}</span>
           </a>
         </template>
-        <span class="demo-page__divider">·</span>
+      </div>
+      <div class="demo-page__footer-version">
         <span class="demo-page__version" :title="`WASM Build: ${wasmMeta.md5}`">
-          midi-sketch lib {{ store.libVersion || '...' }} {{ wasmHash }}
+          midi-sketch {{ store.libVersion || '...' }} ({{ wasmHash }})
         </span>
       </div>
     </footer>
@@ -225,13 +237,22 @@ const otherLocales = computed(() =>
   z-index: 2;
   padding: 0.75rem 1.5rem;
   background: linear-gradient(to top, rgba(5, 5, 8, 0.9), transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.demo-page__footer-inner {
+.demo-page__footer-links {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+}
+
+.demo-page__footer-version {
+  display: flex;
+  justify-content: center;
 }
 
 .demo-page__link {

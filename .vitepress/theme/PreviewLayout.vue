@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useData } from 'vitepress'
-import { useI18n } from './composables/useI18n'
-import { useMidiPlayer } from './composables/useMidiPlayer'
-import { decodeShareUrl, type DecodedShare } from './utils/shareEncoder'
-import { KEY_NAMES } from './utils/midiUtils'
-import { songImages } from './data/songImages'
-import { chordProgressions } from './data/chordColors'
-import NoteFlowVisualizer from './components/NoteFlowVisualizer.vue'
+import { useI18n } from '@/composables/useI18n'
+import { useMidiPlayer } from '@/composables/useMidiPlayer'
+import { decodeShareUrl, type DecodedShare } from '@/utils/shareEncoder'
+import { KEY_NAMES } from '@/utils/midiUtils'
+import { songImages } from '@/data/songImages'
+import { chordProgressions } from '@/data/chordColors'
+import NoteFlowVisualizer from '@/components/NoteFlowVisualizer.vue'
 
 const { t } = useI18n()
 const { lang } = useData()
@@ -140,9 +140,9 @@ onMounted(async () => {
     preload()
 
     // Init WASM
-    const mod = await import('./wasm/index.js')
+    const mod = await import('@/wasm/index.js')
     midisketch = mod
-    const wasmPath = new URL('./wasm/midisketch.wasm', import.meta.url).href
+    const wasmPath = new URL('@/wasm/midisketch.wasm', import.meta.url).href
     await mod.init({ wasmPath })
     instance = new mod.MidiSketch()
 

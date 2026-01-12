@@ -1,6 +1,6 @@
 #!/bin/bash
-WASM_FILE=".vitepress/theme/wasm/midisketch.wasm"
-META_FILE=".vitepress/theme/wasm/meta.json"
+WASM_FILE="src/wasm/midisketch.wasm"
+META_FILE="src/wasm/meta.json"
 
 if [ -f "$WASM_FILE" ]; then
   SIZE=$(stat -c%s "$WASM_FILE")

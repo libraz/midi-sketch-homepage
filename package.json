@@ -8,7 +8,7 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "copy:wasm": "cp ../midi-sketch/dist/midisketch.wasm ../midi-sketch/dist/midisketch.js ../midi-sketch/dist/index.js ../midi-sketch/dist/index.d.ts .vitepress/theme/wasm/ && ./scripts/update-wasm-meta.sh"
+    "copy:wasm": "cp ../midi-sketch/dist/midisketch.wasm ../midi-sketch/dist/midisketch.js ../midi-sketch/dist/index.js ../midi-sketch/dist/index.d.ts src/wasm/ && sed -i '/^\\//# sourceMappingURL=/d' src/wasm/index.js && ./scripts/update-wasm-meta.sh"
   },
   "devDependencies": {
     "vitepress": "^1.6.4",
@@ -21,5 +21,9 @@
     "tone": "15.1.22",
     "vitepress-plugin-mermaid": "^2.0.17",
     "vuetify": "^3.11.6"
+  },
+  "volta": {
+    "node": "22.21.1",
+    "yarn": "4.12.0"
   }
 }

@@ -4,7 +4,7 @@ import { h } from 'vue'
 import { useData } from 'vitepress'
 import './custom.css'
 import MidiDemo from './MidiDemo.vue'
-import MidiWizard from './components/MidiWizard.vue'
+import MidiWizard from '@/components/MidiWizard.vue'
 import DemoLayout from './DemoLayout.vue'
 import PreviewLayout from './PreviewLayout.vue'
 
