@@ -1,15 +1,11 @@
 # Getting Started
 
-::: warning Alpha Version
-This package is currently in alpha and not yet published to npm. For now, please build from source or use the demo on this site.
-:::
-
 MIDI Sketch is a lightweight library for auto-generating pop music MIDI sketches. It runs entirely in the browser using WebAssembly.
 
 ## Quick Start
 
 ```javascript
-import { MidiSketch, init, createDefaultConfig, downloadMidi } from 'midi-sketch'
+import { MidiSketch, init, createDefaultConfig, downloadMidi } from '@libraz/midi-sketch'
 
 // Initialize the WASM module
 await init()
@@ -40,11 +36,13 @@ downloadMidi(midiData, 'my-song.mid')
 MIDI Sketch generates multi-track MIDI files with:
 
 - **Vocal** - Main melody line
-- **Chord** - Harmonic backing
-- **Bass** - Bass line
-- **Drums** - Rhythm patterns
-- **Motif** - Background repetitive patterns
-- **Arpeggio** - Synth arpeggio patterns
+- **Aux** - Sub-melody support (pulse loops, target hints, groove accents)
+- **Chord** - Harmonic backing with voice leading
+- **Bass** - Bass line with approach notes
+- **Drums** - Rhythm patterns with fills
+- **Motif** - Background repetitive patterns (BackgroundMotif style)
+- **Arpeggio** - Synth arpeggio patterns (SynthDriven style)
+- **SE** - Section markers
 
 ## Next Steps
 

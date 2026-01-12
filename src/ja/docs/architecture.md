@@ -7,24 +7,28 @@
 ```text
 midi-sketch/
 ├── src/
-│   ├── core/              # コア生成エンジン
+│   ├── core/              # コア生成エンジン（約4500行）
 │   │   ├── pitch_utils.h/cpp      # ピッチ操作（テッシトゥーラ、音程）
 │   │   ├── chord_utils.h/cpp      # コード操作（コードトーン）
 │   │   ├── melody_templates.h/cpp # 7つのメロディテンプレート定義
+│   │   ├── melody_embellishment.h/cpp # NCT挿入システム
 │   │   ├── harmony_context.h/cpp  # トラック間衝突検出
+│   │   ├── piano_roll_safety.h/cpp # ピアノロール可視化API
 │   │   ├── generator.h/cpp        # 中央オーケストレーター
-│   │   └── types.h                # 型定義（約780行）
-│   ├── midi/              # MIDI出力（SMF Type 1）
+│   │   └── basic_types.h          # コア型定義
+│   ├── midi/              # MIDI出力（SMF Type 1, MIDI 2.0）
 │   ├── track/             # トラック生成器
-│   │   ├── vocal.cpp              # ボーカル調整（約470行）
-│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約520行）
-│   │   ├── aux_track.cpp          # Aux副旋律（約440行）
+│   │   ├── vocal.cpp              # ボーカル調整（約960行）
+│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約1280行）
+│   │   ├── aux_track.cpp          # Aux副旋律（約1170行）
+│   │   ├── chord_track.cpp        # コードボイシング（約2000行）
+│   │   ├── bass.cpp               # ベースパターン（約1170行）
 │   │   └── ...                    # その他のトラック生成器
 │   ├── analysis/          # 不協和音分析
 │   ├── preset/            # プリセット定義
 │   ├── midisketch.h       # 公開C++ API
-│   └── midisketch_c.h     # C API（WASMインターフェース、約360行）
-├── tests/                 # Google Testスイート（619+テスト）
+│   └── midisketch_c.h     # C API（WASMインターフェース、約650行）
+├── tests/                 # Google Testスイート（770+テスト）
 ├── dist/                  # WASM配布物
 └── demo/                  # ブラウザデモ
 ```
@@ -39,7 +43,11 @@ midi-sketch/
 class MidiSketch {
   void generate(const GeneratorParams& params);
   void generateFromConfig(const SongConfig& config);
-  void regenerateMelody(uint32_t new_seed = 0);
+  void regenerateVocal(const VocalConfig& config);
+  void generateVocal(const SongConfig& config);
+  void generateAccompaniment(const AccompanimentConfig& config);
+  void regenerateAccompaniment(uint32_t seed);
+  void setVocalNotes(const SongConfig& config, const NoteInput* notes, size_t count);
 
   std::vector<uint8_t> getMidi() const;
   std::string getEventsJson() const;
@@ -88,6 +96,8 @@ struct Song {
 
 ## データフロー
 
+### 標準生成（BGM先行）
+
 ```mermaid
 flowchart TD
     subgraph Input ["入力"]
@@ -100,14 +110,39 @@ flowchart TD
         S1 --> S2[generateBass]
         S2 --> S3[generateChord]
         S3 --> S4[generateVocal]
-        S4 --> S5[generateDrums]
-        S5 --> S6[generateMotif]
-        S6 --> S7[generateArpeggio]
-        S7 --> S8[applyTransitionDynamics]
-        S8 --> S9[applyHumanization]
+        S4 --> S5[generateAux]
+        S5 --> S6[generateDrums]
+        S6 --> S7[generateMotif]
+        S7 --> S8[generateArpeggio]
+        S8 --> S9[applyTransitionDynamics]
+        S9 --> S10[applyHumanization]
     end
 
-    S9 --> Song
+    S10 --> Song
+    Song --> MW[MidiWriter]
+    MW --> MIDI["SMF Type 1 バイナリ"]
+```
+
+### ボーカル先行生成
+
+```mermaid
+flowchart TD
+    subgraph Input ["入力"]
+        C[SongConfig] --> GV
+    end
+
+    subgraph VocalFirst ["ボーカル先行ワークフロー"]
+        GV[generateVocal] --> V[Vocal Track]
+        V --> GA[generateAccompaniment]
+        GA --> S1[generateAux]
+        S1 --> S2[generateBass]
+        S2 --> S3[generateChord]
+        S3 --> S4[generateDrums]
+        S4 --> S5[generateMotif]
+        S5 --> S6[generateArpeggio]
+    end
+
+    S6 --> Song
     Song --> MW[MidiWriter]
     MW --> MIDI["SMF Type 1 バイナリ"]
 ```

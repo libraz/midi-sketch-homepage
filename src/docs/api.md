@@ -213,6 +213,144 @@ const events = sketch.getEvents()
 // { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
 ```
 
+### `generateVocal(config)`
+
+Generate only the vocal track without accompaniment. Use for trial-and-error workflow: generate vocal, preview, regenerate if needed. Call `generateAccompaniment()` when satisfied with the vocal.
+
+```javascript
+sketch.generateVocal({
+  stylePresetId: 0,
+  key: 0,
+  bpm: 120,
+  seed: 0,
+  chordProgressionId: 0,
+  formId: 0,
+  vocalLow: 55,
+  vocalHigh: 74,
+  vocalAttitude: 1,
+  // ... other SongConfig options
+})
+```
+
+### `generateAccompaniment(config?)`
+
+Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux → Bass → Chord → Drums (adapting to vocal).
+
+```javascript
+// Simple: use default settings
+sketch.generateAccompaniment()
+
+// With configuration
+sketch.generateAccompaniment({
+  seed: 12345,                // Random seed (0 = auto)
+  drumsEnabled: true,
+  arpeggioEnabled: false,
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
+  arpeggioOctaveRange: 2,
+  arpeggioGate: 80,
+  arpeggioSyncChord: true,
+  chordExtSus: false,
+  chordExt7th: false,
+  chordExt9th: false,
+  humanize: true,
+  humanizeTiming: 50,
+  humanizeVelocity: 50,
+  seEnabled: false,
+  callEnabled: false,
+})
+```
+
+### `regenerateAccompaniment(seedOrConfig)`
+
+Regenerate accompaniment tracks with a new seed or configuration. Keeps current vocal, regenerates all accompaniment tracks (Aux, Bass, Chord, Drums, etc.).
+
+```javascript
+// With seed only
+sketch.regenerateAccompaniment(12345)
+
+// With full configuration
+sketch.regenerateAccompaniment({
+  seed: 12345,
+  drumsEnabled: true,
+  arpeggioEnabled: true,
+  // ... other AccompanimentConfig options
+})
+```
+
+### `generateWithVocal(config)`
+
+Generate all tracks with vocal-first priority. Generation order: Vocal → Aux → Bass → Chord → Drums. Accompaniment adapts to vocal melody.
+
+```javascript
+sketch.generateWithVocal({
+  stylePresetId: 0,
+  key: 0,
+  bpm: 120,
+  seed: 0,
+  // ... other SongConfig options
+})
+```
+
+### `setVocalNotes(config, notes)`
+
+Set custom vocal notes for accompaniment generation. Initializes the song structure and chord progression from config, then replaces the vocal track with the provided notes. Call `generateAccompaniment()` after this.
+
+```javascript
+// Set custom vocal notes
+sketch.setVocalNotes(config, [
+  { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
+  { startTick: 480, duration: 480, pitch: 62, velocity: 100 },
+  { startTick: 960, duration: 960, pitch: 64, velocity: 100 },
+])
+
+// Generate accompaniment for the custom vocal
+sketch.generateAccompaniment()
+
+// Get the MIDI data
+const midi = sketch.getMidi()
+```
+
+### `getPianoRollSafetyAt(tick, prevPitch?)`
+
+Get piano roll safety info for a single tick. Returns safety level, reason flags, and collision info for each MIDI note (0-127). Use this before placing custom vocal notes to see which notes are safe.
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+
+// Check if C4 (pitch 60) is safe
+if (info.safety[60] === 0) { // NoteSafety.Safe
+  console.log('C4 is a chord tone, safe to use')
+}
+
+// Get recommended notes
+console.log('Recommended:', info.recommended)
+```
+
+### `getPianoRollSafety(startTick, endTick, step)`
+
+Get piano roll safety info for a range of ticks. Useful for visualizing safe notes over time in a piano roll editor.
+
+```javascript
+// Get safety info for first 4 bars, sampled at 16th note resolution
+const infos = sketch.getPianoRollSafety(0, 1920 * 4, 120)
+
+for (const info of infos) {
+  console.log(`Tick ${info.tick}: chord degree ${info.chordDegree}`)
+  console.log('Recommended notes:', info.recommended)
+}
+```
+
+### `reasonToString(reason)`
+
+Convert reason flags to human-readable string.
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+const reasonText = sketch.reasonToString(info.reason[60])
+// "ChordTone" or "LowRegister, Tritone"
+```
+
 ### `destroy()`
 
 Clean up resources.
@@ -242,6 +380,51 @@ sketch.regenerateVocal({
   vocalHigh: 74,
   vocalAttitude: 1,
 })
+
+const midiData = sketch.getMidi()
+```
+
+## Vocal-First Workflow
+
+Generate vocal first, preview, iterate, then generate accompaniment:
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+const config = midisketch.createDefaultConfig(0)
+
+// Step 1: Generate vocal only
+sketch.generateVocal(config)
+
+// Preview and iterate until satisfied...
+sketch.regenerateVocal({ seed: 12345, vocalAttitude: 2 })
+
+// Step 2: Generate accompaniment for the vocal
+sketch.generateAccompaniment()
+
+const midiData = sketch.getMidi()
+```
+
+## Custom Vocal Import Workflow
+
+Import your own melody and generate fitting accompaniment:
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+const config = midisketch.createDefaultConfig(0)
+
+// Step 1: Set custom vocal notes
+sketch.setVocalNotes(config, [
+  { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
+  { startTick: 480, duration: 480, pitch: 62, velocity: 100 },
+  { startTick: 960, duration: 960, pitch: 64, velocity: 100 },
+])
+
+// Step 2: Use Piano Roll Safety API to validate notes (optional)
+const safety = sketch.getPianoRollSafetyAt(0)
+console.log('Recommended notes at tick 0:', safety.recommended)
+
+// Step 3: Generate accompaniment
+sketch.generateAccompaniment()
 
 const midiData = sketch.getMidi()
 ```
@@ -370,4 +553,136 @@ VocalGrooveFeel.Swing      // 2 - Swing feel
 VocalGrooveFeel.Syncopated // 3 - Syncopated rhythm
 VocalGrooveFeel.Driving16th // 4 - Driving 16th note feel
 VocalGrooveFeel.Bouncy8th  // 5 - Bouncy 8th note feel
+```
+
+### `NoteSafety`
+
+```javascript
+NoteSafety.Safe      // 0 - Green: chord tone, safe to use
+NoteSafety.Warning   // 1 - Yellow: tension, low register, or passing tone
+NoteSafety.Dissonant // 2 - Red: dissonant or out of range
+```
+
+### `NoteReason`
+
+Reason flags for note safety (bitfield, can be combined):
+
+```javascript
+NoteReason.None         // 0
+// Positive reasons (green)
+NoteReason.ChordTone    // 1 - Chord tone (root, 3rd, 5th, 7th)
+NoteReason.Tension      // 2 - Tension (9th, 11th, 13th)
+NoteReason.ScaleTone    // 4 - Scale tone (not chord but in scale)
+// Warning reasons (yellow)
+NoteReason.LowRegister  // 8 - Low register (below C4), may sound muddy
+NoteReason.Tritone      // 16 - Tritone interval (unstable except on V7)
+NoteReason.LargeLeap    // 32 - Large leap (6+ semitones from prev note)
+// Dissonant reasons (red)
+NoteReason.Minor2nd     // 64 - Minor 2nd (1 semitone) collision
+NoteReason.Major7th     // 128 - Major 7th (11 semitones) collision
+NoteReason.NonScale     // 256 - Non-scale tone (chromatic)
+NoteReason.PassingTone  // 512 - Can be used as passing tone
+// Out of range reasons (red)
+NoteReason.OutOfRange   // 1024 - Outside vocal range
+NoteReason.TooHigh      // 2048 - Too high to sing
+NoteReason.TooLow       // 4096 - Too low to sing
+```
+
+## Types
+
+### `VocalConfig`
+
+Configuration for vocal regeneration:
+
+```typescript
+interface VocalConfig {
+  seed?: number              // Random seed (0 = new random)
+  vocalLow?: number          // Vocal range lower bound (MIDI note, 36-96)
+  vocalHigh?: number         // Vocal range upper bound (MIDI note, 36-96)
+  vocalAttitude?: number     // 0=Clean, 1=Expressive, 2=Raw
+  vocalStyle?: number        // Vocal style preset (0=Auto)
+  melodyTemplate?: number    // Melody template (0=Auto)
+  melodicComplexity?: number // 0=Simple, 1=Standard, 2=Complex
+  hookIntensity?: number     // 0=Off, 1=Light, 2=Normal, 3=Strong
+  vocalGroove?: number       // 0=Straight, 1=OffBeat, etc.
+  compositionStyle?: number  // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+}
+```
+
+### `AccompanimentConfig`
+
+Configuration for accompaniment generation/regeneration:
+
+```typescript
+interface AccompanimentConfig {
+  seed?: number               // Random seed (0 = auto)
+  // Drums
+  drumsEnabled?: boolean
+  // Arpeggio
+  arpeggioEnabled?: boolean
+  arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed?: number      // 0=Eighth, 1=Sixteenth, 2=Triplet
+  arpeggioOctaveRange?: number // 1-3
+  arpeggioGate?: number       // 0-100
+  arpeggioSyncChord?: boolean
+  // Chord Extensions
+  chordExtSus?: boolean
+  chordExt7th?: boolean
+  chordExt9th?: boolean
+  chordExtSusProb?: number    // 0-100
+  chordExt7thProb?: number    // 0-100
+  chordExt9thProb?: number    // 0-100
+  // Humanization
+  humanize?: boolean
+  humanizeTiming?: number     // 0-100
+  humanizeVelocity?: number   // 0-100
+  // SE/Call
+  seEnabled?: boolean
+  callEnabled?: boolean
+  callDensity?: number        // 0=Sparse, 1=Light, 2=Standard, 3=Dense
+  introChant?: number         // 0=None, 1=Gachikoi, 2=Mix
+  mixPattern?: number         // 0=None, 1=Standard, 2=Tiger
+  callNotesEnabled?: boolean
+}
+```
+
+### `NoteInput`
+
+Note input for custom vocal track:
+
+```typescript
+interface NoteInput {
+  startTick: number  // Note start time in ticks
+  duration: number   // Note duration in ticks
+  pitch: number      // MIDI note number (0-127)
+  velocity: number   // Note velocity (0-127)
+}
+```
+
+### `PianoRollInfo`
+
+Piano roll safety info for a single tick:
+
+```typescript
+interface PianoRollInfo {
+  tick: number                // Tick position
+  chordDegree: number         // Current chord degree (0=I, 1=ii, etc.)
+  currentKey: number          // Current key (0-11, considering modulation)
+  safety: NoteSafetyLevel[]   // Safety level for each MIDI note (0-127)
+  reason: NoteReasonFlags[]   // Reason flags for each note (0-127)
+  collision: CollisionInfo[]  // Collision details for each note
+  recommended: number[]       // Recommended notes (priority order, max 8)
+}
+```
+
+### `CollisionInfo`
+
+Collision info for a note that collides with BGM:
+
+```typescript
+interface CollisionInfo {
+  trackRole: number         // Track role of colliding track
+  collidingPitch: number    // MIDI pitch of colliding note
+  intervalSemitones: number // Collision interval in semitones (1, 6, or 11)
+}
 ```

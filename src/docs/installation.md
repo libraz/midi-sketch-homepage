@@ -1,23 +1,23 @@
 # Installation
 
-::: warning Alpha Version
-This package is currently in alpha and not yet published to npm. For now, please build from source or use the demo on this site.
-:::
-
 ## Package Manager
+
+::: warning BETA
+The npm package is not yet published. During the beta period, please use the library via the [demo page](/demo) or build from source.
+:::
 
 ::: code-group
 
 ```bash [npm]
-npm install midi-sketch
+npm install @libraz/midi-sketch
 ```
 
 ```bash [yarn]
-yarn add midi-sketch
+yarn add @libraz/midi-sketch
 ```
 
 ```bash [pnpm]
-pnpm add midi-sketch
+pnpm add @libraz/midi-sketch
 ```
 
 :::
@@ -26,10 +26,13 @@ pnpm add midi-sketch
 
 ```html
 <script type="module">
-import midisketch from 'midi-sketch'
+import { init, MidiSketch, createDefaultConfig } from '@libraz/midi-sketch'
 
-await midisketch.init()
-const sketch = new midisketch.MidiSketch()
+await init()
+const sketch = new MidiSketch()
+const config = createDefaultConfig(0)
+sketch.generateFromConfig(config)
+const midi = sketch.getMidi()
 // ...
 </script>
 ```
@@ -42,7 +45,7 @@ const sketch = new midisketch.MidiSketch()
 // vite.config.js
 export default {
   optimizeDeps: {
-    exclude: ['midi-sketch']
+    exclude: ['@libraz/midi-sketch']
   }
 }
 ```

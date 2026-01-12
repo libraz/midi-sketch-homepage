@@ -84,13 +84,18 @@ graph LR
 ```mermaid
 graph TD
     modulationTiming["modulationTiming (!=None)"] --> modulationSemitones
+    modulationSemitones --> vocalHighAdjust["(internal) vocalHigh auto-adjust"]
 ```
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `modulationTiming != None` | `modulationSemitones` | Modulation amount (1-4) |
+| `modulationTiming != None` | `modulationSemitones` | Modulation amount (1-4 semitones) |
+| `modulationSemitones > 0` | (internal) `effective_vocal_high` | Auto-adjusted to fit post-modulation range |
 
-**Note**: When `modulationTiming=None`, `modulationSemitones` is not validated.
+**Notes**:
+- When `modulationTiming=None`, `modulationSemitones` is not validated
+- **Vocal range auto-adjustment**: When modulation is enabled, `effective_vocal_high = vocal_high - modulation_semitones` ensures vocal stays in range post-modulation
+- **Works in all CompositionStyles**: Modulation is effective in BGM modes (BackgroundMotif, SynthDriven) as well
 
 ### 1.6 Vocal (skipVocal exclusion)
 
@@ -105,56 +110,65 @@ graph TD
     skipVocal --> vocalGroove
 ```
 
-| Condition | Effective Options |
-|-----------|-------------------|
-| `skipVocal=false` | All vocal-related options |
-| `skipVocal=true` | All vocal options are ignored |
+| Condition | Effective Options | Use Case |
+|-----------|-------------------|----------|
+| `skipVocal=false` | All vocal-related options | Normal song generation |
+| `skipVocal=true` | All vocal options are ignored | **BGM-only generation (no vocal)** |
 
-### 1.7 MelodyTemplate Selection
-
-```mermaid
-graph TD
-    melodyTemplate["melodyTemplate (0=Auto)"] --> |"!= 0"| MT["Use specified template"]
-    melodyTemplate --> |"= 0"| VS["Use vocalStyle mapping"]
-    VS --> VSM["VocalStylePreset → MelodyTemplate"]
-```
-
-| vocalStyle | Default Template |
-|------------|-----------------|
-| Standard (1) | PlateauTalk (1) |
-| Vocaloid (2) | RunUpTarget (2) |
-| Idol (4) | PlateauTalk (1) |
-| Ballad (5) | SparseAnchor (5) |
-| Rock (6) | RunUpTarget (2) |
-| CityPop (7) | PlateauTalk (1) |
-| Anime (8) | HookRepeat (4) |
+**Important**: There is no API to add vocals after BGM-only generation. Use the **Vocal-First workflow** instead (see [API Reference](/docs/api)).
 
 ---
 
 ## 2. CompositionStyle Branching
 
-The value of `compositionStyle` determines which options are effective:
+The value of `compositionStyle` determines which tracks are generated and which options are effective:
+
+### 2.1 MelodyLead (0) - Default
 
 ```mermaid
 graph TD
-    subgraph MelodyLead["compositionStyle=0 (MelodyLead)"]
-        ML1["All vocal options effective"]
-        ML2["arpeggioEnabled → effective"]
-        ML3["motif options → ignored"]
-    end
-
-    subgraph BackgroundMotif["compositionStyle=1 (BackgroundMotif)"]
-        BM1["vocal options → suppressed"]
-        BM2["motifRepeatScope ← effective"]
-        BM3["motifFixedProgression ← effective"]
-        BM4["motifMaxChordCount ← effective"]
-    end
-
-    subgraph SynthDriven["compositionStyle=2 (SynthDriven)"]
-        SD1["arpeggioEnabled → recommended"]
-        SD2["vocal options → suppressed"]
-    end
+    ML["compositionStyle=0 (MelodyLead)"]
+    ML --> ML1["All vocal options effective"]
+    ML --> ML2["arpeggioEnabled → effective"]
+    ML --> ML3["motif options → ignored"]
+    ML --> ML4["modulation → effective"]
 ```
+
+**Generated tracks**: Vocal → Aux → Bass → Chord → Drums (+ Arpeggio if enabled)
+
+### 2.2 BackgroundMotif (1) - BGM-Only Mode
+
+```mermaid
+graph TD
+    BM["compositionStyle=1 (BackgroundMotif)"]
+    BM --> BM1["vocal options → disabled (no Vocal track)"]
+    BM --> BM2["Aux track → disabled"]
+    BM --> BM3["arpeggioEnabled → effective (Motif + Arpeggio both)"]
+    BM --> BM4["motifRepeatScope ← effective"]
+    BM --> BM5["motifFixedProgression ← effective"]
+    BM --> BM6["motifMaxChordCount ← effective"]
+    BM --> BM7["modulation → effective"]
+```
+
+**Generated tracks**:
+| arpeggioEnabled | Generated Tracks |
+|-----------------|------------------|
+| `false` | Motif + Bass + Chord + Drums |
+| `true` | Motif + Bass + Chord + Drums + **Arpeggio** |
+
+### 2.3 SynthDriven (2) - BGM-Only Mode
+
+```mermaid
+graph TD
+    SD["compositionStyle=2 (SynthDriven)"]
+    SD --> SD1["vocal options → disabled (no Vocal track)"]
+    SD --> SD2["Aux track → disabled"]
+    SD --> SD3["arpeggioEnabled → auto-enabled (always)"]
+    SD --> SD4["Arpeggio-centered arrangement"]
+    SD --> SD5["modulation → effective"]
+```
+
+**Generated tracks**: Bass + Chord + Drums + Arpeggio (no Motif)
 
 ---
 
@@ -164,8 +178,9 @@ graph TD
 |--------|---------------|----------|
 | `bpm` | `0` | Use style preset's default BPM |
 | `seed` | `0` | Auto-generate random seed |
-| `melodyTemplate` | `0` | Use VocalStylePreset's default template |
 | `targetDurationSeconds` | `0` | Use structure pattern from `formId` |
+| `vocalStyle` | `0` (Auto) | Random selection based on style |
+| `melodyTemplate` | `0` (Auto) | Default selection based on style |
 
 ### Flowchart
 
@@ -182,18 +197,29 @@ flowchart TD
 
 ## 4. Validation Conflicts
 
-### 4.1 Error Codes
+### 4.1 Parameter Valid Ranges
 
-| Error | Cause |
-|-------|-------|
-| `INVALID_STYLE` | `stylePresetId >= 17` |
-| `INVALID_CHORD` | `chordProgressionId >= 22` |
-| `INVALID_FORM` | `formId >= 11` |
-| `INVALID_ATTITUDE` | `vocalAttitude` not allowed by style |
-| `INVALID_VOCAL_RANGE` | `vocalLow > vocalHigh` or out of range (36-96) |
-| `INVALID_BPM` | `bpm != 0` and `bpm < 40` or `bpm > 240` |
-| `INVALID_MODULATION` | `modulationTiming != None` and `modulationSemitones` not 1-4 |
-| `DURATION_TOO_SHORT` | `callEnabled=true` and `targetDurationSeconds` below minimum |
+| Parameter | Valid Range | Error Code |
+|-----------|-------------|------------|
+| `stylePresetId` | 0-16 | `INVALID_STYLE` |
+| `key` | 0-11 | `INVALID_KEY` |
+| `bpm` | 0, 40-240 | `INVALID_BPM` |
+| `chordProgressionId` | 0-21 | `INVALID_CHORD` |
+| `formId` | 0-17 | `INVALID_FORM` |
+| `vocalLow`, `vocalHigh` | 36-96, low ≤ high | `INVALID_VOCAL_RANGE` |
+| `compositionStyle` | 0-2 | `INVALID_COMPOSITION_STYLE` |
+| `vocalStyle` | 0-12 | `INVALID_VOCAL_STYLE` |
+| `melodyTemplate` | 0-7 | `INVALID_MELODY_TEMPLATE` |
+| `melodicComplexity` | 0-2 | `INVALID_MELODIC_COMPLEXITY` |
+| `hookIntensity` | 0-3 | `INVALID_HOOK_INTENSITY` |
+| `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
+| `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
+| `modulationSemitones` | 1-4 (when timing≠0) | `INVALID_MODULATION` |
+| `arpeggioPattern` | 0-3 | `INVALID_ARPEGGIO_PATTERN` |
+| `arpeggioSpeed` | 0-2 | `INVALID_ARPEGGIO_SPEED` |
+| `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
+| `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
+| `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
 
 ### 4.2 Style × Attitude Combinations
 
@@ -206,22 +232,48 @@ allowedAttitudes = ATTITUDE_CLEAN | ATTITUDE_EXPRESSIVE  // 0b011 = 3
 vocalAttitude = 2 (Raw) → INVALID_ATTITUDE error
 ```
 
-### 4.3 Call × Duration Conflict
+Check allowed attitudes with: `midisketch_style_preset_allowed_attitudes(styleId)`
 
-```mermaid
-flowchart TD
-    A["callEnabled=true"] --> B["Calculate minimum_seconds<br/>calcMinSeconds(introChant, mixPattern, bpm)"]
-    B --> C{targetDurationSeconds > 0<br/>AND < minimum_seconds?}
-    C -->|Yes| D["DURATION_TOO_SHORT error"]
-    C -->|No| E["Valid configuration"]
+### 4.3 Modulation × Semitones Dependency
+
+| modulationTiming | modulationSemitones | Result |
+|------------------|---------------------|--------|
+| 0 (None) | any (ignored) | OK |
+| 1-4 | 0 | `INVALID_MODULATION` |
+| 1-4 | 1-4 | OK |
+| 1-4 | 5+ | `INVALID_MODULATION` |
+
+### 4.4 Call × Duration × BPM Conflict
+
+```
+IF callEnabled == true AND targetDurationSeconds > 0
+THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
 
-| introChant | mixPattern | Min seconds @120 BPM |
-|------------|------------|----------------------|
-| None | None | No limit |
-| Gachikoi | None | ~24s |
-| None | Tiger | ~20s |
-| Gachikoi | Tiger | ~40s |
+Minimum time calculation:
+```
+min_bars = 24 + introChant_bars + mixPattern_bars
+min_seconds = min_bars * 240 / bpm
+```
+
+| bpm | Base minimum (call enabled) | With introChant/mixPattern |
+|-----|---------------------------|---------------------------|
+| 40 | **144 seconds** | Even longer |
+| 60 | **96 seconds** | Even longer |
+| 120 | **48 seconds** | Even longer |
+| 240 | **24 seconds** | Even longer |
+
+**Solution**: Use `targetDurationSeconds=0` (auto) to let the system determine appropriate length.
+
+### 4.5 Crash-Prone Combinations
+
+| Pattern | Cause | Fix |
+|---------|-------|-----|
+| `modulationTiming≠0` + `modulationSemitones=0` | Modulation enabled but amount invalid | Set `modulationSemitones=2` |
+| `callEnabled=true` + `targetDurationSeconds=30` + `bpm=40` | Duration too short | Set `targetDurationSeconds=0` |
+| `vocalLow=80` + `vocalHigh=60` | Range inverted | Ensure low ≤ high |
+| `vocalLow=30` or `vocalHigh=100` | Out of range | Use 36-96 |
+| `bpm=300` | BPM out of range | Use 40-240 |
 
 ---
 
@@ -243,14 +295,11 @@ flowchart TD
 
 ```javascript
 {
-  stylePresetId: 16,  // vocaloid preset
+  stylePresetId: 14,  // Anime Opening
   compositionStyle: 0,
-  vocalStyle: 2,      // Vocaloid
-  vocalNoteDensity: 150,
-  vocalMinNoteDivision: 16,
-  vocalAllowExtremLeap: true,
+  vocalStyle: 2,      // Vocaloid - high density, wide leaps
   arpeggioEnabled: true,
-  arpeggioSpeed: 1  // Sixteenth
+  arpeggioSpeed: 1    // Sixteenth
 }
 ```
 
@@ -258,7 +307,8 @@ flowchart TD
 
 ```javascript
 {
-  stylePresetId: 14,  // idol preset
+  stylePresetId: 3,   // Idol Standard
+  vocalStyle: 4,      // Idol
   callEnabled: true,
   introChant: 1,      // Gachikoi
   mixPattern: 2,      // Tiger
@@ -268,16 +318,46 @@ flowchart TD
 }
 ```
 
-### 5.4 BGM Mode (Motif-focused)
+### 5.4 BGM Mode (Motif + Arpeggio)
 
 ```javascript
 {
-  compositionStyle: 1,  // BackgroundMotif
-  skipVocal: true,      // or false for subdued vocals
+  compositionStyle: 1,  // BackgroundMotif (BGM-only)
+  // No need to set skipVocal (auto-disabled in BackgroundMotif)
+
+  // Motif settings
   motifFixedProgression: true,
   motifMaxChordCount: 4,
-  arpeggioEnabled: true
+
+  // Arpeggio (also available in BackgroundMotif)
+  arpeggioEnabled: true,      // → Motif + Arpeggio both generated
+  arpeggioPattern: 2,         // UpDown
+  arpeggioSpeed: 1,           // Sixteenth
+  arpeggioOctaveRange: 2,
+  arpeggioGate: 80,
+
+  // Modulation (works in BGM mode too)
+  modulationTiming: 1,        // LastChorus
+  modulationSemitones: 2      // +2 semitones
 }
+// Output: Motif + Bass + Chord + Drums + Arpeggio (modulates +2 at last chorus)
+```
+
+### 5.5 BGM Mode (Arpeggio-Centered)
+
+```javascript
+{
+  compositionStyle: 2,  // SynthDriven (BGM-only)
+  // arpeggioEnabled is auto-enabled in SynthDriven
+  arpeggioPattern: 0,         // Up
+  arpeggioSpeed: 2,           // Triplet
+  arpeggioOctaveRange: 3,
+
+  // Modulation (works in BGM mode too)
+  modulationTiming: 2,        // AfterBridge
+  modulationSemitones: 3      // +3 semitones
+}
+// Output: Bass + Chord + Drums + Arpeggio (no Motif, modulates +3 after bridge)
 ```
 
 ---
@@ -286,27 +366,36 @@ flowchart TD
 
 Certain parameters automatically configure internal values when set.
 
-### 6.1 VocalStylePreset → MelodyTemplate
+### 6.1 VocalStylePreset → Melody Parameters
 
-Setting `vocalStyle` automatically selects a `MelodyTemplate`:
+Setting `vocalStyle` automatically configures internal melody generation parameters:
 
-| vocalStyle | MelodyTemplate | Key Characteristics |
-|------------|----------------|---------------------|
-| `Auto (0)` | Section-based | Verse=PlateauTalk, Chorus=RunUpTarget |
-| `Standard (1)` | PlateauTalk (1) | plateau_ratio=0.40, balanced |
-| `Vocaloid (2)` | RunUpTarget (2) | High density, wide leaps |
-| `UltraVocaloid (3)` | RunUpTarget (2) | Extreme density (32nd notes) |
-| `Idol (4)` | PlateauTalk (1) | High 16th ratio, hooks |
-| `Ballad (5)` | SparseAnchor (5) | Long notes, sparse |
-| `Rock (6)` | RunUpTarget (2) | Register shift |
-| `CityPop (7)` | PlateauTalk (1) | Groovy, syncopated |
-| `Anime (8)` | HookRepeat (4) | Hook-heavy |
-| `BrightKira (9)` | HookRepeat (4) | High register |
-| `CoolSynth (10)` | PlateauTalk (1) | Electronic |
-| `CuteAffected (11)` | HookRepeat (4) | Playful |
-| `PowerfulShout (12)` | RunUpTarget (2) | Intense |
+| Parameter | Description |
+|-----------|-------------|
+| `max_leap_interval` | Maximum leap width (semitones) |
+| `syncopation_prob` | Syncopation probability |
+| `verse/chorus_density_modifier` | Section-specific density coefficient |
+| `hook_repetition` | Whether to repeat hooks |
+| `chorus_long_tones` | Long notes in chorus |
+| `tension_usage` | Tension usage rate |
 
-**Important**: If you explicitly set `melodyTemplate` to a non-zero value, it overrides the VocalStylePreset default.
+**VocalStylePreset List** (0-12):
+
+| ID | Name | Characteristics |
+|----|------|-----------------|
+| 0 | Auto | Random selection based on style |
+| 1 | Standard | Standard pop |
+| 2 | Vocaloid | High density, wide leaps, syncopation (singable) |
+| 3 | UltraVocaloid | Ultra-fast, extreme leaps (machine-oriented) |
+| 4 | Idol | Catchy, hook-focused |
+| 5 | Ballad | Relaxed, long notes |
+| 6 | Rock | Powerful, chorus emphasis |
+| 7 | CityPop | Stylish, uses tensions |
+| 8 | Anime | Dramatic, strong hooks |
+| 9 | BrightKira | Bright, sparkly |
+| 10 | CoolSynth | Cool, many 16th notes |
+| 11 | CuteAffected | Cute, moderate syncopation |
+| 12 | PowerfulShout | Powerful, long notes + high density |
 
 ### 6.2 MelodicComplexity → Multiple Parameters
 
@@ -316,111 +405,193 @@ Setting `vocalStyle` automatically selects a `MelodyTemplate`:
 | `Standard (1)` | No changes (default) |
 | `Complex (2)` | `note_density *= 1.3`, `max_leap_interval *= 1.5` (max 12), `tension_usage *= 1.5`, `sixteenth_note_ratio *= 1.5` (max 0.5), `syncopation_prob *= 1.5` (max 0.5) |
 
-### 6.3 CompositionStyle → Implicit Behavior
+### 6.3 VocalAttitude → Pitch Selection
+
+| vocalAttitude | Pitch Candidates | Musical Characteristics |
+|---------------|-----------------|------------------------|
+| `Clean (0)` | Chord tones only (1, 3, 5) | Safe, consonant, stable |
+| `Expressive (1)` | Chord tones + tensions (7th, 9th) | Colorful, delayed resolution |
+| `Raw (2)` | All scale tones | Edgy, non-chord tone landing |
+
+### 6.4 CompositionStyle → Implicit Behavior
 
 | compositionStyle | Implicit Behavior |
 |------------------|-------------------|
-| `BackgroundMotif (1)` | **Auto-disable modulation**, vocal volume suppressed (velocity_scale applied), simple pitch constraints |
-| `SynthDriven (2)` | **Auto-disable modulation**, **Auto-enable arpeggio** (even if arpeggioEnabled=false), vocal volume suppressed (velocity_scale=0.75) |
+| `BackgroundMotif (1)` | **Vocal/Aux completely disabled** (not generated), Motif track generated, **modulation works** |
+| `SynthDriven (2)` | **Arpeggio auto-enabled** (even if arpeggioEnabled=false), **Vocal/Aux completely disabled**, **modulation works** |
 
 ```javascript
 // Example: Arpeggio is generated even if not explicitly enabled
 {
-  compositionStyle: 2,  // SynthDriven
-  arpeggioEnabled: false  // ← Ignored! Arpeggio auto-enabled
+  compositionStyle: 2,  // SynthDriven (BGM-only)
+  arpeggioEnabled: false,  // ← Ignored! Arpeggio auto-enabled
+  modulationTiming: 1,     // Works in BGM mode
+  modulationSemitones: 2
+  // Note: No Vocal track is generated in this mode
 }
 ```
 
-### 6.4 VocalGrooveFeel → Internal Rhythm Parameters
+### 6.5 VocalGrooveFeel → Timing Adjustment
 
-| vocalGroove | Auto Settings |
-|-------------|---------------|
-| `Straight (0)` | No changes |
-| `OffBeat (1)` | `offbeat_preference=0.4`, `syncopation_boost=0.2` |
-| `Swing (2)` | `swing_amount=0.25`, `syncopation_boost=0.1` |
-| `Syncopated (3)` | `syncopation_boost=0.4`, `offbeat_preference=0.3` |
-| `Driving16th (4)` | `sixteenth_note_ratio=0.6`, `syncopation_prob=0.3` |
-| `Bouncy8th (5)` | `swing_amount=0.15`, `syncopation_boost=0.15` |
+| vocalGroove | Effect |
+|-------------|--------|
+| `Straight (0)` | No change |
+| `OffBeat (1)` | Delay on-beat notes (+30 ticks) |
+| `Swing (2)` | Delay 8th note 2nd beat |
+| `Syncopated (3)` | Anticipate beats 2, 4 (-30 ticks) |
+| `Driving16th (4)` | Emphasize 16th notes |
+| `Bouncy8th (5)` | Bounce feel on 8th notes |
 
-### 6.5 BPM ≥ 140 → Vocal Density Boost
+### 6.6 hookIntensity → Phrase Generation Changes
 
-When BPM is 140 or higher, vocal density is automatically increased:
-
-```
-if (bpm >= 140) {
-  note_density *= 1.1  // 10% increase
-  sixteenth_note_ratio += 0.1  // 16th note ratio increase
-}
-```
-
-### 6.6 drumsEnabled=false → Bass Rhythmic Drive
-
-When drums are disabled, bass automatically switches to rhythmic patterns:
-
-| drumsEnabled | Section | Bass Behavior |
-|--------------|---------|---------------|
-| `false` | Intro/Interlude/Outro | `RootFifth` pattern |
-| `false` | A/B/Chorus/Bridge | `RhythmicDrive` pattern (emphasized 8th notes) |
+| hookIntensity | Duration Multiplier | Velocity Addition | Target Sections |
+|---------------|--------------------|--------------------|-----------------|
+| `Off (0)` | - | - | None |
+| `Light (1)` | ×1.3 | +5 | Chorus, B |
+| `Normal (2)` | ×1.5 | +10 | Chorus, B |
+| `Strong (3)` | ×2.0 | +15 | **All sections** |
 
 ---
 
 ## 7. Option Dependency Tree
 
-```mermaid
-flowchart TD
-    subgraph Basic["Basic Settings"]
-        stylePresetId
-        key
-        bpm["bpm (0=default)"]
-        seed["seed (0=random)"]
-    end
-
-    subgraph Structure
-        formId
-        targetDurationSeconds
-    end
-
-    subgraph Vocal["Vocal (skipVocal=false)"]
-        vocalAttitude
-        vocalStyle["vocalStyle (0=Auto)"]
-        melodyTemplate["melodyTemplate (0=Auto)"]
-        vocalRange["vocalLow / vocalHigh"]
-        melodicComplexity
-        hookIntensity
-        vocalGroove
-    end
-
-    subgraph Arpeggio["Arpeggio (arpeggioEnabled=true)"]
-        arpeggioPattern
-        arpeggioSpeed
-        arpeggioOctaveRange
-        arpeggioGate
-        arpeggioSyncChord
-    end
-
-    subgraph CallSystem["Call System (callEnabled=true)"]
-        introChant
-        mixPattern
-        callDensity
-        callNotesEnabled
-    end
-
-    subgraph ChordExt["Chord Extensions"]
-        chordExtSus --> chordExtSusProb
-        chordExt7th --> chordExt7thProb
-        chordExt9th --> chordExt9thProb
-    end
-
-    subgraph Modulation["Modulation (timing!=None)"]
-        modulationSemitones
-    end
-
-    subgraph Humanize["Humanize (humanize=true)"]
-        humanizeTiming
-        humanizeVelocity
-    end
-
-    stylePresetId -.->|"determines defaults"| bpm
-    stylePresetId -.->|"restricts"| vocalAttitude
-    targetDurationSeconds -.->|"conflicts"| mixPattern
 ```
+SongConfig
+├── Basic Settings
+│   ├── stylePresetId     ─────┐
+│   ├── key                    │ Style determines defaults
+│   ├── bpm (0=default)        │ for other options
+│   └── seed (0=random)        │
+│                              ▼
+├── Structure ◄────────────────┤
+│   ├── formId                 │
+│   └── targetDurationSeconds ─┴─▶ Exclusive with formId (auto if >0)
+│
+├── Vocal (only when skipVocal=false)
+│   ├── vocalAttitude  ◄────────── Restricted by style
+│   ├── vocalStyle     ◄────────── 0=Auto, 1-12=explicit preset
+│   ├── vocalLow/High
+│   ├── melodicComplexity
+│   ├── hookIntensity
+│   └── vocalGroove
+│
+├── Arpeggio (only when arpeggioEnabled=true)
+│   ├── arpeggioPattern
+│   ├── arpeggioSpeed
+│   ├── arpeggioOctaveRange
+│   ├── arpeggioGate
+│   └── arpeggioSyncChord
+│
+├── Call System (only when callEnabled=true)
+│   ├── introChant
+│   ├── mixPattern  ─────────────▶ Conflicts with targetDurationSeconds
+│   ├── callDensity
+│   └── callNotesEnabled
+│
+├── Chord Extensions (prob effective only when enabled=true)
+│   ├── chordExtSus  → chordExtSusProb
+│   ├── chordExt7th  → chordExt7thProb
+│   └── chordExt9th  → chordExt9thProb
+│
+├── Modulation (only when modulationTiming!=None)
+│   └── modulationSemitones
+│
+├── Humanize (only when humanize=true)
+│   ├── humanizeTiming
+│   └── humanizeVelocity
+│
+└── CompositionStyle-dependent
+    ├── compositionStyle=0 (MelodyLead): Vocal/Aux enabled, standard
+    ├── compositionStyle=1 (BackgroundMotif): BGM-only (Vocal/Aux disabled)
+    │   ├── motifRepeatScope
+    │   ├── motifFixedProgression
+    │   └── motifMaxChordCount
+    └── compositionStyle=2 (SynthDriven): BGM-only, arpeggio auto-enabled
+```
+
+---
+
+## 8. Workflow-Specific Options
+
+### 8.1 generateVocal(config) - Used Parameters
+
+| Category | Parameter | Used | Description |
+|----------|-----------|:----:|-------------|
+| **Basic** | `stylePresetId` | ✅ | Style determination |
+| | `key` | ✅ | Key (internal C major, transpose at output) |
+| | `bpm` | ✅ | Tempo (0=style default) |
+| | `seed` | ✅ | Random seed |
+| | `chordProgressionId` | ✅ | Chord progression (melody reference) |
+| | `formId` | ✅ | Structure pattern |
+| **Vocal** | `vocalLow` | ✅ | Range lower bound |
+| | `vocalHigh` | ✅ | Range upper bound |
+| | `vocalAttitude` | ✅ | Expression style |
+| | `vocalStyle` | ✅ | Vocal style preset |
+| | `melodicComplexity` | ✅ | Melody complexity |
+| | `hookIntensity` | ✅ | Hook strength |
+| | `vocalGroove` | ✅ | Groove feel |
+| **Ignored** | `drumsEnabled` | ❌ | Vocal only |
+| | `arpeggioEnabled` | ❌ | Vocal only |
+| | `humanize` | ❌ | Applied when accompaniment added |
+
+### 8.2 generateAccompaniment(config?) - Used Parameters
+
+| Category | Parameter | Used | Description |
+|----------|-----------|:----:|-------------|
+| **Tracks** | `drumsEnabled` | ✅ | Generate drums |
+| | `arpeggioEnabled` | ✅ | Generate arpeggio |
+| | `arpeggio.*` | ✅ | Arpeggio settings |
+| | `chordExt*` | ✅ | Chord extension settings |
+| **Post-processing** | `humanize` | ✅ | Apply humanization |
+| | `humanizeTiming` | ✅ | Timing variation |
+| | `humanizeVelocity` | ✅ | Velocity variation |
+| **SE/Call** | `seEnabled` | ✅ | SE track generation |
+| | `callEnabled` | ✅ | Call feature |
+| | `callDensity` | ✅ | Call density |
+
+### 8.3 regenerateVocal(configOrSeed) - Used Parameters
+
+**Seed only** (`regenerateVocal(12345)`):
+- Only `seed` is changed; other parameters use previous `generateVocal` settings
+
+**VocalConfig** (`regenerateVocal({...})`):
+| Parameter | Used | Description |
+|-----------|:----:|-------------|
+| `seed` | ✅ | New random seed |
+| `vocalLow` | ✅ | Change range lower bound |
+| `vocalHigh` | ✅ | Change range upper bound |
+| `vocalAttitude` | ✅ | Change expression style |
+| `vocalStyle` | ✅ | Change vocal style preset |
+| `melodicComplexity` | ✅ | Change complexity |
+| `hookIntensity` | ✅ | Change hook strength |
+| `vocalGroove` | ✅ | Change groove |
+
+**Note**: Chord progression and structure are NOT changed (continues from generateVocal settings).
+
+---
+
+## 9. Parameter Application Flow
+
+```
+SongConfig
+    │
+    ├── stylePresetId ──→ mood, compositionStyle, bpm(default), melody_params
+    │                           │
+    │                           ▼ (can be overridden by explicit setting)
+    ├── compositionStyle ──────────────→ Final compositionStyle
+    ├── bpm ───────────────────────────→ Final BPM
+    │
+    ├── vocalStyle ─────────→ melody_params override ─────→ │
+    │       │                                               │
+    │       └── (Auto) ────→ Random selection               │
+    │                                                       ▼
+    ├── melodicComplexity ─→ melody_params multiplier ────→ Final melody_params
+    │
+    ├── hookIntensity ─────→ Chorus/B section note adjustment
+    │
+    ├── vocalGroove ───────→ All note timing adjustment
+    │
+    └── callEnabled ──────→ (if false=Auto) determined by vocalStyle → call_enabled
+```
+
+**Application order**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity`

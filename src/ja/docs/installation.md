@@ -1,23 +1,23 @@
 # インストール
 
-::: warning アルファ版
-このパッケージは現在アルファ版であり、npmには未公開です。現時点ではソースからビルドするか、このサイトのデモをご利用ください。
-:::
-
 ## パッケージマネージャー
+
+::: warning ベータ版
+npm パッケージはまだ公開されていません。ベータ期間中は[デモページ](/ja/demo)からライブラリをご利用いただくか、ソースからビルドしてください。
+:::
 
 ::: code-group
 
 ```bash [npm]
-npm install midi-sketch
+npm install @libraz/midi-sketch
 ```
 
 ```bash [yarn]
-yarn add midi-sketch
+yarn add @libraz/midi-sketch
 ```
 
 ```bash [pnpm]
-pnpm add midi-sketch
+pnpm add @libraz/midi-sketch
 ```
 
 :::
@@ -26,10 +26,13 @@ pnpm add midi-sketch
 
 ```html
 <script type="module">
-import midisketch from 'midi-sketch'
+import { init, MidiSketch, createDefaultConfig } from '@libraz/midi-sketch'
 
-await midisketch.init()
-const sketch = new midisketch.MidiSketch()
+await init()
+const sketch = new MidiSketch()
+const config = createDefaultConfig(0)
+sketch.generateFromConfig(config)
+const midi = sketch.getMidi()
 // ...
 </script>
 ```
@@ -42,7 +45,7 @@ const sketch = new midisketch.MidiSketch()
 // vite.config.js
 export default {
   optimizeDeps: {
-    exclude: ['midi-sketch']
+    exclude: ['@libraz/midi-sketch']
   }
 }
 ```

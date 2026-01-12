@@ -1,16 +1,19 @@
-# WASM/JS オプション間の関係性
+# オプション関係性
 
-## 概要
+このドキュメントでは、MIDI Sketchの`SongConfig`オプション間の関係性を説明します。
 
-`SongConfig`のオプションには以下の関係性があります:
-- **排他**: 同時に有効にしても片方のみ機能
+## 関係性の種類
+
+オプションには以下の関係性があります：
+
 - **依存**: 親オプションが有効でないと子オプションは無視される
-- **優先**: 特殊な値(0など)が他の設定をオーバーライド
+- **優先**: 特殊な値（0など）が他の設定をオーバーライド
 - **干渉**: 特定の組み合わせでバリデーションエラー
+- **暗黙**: あるオプションを設定すると内部パラメータが自動設定される
 
 ---
 
-## 1. 依存関係 (親→子)
+## 1. 依存関係
 
 ### 1.1 Call System
 
@@ -24,7 +27,7 @@ graph TD
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `callEnabled=true` | `introChant` | Chantセクションの種類 |
+| `callEnabled=true` | `introChant` | イントロチャントの種類 |
 | `callEnabled=true` | `mixPattern` | MIXセクションの種類 |
 | `callEnabled=true` | `callDensity` | コーラスでのコール密度 |
 | `callEnabled=true` | `callNotesEnabled` | コールをMIDIノートとして出力 |
@@ -43,7 +46,7 @@ graph TD
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
 | `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random |
-| `arpeggioEnabled=true` | `arpeggioSpeed` | Eighth/Sixteenth/Triplet |
+| `arpeggioEnabled=true` | `arpeggioSpeed` | 8分/16分/3連符 |
 | `arpeggioEnabled=true` | `arpeggioOctaveRange` | 1-3オクターブ |
 | `arpeggioEnabled=true` | `arpeggioGate` | ゲート長(0-100) |
 | `arpeggioEnabled=true` | `arpeggioSyncChord` | コード変更と同期 |
@@ -81,13 +84,18 @@ graph LR
 ```mermaid
 graph TD
     modulationTiming["modulationTiming (!=None)"] --> modulationSemitones
+    modulationSemitones --> vocalHighAdjust["(内部) vocalHigh自動調整"]
 ```
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `modulationTiming != None` | `modulationSemitones` | 転調量(1-4) |
+| `modulationTiming != None` | `modulationSemitones` | 転調量（1-4半音） |
+| `modulationSemitones > 0` | (内部) `effective_vocal_high` | 転調後も音域内に収まるよう自動調整 |
 
-**注意**: `modulationTiming=None`の場合、`modulationSemitones`はバリデーションされない。
+**注意**:
+- `modulationTiming=None`の場合、`modulationSemitones`はバリデーションされない
+- **ボーカル音域の自動調整**: 転調が有効な場合、`effective_vocal_high = vocal_high - modulation_semitones`で計算され、転調後もボーカルが音域内に収まる
+- **全CompositionStyleで有効**: BGMモード（BackgroundMotif, SynthDriven）でも転調が機能する
 
 ### 1.6 Vocal (skipVocalによる排他)
 
@@ -102,74 +110,84 @@ graph TD
     skipVocal --> vocalGroove
 ```
 
-| 条件 | 有効なオプション |
-|------|------------------|
-| `skipVocal=false` | すべてのvocal関連オプション |
-| `skipVocal=true` | vocal関連オプションは全て無視 |
+| 条件 | 有効なオプション | 用途 |
+|------|------------------|------|
+| `skipVocal=false` | すべてのvocal関連オプション | 通常の楽曲生成 |
+| `skipVocal=true` | vocal関連オプションは全て無視 | **BGMのみ生成（Vocalなし）** |
 
-### 1.7 MelodyTemplate選択
-
-```mermaid
-graph TD
-    melodyTemplate["melodyTemplate (0=Auto)"] --> |"!= 0"| MT["指定テンプレートを使用"]
-    melodyTemplate --> |"= 0"| VS["vocalStyleマッピングを使用"]
-    VS --> VSM["VocalStylePreset → MelodyTemplate"]
-```
-
-| vocalStyle | デフォルトテンプレート |
-|------------|-----------------|
-| Standard (1) | PlateauTalk (1) |
-| Vocaloid (2) | RunUpTarget (2) |
-| Idol (4) | PlateauTalk (1) |
-| Ballad (5) | SparseAnchor (5) |
-| Rock (6) | RunUpTarget (2) |
-| CityPop (7) | PlateauTalk (1) |
-| Anime (8) | HookRepeat (4) |
+**重要**: BGM生成後にVocalを追加するAPIは存在しません。代わりに**Vocal-firstワークフロー**を使用してください（[APIリファレンス](/ja/docs/api)参照）。
 
 ---
 
-## 2. CompositionStyle による分岐
+## 2. CompositionStyleによる分岐
 
-`compositionStyle`の値によって有効なオプションが変わります:
+`compositionStyle`の値によって、生成されるトラックと有効なオプションが変わります：
+
+### 2.1 MelodyLead (0) - デフォルト
 
 ```mermaid
 graph TD
-    subgraph MelodyLead["compositionStyle=0 (MelodyLead)"]
-        ML1["全vocalオプション有効"]
-        ML2["arpeggioEnabled → 有効"]
-        ML3["motifオプション → 無視"]
-    end
-
-    subgraph BackgroundMotif["compositionStyle=1 (BackgroundMotif)"]
-        BM1["vocalオプション → 抑制"]
-        BM2["motifRepeatScope ← 有効"]
-        BM3["motifFixedProgression ← 有効"]
-        BM4["motifMaxChordCount ← 有効"]
-    end
-
-    subgraph SynthDriven["compositionStyle=2 (SynthDriven)"]
-        SD1["arpeggioEnabled → 推奨"]
-        SD2["vocalオプション → 抑制"]
-    end
+    ML["compositionStyle=0 (MelodyLead)"]
+    ML --> ML1["全vocalオプション有効"]
+    ML --> ML2["arpeggioEnabled → 有効"]
+    ML --> ML3["motifオプション → 無視"]
+    ML --> ML4["modulation → 有効"]
 ```
+
+**生成トラック**: Vocal → Aux → Bass → Chord → Drums（+ Arpeggio有効時）
+
+### 2.2 BackgroundMotif (1) - BGM専用モード
+
+```mermaid
+graph TD
+    BM["compositionStyle=1 (BackgroundMotif)"]
+    BM --> BM1["vocalオプション → 無効（Vocalトラック生成されない）"]
+    BM --> BM2["Auxトラック → 無効"]
+    BM --> BM3["arpeggioEnabled → 有効（Motif + Arpeggio両方生成）"]
+    BM --> BM4["motifRepeatScope ← 有効"]
+    BM --> BM5["motifFixedProgression ← 有効"]
+    BM --> BM6["motifMaxChordCount ← 有効"]
+    BM --> BM7["modulation → 有効"]
+```
+
+**生成トラック構成**:
+| arpeggioEnabled | 生成されるトラック |
+|-----------------|-------------------|
+| `false` | Motif + Bass + Chord + Drums |
+| `true` | Motif + Bass + Chord + Drums + **Arpeggio** |
+
+### 2.3 SynthDriven (2) - BGM専用モード
+
+```mermaid
+graph TD
+    SD["compositionStyle=2 (SynthDriven)"]
+    SD --> SD1["vocalオプション → 無効（Vocalトラック生成されない）"]
+    SD --> SD2["Auxトラック → 無効"]
+    SD --> SD3["arpeggioEnabled → 自動有効化（常に有効）"]
+    SD --> SD4["Arpeggio中心のアレンジ"]
+    SD --> SD5["modulation → 有効"]
+```
+
+**生成トラック**: Bass + Chord + Drums + Arpeggio（Motifなし）
 
 ---
 
-## 3. 優先順位 (特殊値によるオーバーライド)
+## 3. 優先順位（特殊値によるオーバーライド）
 
 | オプション | 特殊値 | 動作 |
 |------------|--------|------|
 | `bpm` | `0` | スタイルプリセットのデフォルトBPMを使用 |
 | `seed` | `0` | ランダムシードを自動生成 |
-| `melodyTemplate` | `0` | VocalStylePresetのデフォルトテンプレートを使用 |
 | `targetDurationSeconds` | `0` | `formId`で指定した構造パターンを使用 |
+| `vocalStyle` | `0` (Auto) | スタイルに応じたランダム選択 |
+| `melodyTemplate` | `0` (Auto) | スタイルに応じたデフォルト選択 |
 
 ### フローチャート
 
 ```mermaid
 flowchart TD
     A{bpm指定?} -->|bpm=0| B["stylePreset.tempo_defaultを使用"]
-    A -->|bpm>0| C["指定値を使用 (40-240範囲)"]
+    A -->|bpm>0| C["指定値を使用(40-240)"]
 
     D{targetDurationSeconds?} -->|=0| E["formIdのStructurePatternを使用"]
     D -->|>0| F["指定秒数に合わせて構造を自動生成"]
@@ -177,54 +195,91 @@ flowchart TD
 
 ---
 
-## 4. 相互干渉 (バリデーションエラー)
+## 4. バリデーション干渉
 
-### 4.1 エラーコード一覧
+### 4.1 パラメータ有効範囲一覧
 
-| エラー | 原因 |
-|--------|------|
-| `INVALID_STYLE` | `stylePresetId >= 17` |
-| `INVALID_CHORD` | `chordProgressionId >= 22` |
-| `INVALID_FORM` | `formId >= 11` |
-| `INVALID_ATTITUDE` | スタイルで許可されていない`vocalAttitude` |
-| `INVALID_VOCAL_RANGE` | `vocalLow > vocalHigh` または範囲外(36-96) |
-| `INVALID_BPM` | `bpm != 0` かつ `bpm < 40` または `bpm > 240` |
-| `INVALID_MODULATION` | `modulationTiming != None` かつ `modulationSemitones` が1-4範囲外 |
-| `DURATION_TOO_SHORT` | `callEnabled=true` かつ `targetDurationSeconds` が最小秒数未満 |
+| パラメータ | 有効範囲 | エラーコード |
+|-----------|---------|--------------|
+| `stylePresetId` | 0-16 | `INVALID_STYLE` |
+| `key` | 0-11 | `INVALID_KEY` |
+| `bpm` | 0, 40-240 | `INVALID_BPM` |
+| `chordProgressionId` | 0-21 | `INVALID_CHORD` |
+| `formId` | 0-17 | `INVALID_FORM` |
+| `vocalLow`, `vocalHigh` | 36-96, low ≤ high | `INVALID_VOCAL_RANGE` |
+| `compositionStyle` | 0-2 | `INVALID_COMPOSITION_STYLE` |
+| `vocalStyle` | 0-12 | `INVALID_VOCAL_STYLE` |
+| `melodyTemplate` | 0-7 | `INVALID_MELODY_TEMPLATE` |
+| `melodicComplexity` | 0-2 | `INVALID_MELODIC_COMPLEXITY` |
+| `hookIntensity` | 0-3 | `INVALID_HOOK_INTENSITY` |
+| `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
+| `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
+| `modulationSemitones` | 1-4 (timing≠0時) | `INVALID_MODULATION` |
+| `arpeggioPattern` | 0-3 | `INVALID_ARPEGGIO_PATTERN` |
+| `arpeggioSpeed` | 0-2 | `INVALID_ARPEGGIO_SPEED` |
+| `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
+| `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
+| `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
 
-### 4.2 スタイル × Attitude の組み合わせ
+### 4.2 スタイル × vocalAttitude の組み合わせ
 
-各スタイルプリセットには`allowedAttitudes`ビットフラグがあり、許可されていないAttitudeを指定するとエラー:
+各スタイルプリセットには`allowedAttitudes`ビットフラグがあり、許可されていないAttitudeを指定するとエラー：
 
 ```typescript
-// 例: スタイルがCleanとExpressiveのみ許可している場合
+// 例: スタイルがCleanとExpressiveのみ許可
 allowedAttitudes = ATTITUDE_CLEAN | ATTITUDE_EXPRESSIVE  // 0b011 = 3
 
 vocalAttitude = 2 (Raw) → INVALID_ATTITUDE エラー
 ```
 
-### 4.3 Call × Duration の干渉
+許可Attitudeは `midisketch_style_preset_allowed_attitudes(styleId)` で取得可能。
 
-```mermaid
-flowchart TD
-    A["callEnabled=true"] --> B["最小必要秒数を計算<br/>calcMinSeconds(introChant, mixPattern, bpm)"]
-    B --> C{targetDurationSeconds > 0<br/>AND < 最小必要秒数?}
-    C -->|Yes| D["DURATION_TOO_SHORT エラー"]
-    C -->|No| E["有効な設定"]
+### 4.3 modulationTiming × modulationSemitones の依存関係
+
+| modulationTiming | modulationSemitones | 結果 |
+|------------------|---------------------|------|
+| 0 (None) | 任意（無視される） | OK |
+| 1-4 | 0 | `INVALID_MODULATION` |
+| 1-4 | 1-4 | OK |
+| 1-4 | 5以上 | `INVALID_MODULATION` |
+
+### 4.4 callEnabled × targetDurationSeconds × bpm の干渉
+
+```
+IF callEnabled == true AND targetDurationSeconds > 0
+THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
 
-| introChant | mixPattern | BPM=120での最小秒数目安 |
-|------------|------------|-------------------------|
-| None | None | 制限なし |
-| Gachikoi | None | ~24秒 |
-| None | Tiger | ~20秒 |
-| Gachikoi | Tiger | ~40秒 |
+最小時間の計算式:
+```
+min_bars = 24 + introChant_bars + mixPattern_bars
+min_seconds = min_bars * 240 / bpm
+```
+
+| bpm | 基本最小秒数（call有効時） | introChant/mixPattern追加時 |
+|-----|---------------------------|---------------------------|
+| 40 | **144秒** | さらに増加 |
+| 60 | **96秒** | さらに増加 |
+| 120 | **48秒** | さらに増加 |
+| 240 | **24秒** | さらに増加 |
+
+**対処法**: `targetDurationSeconds=0`（自動）を使用してシステムに適切な長さを決定させる。
+
+### 4.5 クラッシュを引き起こす可能性のある組み合わせ
+
+| パターン | 原因 | 対処法 |
+|----------|------|--------|
+| `modulationTiming≠0` + `modulationSemitones=0` | 転調有効だが量が無効 | `modulationSemitones=2`に設定 |
+| `callEnabled=true` + `targetDurationSeconds=30` + `bpm=40` | 時間不足 | `targetDurationSeconds=0`に設定 |
+| `vocalLow=80` + `vocalHigh=60` | 範囲反転 | low ≤ highにする |
+| `vocalLow=30` または `vocalHigh=100` | 範囲外 | 36-96の範囲内にする |
+| `bpm=300` | BPM範囲外 | 40-240の範囲内にする |
 
 ---
 
 ## 5. 推奨組み合わせパターン
 
-### 5.1 シンプルなポップ (デフォルト)
+### 5.1 シンプルなポップ（デフォルト）
 
 ```javascript
 {
@@ -240,185 +295,109 @@ flowchart TD
 
 ```javascript
 {
-  stylePresetId: 16,  // vocaloid preset
+  stylePresetId: 14,  // Anime Opening
   compositionStyle: 0,
-  vocalStyle: 2,      // Vocaloid
-  melodyTemplate: 2,  // RunUpTarget (YOASOBI風)
+  vocalStyle: 2,      // Vocaloid - 高密度・広跳躍
   arpeggioEnabled: true,
-  arpeggioSpeed: 1    // Sixteenth
+  arpeggioSpeed: 1    // 16分
 }
 ```
 
-### 5.3 アイドル曲 (コールあり)
+### 5.3 アイドル曲（コールあり）
 
 ```javascript
 {
-  stylePresetId: 14,  // idol preset
+  stylePresetId: 3,   // Idol Standard
+  vocalStyle: 4,      // Idol
   callEnabled: true,
-  introChant: 1,      // Gachikoi
-  mixPattern: 2,      // Tiger
+  introChant: 1,      // ガチ恋
+  mixPattern: 2,      // 虎火
   callDensity: 2,     // Standard
   callNotesEnabled: true,
   targetDurationSeconds: 180  // 3分以上必要
 }
 ```
 
-### 5.4 BGMモード (Motif重視)
+### 5.4 BGMモード（Motif + Arpeggio）
 
 ```javascript
 {
-  compositionStyle: 1,  // BackgroundMotif
-  skipVocal: true,      // または false で控えめボーカル
+  compositionStyle: 1,  // BackgroundMotif (BGM専用)
+  // skipVocalの指定は不要（BackgroundMotifでは自動的にVocal無効）
+
+  // Motif設定
   motifFixedProgression: true,
   motifMaxChordCount: 4,
-  arpeggioEnabled: true
+
+  // Arpeggio設定（BackgroundMotifでも使用可能）
+  arpeggioEnabled: true,      // → Motif + Arpeggio 両方生成
+  arpeggioPattern: 2,         // UpDown
+  arpeggioSpeed: 1,           // 16分
+  arpeggioOctaveRange: 2,
+  arpeggioGate: 80,
+
+  // 転調設定（BGMモードでも有効）
+  modulationTiming: 1,        // LastChorus
+  modulationSemitones: 2      // +2半音
 }
+// 出力: Motif + Bass + Chord + Drums + Arpeggio（最後のサビで+2半音転調）
+```
+
+### 5.5 BGMモード（Arpeggio中心）
+
+```javascript
+{
+  compositionStyle: 2,  // SynthDriven (BGM専用)
+  // arpeggioEnabledは不要（SynthDrivenでは自動有効）
+  arpeggioPattern: 0,         // Up
+  arpeggioSpeed: 2,           // 3連符
+  arpeggioOctaveRange: 3,
+
+  // 転調設定（BGMモードでも有効）
+  modulationTiming: 2,        // AfterBridge
+  modulationSemitones: 3      // +3半音
+}
+// 出力: Bass + Chord + Drums + Arpeggio (Motifなし、ブリッジ後に+3半音転調)
 ```
 
 ---
 
-## 6. JS API オプション対応表
+## 6. 暗黙的な内部設定
 
-| JS名 | C API名 | 型 | デフォルト |
-|------|---------|-----|----------|
-| `stylePresetId` | `style_preset_id` | uint8 | 0 |
-| `key` | `key` | uint8 | 0 (C) |
-| `bpm` | `bpm` | uint16 | 0 |
-| `seed` | `seed` | uint32 | 0 |
-| `chordProgressionId` | `chord_progression_id` | uint8 | 0 |
-| `formId` | `form_id` | uint8 | 0 |
-| `vocalAttitude` | `vocal_attitude` | uint8 | 0 |
-| `drumsEnabled` | `drums_enabled` | bool | true |
-| `arpeggioEnabled` | `arpeggio_enabled` | bool | false |
-| `arpeggioPattern` | `arpeggio_pattern` | uint8 | 0 |
-| `arpeggioSpeed` | `arpeggio_speed` | uint8 | 1 |
-| `arpeggioOctaveRange` | `arpeggio_octave_range` | uint8 | 2 |
-| `arpeggioGate` | `arpeggio_gate` | uint8 | 80 |
-| `arpeggioSyncChord` | `arpeggio_sync_chord` | bool | true |
-| `vocalLow` | `vocal_low` | uint8 | 55 |
-| `vocalHigh` | `vocal_high` | uint8 | 74 |
-| `skipVocal` | `skip_vocal` | bool | false |
-| `humanize` | `humanize` | bool | false |
-| `humanizeTiming` | `humanize_timing` | uint8 | 50 |
-| `humanizeVelocity` | `humanize_velocity` | uint8 | 50 |
-| `chordExtSus` | `chord_ext_sus` | bool | false |
-| `chordExt7th` | `chord_ext_7th` | bool | false |
-| `chordExt9th` | `chord_ext_9th` | bool | false |
-| `chordExtSusProb` | `chord_ext_sus_prob` | uint8 | 20 |
-| `chordExt7thProb` | `chord_ext_7th_prob` | uint8 | 30 |
-| `chordExt9thProb` | `chord_ext_9th_prob` | uint8 | 25 |
-| `compositionStyle` | `composition_style` | uint8 | 0 |
-| `targetDurationSeconds` | `target_duration_seconds` | uint16 | 0 |
-| `modulationTiming` | `modulation_timing` | uint8 | 0 |
-| `modulationSemitones` | `modulation_semitones` | int8 | 2 |
-| `seEnabled` | `se_enabled` | bool | true |
-| `callEnabled` | `call_enabled` | bool | false |
-| `callNotesEnabled` | `call_notes_enabled` | bool | true |
-| `introChant` | `intro_chant` | uint8 | 0 |
-| `mixPattern` | `mix_pattern` | uint8 | 0 |
-| `callDensity` | `call_density` | uint8 | 2 |
-| `vocalStyle` | `vocal_style` | uint8 | 0 |
-| `melodyTemplate` | `melody_template` | uint8 | 0 |
-| `arrangementGrowth` | `arrangement_growth` | uint8 | 0 |
-| `motifRepeatScope` | `motif_repeat_scope` | uint8 | 0 |
-| `motifFixedProgression` | `motif_fixed_progression` | bool | true |
-| `motifMaxChordCount` | `motif_max_chord_count` | uint8 | 4 |
-| `melodicComplexity` | `melodic_complexity` | uint8 | 1 |
-| `hookIntensity` | `hook_intensity` | uint8 | 2 |
-| `vocalGroove` | `vocal_groove` | uint8 | 0 |
+特定のパラメータを設定すると、内部で他のパラメータが自動的に設定されます。
 
----
+### 6.1 VocalStylePreset → メロディパラメータ
 
-## 7. 図解: オプション依存関係ツリー
+`vocalStyle`を設定すると、内部のメロディ生成パラメータが自動設定されます：
 
-```mermaid
-flowchart TD
-    subgraph Basic["Basic Settings"]
-        stylePresetId
-        key
-        bpm["bpm (0=default)"]
-        seed["seed (0=random)"]
-    end
+| パラメータ | 説明 |
+|-----------|------|
+| `max_leap_interval` | 最大跳躍幅（半音数） |
+| `syncopation_prob` | シンコペーション確率 |
+| `verse/chorus_density_modifier` | セクション別密度係数 |
+| `hook_repetition` | フック反復の有無 |
+| `chorus_long_tones` | コーラスでの長音符 |
+| `tension_usage` | テンション使用率 |
 
-    subgraph Structure
-        formId
-        targetDurationSeconds
-    end
+**VocalStylePreset一覧** (0-12):
 
-    subgraph Vocal["Vocal (skipVocal=false)"]
-        vocalAttitude
-        vocalStyle["vocalStyle (0=Auto)"]
-        melodyTemplate["melodyTemplate (0=Auto)"]
-        vocalRange["vocalLow / vocalHigh"]
-        melodicComplexity
-        hookIntensity
-        vocalGroove
-    end
+| ID | 名前 | 特徴 |
+|----|------|------|
+| 0 | Auto | スタイルに応じてランダム選択 |
+| 1 | Standard | 標準的なポップス |
+| 2 | Vocaloid | 高密度・広跳躍・シンコペーション（歌唱可能） |
+| 3 | UltraVocaloid | 超高速・極端な跳躍（機械向け） |
+| 4 | Idol | キャッチー・フック重視 |
+| 5 | Ballad | ゆったり・長音符重視 |
+| 6 | Rock | パワフル・コーラス強調 |
+| 7 | CityPop | おしゃれ・テンション使用 |
+| 8 | Anime | ドラマチック・フック強め |
+| 9 | BrightKira | 明るい・キラキラ |
+| 10 | CoolSynth | クール・16分音符多め |
+| 11 | CuteAffected | かわいい・控えめシンコペ |
+| 12 | PowerfulShout | 力強い・長音符＋密度上昇 |
 
-    subgraph Arpeggio["Arpeggio (arpeggioEnabled=true)"]
-        arpeggioPattern
-        arpeggioSpeed
-        arpeggioOctaveRange
-        arpeggioGate
-        arpeggioSyncChord
-    end
-
-    subgraph CallSystem["Call System (callEnabled=true)"]
-        introChant
-        mixPattern
-        callDensity
-        callNotesEnabled
-    end
-
-    subgraph ChordExt["Chord Extensions"]
-        chordExtSus --> chordExtSusProb
-        chordExt7th --> chordExt7thProb
-        chordExt9th --> chordExt9thProb
-    end
-
-    subgraph Modulation["Modulation (timing!=None)"]
-        modulationSemitones
-    end
-
-    subgraph Humanize["Humanize (humanize=true)"]
-        humanizeTiming
-        humanizeVelocity
-    end
-
-    stylePresetId -.->|"デフォルト値決定"| bpm
-    stylePresetId -.->|"制限"| vocalAttitude
-    targetDurationSeconds -.->|"干渉"| mixPattern
-```
-
----
-
-## 8. 暗黙的な内部設定 (Auto-Settings)
-
-特定のパラメータを設定すると、内部で他のパラメータが自動的に設定/変更される関係です。
-
-### 8.1 VocalStylePreset → MelodyTemplate
-
-`vocalStyle`を設定すると、`MelodyTemplate`が自動選択されます：
-
-| vocalStyle | MelodyTemplate | 主な特性 |
-|------------|----------------|----------|
-| `Auto (0)` | セクション依存 | Verse=PlateauTalk、Chorus=RunUpTarget |
-| `Standard (1)` | PlateauTalk (1) | plateau_ratio=0.40、バランス型 |
-| `Vocaloid (2)` | RunUpTarget (2) | 高密度、広い跳躍 |
-| `UltraVocaloid (3)` | RunUpTarget (2) | 超高密度（32分音符） |
-| `Idol (4)` | PlateauTalk (1) | 高16分率、フック |
-| `Ballad (5)` | SparseAnchor (5) | ロングノート、スパース |
-| `Rock (6)` | RunUpTarget (2) | 音域シフト |
-| `CityPop (7)` | PlateauTalk (1) | グルービー、シンコペ |
-| `Anime (8)` | HookRepeat (4) | フック重視 |
-| `BrightKira (9)` | HookRepeat (4) | 高音域 |
-| `CoolSynth (10)` | PlateauTalk (1) | エレクトロニック |
-| `CuteAffected (11)` | HookRepeat (4) | プレイフル |
-| `PowerfulShout (12)` | RunUpTarget (2) | 激しい |
-
-**重要**: `melodyTemplate`を非0の値で明示的に設定すると、VocalStylePresetのデフォルトを上書きします。
-
-### 8.2 MelodicComplexity → 複数パラメータ
+### 6.2 MelodicComplexity → 複数パラメータ
 
 | melodicComplexity | 自動設定 |
 |-------------------|----------|
@@ -426,88 +405,193 @@ flowchart TD
 | `Standard (1)` | 変更なし（デフォルト） |
 | `Complex (2)` | `note_density *= 1.3`, `max_leap_interval *= 1.5` (max 12), `tension_usage *= 1.5`, `sixteenth_note_ratio *= 1.5` (max 0.5), `syncopation_prob *= 1.5` (max 0.5) |
 
-### 8.3 CompositionStyle → 暗黙的動作
+### 6.3 VocalAttitude → ピッチ選択
+
+| vocalAttitude | ピッチ候補 | 音楽的特徴 |
+|---------------|-----------|-----------|
+| `Clean (0)` | コードトーン（1, 3, 5）のみ | 安全・協和的・安定 |
+| `Expressive (1)` | コードトーン + テンション（7th, 9th） | カラフル・遅延解決 |
+| `Raw (2)` | 全スケールトーン | エッジー・ノンコードトーン着地 |
+
+### 6.4 CompositionStyle → 暗黙的動作
 
 | compositionStyle | 暗黙的に発生する動作 |
 |------------------|---------------------|
-| `BackgroundMotif (1)` | **modulation自動無効化**, vocal音量抑制 (velocity_scale適用), シンプルな音程制限 |
-| `SynthDriven (2)` | **modulation自動無効化**, **arpeggio自動有効化** (arpeggioEnabled=falseでも有効), vocal音量抑制 (velocity_scale=0.75) |
+| `BackgroundMotif (1)` | **Vocal/Aux完全無効化**（生成されない）, Motifトラック生成, **modulation有効** |
+| `SynthDriven (2)` | **arpeggio自動有効化**（arpeggioEnabled=falseでも有効）, **Vocal/Aux完全無効化**, **modulation有効** |
 
 ```javascript
 // 例: arpeggioEnabledを設定していなくてもアルペジオが生成される
 {
-  compositionStyle: 2,  // SynthDriven
-  arpeggioEnabled: false  // ← 無視される！アルペジオは自動で有効
+  compositionStyle: 2,  // SynthDriven (BGM専用)
+  arpeggioEnabled: false,  // ← 無視される！アルペジオは自動で有効
+  modulationTiming: 1,     // BGMモードでも有効
+  modulationSemitones: 2
+  // 注意: このモードではVocalトラックは生成されない
 }
 ```
 
-### 8.4 VocalGrooveFeel → 内部リズムパラメータ
+### 6.5 VocalGrooveFeel → タイミング調整
 
-| vocalGroove | 自動設定 |
-|-------------|----------|
+| vocalGroove | 効果 |
+|-------------|------|
 | `Straight (0)` | 変更なし |
-| `Swing (1)` | `swing_amount=0.25`, `syncopation_boost=0.1` |
-| `HipHop (2)` | `offbeat_preference=0.4`, `syncopation_boost=0.2` |
-| `Latin (3)` | `syncopation_boost=0.4`, `offbeat_preference=0.3` |
-| `RnB (4)` | `swing_amount=0.15`, `syncopation_boost=0.15` |
+| `OffBeat (1)` | オンビートを遅らせる（+30 ticks） |
+| `Swing (2)` | 8分音符の2拍目を遅らせる |
+| `Syncopated (3)` | ビート2,4を先取り（-30 ticks） |
+| `Driving16th (4)` | 16分音符を強調 |
+| `Bouncy8th (5)` | 8分音符にバウンス感 |
 
-### 8.5 BPM ≥ 140 → Vocal密度ブースト
+### 6.6 hookIntensity → フレーズ生成変更
 
-BPMが140以上の場合、自動的にボーカル密度が上昇します:
-
-```
-if (bpm >= 140) {
-  note_density *= 1.1  // 10%増加
-  sixteenth_note_ratio += 0.1  // 16分音符比率増加
-}
-```
-
-### 8.6 drumsEnabled=false → Bass Rhythmic Drive
-
-ドラムが無効の場合、ベースが自動的にリズム担当に切り替わります:
-
-| drumsEnabled | セクション | Bass動作 |
-|--------------|-----------|----------|
-| `false` | Intro/Interlude/Outro | `RootFifth`パターン |
-| `false` | A/B/Chorus/Bridge | `RhythmicDrive`パターン (強調8分音符) |
-
-### 8.7 vocalNoteDensity=0 → Mood密度適用
-
-`vocalNoteDensity`が0（デフォルト）の場合、`stylePresetId`から派生するMood値に基づいて密度が自動計算されます:
-
-```
-if (vocal_note_density == 0) {
-  note_density = preset.melody.note_density * (mood_density + 0.5)
-}
-```
-
-### 8.8 hookIntensity → フレーズ生成変更
-
-| hookIntensity | 効果 |
-|---------------|------|
-| `Low (0)` | フックなし、変化重視 |
-| `Medium (1)` | 適度なフック（デフォルト） |
-| `High (2)` | 強いフック反復、キャッチーなメロディ |
+| hookIntensity | duration乗数 | velocity加算 | 対象セクション |
+|---------------|-------------|-------------|----------------|
+| `Off (0)` | - | - | なし |
+| `Light (1)` | ×1.3 | +5 | Chorus, B |
+| `Normal (2)` | ×1.5 | +10 | Chorus, B |
+| `Strong (3)` | ×2.0 | +15 | **全セクション** |
 
 ---
 
-## 9. 内部パラメータ影響図
+## 7. オプション依存関係ツリー
 
-```mermaid
-flowchart TD
-    Input["SongConfig入力"] --> vocalStyle
-    Input --> compositionStyle
-    Input --> melodicComplexity
-
-    vocalStyle --> VocalParams["note_density<br/>min_note_div<br/>syncopation_prob<br/>max_leap_interval<br/>vocal_rest_ratio<br/>allow_extreme_leap"]
-
-    compositionStyle --> Modulation["modulation<br/>(自動無効化)"]
-    compositionStyle --> SynthDriven["SynthDriven時<br/>arpeggioEnabled = true (強制)"]
-
-    melodicComplexity --> ComplexParams["note_density (乗算調整)<br/>max_leap_interval<br/>tension_usage"]
-
-    VocalParams --> Final["最終パラメータ<br/>(内部使用)"]
-    Modulation --> Final
-    SynthDriven --> Final
-    ComplexParams --> Final
 ```
+SongConfig
+├── Basic Settings
+│   ├── stylePresetId     ─────┐
+│   ├── key                    │ スタイルが他オプションの
+│   ├── bpm (0=default)        │ デフォルト値を決定
+│   └── seed (0=random)        │
+│                              ▼
+├── Structure ◄────────────────┤
+│   ├── formId                 │
+│   └── targetDurationSeconds ─┴─▶ formIdと排他(0以外なら自動生成)
+│
+├── Vocal (skipVocal=falseの場合のみ)
+│   ├── vocalAttitude  ◄────────── styleで制限あり
+│   ├── vocalStyle     ◄────────── 0=Auto, 1-12=明示的プリセット
+│   ├── vocalLow/High
+│   ├── melodicComplexity
+│   ├── hookIntensity
+│   └── vocalGroove
+│
+├── Arpeggio (arpeggioEnabled=trueの場合のみ)
+│   ├── arpeggioPattern
+│   ├── arpeggioSpeed
+│   ├── arpeggioOctaveRange
+│   ├── arpeggioGate
+│   └── arpeggioSyncChord
+│
+├── Call System (callEnabled=trueの場合のみ)
+│   ├── introChant
+│   ├── mixPattern  ─────────────▶ targetDurationSecondsと干渉
+│   ├── callDensity
+│   └── callNotesEnabled
+│
+├── Chord Extensions (各enabledがtrueの場合のみprob有効)
+│   ├── chordExtSus  → chordExtSusProb
+│   ├── chordExt7th  → chordExt7thProb
+│   └── chordExt9th  → chordExt9thProb
+│
+├── Modulation (modulationTiming!=Noneの場合のみ)
+│   └── modulationSemitones
+│
+├── Humanize (humanize=trueの場合のみ)
+│   ├── humanizeTiming
+│   └── humanizeVelocity
+│
+└── CompositionStyle依存
+    ├── compositionStyle=0 (MelodyLead): Vocal/Aux有効・標準
+    ├── compositionStyle=1 (BackgroundMotif): BGM専用(Vocal/Aux無効)
+    │   ├── motifRepeatScope
+    │   ├── motifFixedProgression
+    │   └── motifMaxChordCount
+    └── compositionStyle=2 (SynthDriven): BGM専用, arpeggio自動有効
+```
+
+---
+
+## 8. ワークフロー別のオプション使用
+
+### 8.1 generateVocal(config) で使用されるパラメータ
+
+| カテゴリ | パラメータ | 使用 | 説明 |
+|----------|-----------|:----:|------|
+| **基本** | `stylePresetId` | ✅ | スタイル決定 |
+| | `key` | ✅ | キー（内部はCメジャー、出力時に移調） |
+| | `bpm` | ✅ | テンポ（0=スタイルデフォルト） |
+| | `seed` | ✅ | ランダムシード |
+| | `chordProgressionId` | ✅ | コード進行（メロディ生成の参照） |
+| | `formId` | ✅ | 構造パターン |
+| **ボーカル** | `vocalLow` | ✅ | 音域下限 |
+| | `vocalHigh` | ✅ | 音域上限 |
+| | `vocalAttitude` | ✅ | 表現スタイル |
+| | `vocalStyle` | ✅ | ボーカルスタイルプリセット |
+| | `melodicComplexity` | ✅ | メロディの複雑さ |
+| | `hookIntensity` | ✅ | フック強度 |
+| | `vocalGroove` | ✅ | グルーブ感 |
+| **無視** | `drumsEnabled` | ❌ | Vocalのみ生成 |
+| | `arpeggioEnabled` | ❌ | Vocalのみ生成 |
+| | `humanize` | ❌ | 伴奏追加時に適用 |
+
+### 8.2 generateAccompaniment(config?) で使用されるパラメータ
+
+| カテゴリ | パラメータ | 使用 | 説明 |
+|----------|-----------|:----:|------|
+| **トラック** | `drumsEnabled` | ✅ | ドラム生成 |
+| | `arpeggioEnabled` | ✅ | アルペジオ生成 |
+| | `arpeggio.*` | ✅ | アルペジオ設定 |
+| | `chordExt*` | ✅ | コード拡張設定 |
+| **後処理** | `humanize` | ✅ | ヒューマナイズ適用 |
+| | `humanizeTiming` | ✅ | タイミング変動 |
+| | `humanizeVelocity` | ✅ | ベロシティ変動 |
+| **SE/Call** | `seEnabled` | ✅ | SEトラック生成 |
+| | `callEnabled` | ✅ | コール機能 |
+| | `callDensity` | ✅ | コール密度 |
+
+### 8.3 regenerateVocal(configOrSeed) で使用されるパラメータ
+
+**シード指定の場合** (`regenerateVocal(12345)`):
+- `seed`のみ変更、他のパラメータは前回の`generateVocal`設定を継続
+
+**VocalConfig指定の場合** (`regenerateVocal({...})`):
+| パラメータ | 使用 | 説明 |
+|-----------|:----:|------|
+| `seed` | ✅ | 新しいランダムシード |
+| `vocalLow` | ✅ | 音域下限を変更 |
+| `vocalHigh` | ✅ | 音域上限を変更 |
+| `vocalAttitude` | ✅ | 表現スタイルを変更 |
+| `vocalStyle` | ✅ | ボーカルスタイルプリセットを変更 |
+| `melodicComplexity` | ✅ | 複雑さを変更 |
+| `hookIntensity` | ✅ | フック強度を変更 |
+| `vocalGroove` | ✅ | グルーブを変更 |
+
+**注意**: コード進行と構造は変更されません（generateVocal時の設定を継続）。
+
+---
+
+## 9. パラメータ適用フロー
+
+```
+SongConfig
+    │
+    ├── stylePresetId ──→ mood, compositionStyle, bpm(default), melody_params
+    │                           │
+    │                           ▼ (明示設定で上書き可)
+    ├── compositionStyle ──────────────→ 最終compositionStyle
+    ├── bpm ───────────────────────────→ 最終BPM
+    │
+    ├── vocalStyle ─────────→ melody_params上書き ─────→ │
+    │       │                                            │
+    │       └── (Auto) ────→ ランダム選択               │
+    │                                                    ▼
+    ├── melodicComplexity ─→ melody_params乗算調整 ────→ 最終melody_params
+    │
+    ├── hookIntensity ─────→ Chorus/Bセクションのノート調整
+    │
+    ├── vocalGroove ───────→ 全ノートのタイミング調整
+    │
+    └── callEnabled ──────→ (false=Auto時) vocalStyleで判定 → call_enabled
+```
+
+**適用順序**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity`

@@ -47,7 +47,7 @@ flowchart TB
 
 ## Vocal Track
 
-**Source:** `src/track/vocal.cpp` (~470 lines), `src/track/melody_designer.cpp` (~520 lines)
+**Source:** `src/track/vocal.cpp` (~960 lines), `src/track/melody_designer.cpp` (~1280 lines)
 
 The vocal system uses a **template-driven melody designer** for predictable, stylistically-accurate melody generation.
 
@@ -135,11 +135,30 @@ struct VocalRange {
 };
 ```
 
+### Melodic Embellishment
+
+The vocal track uses a melodic embellishment system that adds musical "play" to chord-tone melodies:
+
+| NCT Type | Description | Placement |
+|----------|-------------|-----------|
+| **ChordTone** | Harmonic tone (baseline) | Strong beats |
+| **PassingTone** | Stepwise motion between chord tones | Weak beats |
+| **NeighborTone** | Step away and return to same chord tone | Weak beats |
+| **Appoggiatura** | Accented dissonance resolving by step | Strong beats |
+| **Anticipation** | Early arrival of next chord's tone | Before chord change |
+| **Tension** | 9th, 11th, 13th from chord extensions | Based on style |
+
+Configuration varies by mood:
+- **Bright**: More chord tones, less dissonance
+- **Jazzy**: More tensions, syncopation
+- **Ballad**: Balanced with expressive appoggiaturas
+- **J-POP**: Prefers pentatonic scale (yonanuki) intervals
+
 ---
 
 ## Aux Track
 
-**Source:** `src/track/aux_track.cpp` (~440 lines)
+**Source:** `src/track/aux_track.cpp` (~1170 lines)
 
 The Aux (auxiliary) track provides **sub-melody support** for the main vocal. It's not a counter-melody, but a "perceptual control layer" that enhances the main melody.
 
@@ -182,11 +201,20 @@ Each melody template automatically selects appropriate aux functions:
 - Lower velocity (0.5-0.8× vocal velocity)
 - Uses HarmonyContext to avoid dissonance with vocal
 
+### Chorus Behavior
+
+In chorus sections, Aux track adapts its behavior:
+
+- **Reduced density**: Aux takes a backseat to let vocal shine
+- **Lower register**: Moves to lower range to avoid vocal collision
+- **Simplified patterns**: Uses more sustained notes, less busy patterns
+- **Phrase endings**: Respects phrase boundaries with proper resolution
+
 ---
 
 ## Chord Track
 
-**Source:** `src/track/chord_track.cpp` (~820 lines)
+**Source:** `src/track/chord_track.cpp` (~2000 lines)
 
 Generates harmonic voicings with voice leading optimization.
 
@@ -251,7 +279,7 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ## Bass Track
 
-**Source:** `src/track/bass.cpp` (~450 lines)
+**Source:** `src/track/bass.cpp` (~1170 lines)
 
 Generates the harmonic foundation with root-focused patterns.
 
@@ -294,7 +322,7 @@ uint8_t approachNote = nextRoot - 1; // chromatic approach
 
 ## Drums Track
 
-**Source:** `src/track/drums.cpp` (~680 lines)
+**Source:** `src/track/drums.cpp` (~880 lines)
 
 Generates drum patterns with fills and dynamics.
 
@@ -355,9 +383,9 @@ Velocity-reduced snare articulations for groove:
 
 ## Motif Track
 
-**Source:** `src/track/motif.cpp` (~470 lines)
+**Source:** `src/track/motif.cpp` (~630 lines)
 
-For `BackgroundMotif` composition style. Creates repeating patterns.
+For `BackgroundMotif` composition style (BGM-only mode). Creates repeating patterns that serve as the primary melodic element, allowing the vocal to take a background role or be omitted entirely.
 
 ### Parameters
 
@@ -399,9 +427,9 @@ flowchart TD
 
 ## Arpeggio Track
 
-**Source:** `src/track/arpeggio.cpp` (~200 lines)
+**Source:** `src/track/arpeggio.cpp` (~275 lines)
 
-For `SynthDriven` composition style. Creates arpeggiated patterns.
+For `SynthDriven` composition style (BGM-only mode). Creates arpeggiated patterns that serve as the primary harmonic/melodic element in electronic-style tracks.
 
 ### Parameters
 

@@ -7,24 +7,28 @@ This document explains the internal architecture of [MIDI Sketch](https://github
 ```
 midi-sketch/
 ├── src/
-│   ├── core/              # Core generation engine
+│   ├── core/              # Core generation engine (~4500 lines total)
 │   │   ├── pitch_utils.h/cpp      # Pitch operations (tessitura, intervals)
 │   │   ├── chord_utils.h/cpp      # Chord operations (chord tones)
 │   │   ├── melody_templates.h/cpp # 7 melody template definitions
+│   │   ├── melody_embellishment.h/cpp # NCT insertion system
 │   │   ├── harmony_context.h/cpp  # Inter-track collision detection
+│   │   ├── piano_roll_safety.h/cpp # Piano roll visualization API
 │   │   ├── generator.h/cpp        # Central orchestrator
-│   │   └── types.h                # Type definitions (~780 lines)
-│   ├── midi/              # MIDI output (SMF Type 1)
+│   │   └── basic_types.h          # Core type definitions
+│   ├── midi/              # MIDI output (SMF Type 1, MIDI 2.0)
 │   ├── track/             # Track generators
-│   │   ├── vocal.cpp              # Vocal coordination (~470 lines)
-│   │   ├── melody_designer.cpp    # Template-driven melody (~520 lines)
-│   │   ├── aux_track.cpp          # Aux sub-melody (~440 lines)
+│   │   ├── vocal.cpp              # Vocal coordination (~960 lines)
+│   │   ├── melody_designer.cpp    # Template-driven melody (~1280 lines)
+│   │   ├── aux_track.cpp          # Aux sub-melody (~1170 lines)
+│   │   ├── chord_track.cpp        # Chord voicing (~2000 lines)
+│   │   ├── bass.cpp               # Bass patterns (~1170 lines)
 │   │   └── ...                    # Other track generators
 │   ├── analysis/          # Dissonance analysis
 │   ├── preset/            # Preset definitions
 │   ├── midisketch.h       # Public C++ API
-│   └── midisketch_c.h     # C API (WASM interface, ~360 lines)
-├── tests/                 # Google Test suite (619+ tests)
+│   └── midisketch_c.h     # C API (WASM interface, ~650 lines)
+├── tests/                 # Google Test suite (770+ tests)
 ├── dist/                  # WASM distribution
 └── demo/                  # Browser demo
 ```
@@ -39,7 +43,11 @@ The main entry point providing a high-level API:
 class MidiSketch {
   void generate(const GeneratorParams& params);
   void generateFromConfig(const SongConfig& config);
-  void regenerateMelody(uint32_t new_seed = 0);
+  void regenerateVocal(const VocalConfig& config);
+  void generateVocal(const SongConfig& config);
+  void generateAccompaniment(const AccompanimentConfig& config);
+  void regenerateAccompaniment(uint32_t seed);
+  void setVocalNotes(const SongConfig& config, const NoteInput* notes, size_t count);
 
   std::vector<uint8_t> getMidi() const;
   std::string getEventsJson() const;
@@ -88,6 +96,8 @@ struct Song {
 
 ## Data Flow
 
+### Standard Generation (BGM-first)
+
 ```mermaid
 flowchart TD
     subgraph Input
@@ -100,14 +110,39 @@ flowchart TD
         S1 --> S2[generateBass]
         S2 --> S3[generateChord]
         S3 --> S4[generateVocal]
-        S4 --> S5[generateDrums]
-        S5 --> S6[generateMotif]
-        S6 --> S7[generateArpeggio]
-        S7 --> S8[applyTransitionDynamics]
-        S8 --> S9[applyHumanization]
+        S4 --> S5[generateAux]
+        S5 --> S6[generateDrums]
+        S6 --> S7[generateMotif]
+        S7 --> S8[generateArpeggio]
+        S8 --> S9[applyTransitionDynamics]
+        S9 --> S10[applyHumanization]
     end
 
-    S9 --> Song
+    S10 --> Song
+    Song --> MW[MidiWriter]
+    MW --> MIDI["SMF Type 1 Binary"]
+```
+
+### Vocal-First Generation
+
+```mermaid
+flowchart TD
+    subgraph Input
+        C[SongConfig] --> GV
+    end
+
+    subgraph VocalFirst ["Vocal-First Workflow"]
+        GV[generateVocal] --> V[Vocal Track]
+        V --> GA[generateAccompaniment]
+        GA --> S1[generateAux]
+        S1 --> S2[generateBass]
+        S2 --> S3[generateChord]
+        S3 --> S4[generateDrums]
+        S4 --> S5[generateMotif]
+        S5 --> S6[generateArpeggio]
+    end
+
+    S6 --> Song
     Song --> MW[MidiWriter]
     MW --> MIDI["SMF Type 1 Binary"]
 ```

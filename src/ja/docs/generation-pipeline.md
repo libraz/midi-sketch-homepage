@@ -4,28 +4,49 @@
 
 ## パイプライン概要
 
+MIDI Sketchはコンポジションスタイルとユースケースに応じて複数の生成ワークフローをサポートしています。
+
+### ボーカル先行ワークフロー
+
+反復的なボーカル調整用：
+
+```mermaid
+flowchart TD
+    subgraph Step1 ["ステップ1: ボーカル生成"]
+        V1[generateVocal] --> V2["プレビュー/イテレーション"]
+        V2 -->|満足していない| V3[regenerateVocal]
+        V3 --> V2
+    end
+
+    subgraph Step2 ["ステップ2: 伴奏"]
+        A1[generateAccompaniment]
+        A1 --> A2["Aux → ベース → コード → ドラム"]
+    end
+
+    V2 -->|満足| A1
+```
+
+### BGM専用モード
+
+`BackgroundMotif`と`SynthDriven`コンポジションスタイルでは、ボーカル生成がスキップされます：
+
 ```mermaid
 flowchart LR
-    subgraph Phase1 ["フェーズ1: 構造"]
-        P1["アレンジメント構築"]
+    subgraph BGMMode ["BGM専用パイプライン"]
+        B1["構造"] --> B2["モチーフ/アルペジオ"]
+        B2 --> B3["ベース"]
+        B3 --> B4["コード"]
+        B4 --> B5["ドラム"]
     end
-
-    subgraph Phase2 ["フェーズ2: リズムセクション"]
-        P2A["ベース"] --> P2B["コード"]
-        P2B --> P2C["ドラム"]
-    end
-
-    subgraph Phase3 ["フェーズ3: メロディ"]
-        P3A["ボーカル"] --> P3B["モチーフ"]
-        P3B --> P3C["アルペジオ"]
-    end
-
-    subgraph Phase4 ["フェーズ4: 仕上げ"]
-        P4A["トランジション・ダイナミクス"] --> P4B["ヒューマナイズ"]
-    end
-
-    Phase1 --> Phase2 --> Phase3 --> Phase4
 ```
+
+## CompositionStyleによる分岐
+
+| スタイル | 主要トラック | ボーカル | 生成順序 |
+|----------|--------------|----------|----------|
+| **MelodyLead** | ボーカル | あり | Vocal → Aux → Bass → Chord → Drums |
+| **BackgroundMotif** | モチーフ | なし | Motif → Bass → Chord → Drums |
+| **SynthDriven** | アルペジオ | なし | Bass → Chord → Arpeggio → Drums |
 
 ## フェーズ1: 構造構築
 
@@ -63,23 +84,94 @@ struct Section {
 };
 ```
 
-## フェーズ2: リズムセクション
+## フェーズ2: トラック生成
 
-### ベース生成
+### ボーカルトラック（MelodyLeadのみ）
 
-ベースは和声の基礎として最初に生成：
+フレーズキャッシュとテンプレート駆動設計を持つ最も複雑な生成器：
 
 ```mermaid
 flowchart TD
-    A[小節のコードを取得] --> B[ルート音を決定]
-    B --> C{セクションタイプ?}
-    C -->|Chorus| D[高いオクターブ]
-    C -->|Intro| E[低いオクターブ]
-    C -->|その他| F[中オクターブ]
-    D --> G[アプローチノートを追加]
-    E --> G
-    F --> G
-    G --> H[パターンを適用]
+    A["セクション取得"] --> B{"フレーズキャッシュあり?"}
+    B -->|あり| C["キャッシュからフレーズ取得"]
+    B -->|なし| D["メロディテンプレート選択"]
+    D --> E["フレーズ輪郭を生成"]
+    E --> F["強拍にコードトーン適用"]
+    F --> G["装飾を追加"]
+    G --> H["キャッシュに保存"]
+    C --> I["ボイスリーディング適用"]
+    H --> I
+    I --> J["アティチュード適用"]
+    J --> K["音域クランプ"]
+```
+
+**メロディテンプレート:**
+
+| テンプレート | 特徴 |
+|--------------|------|
+| ArchShape | ピークまで上昇し、下降 |
+| DescendingLine | フレーズ全体で緩やかに下降 |
+| PhraseEcho | メロディモチーフを繰り返し |
+| StepwiseFlow | 滑らかな順次進行 |
+| LeapAndStep | 跳躍後に順次進行で埋める |
+| PentatonicFlow | ペンタトニックスケール使用 |
+| SyncopatedGroove | オフビート強調 |
+
+**ボーカルアティチュード:**
+
+| アティチュード | 特徴 |
+|----------------|------|
+| Clean | コードトーンのみ、オンビートリズム |
+| Expressive | 遅延解決のテンション、微妙なタイミング変動 |
+| Raw | 非コードトーン、フレーズ境界の破壊 |
+
+### Auxトラック
+
+ボーカルに適応する副旋律サポートを生成：
+
+```mermaid
+flowchart TD
+    A["ボーカルフレーズを分析"] --> B{"セクションタイプ?"}
+    B -->|Chorus| C["密度を下げ、低音域へ"]
+    B -->|Verse| D["通常密度"]
+    C --> E["Aux機能を選択"]
+    D --> E
+    E --> F{"機能タイプ"}
+    F -->|PulseLoop| G["リズミックアンカーパルス"]
+    F -->|TargetHint| H["メロディターゲットノート"]
+    F -->|GrooveAccent| I["シンコペーションアクセント"]
+    G --> J["ボーカル衝突を回避"]
+    H --> J
+    I --> J
+```
+
+**Aux機能:**
+
+| 機能 | 目的 | 使用タイミング |
+|------|------|----------------|
+| PulseLoop | リズミックアンカー | ストレートリズム |
+| TargetHint | メロディターゲットの提示 | 複雑なメロディ |
+| GrooveAccent | リズミックアクセント | シンコペーショングルーブ |
+
+### ベース生成
+
+ベースは和声の基礎を提供し、ボーカルがある場合は適応：
+
+```mermaid
+flowchart TD
+    A["小節のコードを取得"] --> B["ルート音を決定"]
+    B --> C{"ボーカルあり?"}
+    C -->|あり| D["衝突回避を適用"]
+    C -->|なし| E["標準生成"]
+    D --> F{"セクションタイプ?"}
+    E --> F
+    F -->|Chorus| G["高いオクターブ"]
+    F -->|Intro| H["低いオクターブ"]
+    F -->|その他| I["中オクターブ"]
+    G --> J["アプローチノートを追加"]
+    H --> J
+    I --> J
+    J --> K["パターンを適用"]
 ```
 
 **ベースパターン:**
@@ -90,14 +182,21 @@ flowchart TD
 
 ### コード生成
 
-コードボイシングはベース分析を使用して協調：
+コードボイシングはベースとボーカルと協調：
 
 ```cpp
 void Generator::generateChord() {
     BassAnalysis bassAnalysis = analyzeBass(song_.bass);
+    VocalAnalysis vocalAnalysis = analyzeVocal(song_.vocal);
+
     // ベースがルートを持つ場合はルートレスボイシング
     if (bassAnalysis.hasRootOnBeat1) {
         useRootlessVoicing();
+    }
+
+    // ボーカルとの衝突を回避
+    if (vocalAnalysis.hasNoteAt(tick)) {
+        adjustVoicing(vocalAnalysis.pitchAt(tick));
     }
 }
 ```
@@ -128,46 +227,9 @@ void Generator::generateChord() {
 - スネアロール
 - セクション遷移でのコンビネーションフィル
 
-## フェーズ3: メロディ生成
-
-### ボーカルトラック
-
-フレーズキャッシュを持つ最も複雑な生成器：
-
-```mermaid
-flowchart TD
-    A[セクション取得] --> B{フレーズキャッシュあり?}
-    B -->|あり| C[キャッシュからフレーズ取得]
-    B -->|なし| D[新規フレーズ生成]
-    D --> E[キャッシュに保存]
-    C --> F[ボイスリーディング適用]
-    E --> F
-    F --> G{拍の強さ?}
-    G -->|強拍| H[コードトーン優先]
-    G -->|弱拍| I[テンションを許可]
-    H --> J[ボーカルアティチュード適用]
-    I --> J
-    J --> K[音域クランプ]
-```
-
-**ボーカルアティチュード:**
-
-| アティチュード | 特徴 |
-|----------------|------|
-| Clean | コードトーンのみ、オンビートリズム |
-| Expressive | 遅延解決のテンション、微妙なタイミング変動 |
-| Raw | 非コードトーン、フレーズ境界の破壊 |
-
-**非コードトーン:**
-
-- 4-3サスペンション
-- アンティシペーション
-- パッシングトーン
-- ネイバートーン
-
 ### モチーフトラック（BackgroundMotifスタイル）
 
-繰り返しパターンを生成：
+主要なメロディ要素として繰り返しパターンを生成：
 
 ```cpp
 MotifParams params {
@@ -180,7 +242,7 @@ MotifParams params {
 
 ### アルペジオトラック（SynthDrivenスタイル）
 
-アルペジオパターンを生成：
+主要なハーモニック要素としてアルペジオパターンを生成：
 
 ```cpp
 ArpeggioParams params {
@@ -191,7 +253,14 @@ ArpeggioParams params {
 };
 ```
 
-## フェーズ4: 仕上げ
+### SEトラック
+
+セクションマーカーとサウンドエフェクトキューを生成：
+- セクション境界マーカー（テキストイベント）
+- コールタイミングヒント（callEnabled時）
+- イントロチャントマーカー
+
+## フェーズ3: 仕上げ
 
 ### トランジション・ダイナミクス
 
@@ -199,8 +268,8 @@ ArpeggioParams params {
 
 ```mermaid
 flowchart LR
-    A[Bセクション] -->|クレシェンド| B[サビ]
-    B -->|ステップアップ| C[サビ2]
+    A["Bセクション"] -->|クレシェンド| B["サビ"]
+    B -->|ステップアップ| C["サビ2"]
 ```
 
 **セクションエネルギー倍率:**
@@ -228,17 +297,18 @@ void applyHumanization(Song& song, float intensity) {
 
 ## MIDI出力
 
-最後に、SongをSMF Type 1に変換：
+最後に、SongをSMF Type 1または Type 2に変換：
 
 ```mermaid
 flowchart TD
     A[Song] --> B[MidiWriter::build]
-    B --> C[ヘッダー書き込み]
-    C --> D[各トラックを処理]
-    D --> E[NoteEventをMidiEventに変換]
-    E --> F[目標キーへ移調を適用]
-    F --> G[可変長タイミングを書き込み]
-    G --> H[SMF Type 1 バイナリ]
+    B --> C["ヘッダー書き込み"]
+    C --> D["生成メタデータを埋め込み"]
+    D --> E["各トラックを処理"]
+    E --> F["NoteEventをMidiEventに変換"]
+    F --> G["目標キーへ移調を適用"]
+    G --> H["可変長タイミングを書き込み"]
+    H --> I["SMF バイナリ"]
 ```
 
 **トラックマッピング:**
@@ -246,10 +316,11 @@ flowchart TD
 | トラック | チャンネル | プログラム |
 |----------|------------|------------|
 | Vocal | 0 | 0（ピアノ） |
-| Chord | 1 | 4（エレピ） |
-| Bass | 2 | 33（エレベ） |
-| Motif | 3 | 81（シンセリード） |
-| Arpeggio | 4 | 81（ソウリード） |
+| Aux | 1 | 4（エレピ） |
+| Chord | 2 | 4（エレピ） |
+| Bass | 3 | 33（エレベ） |
+| Motif | 4 | 81（シンセリード） |
+| Arpeggio | 5 | 81（ソウリード） |
 | Drums | 9 | GMドラム |
 | SE | 15 | テキストイベント |
 
@@ -262,3 +333,23 @@ uint8_t MidiWriter::transposePitch(uint8_t pitch, Key key) {
     return pitch + static_cast<uint8_t>(key);
 }
 ```
+
+## メタデータ埋め込み
+
+生成されたMIDIファイルには再生成用のメタデータが含まれます：
+
+```cpp
+struct MidiMetadata {
+    uint32_t seed;
+    uint8_t style_preset_id;
+    uint8_t chord_progression_id;
+    uint8_t form_id;
+    uint8_t composition_style;
+    uint8_t vocal_attitude;
+    uint8_t vocal_style;
+    uint8_t melody_template;
+    // ... 追加パラメータ
+};
+```
+
+これにより、CLIで正確な再現が可能：`./midisketch_cli --regenerate song.mid`

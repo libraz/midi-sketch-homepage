@@ -213,6 +213,144 @@ const events = sketch.getEvents()
 // { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
 ```
 
+### `generateVocal(config)`
+
+伴奏なしでボーカルトラックのみを生成します。試行錯誤ワークフロー用：ボーカル生成→プレビュー→必要に応じて再生成。ボーカルに満足したら `generateAccompaniment()` を呼び出します。
+
+```javascript
+sketch.generateVocal({
+  stylePresetId: 0,
+  key: 0,
+  bpm: 120,
+  seed: 0,
+  chordProgressionId: 0,
+  formId: 0,
+  vocalLow: 55,
+  vocalHigh: 74,
+  vocalAttitude: 1,
+  // ... その他のSongConfigオプション
+})
+```
+
+### `generateAccompaniment(config?)`
+
+既存のボーカルに対して伴奏トラックを生成します。`generateVocal()` または `setVocalNotes()` の後に呼び出す必要があります。生成順序：Aux → Bass → Chord → Drums（ボーカルに適応）
+
+```javascript
+// シンプル：デフォルト設定を使用
+sketch.generateAccompaniment()
+
+// 設定付き
+sketch.generateAccompaniment({
+  seed: 12345,                // ランダムシード (0 = 自動)
+  drumsEnabled: true,
+  arpeggioEnabled: false,
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed: 1,           // 0=8分, 1=16分, 2=3連符
+  arpeggioOctaveRange: 2,
+  arpeggioGate: 80,
+  arpeggioSyncChord: true,
+  chordExtSus: false,
+  chordExt7th: false,
+  chordExt9th: false,
+  humanize: true,
+  humanizeTiming: 50,
+  humanizeVelocity: 50,
+  seEnabled: false,
+  callEnabled: false,
+})
+```
+
+### `regenerateAccompaniment(seedOrConfig)`
+
+新しいシードまたは設定で伴奏トラックを再生成します。現在のボーカルを保持し、全ての伴奏トラック（Aux、Bass、Chord、Drums等）を再生成します。
+
+```javascript
+// シードのみ
+sketch.regenerateAccompaniment(12345)
+
+// 完全な設定
+sketch.regenerateAccompaniment({
+  seed: 12345,
+  drumsEnabled: true,
+  arpeggioEnabled: true,
+  // ... その他のAccompanimentConfigオプション
+})
+```
+
+### `generateWithVocal(config)`
+
+ボーカル優先で全トラックを生成します。生成順序：Vocal → Aux → Bass → Chord → Drums。伴奏がボーカルメロディに適応します。
+
+```javascript
+sketch.generateWithVocal({
+  stylePresetId: 0,
+  key: 0,
+  bpm: 120,
+  seed: 0,
+  // ... その他のSongConfigオプション
+})
+```
+
+### `setVocalNotes(config, notes)`
+
+伴奏生成用にカスタムボーカルノートを設定します。configから曲構成とコード進行を初期化し、提供されたノートでボーカルトラックを置き換えます。この後に `generateAccompaniment()` を呼び出します。
+
+```javascript
+// カスタムボーカルノートを設定
+sketch.setVocalNotes(config, [
+  { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
+  { startTick: 480, duration: 480, pitch: 62, velocity: 100 },
+  { startTick: 960, duration: 960, pitch: 64, velocity: 100 },
+])
+
+// カスタムボーカル用の伴奏を生成
+sketch.generateAccompaniment()
+
+// MIDIデータを取得
+const midi = sketch.getMidi()
+```
+
+### `getPianoRollSafetyAt(tick, prevPitch?)`
+
+単一ティックのピアノロール安全性情報を取得します。各MIDIノート（0-127）の安全性レベル、理由フラグ、衝突情報を返します。カスタムボーカルノートを配置する前に、どのノートが安全かを確認するために使用します。
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+
+// C4（ピッチ60）が安全かチェック
+if (info.safety[60] === 0) { // NoteSafety.Safe
+  console.log('C4はコードトーン、使用可能')
+}
+
+// 推奨ノートを取得
+console.log('推奨:', info.recommended)
+```
+
+### `getPianoRollSafety(startTick, endTick, step)`
+
+ティック範囲のピアノロール安全性情報を取得します。ピアノロールエディタで時間経過に伴う安全なノートを可視化するのに便利です。
+
+```javascript
+// 最初の4小節、16分音符解像度でサンプリング
+const infos = sketch.getPianoRollSafety(0, 1920 * 4, 120)
+
+for (const info of infos) {
+  console.log(`Tick ${info.tick}: コード度数 ${info.chordDegree}`)
+  console.log('推奨ノート:', info.recommended)
+}
+```
+
+### `reasonToString(reason)`
+
+理由フラグを人間が読める文字列に変換します。
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+const reasonText = sketch.reasonToString(info.reason[60])
+// "ChordTone" または "LowRegister, Tritone"
+```
+
 ### `destroy()`
 
 リソースをクリーンアップします。
@@ -242,6 +380,51 @@ sketch.regenerateVocal({
   vocalHigh: 74,
   vocalAttitude: 1,
 })
+
+const midiData = sketch.getMidi()
+```
+
+## ボーカル先行ワークフロー
+
+ボーカルを先に生成し、プレビュー、反復、その後伴奏を生成：
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+const config = midisketch.createDefaultConfig(0)
+
+// ステップ1: ボーカルのみ生成
+sketch.generateVocal(config)
+
+// プレビューして満足するまで反復...
+sketch.regenerateVocal({ seed: 12345, vocalAttitude: 2 })
+
+// ステップ2: ボーカル用の伴奏を生成
+sketch.generateAccompaniment()
+
+const midiData = sketch.getMidi()
+```
+
+## カスタムボーカルインポートワークフロー
+
+独自のメロディをインポートし、フィットする伴奏を生成：
+
+```javascript
+const sketch = new midisketch.MidiSketch()
+const config = midisketch.createDefaultConfig(0)
+
+// ステップ1: カスタムボーカルノートを設定
+sketch.setVocalNotes(config, [
+  { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
+  { startTick: 480, duration: 480, pitch: 62, velocity: 100 },
+  { startTick: 960, duration: 960, pitch: 64, velocity: 100 },
+])
+
+// ステップ2: Piano Roll Safety APIでノートを検証（オプション）
+const safety = sketch.getPianoRollSafetyAt(0)
+console.log('tick 0での推奨ノート:', safety.recommended)
+
+// ステップ3: 伴奏を生成
+sketch.generateAccompaniment()
 
 const midiData = sketch.getMidi()
 ```
@@ -370,4 +553,136 @@ VocalGrooveFeel.Swing      // 2 - スウィング感
 VocalGrooveFeel.Syncopated // 3 - シンコペーションリズム
 VocalGrooveFeel.Driving16th // 4 - ドライブ感のある16分音符
 VocalGrooveFeel.Bouncy8th  // 5 - バウンス感のある8分音符
+```
+
+### `NoteSafety`
+
+```javascript
+NoteSafety.Safe      // 0 - 緑：コードトーン、使用安全
+NoteSafety.Warning   // 1 - 黄：テンション、低音域、またはパッシングトーン
+NoteSafety.Dissonant // 2 - 赤：不協和音または音域外
+```
+
+### `NoteReason`
+
+ノート安全性の理由フラグ（ビットフィールド、組み合わせ可能）：
+
+```javascript
+NoteReason.None         // 0
+// ポジティブな理由（緑）
+NoteReason.ChordTone    // 1 - コードトーン（ルート、3度、5度、7度）
+NoteReason.Tension      // 2 - テンション（9度、11度、13度）
+NoteReason.ScaleTone    // 4 - スケールトーン（コード外だがスケール内）
+// 警告理由（黄）
+NoteReason.LowRegister  // 8 - 低音域（C4以下）、濁りの可能性
+NoteReason.Tritone      // 16 - トライトーン音程（V7以外では不安定）
+NoteReason.LargeLeap    // 32 - 大きな跳躍（前のノートから6半音以上）
+// 不協和理由（赤）
+NoteReason.Minor2nd     // 64 - 短2度（1半音）の衝突
+NoteReason.Major7th     // 128 - 長7度（11半音）の衝突
+NoteReason.NonScale     // 256 - スケール外のトーン（クロマチック）
+NoteReason.PassingTone  // 512 - パッシングトーンとして使用可能
+// 音域外理由（赤）
+NoteReason.OutOfRange   // 1024 - ボーカル音域外
+NoteReason.TooHigh      // 2048 - 高すぎて歌えない
+NoteReason.TooLow       // 4096 - 低すぎて歌えない
+```
+
+## 型定義
+
+### `VocalConfig`
+
+ボーカル再生成の設定：
+
+```typescript
+interface VocalConfig {
+  seed?: number              // ランダムシード (0 = 新しいランダム)
+  vocalLow?: number          // ボーカル音域下限 (MIDIノート, 36-96)
+  vocalHigh?: number         // ボーカル音域上限 (MIDIノート, 36-96)
+  vocalAttitude?: number     // 0=Clean, 1=Expressive, 2=Raw
+  vocalStyle?: number        // ボーカルスタイルプリセット (0=自動)
+  melodyTemplate?: number    // メロディテンプレート (0=自動)
+  melodicComplexity?: number // 0=シンプル, 1=標準, 2=複雑
+  hookIntensity?: number     // 0=オフ, 1=ライト, 2=ノーマル, 3=ストロング
+  vocalGroove?: number       // 0=ストレート, 1=オフビート等
+  compositionStyle?: number  // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+}
+```
+
+### `AccompanimentConfig`
+
+伴奏生成/再生成の設定：
+
+```typescript
+interface AccompanimentConfig {
+  seed?: number               // ランダムシード (0 = 自動)
+  // ドラム
+  drumsEnabled?: boolean
+  // アルペジオ
+  arpeggioEnabled?: boolean
+  arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioSpeed?: number      // 0=8分, 1=16分, 2=3連符
+  arpeggioOctaveRange?: number // 1-3
+  arpeggioGate?: number       // 0-100
+  arpeggioSyncChord?: boolean
+  // コード拡張
+  chordExtSus?: boolean
+  chordExt7th?: boolean
+  chordExt9th?: boolean
+  chordExtSusProb?: number    // 0-100
+  chordExt7thProb?: number    // 0-100
+  chordExt9thProb?: number    // 0-100
+  // ヒューマナイズ
+  humanize?: boolean
+  humanizeTiming?: number     // 0-100
+  humanizeVelocity?: number   // 0-100
+  // SE/コール
+  seEnabled?: boolean
+  callEnabled?: boolean
+  callDensity?: number        // 0=控えめ, 1=ライト, 2=標準, 3=高密度
+  introChant?: number         // 0=なし, 1=ガチ恋, 2=ミックス
+  mixPattern?: number         // 0=なし, 1=スタンダード, 2=虎火
+  callNotesEnabled?: boolean
+}
+```
+
+### `NoteInput`
+
+カスタムボーカルトラック用のノート入力：
+
+```typescript
+interface NoteInput {
+  startTick: number  // ノート開始時間（ティック）
+  duration: number   // ノート長（ティック）
+  pitch: number      // MIDIノート番号 (0-127)
+  velocity: number   // ノートベロシティ (0-127)
+}
+```
+
+### `PianoRollInfo`
+
+単一ティックのピアノロール安全性情報：
+
+```typescript
+interface PianoRollInfo {
+  tick: number                // ティック位置
+  chordDegree: number         // 現在のコード度数 (0=I, 1=ii等)
+  currentKey: number          // 現在のキー (0-11、転調考慮)
+  safety: NoteSafetyLevel[]   // 各MIDIノートの安全性レベル (0-127)
+  reason: NoteReasonFlags[]   // 各ノートの理由フラグ (0-127)
+  collision: CollisionInfo[]  // 各ノートの衝突詳細
+  recommended: number[]       // 推奨ノート（優先順、最大8）
+}
+```
+
+### `CollisionInfo`
+
+BGMと衝突するノートの情報：
+
+```typescript
+interface CollisionInfo {
+  trackRole: number         // 衝突トラックの役割
+  collidingPitch: number    // 衝突ノートのMIDIピッチ
+  intervalSemitones: number // 衝突音程（半音、1, 6, または 11）
+}
 ```

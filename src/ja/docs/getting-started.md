@@ -1,15 +1,11 @@
 # はじめに
 
-::: warning アルファ版
-このパッケージは現在アルファ版であり、npmには未公開です。現時点ではソースからビルドするか、このサイトのデモをご利用ください。
-:::
-
 MIDI Sketch は、ポップミュージックの MIDI スケッチを自動生成する軽量ライブラリです。WebAssembly を使用してブラウザ上で動作します。
 
 ## クイックスタート
 
 ```javascript
-import { MidiSketch, init, createDefaultConfig, downloadMidi } from 'midi-sketch'
+import { MidiSketch, init, createDefaultConfig, downloadMidi } from '@libraz/midi-sketch'
 
 // WASM モジュールを初期化
 await init()
@@ -40,11 +36,13 @@ downloadMidi(midiData, 'my-song.mid')
 MIDI Sketch は以下のマルチトラック MIDI ファイルを生成します：
 
 - **Vocal** - メインメロディ
-- **Chord** - ハーモニーバッキング
-- **Bass** - ベースライン
-- **Drums** - リズムパターン
-- **Motif** - バックグラウンドの反復パターン
-- **Arpeggio** - シンセアルペジオパターン
+- **Aux** - 副旋律サポート（パルスループ、ターゲットヒント、グルーブアクセント）
+- **Chord** - ボイスリーディング付きハーモニーバッキング
+- **Bass** - アプローチノート付きベースライン
+- **Drums** - フィル付きリズムパターン
+- **Motif** - バックグラウンドの反復パターン（BackgroundMotifスタイル）
+- **Arpeggio** - シンセアルペジオパターン（SynthDrivenスタイル）
+- **SE** - セクションマーカー
 
 ## 次のステップ
 
