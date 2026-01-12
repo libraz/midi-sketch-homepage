@@ -3,7 +3,7 @@
 ## Package Manager
 
 ::: warning BETA
-The npm package is not yet published. During the beta period, please use the library via the [demo page](/demo) or build from source.
+The npm package is not yet published. During the beta period, please use the library via the [demo page](/) or build from source.
 :::
 
 ::: code-group
