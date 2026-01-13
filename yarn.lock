@@ -268,6 +268,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@breezystack/lamejs@npm:^1.2.7":
+  version: 1.2.7
+  resolution: "@breezystack/lamejs@npm:1.2.7"
+  checksum: 10c0/b0b9db9a7434e8815e0d5fab2fb2cc21fc974da64b478d2f84f998388f241627c3dd163bc5c921aac81b18b78cfc81eb4c79cbef8572b2474a7a33961be3d107
+  languageName: node
+  linkType: hard
+
 "@chevrotain/cst-dts-gen@npm:11.0.3":
   version: 11.0.3
   resolution: "@chevrotain/cst-dts-gen@npm:11.0.3"
@@ -570,13 +577,6 @@ __metadata:
   version: 1.5.5
   resolution: "@jridgewell/sourcemap-codec@npm:1.5.5"
   checksum: 10c0/f9e538f302b63c0ebc06eecb1dd9918dd4289ed36147a0ddce35d6ea4d7ebbda243cda7b2213b6a5e1d8087a298d5cf630fb2bd39329cdecb82017023f6081a0
-  languageName: node
-  linkType: hard
-
-"@mdi/font@npm:^7.4.47":
-  version: 7.4.47
-  resolution: "@mdi/font@npm:7.4.47"
-  checksum: 10c0/4cd44a9e9c40218f00d2500f7408f913ac276348054c9c1b0108330060fecb3cb58c8c08eda39a7535298aaf3f1d28c0c115751cfe9fc2c9cdb9d50450107db9
   languageName: node
   linkType: hard
 
@@ -2606,14 +2606,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "midi-sketch-homepage@workspace:."
   dependencies:
-    "@mdi/font": "npm:^7.4.47"
+    "@breezystack/lamejs": "npm:^1.2.7"
     mermaid: "npm:^11.12.2"
     smplr: "npm:^0.16.3"
     tone: "npm:15.1.22"
     vitepress: "npm:^1.6.4"
     vitepress-plugin-mermaid: "npm:^2.0.17"
     vue: "npm:^3.5.26"
-    vuetify: "npm:^3.11.6"
   languageName: unknown
   linkType: soft
 
@@ -3537,25 +3536,6 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/057630af8a278b8a682974e3f92388821701be800b3d545d9b45c1444138ccaff1902d2065dab0e7cb971c0509e6c22c09e90787ee5bc8d262ede7012e61f871
-  languageName: node
-  linkType: hard
-
-"vuetify@npm:^3.11.6":
-  version: 3.11.6
-  resolution: "vuetify@npm:3.11.6"
-  peerDependencies:
-    typescript: ">=4.7"
-    vite-plugin-vuetify: ">=2.1.0"
-    vue: ^3.5.0
-    webpack-plugin-vuetify: ">=3.1.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-    vite-plugin-vuetify:
-      optional: true
-    webpack-plugin-vuetify:
-      optional: true
-  checksum: 10c0/14a60f53274696ae7fcbb86ca012d5bd32f7db329d02493a1ee559bf1e3b6f8af70f3050c8f23fa8bd9187b24741755f3fa52ab833cd0f551edbc55a108d3a4f
   languageName: node
   linkType: hard
 

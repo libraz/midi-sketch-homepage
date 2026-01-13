@@ -11,15 +11,18 @@ import {
 } from './types'
 import { useViewport } from './composables/useViewport'
 import { useNoteInteraction } from './composables/useNoteInteraction'
-import { useCanvasDrawing } from './composables/useCanvasDrawing'
+import { useLayeredCanvas } from './composables/useLayeredCanvas'
 import { useClipboard } from './composables/useClipboard'
 import { useContextMenuActions } from './composables/useContextMenuActions'
 import { usePlaybackControl } from './composables/usePlaybackControl'
 import { useEditorEvents } from './composables/useEditorEvents'
+import { usePlayheadDrag } from './composables/usePlayheadDrag'
 import PianoRollHeader from './PianoRollHeader.vue'
 import PianoRollPianoKeys from './PianoRollPianoKeys.vue'
 import PianoRollFooter from './PianoRollFooter.vue'
 import PianoRollContextMenu from './PianoRollContextMenu.vue'
+import PianoRollPlayhead from './PianoRollPlayhead.vue'
+import PianoRollTooltip from './PianoRollTooltip.vue'
 
 // ============================================================================
 // Props & Emits
@@ -54,17 +57,26 @@ const emit = defineEmits<{
   noteMove: [noteId: string, pitch: number, startTick: number]
   noteSplit: [noteId: string, splitTick: number]
   noteMerge: [noteIds: string[]]
+  scroll: [scrollLeft: number, scrollTop: number]
+  zoomChange: [zoomLevel: number]
+  playbackUpdate: [tick: number | null, isPlaying: boolean]
 }>()
 
 // ============================================================================
 // Refs
 // ============================================================================
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+// Layered canvas refs for performance
+const gridCanvasRef = ref<HTMLCanvasElement | null>(null)
+const noteCanvasRef = ref<HTMLCanvasElement | null>(null)
+const overlayCanvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 const editorBodyRef = ref<HTMLElement | null>(null)
 const headerRef = ref<InstanceType<typeof PianoRollHeader> | null>(null)
 const currentDuration = ref(480)
+
+// Tooltip state
+const tooltipPosition = ref<{ x: number; y: number } | null>(null)
 
 // ============================================================================
 // Computed Props
@@ -78,6 +90,11 @@ const allowHarmonyRef = computed(() => props.allowHarmony ?? false)
 const placedNotesRef = computed(() => props.placedNotes)
 const bpmRef = computed(() => props.bpm ?? 120)
 const soundEnabledRef = computed(() => props.soundEnabled ?? true)
+
+// Refs for props (needed for layered canvas reactivity)
+const safetyInfoRef = computed(() => props.safetyInfo)
+const showSafetyAlwaysRef = computed(() => props.showSafetyAlways)
+const getSafetyAtTickRef = computed(() => props.getSafetyAtTick)
 
 // ============================================================================
 // Composables
@@ -103,8 +120,6 @@ const interaction = useNoteInteraction({
   snapToGrid: viewport.snapToGrid,
 })
 
-const { draw } = useCanvasDrawing()
-
 const clipboard = useClipboard({
   placedNotes: placedNotesRef,
   selectedNoteIds: interaction.selectedNoteIds,
@@ -112,7 +127,7 @@ const clipboard = useClipboard({
 })
 
 // ============================================================================
-// Drawing
+// Drawing with Layered Canvas
 // ============================================================================
 
 const currentChord = computed<ChordInfo>(() => {
@@ -125,53 +140,83 @@ const currentChord = computed<ChordInfo>(() => {
   }
 })
 
+// Initialize layered canvas composable
+const layeredCanvas = useLayeredCanvas({
+  canvasRefs: {
+    gridCanvas: gridCanvasRef,
+    noteCanvas: noteCanvasRef,
+    overlayCanvas: overlayCanvasRef,
+  },
+  editorBody: editorBodyRef,
+  canvasWidth: viewport.canvasWidth,
+  canvasHeight: viewport.canvasHeight,
+  dpr: viewport.dpr,
+  zoomLevel: viewport.zoomLevel,
+  totalTicks: viewport.totalTicks,
+  pixelsPerTick: viewport.pixelsPerTick,
+  gridSnap: gridSnapRef,
+  noteHeight: viewport.noteHeight,
+  vocalRange: viewport.vocalRange,
+  placedNotes: placedNotesRef,
+  safetyInfo: safetyInfoRef,
+  chordsInView: computed(() => props.chordsInView),
+  showSafetyAlways: showSafetyAlwaysRef,
+  getSafetyAtTick: getSafetyAtTickRef,
+  currentChord,
+  hoveredNote: interaction.hoveredNote,
+  hoveredNoteId: interaction.hoveredNoteId,
+  selectedNoteIds: interaction.selectedNoteIds,
+  isDragging: interaction.isDragging,
+  dragType: interaction.dragType,
+  dragNoteId: interaction.dragNoteId,
+  dragStartTick: interaction.dragStartTick,
+  dragStartDuration: interaction.dragStartDuration,
+  dragPreviewPitch: interaction.dragPreviewPitch,
+  dragPreviewTick: interaction.dragPreviewTick,
+  dragPreviewDuration: interaction.dragPreviewDuration,
+  isSelecting: interaction.isSelecting,
+  selectionStart: interaction.selectionStart,
+  selectionEnd: interaction.selectionEnd,
+  dragMultipleNotes: interaction.dragMultipleNotes,
+  dragPitchDelta: interaction.dragPitchDelta,
+  dragTickDelta: interaction.dragTickDelta,
+  noteToY: viewport.noteToY,
+  yToNote: viewport.yToNote,
+  tickToX: viewport.tickToX,
+  xToTick: viewport.xToTick,
+  isInVocalRange: viewport.isInVocalRange,
+  playheadTick: ref(null), // Playhead is now CSS-based
+})
+
+// Redraw functions with layer awareness
+function redrawGrid() {
+  layeredCanvas.markGridDirty()
+  layeredCanvas.scheduleRedraw()
+}
+
+function redrawNotes() {
+  layeredCanvas.markNotesDirty()
+  layeredCanvas.scheduleRedraw()
+}
+
+function redrawOverlay() {
+  layeredCanvas.markOverlayDirty()
+  layeredCanvas.scheduleRedraw()
+}
+
+function redrawAll() {
+  layeredCanvas.redrawAll()
+}
+
+// Backward compatible redraw (marks notes + overlay dirty)
 function redraw() {
-  draw({
-    canvas: canvasRef.value,
-    editorBody: editorBodyRef.value,
-    canvasWidth: viewport.canvasWidth,
-    canvasHeight: viewport.canvasHeight,
-    dpr: viewport.dpr,
-    zoomLevel: viewport.zoomLevel,
-    totalTicks: viewport.totalTicks,
-    pixelsPerTick: viewport.pixelsPerTick,
-    gridSnap: gridSnapRef,
-    noteHeight: viewport.noteHeight,
-    vocalRange: viewport.vocalRange,
-    placedNotes: props.placedNotes,
-    safetyInfo: props.safetyInfo,
-    chordsInView: props.chordsInView,
-    showSafetyAlways: props.showSafetyAlways,
-    getSafetyAtTick: props.getSafetyAtTick,
-    currentChord: currentChord.value,
-    hoveredNote: interaction.hoveredNote,
-    hoveredNoteId: interaction.hoveredNoteId,
-    selectedNoteIds: interaction.selectedNoteIds,
-    isDragging: interaction.isDragging,
-    dragType: interaction.dragType,
-    dragNoteId: interaction.dragNoteId,
-    dragStartTick: interaction.dragStartTick,
-    dragStartDuration: interaction.dragStartDuration,
-    dragPreviewPitch: interaction.dragPreviewPitch,
-    dragPreviewTick: interaction.dragPreviewTick,
-    dragPreviewDuration: interaction.dragPreviewDuration,
-    isSelecting: interaction.isSelecting,
-    selectionStart: interaction.selectionStart,
-    selectionEnd: interaction.selectionEnd,
-    dragMultipleNotes: interaction.dragMultipleNotes,
-    dragPitchDelta: interaction.dragPitchDelta,
-    dragTickDelta: interaction.dragTickDelta,
-    noteToY: viewport.noteToY,
-    yToNote: viewport.yToNote,
-    tickToX: viewport.tickToX,
-    xToTick: viewport.xToTick,
-    isInVocalRange: viewport.isInVocalRange,
-    playheadTick: playback.playheadTick,
-  })
+  layeredCanvas.markNotesDirty()
+  layeredCanvas.markOverlayDirty()
+  layeredCanvas.scheduleRedraw()
 }
 
 // ============================================================================
-// Playback Control
+// Playback Control (with CSS-based playhead)
 // ============================================================================
 
 const playback = usePlaybackControl({
@@ -179,9 +224,32 @@ const playback = usePlaybackControl({
   totalBars: totalBarsRef,
   bpm: bpmRef,
   soundEnabled: soundEnabledRef,
+  chordsInView: computed(() => props.chordsInView),
   tickToX: viewport.tickToX,
   editorBodyRef,
-  onRedraw: redraw,
+  onRedraw: () => {
+    // Playhead position is updated via watch below (playheadDrag.updatePosition)
+  },
+})
+
+// Playhead drag composable
+const playheadDrag = usePlayheadDrag({
+  editorBodyRef,
+  tickToX: viewport.tickToX,
+  xToTick: viewport.xToTick,
+  snapToGrid: viewport.snapToGrid,
+  totalTicks: viewport.totalTicks,
+  isPlaying: playback.isPlaying,
+  stop: playback.stop,
+  seek: playback.seek,
+  suspendScrollFollow: playback.suspendScrollFollow,
+})
+
+// Watch playhead tick to update CSS position
+watch(() => playback.playheadTick.value, (tick) => {
+  if (!playheadDrag.isDragging.value) {
+    playheadDrag.updatePosition(tick)
+  }
 })
 
 // ============================================================================
@@ -205,12 +273,12 @@ const contextMenuActions = useContextMenuActions(
 )
 
 // ============================================================================
-// Event Handlers
+// Event Handlers (use overlay canvas for mouse events)
 // ============================================================================
 
 const events = useEditorEvents(
   {
-    canvasRef,
+    canvasRef: overlayCanvasRef, // Mouse events on topmost canvas
     editorBodyRef,
     placedNotes: placedNotesRef,
     gridSnap: gridSnapRef,
@@ -218,18 +286,33 @@ const events = useEditorEvents(
     viewport,
     interaction,
     clipboard,
-    onRedraw: redraw,
+    onRedraw: redrawOverlay, // Only redraw overlay for interactions
     playNotePreview: playback.playNotePreview,
     togglePlay: playback.togglePlay,
   },
   {
     onNoteHover: (pitch) => emit('noteHover', pitch),
     onNoteClick: (pitch, tick) => emit('noteClick', pitch, tick),
-    onNoteDelete: (noteId) => emit('noteDelete', noteId),
-    onNoteMove: (noteId, pitch, tick) => emit('noteMove', noteId, pitch, tick),
-    onNoteDurationChange: (noteId, duration) => emit('noteDurationChange', noteId, duration),
-    onNoteSplit: (noteId, splitTick) => emit('noteSplit', noteId, splitTick),
-    onNoteAdd: (note) => emit('noteAdd', note),
+    onNoteDelete: (noteId) => {
+      emit('noteDelete', noteId)
+      redrawNotes() // Note deleted, redraw notes layer
+    },
+    onNoteMove: (noteId, pitch, tick) => {
+      emit('noteMove', noteId, pitch, tick)
+      redrawNotes() // Note moved, redraw notes layer
+    },
+    onNoteDurationChange: (noteId, duration) => {
+      emit('noteDurationChange', noteId, duration)
+      redrawNotes() // Note resized, redraw notes layer
+    },
+    onNoteSplit: (noteId, splitTick) => {
+      emit('noteSplit', noteId, splitTick)
+      redrawNotes() // Note split, redraw notes layer
+    },
+    onNoteAdd: (note) => {
+      emit('noteAdd', note)
+      redrawNotes() // Note added, redraw notes layer
+    },
   }
 )
 
@@ -254,19 +337,25 @@ function getNoteReason(pitch: number): number {
 }
 
 // ============================================================================
-// Scroll Sync
+// Scroll Sync (optimized - no canvas redraw needed)
 // ============================================================================
 
 function handleEditorScroll() {
   if (editorBodyRef.value) {
     const scrollLeft = editorBodyRef.value.scrollLeft
+    const scrollTop = editorBodyRef.value.scrollTop
+
+    // Sync header scroll immediately (cheap operation)
     if (headerRef.value?.sectionBarRef) {
       headerRef.value.sectionBarRef.scrollLeft = scrollLeft
     }
     if (headerRef.value?.chordBarRef) {
       headerRef.value.chordBarRef.scrollLeft = scrollLeft
     }
-    redraw()
+    emit('scroll', scrollLeft, scrollTop)
+
+    // NO canvas redraw on scroll - canvas is pre-rendered at full size
+    // Scrolling just moves the viewport over the existing canvas
   }
 }
 
@@ -274,9 +363,20 @@ function handleEditorScroll() {
 // Setup & Lifecycle
 // ============================================================================
 
-function setupCanvas() {
-  viewport.setupCanvas(canvasRef.value)
-  redraw()
+function setupCanvases() {
+  const width = viewport.contentWidth.value
+  const height = viewport.totalEditorHeight.value
+  const dpr = window.devicePixelRatio || 1
+
+  viewport.dpr.value = dpr
+  viewport.canvasWidth.value = width
+  viewport.canvasHeight.value = height
+
+  // Setup all canvas layers
+  layeredCanvas.setupCanvases(width, height, dpr)
+
+  // Initial draw
+  redrawAll()
 }
 
 function scrollToBar(bar: number) {
@@ -291,27 +391,65 @@ defineExpose({
   isPlaying: playback.isPlaying,
   isPaused: playback.isPaused,
   preloadSound: playback.preload,
+  // For staff view sync
+  zoomLevel: viewport.zoomLevel,
+  playheadTick: playback.playheadTick,
+  getScrollLeft: () => editorBodyRef.value?.scrollLeft ?? 0,
 })
 
 // ============================================================================
-// Watchers
+// Watchers (Highly optimized - minimal redraws)
 // ============================================================================
 
-watch([
-  () => props.safetyInfo,
+// Watch for note array reference change only (not deep)
+// Parent should replace array reference when notes change
+watch(
   () => props.placedNotes,
-  () => props.previewPitch,
-  () => props.showSafetyAlways,
-  interaction.hoveredNote,
-  interaction.hoveredNoteId,
-  interaction.selectedNoteIds,
-  interaction.isSelecting,
-], () => {
-  redraw()
-}, { deep: true })
+  () => redrawNotes()
+)
 
+// Watch for safety info changes - redraw notes layer
+watch(safetyInfoRef, () => redrawNotes())
+
+// Watch for hover NOTE changes only (not pitch - pitch doesn't need redraw)
+let lastHoveredNoteId: string | null = null
+watch(interaction.hoveredNoteId, (newId) => {
+  if (newId !== lastHoveredNoteId) {
+    lastHoveredNoteId = newId
+    redrawNotes() // Redraw notes to update hover state on note
+
+    // Update tooltip position
+    if (newId && placedNotesRef.value) {
+      const note = placedNotesRef.value.find(n => n.id === newId)
+      if (note) {
+        const x = viewport.tickToX(note.startTick) + 40 // 40 = piano keys width
+        const y = viewport.noteToY(note.pitch)
+        tooltipPosition.value = { x, y }
+      }
+    } else {
+      tooltipPosition.value = null
+    }
+  }
+})
+
+// Watch zoom/size changes - setup all canvases
 watch([viewport.zoomLevel, totalBarsRef], () => {
-  setupCanvas()
+  setupCanvases()
+})
+
+// Emit zoom change for external sync (e.g., staff view)
+watch(viewport.zoomLevel, (newZoom) => {
+  emit('zoomChange', newZoom)
+})
+
+// Emit playback updates for external sync (e.g., staff view)
+watch([playback.playheadTick, playback.isPlaying], ([tick, playing]) => {
+  emit('playbackUpdate', tick, playing)
+})
+
+// Watch drag/select state - redraw overlay only
+watch([interaction.isDragging, interaction.isSelecting], () => {
+  redrawOverlay()
 })
 
 // ============================================================================
@@ -319,8 +457,8 @@ watch([viewport.zoomLevel, totalBarsRef], () => {
 // ============================================================================
 
 onMounted(() => {
-  setupCanvas()
-  window.addEventListener('resize', setupCanvas)
+  setupCanvases()
+  window.addEventListener('resize', setupCanvases)
   window.addEventListener('click', events.handleGlobalClick)
   window.addEventListener('mouseup', events.handleGlobalMouseUp)
   window.addEventListener('keydown', events.handleKeyDown)
@@ -331,7 +469,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', setupCanvas)
+  window.removeEventListener('resize', setupCanvases)
   window.removeEventListener('click', events.handleGlobalClick)
   window.removeEventListener('mouseup', events.handleGlobalMouseUp)
   window.removeEventListener('keydown', events.handleKeyDown)
@@ -353,9 +491,9 @@ onUnmounted(() => {
       :is-loading="playback.isLoading.value"
       :sound-enabled="soundEnabledRef"
       @update:current-duration="currentDuration = $event"
-      @zoom-in="viewport.zoomIn(); redraw()"
-      @zoom-out="viewport.zoomOut(); redraw()"
-      @reset-zoom="viewport.resetZoom(); redraw()"
+      @zoom-in="viewport.zoomIn(); emit('zoomChange', viewport.zoomLevel.value); redraw()"
+      @zoom-out="viewport.zoomOut(); emit('zoomChange', viewport.zoomLevel.value); redraw()"
+      @reset-zoom="viewport.resetZoom(); emit('zoomChange', viewport.zoomLevel.value); redraw()"
       @toggle-play="playback.togglePlay"
       @stop="playback.stop"
       @rewind="playback.rewind"
@@ -368,11 +506,16 @@ onUnmounted(() => {
         :vocal-range="viewport.vocalRange.value"
       />
 
-      <!-- Canvas -->
+      <!-- Layered Canvas Stack -->
       <div class="canvas-wrapper" ref="containerRef">
+        <!-- Layer 1: Grid (static, bottom) -->
+        <canvas ref="gridCanvasRef" class="editor-canvas grid-layer" />
+        <!-- Layer 2: Notes (middle) -->
+        <canvas ref="noteCanvasRef" class="editor-canvas note-layer" />
+        <!-- Layer 3: Overlay (interactions, top) -->
         <canvas
-          ref="canvasRef"
-          class="editor-canvas"
+          ref="overlayCanvasRef"
+          class="editor-canvas overlay-layer"
           @mousemove="events.handleMouseMove"
           @mouseleave="events.handleMouseLeave"
           @mousedown="events.handleMouseDown"
@@ -380,6 +523,19 @@ onUnmounted(() => {
           @click="events.handleClick"
           @dblclick="events.handleDoubleClick"
           @contextmenu="events.handleContextMenu"
+        />
+        <!-- CSS Playhead (draggable, smooth animation without canvas redraw) -->
+        <PianoRollPlayhead
+          :x="playheadDrag.playheadX.value"
+          :is-dragging="playheadDrag.isDragging.value"
+          @drag-start="playheadDrag.handleDragStart"
+        />
+        <!-- Note Tooltip -->
+        <PianoRollTooltip
+          :position="tooltipPosition"
+          :pitch="interaction.hoveredNote.value"
+          :safety="getNoteSafety(interaction.hoveredNote.value ?? 0)"
+          :reason="getNoteReason(interaction.hoveredNote.value ?? 0)"
         />
       </div>
     </div>
@@ -447,7 +603,21 @@ onUnmounted(() => {
   position: relative;
 }
 
+/* Layered canvas stack */
 .editor-canvas {
   display: block;
+}
+
+.editor-canvas.grid-layer,
+.editor-canvas.note-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.editor-canvas.overlay-layer {
+  position: relative;
+  z-index: 1;
 }
 </style>

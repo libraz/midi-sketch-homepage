@@ -12,10 +12,6 @@ import VocalSettingsStep from './steps/VocalSettingsStep.vue'
 import VocalGenerationStep from './steps/VocalGenerationStep.vue'
 import BgmSettingsStep from './steps/BgmSettingsStep.vue'
 import BgmGenerationStep from './steps/BgmGenerationStep.vue'
-import SettingsStep from './steps/SettingsStep.vue'
-import BgmStep from './steps/BgmStep.vue'
-import MelodyStep from './steps/MelodyStep.vue'
-import FinalStep from './steps/FinalStep.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -224,9 +220,6 @@ onMounted(() => {
           <!-- BGM steps (both flows) -->
           <BgmSettingsStep v-else-if="currentStepId === 'bgmSettings'" :key="'bgmSettings'" />
           <BgmGenerationStep v-else-if="currentStepId === 'bgmGeneration'" :key="`bgmGeneration-${store.bgmVersion.value}`" />
-
-          <!-- BGM-only flow final step -->
-          <FinalStep v-else-if="currentStepId === 'final'" :key="'final'" />
         </Transition>
       </div>
     </main>

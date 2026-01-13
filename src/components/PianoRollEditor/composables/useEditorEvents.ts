@@ -66,7 +66,7 @@ export function useEditorEvents(
     const y = e.clientY - rect.top
     const pitch = viewport.yToNote(y)
 
-    // Update hovered pitch
+    // Update hovered pitch (watch will trigger redraw if changed)
     if (pitch >= MIN_NOTE && pitch <= MAX_NOTE) {
       interaction.hoveredNote.value = pitch
       emits.onNoteHover(pitch)
@@ -75,33 +75,33 @@ export function useEditorEvents(
       emits.onNoteHover(null)
     }
 
-    // Update hovered note
+    // Update hovered note (watch will trigger redraw if changed)
     const noteAtPos = interaction.getNoteAtPosition(x, y)
     interaction.hoveredNoteId.value = noteAtPos?.note.id ?? null
 
-    // Handle selection box
+    // Handle selection box - needs immediate redraw
     if (interaction.isSelecting.value) {
       interaction.updateSelection(x, y)
       onRedraw()
       return
     }
 
-    // Handle dragging
+    // Handle dragging - needs immediate redraw
     if (interaction.isDragging.value && interaction.dragNoteId.value) {
       interaction.updateDrag(x, y)
       onRedraw()
     } else {
+      // Just update cursor style, no redraw needed
+      // Watch handles hover state changes
       interaction.updateCursor(canvas, x, y)
-      onRedraw()
     }
   }
 
   function handleMouseLeave() {
     interaction.hoveredNote.value = null
+    interaction.hoveredNoteId.value = null
     emits.onNoteHover(null)
-    if (!interaction.isDragging.value) {
-      onRedraw()
-    }
+    // Redraw is handled by watch on hoveredNote/hoveredNoteId
   }
 
   function handleMouseDown(e: MouseEvent) {
@@ -151,10 +151,18 @@ export function useEditorEvents(
     if (result) {
       if (result.type === 'move' && result.pitch !== undefined && result.tick !== undefined) {
         emits.onNoteMove(result.noteId!, result.pitch, result.tick)
+        // Play sound after move completes
+        if (soundEnabled.value) {
+          playNotePreview(result.pitch)
+        }
       } else if (result.type === 'multi-move' && result.moves) {
         // Move all selected notes
         for (const move of result.moves) {
           emits.onNoteMove(move.noteId, move.pitch, move.tick)
+        }
+        // Play the first moved note's pitch
+        if (soundEnabled.value && result.moves.length > 0) {
+          playNotePreview(result.moves[0].pitch)
         }
       } else if (result.type === 'resize' && result.duration !== undefined) {
         emits.onNoteDurationChange(result.noteId!, result.duration)

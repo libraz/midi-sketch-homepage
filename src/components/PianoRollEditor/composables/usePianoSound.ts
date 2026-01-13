@@ -1,6 +1,6 @@
 import { ref, onUnmounted, type Ref } from 'vue'
 import { Soundfont } from 'smplr'
-import type { PlacedNote } from '@/components/PianoRollEditor/types'
+import type { PlacedNote, ChordAtBar } from '@/components/PianoRollEditor/types'
 import { PPQ } from '@/components/PianoRollEditor/types'
 
 // ============================================================================
@@ -10,6 +10,7 @@ import { PPQ } from '@/components/PianoRollEditor/types'
 // Shared audio context and piano instance
 let audioContext: AudioContext | null = null
 let piano: any = null
+let bass: any = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
 
@@ -35,9 +36,16 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
   let stopTimeout: ReturnType<typeof setTimeout> | null = null
   let scheduledNotes: { noteId: string; stopTime: number }[] = []
 
+  // Store playback context for resume after visibility change
+  let lastPlaybackContext: {
+    notes: PlacedNote[]
+    totalTicks?: number
+    chords?: ChordAtBar[]
+  } | null = null
+
   // Initialize audio
   async function init() {
-    if (isInitialized && piano) {
+    if (isInitialized && piano && bass) {
       globalIsReady.value = true
       return
     }
@@ -53,10 +61,13 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     initPromise = (async () => {
       try {
         audioContext = new AudioContext()
-        const loadedPiano = await new Soundfont(audioContext, {
-          instrument: 'acoustic_grand_piano'
-        }).load
+        // Load piano and bass in parallel (same as useMidiPlayer)
+        const [loadedPiano, loadedBass] = await Promise.all([
+          new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
+          new Soundfont(audioContext, { instrument: 'acoustic_bass' }).load,
+        ])
         piano = loadedPiano
+        bass = loadedBass
         isInitialized = true
         globalIsReady.value = true
       } finally {
@@ -110,18 +121,21 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     // For immediate stop, we could stop all and replay active ones
   }
 
-  // Play all placed notes from a specific tick
-  async function play(notes: PlacedNote[], fromTick: number = 0, totalTicks?: number) {
+  // Play all placed notes from a specific tick, with optional chord bass accompaniment
+  async function play(notes: PlacedNote[], fromTick: number = 0, totalTicks?: number, chords?: ChordAtBar[]) {
     if (!globalIsReady.value) {
       await init()
     }
 
-    if (!audioContext || !piano || notes.length === 0) return
+    if (!audioContext || !piano) return
 
     // Resume audio context if suspended
     if (audioContext.state === 'suspended') {
       await audioContext.resume()
     }
+
+    // Store playback context for potential resume after visibility change
+    lastPlaybackContext = { notes, totalTicks, chords }
 
     // Calculate total duration
     let maxEndTick = totalTicks ?? 0
@@ -136,7 +150,7 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     startTime = audioContext.currentTime - offsetSeconds
     scheduledNotes = []
 
-    // Schedule all notes
+    // Schedule melody notes
     for (const note of notes) {
       const noteEndTick = note.startTick + note.duration
 
@@ -164,6 +178,60 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
           noteId: note.id,
           stopTime: playTime + adjustedDuration
         })
+      }
+    }
+
+    // Schedule bass notes for chord progression
+    if (chords && chords.length > 0 && bass) {
+      const ticksPerBar = 4 * PPQ
+      for (const chord of chords) {
+        // Skip invalid chords
+        if (!chord || !chord.name) {
+          continue
+        }
+
+        const barStartTick = (chord.bar - 1) * ticksPerBar
+        const barEndTick = chord.bar * ticksPerBar
+
+        // Skip bars before current position
+        if (barEndTick <= fromTick) {
+          continue
+        }
+
+        // Parse chord root from name (e.g., "Cmaj7" -> "C", "F#m" -> "F#")
+        const rootMatch = chord.name.match(/^([A-G][#b]?)/)
+        if (!rootMatch) continue
+
+        const rootName = rootMatch[1]
+        const noteMap: Record<string, number> = {
+          'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+          'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+          'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+        const rootPitch = noteMap[rootName]
+        if (rootPitch === undefined) continue
+
+        // Bass note at octave 2 (MIDI 36-47)
+        const bassPitch = 36 + rootPitch
+
+        const startSeconds = ticksToSeconds(barStartTick)
+        const durationSeconds = ticksToSeconds(ticksPerBar)
+
+        // Adjust for bars that started before fromTick
+        const adjustedStartSeconds = Math.max(0, startSeconds - offsetSeconds)
+        const adjustedDuration = barStartTick < fromTick
+          ? durationSeconds - (offsetSeconds - startSeconds)
+          : durationSeconds
+
+        if (adjustedDuration > 0) {
+          const playTime = audioContext.currentTime + adjustedStartSeconds
+          bass.start({
+            note: bassPitch,
+            velocity: 70,
+            time: playTime,
+            duration: Math.min(adjustedDuration, ticksToSeconds(ticksPerBar * 0.9)) // Slightly shorter for clarity
+          })
+        }
       }
     }
 
@@ -217,24 +285,27 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     if (piano) {
       piano.stop()
     }
+    if (bass) {
+      bass.stop()
+    }
   }
 
   // Resume playback
-  async function resume(notes: PlacedNote[], totalTicks?: number) {
+  async function resume(notes: PlacedNote[], totalTicks?: number, chords?: ChordAtBar[]) {
     if (!isPaused.value) return
-    await play(notes, pausedTick, totalTicks)
+    await play(notes, pausedTick, totalTicks, chords)
   }
 
   // Toggle play/pause
-  async function togglePlay(notes: PlacedNote[], totalTicks?: number) {
+  async function togglePlay(notes: PlacedNote[], totalTicks?: number, chords?: ChordAtBar[]) {
     if (globalIsLoading.value) return
 
     if (isPlaying.value) {
       pause()
     } else if (isPaused.value) {
-      await resume(notes, totalTicks)
+      await resume(notes, totalTicks, chords)
     } else {
-      await play(notes, 0, totalTicks)
+      await play(notes, 0, totalTicks, chords)
     }
   }
 
@@ -245,6 +316,7 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     currentTick.value = 0
     pausedTick = 0
     scheduledNotes = []
+    lastPlaybackContext = null
 
     if (animationFrame) {
       cancelAnimationFrame(animationFrame)
@@ -259,6 +331,9 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     if (piano) {
       piano.stop()
     }
+    if (bass) {
+      bass.stop()
+    }
   }
 
   // Seek to position
@@ -267,9 +342,32 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     pausedTick = tick
   }
 
+  // Handle visibility change (tab switch)
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      // Tab became hidden - pause if playing
+      if (isPlaying.value) {
+        pause()
+      }
+    } else {
+      // Tab became visible - resume audio context if needed
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume()
+      }
+    }
+  }
+
+  // Setup visibility change listener
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+
   // Cleanup on unmount
   onUnmounted(() => {
     stop()
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   })
 
   return {

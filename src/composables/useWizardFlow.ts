@@ -6,8 +6,8 @@ import { ref, computed } from 'vue'
 
 /**
  * Flow types for the wizard
- * - vocal-first: Vocal priority flow (Style → Chord → FlowSelection → VocalSettings → VocalGeneration → BgmSettings → BgmGeneration)
- * - bgm-only: BGM only flow (Style → Chord → FlowSelection → BgmSettings → BgmGeneration → Final)
+ * - vocal-first: Vocal priority flow (Style → Chord → KeyTempo → FlowSelection → VocalSettings → VocalGeneration → BgmSettings → BgmGeneration)
+ * - bgm-only: BGM only flow (Style → Chord → KeyTempo → FlowSelection → BgmSettings → BgmGeneration)
  */
 export type FlowType = 'vocal-first' | 'bgm-only'
 
@@ -110,50 +110,6 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     dependencies: ['bgmSettings'],
     affectingKeys: [],
     hasGeneration: true
-  },
-  final: {
-    id: 'final',
-    component: 'FinalStep',
-    label: 'wizard.steps.complete',
-    dependencies: ['bgmGeneration'],
-    affectingKeys: [],
-    hasGeneration: false
-  },
-  // Legacy steps for backward compatibility
-  settings: {
-    id: 'settings',
-    component: 'SettingsStep',
-    label: 'wizard.steps.keyTempo',
-    dependencies: ['style', 'chord'],
-    affectingKeys: [
-      'key', 'bpm', 'formId', 'drumsEnabled', 'arpeggioEnabled',
-      'arpeggioPattern', 'arpeggioSpeed', 'arpeggioOctaveRange', 'arpeggioGate',
-      'chordExtSus', 'chordExt7th', 'chordExt9th',
-      'compositionStyle', 'targetDurationSeconds',
-      'modulationTiming', 'modulationSemitones',
-      'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
-      'arrangementGrowth', 'humanize', 'humanizeTiming', 'humanizeVelocity'
-    ],
-    hasGeneration: false
-  },
-  bgm: {
-    id: 'bgm',
-    component: 'BgmStep',
-    label: 'wizard.steps.bgm',
-    dependencies: ['style', 'chord', 'settings'],
-    affectingKeys: [],
-    hasGeneration: true
-  },
-  melody: {
-    id: 'melody',
-    component: 'MelodyStep',
-    label: 'wizard.steps.melody',
-    dependencies: ['bgm'],
-    affectingKeys: [
-      'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
-      'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity'
-    ],
-    hasGeneration: false
   }
 }
 

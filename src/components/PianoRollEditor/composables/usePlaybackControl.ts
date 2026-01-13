@@ -1,5 +1,5 @@
 import { ref, watch, type Ref, type ComputedRef } from 'vue'
-import type { PlacedNote } from '@/components/PianoRollEditor/types'
+import type { PlacedNote, ChordAtBar } from '@/components/PianoRollEditor/types'
 import { PPQ } from '@/components/PianoRollEditor/types'
 import { usePianoSound } from './usePianoSound'
 
@@ -8,6 +8,7 @@ export interface UsePlaybackControlOptions {
   totalBars: ComputedRef<number>
   bpm: ComputedRef<number>
   soundEnabled: ComputedRef<boolean>
+  chordsInView?: ComputedRef<ChordAtBar[] | undefined>
   tickToX: (tick: number) => number
   editorBodyRef: Ref<HTMLElement | null>
   onRedraw: () => void
@@ -19,6 +20,7 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
     totalBars,
     bpm,
     soundEnabled,
+    chordsInView,
     tickToX,
     editorBodyRef,
     onRedraw,
@@ -34,12 +36,13 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
   const getTotalTicks = () => totalBars.value * 4 * PPQ
 
   /**
-   * Play all notes from the beginning.
+   * Play all notes from the beginning with chord bass accompaniment.
    */
   async function play() {
     const notes = placedNotes.value
     if (!notes || notes.length === 0) return
-    await sound.play(notes, 0, getTotalTicks())
+    const chords = chordsInView?.value
+    await sound.play(notes, 0, getTotalTicks(), chords)
   }
 
   /**
@@ -48,7 +51,8 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
   async function togglePlay() {
     const notes = placedNotes.value
     if (!notes || notes.length === 0) return
-    await sound.togglePlay(notes, getTotalTicks())
+    const chords = chordsInView?.value
+    await sound.togglePlay(notes, getTotalTicks(), chords)
   }
 
   /**
@@ -74,6 +78,14 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
   }
 
   /**
+   * Seek to a specific tick position.
+   */
+  function seek(tick: number) {
+    sound.seek(tick)
+    playheadTick.value = tick
+  }
+
+  /**
    * Play a single note preview.
    */
   async function playNotePreview(pitch: number) {
@@ -90,7 +102,10 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
     }
   }
 
-  // Watch playback position and update playhead
+  // Track if scroll follow is suspended (after manual seek/drag)
+  let scrollFollowSuspended = false
+
+  // Watch playback position and update playhead (CSS-based, no canvas redraw)
   watch(sound.currentTick, (tick) => {
     if (sound.isPlaying.value || sound.isPaused.value) {
       playheadTick.value = tick
@@ -99,14 +114,34 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
       if (sound.isPlaying.value && editorBodyRef.value) {
         const playheadX = tickToX(tick)
         const viewportWidth = editorBodyRef.value.clientWidth
-        // Keep playhead at ~25% from left edge
-        const targetScrollLeft = Math.max(0, playheadX - viewportWidth * 0.25)
-        editorBodyRef.value.scrollLeft = targetScrollLeft
+        const currentScroll = editorBodyRef.value.scrollLeft
+
+        // Target position: playhead at 25% from left
+        const targetPlayheadPosition = currentScroll + viewportWidth * 0.25
+
+        // Resume follow when playhead reaches the 25% position
+        if (scrollFollowSuspended && playheadX >= targetPlayheadPosition) {
+          scrollFollowSuspended = false
+        }
+
+        // Keep playhead at ~25% from left edge (when follow is active)
+        if (!scrollFollowSuspended) {
+          const targetScrollLeft = Math.max(0, playheadX - viewportWidth * 0.25)
+          editorBodyRef.value.scrollLeft = targetScrollLeft
+        }
       }
 
+      // Only call onRedraw for CSS playhead update (no canvas redraw needed)
       onRedraw()
     }
   })
+
+  /**
+   * Suspend scroll follow (called after manual seek/drag)
+   */
+  function suspendScrollFollow() {
+    scrollFollowSuspended = true
+  }
 
   return {
     // State
@@ -120,6 +155,8 @@ export function usePlaybackControl(options: UsePlaybackControlOptions) {
     togglePlay,
     stop,
     rewind,
+    seek,
+    suspendScrollFollow,
     playNotePreview,
     preload,
   }

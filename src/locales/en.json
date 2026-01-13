@@ -91,6 +91,13 @@
     "regenerated": "Regenerated",
     "download": "Download MIDI",
     "nextHint": "If you like it, click \"Next\" to proceed to BGM settings",
+    "edit": "Edit Melody",
+    "editingTitle": "Edit Vocal Melody",
+    "editingHint": "Click to add notes, drag to move, right-click for options",
+    "finishEdit": "Done",
+    "cancelEdit": "Cancel",
+    "resetToGenerated": "Reset to Generated",
+    "edited": "Edited",
     "summary": {
       "vocalStyle": "Vocal Style",
       "melodyTemplate": "Melody Type"
@@ -521,6 +528,13 @@
     "preview": "Final Preview",
     "rewind": "Rewind",
     "download": "Download MIDI",
+    "downloadMp3": "Download MP3",
+    "exportStatus": {
+      "loading-instruments": "Loading instruments...",
+      "scheduling": "Scheduling notes...",
+      "rendering": "Rendering audio...",
+      "encoding": "Encoding to MP3..."
+    },
     "regenerateVocal": "Regenerate Vocal",
     "regenerateBgm": "Regenerate BGM",
     "regenerated": "Regenerated",
@@ -762,5 +776,10 @@
     "generating": "Generating...",
     "generate": "Generate MIDI",
     "download": "Download"
+  },
+  "beta": {
+    "title": "Beta Features",
+    "description": "Experimental features under development",
+    "badge": "BETA"
   }
 }

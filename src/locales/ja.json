@@ -91,6 +91,13 @@
     "regenerated": "再生成完了",
     "download": "MIDIをダウンロード",
     "nextHint": "気に入ったら「次へ」でBGM設定に進みましょう",
+    "edit": "メロディを編集",
+    "editingTitle": "ボーカルメロディを編集",
+    "editingHint": "クリックでノート追加、ドラッグで移動、右クリックでオプション",
+    "finishEdit": "完了",
+    "cancelEdit": "キャンセル",
+    "resetToGenerated": "生成時に戻す",
+    "edited": "編集済み",
     "summary": {
       "vocalStyle": "ボーカルスタイル",
       "melodyTemplate": "メロディタイプ"
@@ -521,6 +528,13 @@
     "preview": "完成プレビュー",
     "rewind": "巻き戻し",
     "download": "MIDIをダウンロード",
+    "downloadMp3": "MP3をダウンロード",
+    "exportStatus": {
+      "loading-instruments": "音源を読み込み中...",
+      "scheduling": "ノートを配置中...",
+      "rendering": "オーディオをレンダリング中...",
+      "encoding": "MP3にエンコード中..."
+    },
     "regenerateVocal": "ボーカルを再生成",
     "regenerateBgm": "BGMを再生成",
     "regenerated": "再生成完了",
@@ -762,5 +776,10 @@
     "generating": "生成中...",
     "generate": "MIDI を生成",
     "download": "ダウンロード"
+  },
+  "beta": {
+    "title": "ベータ機能",
+    "description": "開発中の実験的な機能",
+    "badge": "BETA"
   }
 }

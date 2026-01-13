@@ -1,5 +1,7 @@
 import { ref, shallowRef } from 'vue'
 import type { WizardConfig } from '@/stores/useWizardStore'
+import type { PlacedNote } from '@/components/PianoRollEditor/types'
+import { placedNotesToNoteInput } from '@/utils/noteConversion'
 
 // ============================================
 // Types
@@ -547,6 +549,31 @@ export function useMidiGeneration() {
   }
 
   /**
+   * Set custom vocal notes (for edited vocal melody).
+   * Replaces the generated vocal track with user-edited notes.
+   * Must be called before generateAccompanimentTracks for vocal-first flow.
+   */
+  async function setVocalNotes(config: WizardConfig, placedNotes: PlacedNote[]): Promise<void> {
+    if (!_instance) {
+      throw new Error('No instance available. Call generateVocalOnly first.')
+    }
+
+    try {
+      // Build vocal config for song structure
+      const vocalConfig = buildVocalConfig(config)
+
+      // Convert PlacedNotes to NoteInput format
+      const noteInputs = placedNotesToNoteInput(placedNotes)
+
+      // Call WASM setVocalNotes API
+      _instance.setVocalNotes(vocalConfig, noteInputs)
+    } catch (e: any) {
+      error.value = e.message
+      throw e
+    }
+  }
+
+  /**
    * Safely retrieve event data from the instance.
    */
   function safeGetEvents(instance: any): any | null {
@@ -637,6 +664,7 @@ export function useMidiGeneration() {
     generateVocalOnly,
     generateAccompanimentTracks,
     regenerateAccompaniment,
+    setVocalNotes,
 
     // Config builders
     buildBgmConfig,

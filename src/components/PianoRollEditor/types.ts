@@ -76,6 +76,7 @@ export interface ChordAtBar {
   bar: number  // 1-indexed bar number within view
   name: string
   degree: string
+  root?: number  // MIDI pitch of root note (e.g., 48 = C3 for bass)
 }
 
 export interface SectionAtBar {
@@ -195,6 +196,56 @@ export function getReasonText(reason: number): string {
   if (reason & NoteReason.PassingTone) reasons.push('Passing')
 
   return reasons.join(', ')
+}
+
+// Detailed reason text for tooltip display
+export function getDetailedReasonText(reason: number): string[] {
+  const details: string[] = []
+
+  // Chord tone details
+  if (reason & NoteReason.ChordTone) {
+    if (reason & NoteReason.Root) details.push('Chord Root (1st)')
+    else if (reason & NoteReason.Third) details.push('Chord 3rd')
+    else if (reason & NoteReason.Fifth) details.push('Chord 5th')
+    else if (reason & NoteReason.Seventh) details.push('Chord 7th')
+    else details.push('Chord Tone')
+  }
+
+  // Tension details
+  if (reason & NoteReason.Tension) {
+    if (reason & NoteReason.Ninth) details.push('Tension 9th')
+    else if (reason & NoteReason.Eleventh) details.push('Tension 11th')
+    else if (reason & NoteReason.Thirteenth) details.push('Tension 13th')
+    else details.push('Tension Note')
+  }
+
+  // Scale tone
+  if (reason & NoteReason.ScaleTone) details.push('Scale Tone')
+
+  // Chromatic
+  if (reason & NoteReason.NonScale) details.push('Non-scale (Chromatic)')
+
+  // Avoid note
+  if (reason & NoteReason.AvoidNote) details.push('Avoid Note')
+
+  // Register warnings
+  if (reason & NoteReason.OutOfRange) {
+    if (reason & NoteReason.TooHigh) details.push('Too High for Vocal')
+    else if (reason & NoteReason.TooLow) details.push('Too Low for Vocal')
+    else details.push('Out of Vocal Range')
+  } else {
+    if (reason & NoteReason.LowRegister) details.push('Low Register')
+    if (reason & NoteReason.HighRegister) details.push('High Register')
+  }
+
+  // Interval warnings
+  if (reason & NoteReason.Tritone) details.push('Tritone Interval')
+  if (reason & NoteReason.LargeLeap) details.push('Large Leap')
+  if (reason & NoteReason.Minor2nd) details.push('Minor 2nd Interval')
+  if (reason & NoteReason.Major7th) details.push('Major 7th Interval')
+  if (reason & NoteReason.PassingTone) details.push('Passing Tone')
+
+  return details
 }
 
 // ============================================================================

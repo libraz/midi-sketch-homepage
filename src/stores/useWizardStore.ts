@@ -1,6 +1,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { songImages } from '@/data/songImages'
 import { useWizardFlow, STEP_DEFINITIONS, type FlowType } from '@/composables/useWizardFlow'
+import type { PlacedNote } from '@/components/PianoRollEditor/types'
 
 // ============================================
 // Flow Type Definitions
@@ -180,6 +181,9 @@ const libVersion = ref<string | null>(null)
 
 const config = reactive<WizardConfig>({ ...DEFAULT_CONFIG })
 
+// Edited vocal notes (null = not edited, use generated)
+const editedVocalNotes = ref<PlacedNote[] | null>(null)
+
 // ============================================
 // Flow Management
 // ============================================
@@ -200,6 +204,8 @@ watch(() => config.flowType, (newType) => {
 function invalidateVocal() {
   vocalGenerated.value = false
   vocalVersion.value++
+  // Clear edited vocal notes when regenerating
+  editedVocalNotes.value = null
   // Vocal invalidation also invalidates BGM in vocal-first flow
   if (config.flowType === 'vocal-first') {
     invalidateBgm()
@@ -405,10 +411,32 @@ export function useWizardStore() {
     invalidateBgm()
     vocalVersion.value = 0
     bgmVersion.value = 0
+    editedVocalNotes.value = null
 
     // Reset all config to defaults
     Object.assign(config, DEFAULT_CONFIG)
     wizardFlow.setFlowType('vocal-first')
+  }
+
+  /**
+   * Set edited vocal notes
+   */
+  function setEditedVocalNotes(notes: PlacedNote[]) {
+    editedVocalNotes.value = notes
+  }
+
+  /**
+   * Clear edited vocal notes (revert to generated)
+   */
+  function clearEditedVocalNotes() {
+    editedVocalNotes.value = null
+  }
+
+  /**
+   * Check if vocal notes have been edited
+   */
+  function hasEditedVocalNotes(): boolean {
+    return editedVocalNotes.value !== null
   }
 
   return {
@@ -421,6 +449,7 @@ export function useWizardStore() {
     vocalVersion,
     libVersion,
     config,
+    editedVocalNotes,
 
     // Computed
     canGoNext,
@@ -447,6 +476,11 @@ export function useWizardStore() {
     onConfigChange,
     setVocalGenerated,
     setBgmGenerated,
-    reset
+    reset,
+
+    // Vocal editing
+    setEditedVocalNotes,
+    clearEditedVocalNotes,
+    hasEditedVocalNotes
   }
 }

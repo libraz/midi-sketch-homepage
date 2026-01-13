@@ -7,6 +7,7 @@ import { useMidiPlayer } from '@/composables/useMidiPlayer'
 import { useMidiRegeneration } from '@/composables/useMidiRegeneration'
 import { useSeedHistory } from '@/composables/useSeedHistory'
 import { useMidiGeneration } from '@/composables/useMidiGeneration'
+import { useAudioExport } from '@/composables/useAudioExport'
 import { songImages } from '@/data/songImages'
 import { chordProgressions } from '@/data/chordColors'
 import { KEY_NAMES, transposeProgressionToKey } from '@/utils/midiUtils'
@@ -24,6 +25,7 @@ const store = useWizardStore()
 const { isVocalFirst, isBgmOnly } = useWizardFlow()
 const player = useMidiPlayer()
 const midiGen = useMidiGeneration()
+const audioExport = useAudioExport()
 
 const {
   isPlaying,
@@ -181,7 +183,12 @@ async function generate(overrideSeed?: number) {
 
     if (isVocalFirst.value) {
       // Vocal-first flow: use generateAccompaniment API
-      // Vocal should already be generated at this point
+      // Check if user has edited vocal notes
+      if (store.editedVocalNotes.value) {
+        devLog('BGM setVocalNotes (edited)', { noteCount: store.editedVocalNotes.value.length })
+        await midiGen.setVocalNotes(store.config, store.editedVocalNotes.value)
+      }
+
       devLog('BGM generateAccompaniment (vocal-first)', { seed })
       eventData.value = await midiGen.generateAccompanimentTracks(store.config, seed)
     } else {
@@ -245,6 +252,25 @@ function downloadMidi() {
     midiGen.downloadMidi(`midi-sketch-${Date.now()}.mid`)
   } catch {
     // Download failed silently
+  }
+}
+
+async function downloadMp3() {
+  if (!eventData.value) return
+
+  // Stop playback during export
+  if (isPlaying.value) {
+    stop()
+  }
+
+  try {
+    await audioExport.exportToMp3(
+      eventData.value,
+      `midi-sketch-${Date.now()}.mp3`,
+      { mutedTracks: { SE: true } }
+    )
+  } catch (e: any) {
+    devLog('MP3 Export Error', e.message)
   }
 }
 </script>
@@ -322,6 +348,64 @@ function downloadMidi() {
 
       <!-- Hint -->
       <p class="result-hint">{{ isVocalFirst ? t('finalStep.hint') : t('bgmGenerationStep.hint') }}</p>
+
+      <!-- Beta Features Section -->
+      <details class="beta-section">
+        <summary class="beta-section__header">
+          <span class="beta-section__title">
+            <span class="beta-badge">{{ t('beta.badge') }}</span>
+            {{ t('beta.title') }}
+          </span>
+          <svg class="beta-section__chevron" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4.47 5.47a.75.75 0 0 1 1.06 0L8 7.94l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 0 1 0-1.06z"/>
+          </svg>
+        </summary>
+        <div class="beta-section__content">
+          <p class="beta-section__description">{{ t('beta.description') }}</p>
+          <button
+            class="beta-button"
+            :class="{ 'beta-button--loading': audioExport.isExporting.value }"
+            :disabled="audioExport.isExporting.value"
+            @click="downloadMp3"
+          >
+            <svg
+              v-if="audioExport.isExporting.value"
+              class="beta-button__spinner"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-dasharray="50 20"
+              />
+            </svg>
+            <svg
+              v-else
+              class="beta-button__icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            <span>
+              {{ audioExport.isExporting.value
+                ? t(`finalStep.exportStatus.${audioExport.exportStatus.value}`)
+                : t('finalStep.downloadMp3')
+              }}
+            </span>
+            <span class="beta-badge beta-badge--small">{{ t('beta.badge') }}</span>
+          </button>
+        </div>
+      </details>
     </div>
   </div>
 </template>
@@ -350,5 +434,125 @@ function downloadMidi() {
   font-size: 0.85rem;
   color: rgba(250, 250, 250, 0.5);
   text-align: center;
+}
+
+/* Beta Section Styles */
+.beta-section {
+  margin-top: 1.5rem;
+  border: 1px dashed rgba(250, 250, 250, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.beta-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background: rgba(250, 250, 250, 0.02);
+  transition: background 0.2s ease;
+  list-style: none;
+}
+
+.beta-section__header::-webkit-details-marker {
+  display: none;
+}
+
+.beta-section__header:hover {
+  background: rgba(250, 250, 250, 0.04);
+}
+
+.beta-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.5);
+}
+
+.beta-section__chevron {
+  color: rgba(250, 250, 250, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.beta-section[open] .beta-section__chevron {
+  transform: rotate(180deg);
+}
+
+.beta-section__content {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px dashed rgba(250, 250, 250, 0.1);
+}
+
+.beta-section__description {
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.4);
+  margin: 0 0 0.75rem 0;
+}
+
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+}
+
+.beta-badge--small {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.55rem;
+}
+
+.beta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: 1px solid rgba(250, 250, 250, 0.15);
+  border-radius: 6px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.beta-button:hover:not(:disabled) {
+  background: rgba(250, 250, 250, 0.05);
+  border-color: rgba(250, 250, 250, 0.25);
+  color: rgba(250, 250, 250, 0.8);
+}
+
+.beta-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.beta-button--loading {
+  color: rgba(99, 102, 241, 0.8);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.beta-button__icon {
+  opacity: 0.7;
+}
+
+.beta-button__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
