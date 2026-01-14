@@ -11,6 +11,10 @@ Options have the following relationships:
 - **Conflict**: Certain combinations cause validation errors
 - **Implicit**: Setting one option automatically configures internal parameters
 
+::: info Why This Matters
+Understanding these relationships helps you avoid unexpected behavior. For example, setting `arpeggioPattern=2` has no effect if `arpeggioEnabled=false`.
+:::
+
 ---
 
 ## 1. Dependency Relationships
@@ -115,7 +119,9 @@ graph TD
 | `skipVocal=false` | All vocal-related options | Normal song generation |
 | `skipVocal=true` | All vocal options are ignored | **BGM-only generation (no vocal)** |
 
-**Important**: There is no API to add vocals after BGM-only generation. Use the **Vocal-First workflow** instead (see [API Reference](/docs/api)).
+::: danger No Vocal Recovery
+There is no API to add vocals after BGM-only generation. If you need vocals, use `compositionStyle=MelodyLead` or the **Vocal-First workflow** (see [JavaScript API](/docs/api-js)).
+:::
 
 ---
 
@@ -170,6 +176,12 @@ graph TD
 
 **Generated tracks**: Bass + Chord + Drums + Arpeggio (no Motif)
 
+::: tip Choosing CompositionStyle
+- **MelodyLead**: For songs with vocals (pop, rock, ballad)
+- **BackgroundMotif**: For instrumental BGM with repeating melodic patterns (game music, ambient)
+- **SynthDriven**: For electronic/synth-driven instrumental tracks
+:::
+
 ---
 
 ## 3. Priority (Special Value Overrides)
@@ -181,6 +193,10 @@ graph TD
 | `targetDurationSeconds` | `0` | Use structure pattern from `formId` |
 | `vocalStyle` | `0` (Auto) | Random selection based on style |
 | `melodyTemplate` | `0` (Auto) | Default selection based on style |
+
+::: info Using Zero Values
+Zero often means "auto" or "use default". This is useful when you want style-appropriate defaults without specifying exact values.
+:::
 
 ### Flowchart
 
@@ -266,6 +282,10 @@ min_seconds = min_bars * 240 / bpm
 **Solution**: Use `targetDurationSeconds=0` (auto) to let the system determine appropriate length.
 
 ### 4.5 Crash-Prone Combinations
+
+::: danger Avoid These Combinations
+The following combinations will cause validation errors. Check your parameters before generation.
+:::
 
 | Pattern | Cause | Fix |
 |---------|-------|-----|

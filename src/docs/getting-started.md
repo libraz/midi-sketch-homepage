@@ -35,16 +35,26 @@ downloadMidi(midiData, 'my-song.mid')
 
 MIDI Sketch generates multi-track MIDI files with:
 
-- **Vocal** - Main melody line
-- **Aux** - Sub-melody support (pulse loops, target hints, groove accents)
-- **Chord** - Harmonic backing with voice leading
-- **Bass** - Bass line with approach notes
-- **Drums** - Rhythm patterns with fills
-- **Motif** - Background repetitive patterns (BackgroundMotif style)
-- **Arpeggio** - Synth arpeggio patterns (SynthDriven style)
-- **SE** - Section markers
+| Track | Channel | Description |
+|-------|---------|-------------|
+| **Vocal** | 0 | Main melody line (piano roll-safe) |
+| **Aux** | 5 | Sub-melody support (pulse loops, groove accents) |
+| **Chord** | 2 | Harmonic backing with voice leading |
+| **Bass** | 3 | Bass line with approach notes |
+| **Drums** | 9 | Rhythm patterns with fills (GM drums) |
+| **Motif** | 4 | Background patterns (BackgroundMotif style) |
+| **Arpeggio** | 5 | Synth arpeggios (SynthDriven style) |
+| **SE** | 15 | Section markers |
+
+::: info Track Availability
+Not all tracks are generated for every style:
+- **Motif** track: Only in `BackgroundMotif` composition style
+- **Arpeggio** track: Only when `arpeggioEnabled: true` or in `SynthDriven` style
+- **Vocal/Aux**: Can be skipped with `skipVocal: true` for BGM-only generation
+:::
 
 ## Next Steps
 
 - [Installation](./installation) - Install the library
-- [API Reference](./api) - Full API documentation
+- [JavaScript API](./api-js) - JavaScript/WASM API documentation
+- [C++ API](./api-cpp) - C++/C API documentation

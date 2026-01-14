@@ -2,9 +2,17 @@
 
 This document explains the harmonic system in [MIDI Sketch](https://github.com/libraz/midi-sketch).
 
+::: info For Non-Musicians
+This page uses music theory terminology. Don't worry if you're not familiar with it - MIDI Sketch handles all the complex harmony automatically. Understanding these concepts can help you make more informed choices, but it's not required to create great music.
+:::
+
 ## Chord Progressions
 
 MIDI Sketch includes 22 built-in chord progressions, covering common pop music patterns.
+
+::: tip What is a Chord Progression?
+A chord progression is the sequence of chords that forms the harmonic backbone of a song. It's what gives music its sense of movement and emotion. The same melody can feel completely different over different chord progressions.
+:::
 
 ### 4-Chord Progressions
 
@@ -35,6 +43,14 @@ flowchart LR
 | 7 | Progression3 | I-vi-IV | Three-chord |
 | 8 | Rock4 | I-bVII-IV-I | Rock feel |
 
+::: details Understanding These Progressions
+- **Pop4 (I-V-vi-IV)**: The most popular progression in modern music. Used in thousands of hit songs. Creates a satisfying, familiar feel.
+- **Axis (vi-IV-I-V)**: Starts on a minor chord, creating instant melancholy. Used in many emotional ballads.
+- **Komuro (vi-IV-V-I)**: Named after Japanese producer Tetsuya Komuro. The V→I resolution at the end creates a bright, uplifting feeling.
+- **Canon (I-V-vi-iii-IV)**: Based on Pachelbel's Canon. Timeless and elegant.
+- **Rock4 (I-bVII-IV-I)**: The bVII (flat seven) chord adds a rock/blues flavor.
+:::
+
 ### 5-Chord Progressions
 
 | ID | Name | Degrees | Character |
@@ -53,6 +69,10 @@ Total of 22 progressions including:
 
 ## Degree System
 
+::: info What are Chord Degrees?
+Chord degrees (I, ii, iii, IV, V, vi, vii) indicate the position of a chord within a key. Uppercase = major chord, lowercase = minor chord. For example, in C major: I = C major, ii = D minor, V = G major.
+:::
+
 Chord degrees are represented as integers:
 
 ```cpp
@@ -69,6 +89,12 @@ enum Degree {
 ```
 
 ## Chord Quality
+
+::: info Major vs Minor
+- **Major chords** sound bright, happy, and stable (C, F, G)
+- **Minor chords** sound darker, sadder, and more emotional (Dm, Em, Am)
+- **Diminished chords** sound tense and unstable (rarely used in pop)
+:::
 
 Quality is determined by degree in major key:
 
@@ -97,6 +123,14 @@ ChordQuality getQuality(Degree degree) {
 ## Chord Extensions
 
 Extensions add color to basic triads:
+
+::: tip When to Use Extensions
+- **Sus chords**: Create tension before resolution. Great for anticipation moments.
+- **7th chords**: Add sophistication and jazz flavor. Common in city pop and R&B.
+- **9th chords**: Rich, complex sound. Use sparingly for maximum impact.
+
+Higher extension probabilities work well for city pop, jazz, and R&B styles. Keep them low for simple pop and rock.
+:::
 
 ### Extension Types
 
@@ -135,6 +169,10 @@ struct ChordExtensionParams {
 ```
 
 ## Voice Leading
+
+::: info What is Voice Leading?
+Voice leading is how individual notes move from one chord to the next. Good voice leading creates smooth, connected chord transitions. Poor voice leading sounds choppy and amateurish. MIDI Sketch automatically applies professional voice leading to all generated chord progressions.
+:::
 
 ### Principles
 
@@ -182,6 +220,12 @@ flowchart TB
     end
 ```
 
+::: details Voicing Explained
+- **Close Position**: All notes within one octave. Sounds compact and direct. Common in pop.
+- **Open Position**: Notes spread across multiple octaves. Sounds spacious and full. Great for ballads.
+- **Rootless**: Omits the root note (bass plays it). Creates clarity and avoids muddiness. Professional arranging technique.
+:::
+
 ## Bass-Chord Coordination
 
 The chord track uses bass analysis to avoid doubling:
@@ -201,6 +245,10 @@ if (bassAnalysis.hasRootOnBeat1) {
 ```
 
 ## Key Modulation
+
+::: tip Why Modulate?
+Key modulation (changing the key mid-song) is a powerful technique to add excitement and emotional lift. A modulation up by 1-2 semitones in the final chorus creates a feeling of "taking it to the next level" - a classic technique used in countless hit songs.
+:::
 
 ### Modulation Points
 
@@ -262,6 +310,10 @@ uint8_t nearestChordTone(uint8_t pitch, Chord chord) {
 
 ## Tension Notes
 
+::: info What are Tension Notes?
+Tension notes are notes that don't belong to the current chord but are used intentionally to create musical interest. They create a sense of "wanting to resolve" - like a musical question waiting for an answer. Used skillfully, they make melodies more expressive and emotionally compelling.
+:::
+
 Non-chord tones used for melodic interest:
 
 | Tension | Interval | Resolution |
@@ -274,8 +326,192 @@ Non-chord tones used for melodic interest:
 
 ### Usage by Vocal Attitude
 
-| Attitude | Tensions Allowed |
-|----------|------------------|
-| Clean | None (chord tones only) |
-| Expressive | 9th, 13th on weak beats |
-| Raw | All tensions, any beat |
+| Attitude | Tensions Allowed | Musical Effect |
+|----------|------------------|----------------|
+| Clean | None (chord tones only) | Safe, consonant, easy to sing |
+| Expressive | 9th, 13th on weak beats | Colorful, emotional, sophisticated |
+| Raw | All tensions, any beat | Edgy, unpredictable, intense |
+
+::: tip Choosing Vocal Attitude
+- **Clean**: Best for simple pop, children's songs, and when singability is important
+- **Expressive**: Best for ballads, R&B, city pop - adds emotional depth
+- **Raw**: Best for rock, alternative, experimental - creates tension and edge
+:::
+
+---
+
+## Harmony-Melody Integration
+
+The vocal generation system uses harmony information extensively to create musically coherent melodies.
+
+### HarmonyContext
+
+The `HarmonyContext` system tracks all generated tracks and provides collision-free pitch suggestions:
+
+```mermaid
+flowchart TD
+    A[MelodyDesigner] --> B[Request pitch candidates]
+    B --> C[HarmonyContext]
+    C --> D[Check Bass at tick]
+    C --> E[Check Chord at tick]
+    C --> F[Check Aux at tick]
+    D --> G[Collision Detection]
+    E --> G
+    F --> G
+    G --> H[Return safe pitches]
+    H --> I[Melody uses safe pitch]
+```
+
+::: info Why HarmonyContext Matters
+Without HarmonyContext, melodies might clash with accompaniment. For example, if the bass plays E and the melody plays F simultaneously, the result is a harsh minor 2nd dissonance. HarmonyContext prevents this by checking all active notes before suggesting melody pitches.
+:::
+
+### Collision Types
+
+| Interval | Collision Type | Result |
+|----------|---------------|--------|
+| Minor 2nd (1 semitone) | **Severe** | Always avoided |
+| Major 7th (11 semitones) | **Severe** | Always avoided |
+| Tritone (6 semitones) | **Mild** | Context-dependent |
+| Perfect 5th, Octave | **None** | Harmonically stable |
+
+### Chord-Aware Melody Generation
+
+The MelodyDesigner uses chord information at multiple stages:
+
+```mermaid
+flowchart LR
+    subgraph Generation ["1. Generation"]
+        G1[Strong beat] --> G2[Prefer chord tones]
+        G3[Weak beat] --> G4[Allow passing tones]
+    end
+
+    subgraph Evaluation ["2. Evaluation"]
+        E1[Check consonance]
+        E2[Score chord tone alignment]
+    end
+
+    subgraph Refinement ["3. Refinement"]
+        R1[Voice leading to next chord]
+        R2[Anticipation of chord changes]
+    end
+
+    Generation --> Evaluation --> Refinement
+```
+
+**Strong Beat Rule**: On beats 1 and 3, melodies strongly prefer chord tones. This creates a sense of harmonic grounding even when the melody moves freely between strong beats.
+
+### VocalStyleProfile and Harmony
+
+Each `VocalStyleProfile` configures how the melody interacts with harmony:
+
+| Profile | Chord Tone Preference | Tension Usage | Approach |
+|---------|----------------------|---------------|----------|
+| **Standard** | High on strong beats | Occasional 9th | Safe, singable |
+| **Idol** | Very high | Minimal | Catchy, simple |
+| **CityPop** | Medium | Frequent 9th, 13th | Sophisticated |
+| **Vocaloid** | Low | Aggressive | Surprising |
+| **Ballad** | High | Expressive appoggiaturas | Emotional |
+
+::: tip Style-Harmony Matching
+For best results, match your chord extensions to your vocal style:
+- **Idol/Standard**: Keep extensions low (sus, occasional 7th)
+- **CityPop/Jazz**: Use high extension probabilities (7th, 9th)
+- **Vocaloid**: Extensions don't matter much (melody is freer)
+:::
+
+### Melody Evaluation: Harmony Component
+
+The melody evaluation system includes harmony scoring:
+
+```cpp
+float evaluateHarmonyFit(const MelodyCandidate& melody, const Chord& chord) {
+    float score = 0.0f;
+
+    for (auto& note : melody.notes) {
+        if (isStrongBeat(note.tick)) {
+            // Strong beat: chord tone = +1.0, tension = +0.3, other = -0.5
+            if (isChordTone(note.pitch, chord)) score += 1.0f;
+            else if (isTension(note.pitch, chord)) score += 0.3f;
+            else score -= 0.5f;
+        } else {
+            // Weak beat: more lenient
+            if (isChordTone(note.pitch, chord)) score += 0.5f;
+            else if (isScaleTone(note.pitch)) score += 0.2f;
+        }
+    }
+
+    return score / melody.notes.size();
+}
+```
+
+### Hook System and Harmony
+
+The hook system (used in Chorus sections) respects harmony while creating memorable patterns:
+
+| Hook Skeleton | Harmonic Behavior |
+|---------------|-------------------|
+| **Repeat** | Stays on single chord tone |
+| **Ascending** | Rises through chord arpeggio |
+| **AscendDrop** | Arpeggio up, then resolves down |
+| **LeapReturn** | Jumps to tension, returns to chord tone |
+
+::: info Hook + Chord Sync
+Hooks are most effective when they align with chord changes. The `hookIntensity` parameter controls how strongly hooks emphasize chord tones vs. create melodic interest through tensions.
+:::
+
+### Piano Roll Safety API
+
+For external tools (like piano roll editors), the `PianoRollSafety` API provides harmony-aware pitch suggestions:
+
+```cpp
+// Get safe pitches at a specific tick
+vector<SafePitch> getSafePitches(Tick tick) {
+    Chord currentChord = getChordAt(tick);
+    vector<uint8_t> activePitches = getActiveNotesAt(tick);
+
+    vector<SafePitch> result;
+    for (uint8_t pitch = vocalLow; pitch <= vocalHigh; pitch++) {
+        CollisionType collision = checkCollision(pitch, activePitches);
+        bool isChordTone = currentChord.contains(pitch % 12);
+
+        result.push_back({
+            pitch,
+            collision,
+            isChordTone ? PitchSafety::Recommended : PitchSafety::Acceptable
+        });
+    }
+    return result;
+}
+```
+
+This enables visual feedback showing:
+- **Green**: Chord tones (recommended)
+- **Yellow**: Scale tones (acceptable)
+- **Red**: Collision pitches (avoid)
+
+---
+
+## Practical Guide
+
+### Recommended Combinations
+
+| Style | Progression | Extensions | Attitude |
+|-------|-------------|------------|----------|
+| Simple Pop | Pop4 (0) | Low (10-20%) | Clean |
+| Emotional Ballad | Axis (1) | Medium (30%) | Expressive |
+| J-Pop | Komuro (2) | Medium (30%) | Expressive |
+| City Pop | Extended5 (9) | High (50%+) | Expressive |
+| Rock | Rock4 (8) | Low (10%) | Raw |
+
+### Quick Start Recommendations
+
+::: tip For Beginners
+Start with these safe defaults:
+- **Progression**: Pop4 (ID 0) - works with almost anything
+- **Extensions**: Keep all probabilities under 30%
+- **Attitude**: Clean - easiest melodies to work with
+- **Modulation**: None or LastChorus +1 semitone
+
+Once you're comfortable, experiment with more complex progressions and higher extension probabilities.
+:::

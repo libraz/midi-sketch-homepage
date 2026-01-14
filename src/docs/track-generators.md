@@ -47,16 +47,32 @@ flowchart TB
 
 ## Vocal Track
 
-**Source:** `src/track/vocal.cpp` (~960 lines), `src/track/melody_designer.cpp` (~1280 lines)
+**Source:** `src/track/vocal.cpp` (~314 lines), `src/track/melody_designer.cpp` (~2048 lines)
 
-The vocal system uses a **template-driven melody designer** for predictable, stylistically-accurate melody generation.
+The vocal system uses a **template-driven melody designer** with **style-aware evaluation** for predictable, stylistically-accurate melody generation.
+
+::: tip Why "Vocal" Track?
+The Vocal track generates the main melody line. It's called "Vocal" because it's designed to be sung or played as the lead part. Use MIDI channel 0 (piano) in your DAW to preview it, or assign any instrument you prefer.
+:::
 
 ### Architecture
 
-The vocal generation is split into two components:
+The vocal generation consists of three major components:
 
-1. **MelodyDesigner** (`melody_designer.cpp`) - Template-driven pitch selection
-2. **Vocal Generator** (`vocal.cpp`) - Section structure and coordination
+1. **MelodyDesigner** (`melody_designer.cpp`) - Template-driven pitch selection with evaluation
+2. **Vocal Generator** (`vocal.cpp`) - Section structure, caching, and coordination
+3. **VocalStyleProfile** - Unified bias and evaluation configuration per style
+
+```mermaid
+flowchart TD
+    A[VocalStyleProfile] --> B[MelodyDesigner]
+    B --> C[Generate Candidates]
+    C --> D[Evaluate: Style + Singability + Bias]
+    D --> E[Select Best]
+    E --> F[Vocal Generator]
+    F --> G[Apply Constraints]
+    G --> H[Cache Phrase]
+```
 
 ### Melody Templates
 
@@ -117,14 +133,26 @@ This constrained approach produces more natural, singable melodies.
 
 ### Phrase Caching
 
-Phrases are cached by section type to ensure musical coherence:
+Phrases are cached using a composite key (V2 cache) to ensure musical coherence:
 
 ```cpp
-std::map<SectionType, std::vector<Phrase>> phraseCache_;
+struct PhraseCacheKey {
+    SectionType type;      // Verse, Chorus, etc.
+    uint8_t bars;          // Section length
+    uint8_t chord_degree;  // Starting chord degree
+};
 
-// A section uses same/similar phrases when repeated
-// Chorus maintains its melodic identity
+// Cache behavior:
+// - 80% exact reuse: Same phrase reproduced
+// - 20% variation: Applied transformations (octave shift, rhythm variation)
 ```
+
+::: info Phrase Variation
+When reusing cached phrases, the system may apply variations:
+- **Octave shift**: Move phrase up/down an octave
+- **Rhythm variation**: Slight timing adjustments
+- **Contour inversion**: Flip ascending/descending patterns
+:::
 
 ### Range Constraints
 
@@ -153,6 +181,122 @@ Configuration varies by mood:
 - **Jazzy**: More tensions, syncopation
 - **Ballad**: Balanced with expressive appoggiaturas
 - **J-POP**: Prefers pentatonic scale (yonanuki) intervals
+
+### VocalStyleProfile
+
+Each vocal style has a unified profile that controls both **generation bias** and **evaluation weights**:
+
+| Profile | Plateau Bias | High Register | Singability | Surprise |
+|---------|-------------|---------------|-------------|----------|
+| **Standard** | 1.0 | 1.0 | 0.25 | 0.15 |
+| **Idol** | 1.2 | 1.0 | 0.30 | 0.12 |
+| **Rock** | 0.8 | 1.2 | 0.20 | 0.20 |
+| **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
+| **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
+| **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
+
+::: details Profile Parameters
+- **Plateau Bias**: Preference for staying on the same pitch (higher = more repetitive)
+- **High Register**: Preference for high notes (higher = brighter)
+- **Singability**: Weight for human-singable melodies (higher = easier to sing)
+- **Surprise**: Weight for unexpected melodic turns (higher = more dynamic)
+:::
+
+### Melody Evaluation System
+
+The MelodyDesigner generates multiple candidate melodies and evaluates them:
+
+```mermaid
+flowchart LR
+    A[Generate 8 Candidates] --> B[Style Score 40%]
+    A --> C[Singability Score 40%]
+    A --> D[Bias Score 20%]
+    B --> E[Combined Score]
+    C --> E
+    D --> E
+    E --> F[Select Best]
+```
+
+**Evaluation Components:**
+
+| Component | Weight | Criteria |
+|-----------|--------|----------|
+| Style Score | 40% | Contour matching, pattern consistency, surprise balance |
+| Singability Score | 40% | Stepwise motion, breath marks, monotony avoidance |
+| Bias Score | 20% | Interval distribution matching style preferences |
+
+### Hook System
+
+Chorus sections use a dedicated hook generation system with **6 rhythm patterns**:
+
+| Pattern | Rhythm | Character |
+|---------|--------|-----------|
+| **Buildup** | 8-8-4 | Classic step resolution |
+| **Syncopated** | 4-8-8 | Syncopated start |
+| **FourNote** | 8-8-8-4 | High energy |
+| **Powerful** | 4-4 | Simple, strong |
+| **Dotted** | 8-4-8 | Dotted rhythm feel |
+| **CallResponse** | 4-8-8-8 | Call and response |
+
+**Hook Skeletons:**
+
+| Skeleton | Description |
+|----------|-------------|
+| Repeat | Same pitch repeated |
+| Ascending | Rising contour |
+| AscendDrop | Rise then fall |
+| LeapReturn | Jump and return |
+| RhythmRepeat | Pitch varies, rhythm constant |
+
+**Hook Intensity** controls hook prominence:
+- **Off (0)**: No hook repetition
+- **Light (1)**: Subtle hook presence
+- **Normal (2)**: Standard pop hooks
+- **Strong (3)**: Heavy hook emphasis (TikTok-style)
+
+### Global Motif System
+
+The vocal track extracts a **global motif** from the first generated phrase and uses it to maintain musical coherence:
+
+```cpp
+struct GlobalMotif {
+    vector<int8_t> interval_signature;  // Relative pitch changes (max 8)
+    vector<float> rhythm_signature;     // Relative duration ratios
+    ContourType contour_type;           // Ascending, Descending, Peak, Valley, Plateau
+};
+```
+
+**Evaluation Bonus:**
+- Matching contour type: +5% score
+- Similar interval patterns: +5% score (3+ matches)
+- This ensures later sections feel related to the opening
+
+### Piano Roll Safety API
+
+**Source:** `src/core/piano_roll_safety.cpp`
+
+The Piano Roll Safety API helps external tools (like piano roll editors) determine safe pitch placements:
+
+```cpp
+enum class CollisionType : uint8_t {
+    None,    // No collision - safe to place
+    Mild,    // Tritone (context-dependent)
+    Severe   // Minor 2nd / Major 7th (always dissonant)
+};
+```
+
+**Collision Detection:**
+
+| Interval | Type | Risk |
+|----------|------|------|
+| Minor 2nd (1 semitone) | Severe | Always avoid |
+| Major 7th (11 semitones) | Severe | Always avoid |
+| Tritone (6 semitones) | Mild | Context-dependent |
+| Others | None | Generally safe |
+
+::: warning Modulation Awareness
+The API accounts for key modulation. When modulation is enabled, the `effective_vocal_high` is reduced to prevent the final chorus from exceeding the vocal range after transposition.
+:::
 
 ---
 

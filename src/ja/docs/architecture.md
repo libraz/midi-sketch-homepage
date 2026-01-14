@@ -18,11 +18,11 @@ midi-sketch/
 │   │   └── basic_types.h          # コア型定義
 │   ├── midi/              # MIDI出力（SMF Type 1, MIDI 2.0）
 │   ├── track/             # トラック生成器
-│   │   ├── vocal.cpp              # ボーカル調整（約960行）
-│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約1280行）
-│   │   ├── aux_track.cpp          # Aux副旋律（約1170行）
-│   │   ├── chord_track.cpp        # コードボイシング（約2000行）
-│   │   ├── bass.cpp               # ベースパターン（約1170行）
+│   │   ├── vocal.cpp              # ボーカル調整（約314行）
+│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約2048行）
+│   │   ├── aux_track.cpp          # Aux副旋律（約1600行）
+│   │   ├── chord_track.cpp        # コードボイシング（約2050行）
+│   │   ├── bass.cpp               # ベースパターン（約1420行）
 │   │   └── ...                    # その他のトラック生成器
 │   ├── analysis/          # 不協和音分析
 │   ├── preset/            # プリセット定義
@@ -38,6 +38,11 @@ midi-sketch/
 ### MidiSketchクラス
 
 高レベルAPIを提供するメインエントリーポイント：
+
+::: tip 2つの生成ワークフロー
+- **ボーカル先行**: `generateVocal()` → `regenerateVocal()`で反復 → `generateAccompaniment()`で完成
+- **標準**: `generate()` または `generateFromConfig()` でワンショット生成
+:::
 
 ```cpp
 class MidiSketch {
@@ -93,6 +98,10 @@ struct Song {
   MidiTrack se;               // チャンネル 15（マーカー）
 };
 ```
+
+::: info チャンネル共有
+AuxとArpeggioはMIDIチャンネル5を共有しています。MelodyLeadスタイルではAuxが生成され、SynthDrivenスタイルではArpeggioが生成されます。両者が同時に有効になることはありません。
+:::
 
 ## データフロー
 
@@ -158,6 +167,13 @@ constexpr Tick TICKS_PER_BAR = 1920;    // 4/4拍子
 constexpr uint8_t BEATS_PER_BAR = 4;
 ```
 
+::: tip ティック計算
+- 4分音符 = 480 ticks
+- 8分音符 = 240 ticks
+- 16分音符 = 120 ticks
+- 1小節（4/4拍子）= 1920 ticks
+:::
+
 ## ノート表現
 
 2層のノート表現：
@@ -206,6 +222,10 @@ struct Section {
 | **BackgroundMotif** | 繰り返しモチーフが主役、ボーカルは控えめ |
 | **SynthDriven** | シンセ/アルペジオ主体のエレクトロニックスタイル |
 
+::: warning BGM専用モード
+BackgroundMotifとSynthDrivenは**BGM専用モード**です。ボーカルトラックは生成されません。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+:::
+
 ## 乱数生成
 
 メルセンヌ・ツイスターによる決定論的生成：
@@ -213,6 +233,11 @@ struct Section {
 ```cpp
 std::mt19937 rng(seed);  // 同じシード = 同じ出力
 ```
+
+::: info 再現性
+- **seed > 0**: 完全決定論的 - 同じシードと同じパラメータで常に同一の出力
+- **seed = 0**: ランダム - 現在時刻を使用、実行ごとに異なる結果
+:::
 
 シードが0の場合、現在時刻がランダム化に使用されます。
 

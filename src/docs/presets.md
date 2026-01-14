@@ -42,6 +42,10 @@ flowchart LR
 | Interlude | None | Medium-Low | Instrumental break |
 | Outro | Sparse | Medium-Low | Resolution |
 
+::: tip Duration Calculation
+At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact pattern duration, or specify a target duration for auto-generated structures.
+:::
+
 ## Mood Presets
 
 20 mood presets define the overall feel:
@@ -127,23 +131,41 @@ flowchart TD
 
 ## Style Presets
 
-13 style presets that combine mood and composition approach:
+17 style presets that combine mood, structure, and composition approach:
 
-| ID | Name | Comp. Style | Base Mood | Character |
-|----|------|-------------|-----------|-----------|
-| 0 | MinimalGroovePop | MelodyLead | MidPop | Clean, simple |
-| 1 | DancePopStandard | MelodyLead | EnergeticDance | Dance floor |
-| 2 | IdolStandard | MelodyLead | IdolPop | J-pop idol |
-| 3 | RockStandard | MelodyLead | LightRock | Rock band |
-| 4 | BalladStandard | MelodyLead | Ballad | Slow ballad |
-| 5 | YoasobiStyle | SynthDriven | Yoasobi | Anime-style |
-| 6 | SynthwaveStyle | SynthDriven | Synthwave | Retro synth |
-| 7 | FutureBassStyle | SynthDriven | FutureBass | Modern EDM |
-| 8 | CityPopStyle | MelodyLead | CityPop | 80s vibe |
-| 9 | MotifDriven | BackgroundMotif | MidPop | Pattern-based |
-| 10 | ChillMotif | BackgroundMotif | Chill | Relaxed patterns |
-| 11 | ElectroMotif | BackgroundMotif | ElectroPop | Electronic patterns |
-| 12 | AnthemStyle | MelodyLead | Anthem | Triumphant |
+::: tip Choosing a Style Preset
+Style presets provide sensible defaults for BPM, structure, vocal attitude, and recommended chord progressions. You can override any of these settings after calling `createDefaultConfig()`.
+:::
+
+| ID | Name | Description | Default BPM |
+|----|------|-------------|-------------|
+| 0 | Minimal Groove Pop | Repetitive 2-4 chord loops, simple melody | 122 |
+| 1 | Dance Pop Emotion | Classic structure, emotional chorus release | 128 |
+| 2 | Bright Pop | Upbeat, memorable melodies with simple structure | 135 |
+| 3 | Idol Standard | Unison-friendly, memorable melodies | 140 |
+| 4 | Idol Emotion | Emotional idol songs with building pre-chorus | 130 |
+| 5 | Idol Energy | High-energy idol songs for live performances | 150 |
+| 6 | Idol Minimal | Minimal idol songs for short-form content | 135 |
+| 7 | Rock Shout | Aggressive vocals with raw expression | 125 |
+| 8 | Pop Emotion | Word-driven emotional pop with lyrical focus | 108 |
+| 9 | Raw Emotional | Intense emotional expression with boundary-breaking phrases | 102 |
+| 10 | Acoustic Pop | Clear harmony, rhythm-light, vocal-centered | 95 |
+| 11 | Live Call & Response | Concert-ready with call-response structure | 140 |
+| 12 | Background Motif | Motif-driven with subdued vocals, ambient feel | 120 |
+| 13 | City Pop | Groovy 80s Japanese city pop with jazzy chords | 105 |
+| 14 | Anime Opening | Epic, dramatic anime OP style with building energy | 142 |
+| 15 | EDM Synth Pop | Modern electronic dance music with synth leads | 138 |
+| 16 | Emotional Ballad | Slow emotional ballad with expressive vocals | 78 |
+
+### Style Categories
+
+| Category | IDs | Description |
+|----------|-----|-------------|
+| Pop/Dance | 0-2 | General pop and dance styles |
+| Idol | 3-6 | Japanese idol music styles |
+| Rock/Emo | 7-9 | Rock and emotional styles with raw expression |
+| Special/Derived | 10-12 | Acoustic, live, and ambient styles |
+| Genre-Specific | 13-16 | City pop, anime, EDM, and ballad styles |
 
 ## Composition Styles
 
@@ -154,6 +176,10 @@ flowchart TD
 | MelodyLead | Vocal melody | Primary | Full melodic expression |
 | BackgroundMotif | Repeating pattern | Secondary | Motif as main element |
 | SynthDriven | Synth/Arpeggio | Secondary | Electronic, arpeggiated |
+
+::: warning BGM-Only Modes
+BackgroundMotif and SynthDriven do not generate vocal tracks. Use MelodyLead for songs with vocals.
+:::
 
 ### MelodyLead
 
@@ -314,10 +340,13 @@ flowchart TD
 
 ## BPM Range
 
-Valid tempo range: 60-180 BPM
+Valid tempo range: **40-240 BPM**
 
-- Set to 0 to use mood's default BPM
-- Each mood has an optimal BPM setting
+::: info BPM Setting
+- Set to `0` to use the style preset's default BPM
+- Each style preset has an optimal default BPM setting
+- BPM outside the 40-240 range will cause validation errors
+:::
 
 ## Configuration Examples
 
@@ -338,34 +367,45 @@ config.drumsEnabled = true
 ### Emotional Ballad
 
 ```javascript
-// Use BalladStandard preset
-const config = createDefaultConfig(4)  // BalladStandard
+// Use Emotional Ballad preset
+const config = createDefaultConfig(16) // Emotional Ballad
 config.key = 7                         // G major
 config.chordProgressionId = 4          // Emotional4
 config.formId = 8                      // Ballad structure
-config.bpm = 75                        // Slower
+config.bpm = 0                         // Use default (78)
 config.drumsEnabled = true
 ```
 
-### YOASOBI Style
+::: warning Ballad Tempo
+Ballad presets typically have slow default tempos (78-95 BPM). If you need a faster ballad, explicitly set `config.bpm`.
+:::
+
+### Anime Opening Style
 
 ```javascript
-// Use YoasobiStyle preset
-const config = createDefaultConfig(5)  // YoasobiStyle
+// Use Anime Opening preset
+const config = createDefaultConfig(14) // Anime Opening
 config.key = 2                         // D major
 config.chordProgressionId = 2          // Komuro
-config.bpm = 0                         // Use default (148)
+config.bpm = 0                         // Use default (142)
 config.drumsEnabled = true
-config.arpeggioEnabled = true
-config.vocalNoteDensity = 150          // Vocaloid-style dense melody
-config.vocalAllowExtremLeap = true     // Allow wide intervals
+config.vocalStyle = 2                  // Vocaloid style
+config.melodicComplexity = 2           // Complex melodies
+config.hookIntensity = 3               // Strong hooks
 ```
+
+::: tip Vocaloid-style Melodies
+For YOASOBI/Ado-style dense melodies with wide intervals, use:
+- `vocalStyle: 2` (Vocaloid) or `vocalStyle: 3` (UltraVocaloid)
+- `melodicComplexity: 2` (Complex)
+- `melodyTemplate: 2` (RunUpTarget)
+:::
 
 ### Chill Background
 
 ```javascript
-// Use ChillMotif preset
-const config = createDefaultConfig(10)  // ChillMotif
+// Use Background Motif preset
+const config = createDefaultConfig(12)  // Background Motif
 config.key = 5                          // F major
 config.chordProgressionId = 5           // Minimal
 config.formId = 4                       // ShortForm
@@ -373,11 +413,15 @@ config.bpm = 95
 config.drumsEnabled = false             // No drums for ambient
 ```
 
+::: info Background Motif Style
+The Background Motif preset (ID 12) is ideal for ambient and BGM-style tracks with subdued vocals and repeating patterns.
+:::
+
 ### Idol Pop with Calls
 
 ```javascript
-// Use IdolStandard preset
-const config = createDefaultConfig(2)  // IdolStandard
+// Use Idol Standard preset
+const config = createDefaultConfig(3)  // Idol Standard
 config.key = 0                         // C major
 config.callEnabled = true              // Enable call track
 config.introChant = 1                  // Gachikoi intro

@@ -12,6 +12,9 @@ const { t } = useI18n()
 const store = useWizardStore()
 const midiGen = useMidiGeneration()
 
+// Advanced settings accordion state
+const isAdvancedOpen = ref(false)
+
 // Store style presets for attitude validation
 const stylePresets = ref<any[]>([])
 
@@ -124,6 +127,28 @@ const hookIntensityOptions = [
   { key: 'normal', value: 2 },
   { key: 'strong', value: 3 }
 ]
+
+// Summary for advanced settings
+const advancedSummary = computed(() => {
+  const parts: string[] = []
+
+  // Vocal Range
+  const lowNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][store.config.vocalLow % 12]
+  const lowOctave = Math.floor(store.config.vocalLow / 12) - 1
+  const highNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][store.config.vocalHigh % 12]
+  const highOctave = Math.floor(store.config.vocalHigh / 12) - 1
+  parts.push(`${lowNote}${lowOctave}-${highNote}${highOctave}`)
+
+  // Groove (if not straight)
+  if (store.config.vocalGroove !== 0) {
+    const grooveKey = vocalGrooveOptions.find(o => o.value === store.config.vocalGroove)?.key
+    if (grooveKey) {
+      parts.push(t(`melodyStep.advanced.vocalGroove.options.${grooveKey}`))
+    }
+  }
+
+  return parts.join(' · ')
+})
 </script>
 
 <template>
@@ -161,39 +186,6 @@ const hookIntensityOptions = [
         </div>
       </SettingSection>
 
-      <!-- Vocal Range -->
-      <SettingSection
-        icon="🎵"
-        :title="t('melodyStep.advanced.vocalRange.label')"
-        :description="t('melodyStep.advanced.vocalRange.description')"
-      >
-        <VocalRangeSelector
-          :vocal-low="store.config.vocalLow"
-          :vocal-high="store.config.vocalHigh"
-          @update:vocal-low="store.config.vocalLow = $event"
-          @update:vocal-high="store.config.vocalHigh = $event"
-        />
-      </SettingSection>
-
-      <!-- Vocal Attitude (hidden when only one choice available) -->
-      <SettingSection
-        v-if="showAttitudeSection"
-        icon="🎤"
-        :title="t('melodyStep.advanced.vocalAttitude.label')"
-        :description="t('melodyStep.advanced.vocalAttitude.description')"
-      >
-        <div class="option-cards">
-          <OptionCard
-            v-for="option in filteredAttitudeOptions"
-            :key="option.key"
-            :title="t(`melodyStep.advanced.vocalAttitude.options.${option.key}`)"
-            :description="t(`melodyStep.advanced.vocalAttitude.options.${option.key}Desc`)"
-            :is-active="store.config.vocalAttitude === option.value"
-            @select="store.config.vocalAttitude = option.value"
-          />
-        </div>
-      </SettingSection>
-
       <!-- Vocal Style -->
       <SettingSection
         icon="🎼"
@@ -218,65 +210,118 @@ const hookIntensityOptions = [
         </div>
       </SettingSection>
 
-      <!-- Vocal Groove -->
-      <SettingSection
-        icon="🎸"
-        :title="t('melodyStep.advanced.vocalGroove.label')"
-        :description="t('melodyStep.advanced.vocalGroove.description')"
-      >
-        <div class="compact-btns compact-btns--grid">
-          <button
-            v-for="opt in vocalGrooveOptions"
-            :key="opt.key"
-            class="compact-btn"
-            :class="{ 'compact-btn--active': store.config.vocalGroove === opt.value }"
-            @click="store.config.vocalGroove = opt.value"
-          >
-            <span class="compact-btn__icon">{{ opt.icon }}</span>
-            <span>{{ t(`melodyStep.advanced.vocalGroove.options.${opt.key}`) }}</span>
-          </button>
-        </div>
-        <!-- Show description only for selected groove -->
-        <div v-if="store.config.vocalGroove !== 0" class="selected-desc">
-          <span class="selected-desc__text">{{ t(`melodyStep.advanced.vocalGroove.options.${vocalGrooveOptions.find(o => o.value === store.config.vocalGroove)?.key}Desc`) }}</span>
-        </div>
-      </SettingSection>
+      <!-- Advanced Settings Accordion -->
+      <div class="advanced-accordion" :class="{ 'advanced-accordion--open': isAdvancedOpen }">
+        <button class="advanced-accordion__header" @click="isAdvancedOpen = !isAdvancedOpen">
+          <span class="advanced-accordion__icon">⚙</span>
+          <span class="advanced-accordion__title">{{ t('settingsStep.advanced.toggle') }}</span>
+          <span class="advanced-accordion__summary">{{ advancedSummary }}</span>
+          <span class="advanced-accordion__chevron">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
 
-      <!-- Melodic Complexity -->
-      <SettingSection
-        icon="🎼"
-        :title="t('melodyStep.advanced.melodicComplexity.label')"
-        :description="t('melodyStep.advanced.melodicComplexity.description')"
-      >
-        <div class="option-cards option-cards--row">
-          <OptionCard
-            v-for="opt in melodicComplexityOptions"
-            :key="opt.key"
-            :title="t(`melodyStep.advanced.melodicComplexity.options.${opt.key}`)"
-            :is-active="store.config.melodicComplexity === opt.value"
-            compact
-            @select="store.config.melodicComplexity = opt.value"
-          />
-        </div>
-      </SettingSection>
+        <Transition name="accordion">
+          <div v-show="isAdvancedOpen" class="advanced-accordion__body">
+            <div class="advanced-accordion__content">
+              <!-- Vocal Range -->
+              <SettingSection
+                icon="🎵"
+                :title="t('melodyStep.advanced.vocalRange.label')"
+                :description="t('melodyStep.advanced.vocalRange.description')"
+              >
+                <VocalRangeSelector
+                  :vocal-low="store.config.vocalLow"
+                  :vocal-high="store.config.vocalHigh"
+                  @update:vocal-low="store.config.vocalLow = $event"
+                  @update:vocal-high="store.config.vocalHigh = $event"
+                />
+              </SettingSection>
 
-      <!-- Hook Intensity -->
-      <SettingSection
-        icon="🎯"
-        :title="t('melodyStep.advanced.hookIntensity.label')"
-        :description="t('melodyStep.advanced.hookIntensity.description')"
-      >
-        <div class="option-cards option-cards--row">
-          <OptionCard
-            v-for="opt in hookIntensityOptions"
-            :key="opt.key"
-            :title="t(`melodyStep.advanced.hookIntensity.options.${opt.key}`)"
-            :is-active="store.config.hookIntensity === opt.value"
-            compact
-            @select="store.config.hookIntensity = opt.value"
-          />
-        </div>
-      </SettingSection>
+              <!-- Vocal Attitude (hidden when only one choice available) -->
+              <SettingSection
+                v-if="showAttitudeSection"
+                icon="🎤"
+                :title="t('melodyStep.advanced.vocalAttitude.label')"
+                :description="t('melodyStep.advanced.vocalAttitude.description')"
+              >
+                <div class="option-cards">
+                  <OptionCard
+                    v-for="option in filteredAttitudeOptions"
+                    :key="option.key"
+                    :title="t(`melodyStep.advanced.vocalAttitude.options.${option.key}`)"
+                    :description="t(`melodyStep.advanced.vocalAttitude.options.${option.key}Desc`)"
+                    :is-active="store.config.vocalAttitude === option.value"
+                    @select="store.config.vocalAttitude = option.value"
+                  />
+                </div>
+              </SettingSection>
+
+              <!-- Vocal Groove -->
+              <SettingSection
+                icon="🎸"
+                :title="t('melodyStep.advanced.vocalGroove.label')"
+                :description="t('melodyStep.advanced.vocalGroove.description')"
+              >
+                <div class="compact-btns compact-btns--grid">
+                  <button
+                    v-for="opt in vocalGrooveOptions"
+                    :key="opt.key"
+                    class="compact-btn"
+                    :class="{ 'compact-btn--active': store.config.vocalGroove === opt.value }"
+                    @click="store.config.vocalGroove = opt.value"
+                  >
+                    <span class="compact-btn__icon">{{ opt.icon }}</span>
+                    <span>{{ t(`melodyStep.advanced.vocalGroove.options.${opt.key}`) }}</span>
+                  </button>
+                </div>
+                <!-- Show description only for selected groove -->
+                <div v-if="store.config.vocalGroove !== 0" class="selected-desc">
+                  <span class="selected-desc__text">{{ t(`melodyStep.advanced.vocalGroove.options.${vocalGrooveOptions.find(o => o.value === store.config.vocalGroove)?.key}Desc`) }}</span>
+                </div>
+              </SettingSection>
+
+              <!-- Melodic Complexity -->
+              <SettingSection
+                icon="🎼"
+                :title="t('melodyStep.advanced.melodicComplexity.label')"
+                :description="t('melodyStep.advanced.melodicComplexity.description')"
+              >
+                <div class="option-cards option-cards--row">
+                  <OptionCard
+                    v-for="opt in melodicComplexityOptions"
+                    :key="opt.key"
+                    :title="t(`melodyStep.advanced.melodicComplexity.options.${opt.key}`)"
+                    :is-active="store.config.melodicComplexity === opt.value"
+                    compact
+                    @select="store.config.melodicComplexity = opt.value"
+                  />
+                </div>
+              </SettingSection>
+
+              <!-- Hook Intensity -->
+              <SettingSection
+                icon="🎯"
+                :title="t('melodyStep.advanced.hookIntensity.label')"
+                :description="t('melodyStep.advanced.hookIntensity.description')"
+              >
+                <div class="option-cards option-cards--row">
+                  <OptionCard
+                    v-for="opt in hookIntensityOptions"
+                    :key="opt.key"
+                    :title="t(`melodyStep.advanced.hookIntensity.options.${opt.key}`)"
+                    :is-active="store.config.hookIntensity === opt.value"
+                    compact
+                    @select="store.config.hookIntensity = opt.value"
+                  />
+                </div>
+              </SettingSection>
+            </div>
+          </div>
+        </Transition>
+      </div>
     </div>
   </div>
 </template>
@@ -285,6 +330,8 @@ const hookIntensityOptions = [
 .vocal-settings-step {
   --step-accent: #EC4899;
   --accent-rgb: 236, 72, 153;
+  --section-accent: #EC4899;
+  --section-accent-rgb: 236, 72, 153;
 }
 
 /* Vocal Settings */
@@ -396,9 +443,121 @@ const hookIntensityOptions = [
   line-height: 1.5;
 }
 
+/* Advanced Settings Accordion */
+.advanced-accordion {
+  border: 1px solid rgba(var(--accent-rgb), 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(20, 20, 28, 0.3);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.advanced-accordion--open {
+  border-color: rgba(var(--accent-rgb), 0.25);
+  background: rgba(20, 20, 28, 0.5);
+}
+
+.advanced-accordion__header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  gap: 0.625rem;
+}
+
+.advanced-accordion__header:hover {
+  background: rgba(var(--accent-rgb), 0.05);
+}
+
+.advanced-accordion__icon {
+  font-size: 0.9rem;
+  color: rgba(250, 250, 250, 0.5);
+  transition: color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__icon {
+  color: var(--step-accent);
+}
+
+.advanced-accordion__title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.7);
+  transition: color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__title {
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.advanced-accordion__summary {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--step-accent);
+  opacity: 0.8;
+  padding-right: 0.5rem;
+}
+
+.advanced-accordion__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: rgba(250, 250, 250, 0.4);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__chevron {
+  transform: rotate(180deg);
+  color: var(--step-accent);
+}
+
+.advanced-accordion__body {
+  overflow: hidden;
+}
+
+.advanced-accordion__content {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Accordion transition */
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 @media (max-width: 640px) {
   .compact-btns--grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .advanced-accordion__header {
+    padding: 0.75rem;
+  }
+
+  .advanced-accordion__summary {
+    display: none;
+  }
+
+  .advanced-accordion__content {
+    padding: 0 0.75rem 0.75rem;
   }
 }
 </style>

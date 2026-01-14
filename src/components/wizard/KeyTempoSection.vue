@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { songImages } from '@/data/songImages'
@@ -8,6 +8,7 @@ import { transposeProgressionToKey } from '@/utils/midiUtils'
 import KeySelector from './KeySelector.vue'
 import BpmControl from './BpmControl.vue'
 import ModulationPanel from './ModulationPanel.vue'
+import DurationPanel from './DurationPanel.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -16,6 +17,9 @@ const store = useWizardStore()
 defineProps<{
   accentColor?: 'purple' | 'pink' | 'blue'
 }>()
+
+// Advanced settings accordion state
+const isAdvancedOpen = ref(false)
 
 // Current song image for recommended BPM range
 const currentSongImage = computed(() =>
@@ -34,6 +38,40 @@ const chordDisplay = computed(() => {
     name: currentChord.value.name,
     chords: transposeProgressionToKey(currentChord.value.display, store.config.key)
   }
+})
+
+// Formatted duration for summary
+const formattedDuration = computed(() => {
+  const seconds = store.config.targetDurationSeconds
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+})
+
+// Modulation timing keys for translation
+const modulationTimingKeys: Record<number, string> = {
+  0: 'none',
+  1: 'lastChorus',
+  2: 'afterBridge',
+  3: 'eachChorus',
+  4: 'random'
+}
+
+// Summary value for advanced settings
+const advancedSummary = computed(() => {
+  const parts: string[] = []
+
+  // Duration
+  parts.push(formattedDuration.value)
+
+  // Modulation
+  if (store.config.modulationTiming !== 0) {
+    const key = modulationTimingKeys[store.config.modulationTiming] || 'none'
+    const label = t(`settingsStep.advanced.modulation.timingOptions.${key}`)
+    parts.push(`♯+${store.config.modulationSemitones} ${label}`)
+  }
+
+  return parts.join(' · ')
 })
 </script>
 
@@ -74,8 +112,31 @@ const chordDisplay = computed(() => {
         </div>
       </div>
 
-      <!-- Modulation Panel -->
-      <ModulationPanel />
+      <!-- Advanced Settings Accordion -->
+      <div class="advanced-accordion" :class="{ 'advanced-accordion--open': isAdvancedOpen }">
+        <button class="advanced-accordion__header" @click="isAdvancedOpen = !isAdvancedOpen">
+          <span class="advanced-accordion__icon">⚙</span>
+          <span class="advanced-accordion__title">{{ t('settingsStep.advanced.toggle') }}</span>
+          <span class="advanced-accordion__summary">{{ advancedSummary }}</span>
+          <span class="advanced-accordion__chevron">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+
+        <Transition name="accordion">
+          <div v-show="isAdvancedOpen" class="advanced-accordion__body">
+            <div class="advanced-accordion__content">
+              <!-- Duration Panel -->
+              <DurationPanel />
+
+              <!-- Modulation Panel -->
+              <ModulationPanel />
+            </div>
+          </div>
+        </Transition>
+      </div>
     </div>
   </section>
 </template>
@@ -159,6 +220,106 @@ const chordDisplay = computed(() => {
   color: var(--section-accent);
 }
 
+/* Advanced Settings Accordion */
+.advanced-accordion {
+  border: 1px solid rgba(var(--section-accent-rgb), 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(20, 20, 28, 0.3);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.advanced-accordion--open {
+  border-color: rgba(var(--section-accent-rgb), 0.25);
+  background: rgba(20, 20, 28, 0.5);
+}
+
+.advanced-accordion__header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  gap: 0.625rem;
+}
+
+.advanced-accordion__header:hover {
+  background: rgba(var(--section-accent-rgb), 0.05);
+}
+
+.advanced-accordion__icon {
+  font-size: 0.9rem;
+  color: rgba(250, 250, 250, 0.5);
+  transition: color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__icon {
+  color: var(--section-accent);
+}
+
+.advanced-accordion__title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.7);
+  transition: color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__title {
+  color: rgba(250, 250, 250, 0.9);
+}
+
+.advanced-accordion__summary {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--section-accent);
+  opacity: 0.8;
+  padding-right: 0.5rem;
+}
+
+.advanced-accordion__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: rgba(250, 250, 250, 0.4);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.advanced-accordion--open .advanced-accordion__chevron {
+  transform: rotate(180deg);
+  color: var(--section-accent);
+}
+
+.advanced-accordion__body {
+  overflow: hidden;
+}
+
+.advanced-accordion__content {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Accordion transition */
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 /* Mobile: stack vertically */
 @media (max-width: 640px) {
   .key-tempo-row {
@@ -183,6 +344,18 @@ const chordDisplay = computed(() => {
       color-mix(in srgb, var(--section-accent) 25%, transparent) 80%,
       transparent 100%
     );
+  }
+
+  .advanced-accordion__header {
+    padding: 0.75rem;
+  }
+
+  .advanced-accordion__summary {
+    display: none;
+  }
+
+  .advanced-accordion__content {
+    padding: 0 0.75rem 0.75rem;
   }
 }
 </style>

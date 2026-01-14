@@ -41,7 +41,7 @@ The binary will be at `build/midisketch_cli`.
 | `--style N` | Style preset ID (0-16) | 0 |
 | `--mood N` | Mood ID (0-19), overrides style mapping | - |
 | `--chord N` | Chord progression ID (0-19) | - |
-| `--bpm N` | BPM (60-200) | Style preset |
+| `--bpm N` | BPM (40-240) | Style preset |
 | `--key N` | Key (0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | 0 |
 | `--form N` | Form/structure pattern ID (0-17) | - |
 | `--duration N` | Target duration in seconds (0 = use pattern) | 0 |
@@ -58,16 +58,20 @@ The binary will be at `build/midisketch_cli`.
 | `--vocal-high N` | Vocal range upper bound (MIDI note) | 79 |
 | `--vocal-style N` | Vocal style preset | 0 (Auto) |
 
-Vocal style options:
-- 0: Auto
+Vocal style options (13 presets):
+- 0: Auto (selects based on style preset)
 - 1: Standard
-- 2: Vocaloid
-- 3: UltraVocaloid
-- 4: Idol
-- 5: Ballad
-- 6: Rock
-- 7: CityPop
-- 8: Anime
+- 2: Vocaloid (fast, wide leaps)
+- 3: UltraVocaloid (extreme speed, 32nd notes)
+- 4: Idol (catchy, hook-heavy)
+- 5: Ballad (slow, sustained)
+- 6: Rock (powerful, register shift)
+- 7: CityPop (jazzy, syncopated)
+- 8: Anime (dynamic, expressive)
+- 9: BrightKira (high, sparkling)
+- 10: CoolSynth (electronic, precise)
+- 11: CuteAffected (playful)
+- 12: PowerfulShout (intense)
 
 ### File Operations
 

@@ -35,16 +35,26 @@ downloadMidi(midiData, 'my-song.mid')
 
 MIDI Sketch は以下のマルチトラック MIDI ファイルを生成します：
 
-- **Vocal** - メインメロディ
-- **Aux** - 副旋律サポート（パルスループ、ターゲットヒント、グルーブアクセント）
-- **Chord** - ボイスリーディング付きハーモニーバッキング
-- **Bass** - アプローチノート付きベースライン
-- **Drums** - フィル付きリズムパターン
-- **Motif** - バックグラウンドの反復パターン（BackgroundMotifスタイル）
-- **Arpeggio** - シンセアルペジオパターン（SynthDrivenスタイル）
-- **SE** - セクションマーカー
+| トラック | チャンネル | 説明 |
+|----------|-----------|------|
+| **Vocal** | 0 | メインメロディ（ピアノロールセーフ） |
+| **Aux** | 5 | 副旋律サポート（パルスループ、グルーブアクセント） |
+| **Chord** | 2 | ボイスリーディング付きハーモニーバッキング |
+| **Bass** | 3 | アプローチノート付きベースライン |
+| **Drums** | 9 | フィル付きリズムパターン（GMドラム） |
+| **Motif** | 4 | バックグラウンドパターン（BackgroundMotifスタイル） |
+| **Arpeggio** | 5 | シンセアルペジオ（SynthDrivenスタイル） |
+| **SE** | 15 | セクションマーカー |
+
+::: info トラックの生成条件
+すべてのトラックがすべてのスタイルで生成されるわけではありません：
+- **Motif** トラック: `BackgroundMotif` コンポジションスタイルのみ
+- **Arpeggio** トラック: `arpeggioEnabled: true` または `SynthDriven` スタイルのみ
+- **Vocal/Aux**: `skipVocal: true` でBGMのみ生成可能
+:::
 
 ## 次のステップ
 
 - [インストール](./installation) - ライブラリのインストール
-- [API リファレンス](./api) - 完全な API ドキュメント
+- [JavaScript API](./api-js) - JavaScript/WASM API ドキュメント
+- [C++ API](./api-cpp) - C++/C API ドキュメント

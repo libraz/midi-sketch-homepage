@@ -42,6 +42,10 @@ flowchart LR
 | Interlude | None | 中低 | インスト休憩 |
 | Outro | Sparse | 中低 | 解決 |
 
+::: tip 長さの計算
+120 BPMの場合: 1小節 ≈ 2秒。`targetDurationSeconds=0`で正確なパターンの長さを使用するか、目標秒数を指定して自動生成された構造を使用します。
+:::
+
 ## ムードプリセット
 
 20のムードプリセットが全体の雰囲気を定義：
@@ -127,23 +131,41 @@ flowchart TD
 
 ## スタイルプリセット
 
-ムードとコンポジションアプローチを組み合わせた13のスタイルプリセット：
+ムード、構造、コンポジションアプローチを組み合わせた17のスタイルプリセット：
 
-| ID | 名前 | スタイル | ベースムード | 特徴 |
-|----|------|----------|-------------|------|
-| 0 | MinimalGroovePop | MelodyLead | MidPop | クリーン、シンプル |
-| 1 | DancePopStandard | MelodyLead | EnergeticDance | ダンスフロア |
-| 2 | IdolStandard | MelodyLead | IdolPop | J-popアイドル |
-| 3 | RockStandard | MelodyLead | LightRock | ロックバンド |
-| 4 | BalladStandard | MelodyLead | Ballad | スローバラード |
-| 5 | YoasobiStyle | SynthDriven | Yoasobi | アニメスタイル |
-| 6 | SynthwaveStyle | SynthDriven | Synthwave | レトロシンセ |
-| 7 | FutureBassStyle | SynthDriven | FutureBass | モダンEDM |
-| 8 | CityPopStyle | MelodyLead | CityPop | 80年代 |
-| 9 | MotifDriven | BackgroundMotif | MidPop | パターンベース |
-| 10 | ChillMotif | BackgroundMotif | Chill | リラックスパターン |
-| 11 | ElectroMotif | BackgroundMotif | ElectroPop | エレクトロパターン |
-| 12 | AnthemStyle | MelodyLead | Anthem | 勝利感 |
+::: tip スタイルプリセットの選び方
+スタイルプリセットは、BPM、構造、ボーカルアティチュード、推奨コード進行の適切なデフォルト値を提供します。`createDefaultConfig()` 呼び出し後にこれらの設定を上書きできます。
+:::
+
+| ID | 名前 | 説明 | デフォルトBPM |
+|----|------|------|--------------|
+| 0 | Minimal Groove Pop | 2-4コードループの繰り返し、シンプルなメロディ | 122 |
+| 1 | Dance Pop Emotion | クラシック構造、エモーショナルなサビ解放 | 128 |
+| 2 | Bright Pop | アップビート、覚えやすいメロディ | 135 |
+| 3 | Idol Standard | ユニゾン向き、覚えやすいメロディ | 140 |
+| 4 | Idol Emotion | エモーショナルなアイドル曲、盛り上がるBメロ | 130 |
+| 5 | Idol Energy | ハイエナジーなアイドル曲、ライブ向け | 150 |
+| 6 | Idol Minimal | ショートフォーム向けミニマルアイドル曲 | 135 |
+| 7 | Rock Shout | アグレッシブなボーカル、生々しい表現 | 125 |
+| 8 | Pop Emotion | 言葉重視のエモーショナルポップ | 108 |
+| 9 | Raw Emotional | 激しい感情表現、境界を越えるフレーズ | 102 |
+| 10 | Acoustic Pop | クリアなハーモニー、リズム軽め、ボーカル中心 | 95 |
+| 11 | Live Call & Response | コンサート向け、コール＆レスポンス構造 | 140 |
+| 12 | Background Motif | モチーフ駆動、控えめなボーカル、アンビエント | 120 |
+| 13 | City Pop | グルーヴィーな80年代シティポップ、ジャジーなコード | 105 |
+| 14 | Anime Opening | エピック、ドラマチックなアニメOP風 | 142 |
+| 15 | EDM Synth Pop | モダンEDM、シンセリード | 138 |
+| 16 | Emotional Ballad | スローエモーショナルバラード | 78 |
+
+### スタイルカテゴリ
+
+| カテゴリ | ID | 説明 |
+|----------|-----|------|
+| Pop/Dance | 0-2 | 一般的なポップ・ダンススタイル |
+| Idol | 3-6 | J-popアイドル系スタイル |
+| Rock/Emo | 7-9 | ロック・エモーショナル系、生々しい表現 |
+| Special/Derived | 10-12 | アコースティック、ライブ、アンビエント系 |
+| Genre-Specific | 13-16 | シティポップ、アニメ、EDM、バラード系 |
 
 ## コンポジションスタイル
 
@@ -154,6 +176,10 @@ flowchart TD
 | MelodyLead | ボーカルメロディ | プライマリ | フルメロディ表現 |
 | BackgroundMotif | 繰り返しパターン | セカンダリ | モチーフがメイン要素 |
 | SynthDriven | シンセ/アルペジオ | セカンダリ | エレクトロニック、アルペジオ |
+
+::: warning BGM専用モード
+BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+:::
 
 ### MelodyLead
 
@@ -314,10 +340,13 @@ flowchart TD
 
 ## BPMレンジ
 
-有効テンポ範囲: 60-180 BPM
+有効テンポ範囲: **40-240 BPM**
 
-- 0に設定するとムードのデフォルトBPMを使用
-- 各ムードには最適なBPM設定あり
+::: info BPM設定について
+- `0` に設定するとスタイルプリセットのデフォルトBPMを使用
+- 各スタイルプリセットには最適なデフォルトBPM設定あり
+- 40-240の範囲外のBPMはバリデーションエラーになります
+:::
 
 ## 設定例
 
@@ -338,34 +367,45 @@ config.drumsEnabled = true
 ### エモーショナルバラード
 
 ```javascript
-// BalladStandardプリセットを使用
-const config = createDefaultConfig(4)  // BalladStandard
+// Emotional Balladプリセットを使用
+const config = createDefaultConfig(16) // Emotional Ballad
 config.key = 7                         // Gメジャー
 config.chordProgressionId = 4          // Emotional4
 config.formId = 8                      // Ballad構造
-config.bpm = 75                        // より遅く
+config.bpm = 0                         // デフォルト使用 (78)
 config.drumsEnabled = true
 ```
 
-### YOASOBIスタイル
+::: warning バラードのテンポ
+バラードプリセットは通常スローテンポ（78-95 BPM）がデフォルトです。より速いバラードが必要な場合は、`config.bpm` を明示的に設定してください。
+:::
+
+### アニメOP風スタイル
 
 ```javascript
-// YoasobiStyleプリセットを使用
-const config = createDefaultConfig(5)  // YoasobiStyle
+// Anime Openingプリセットを使用
+const config = createDefaultConfig(14) // Anime Opening
 config.key = 2                         // Dメジャー
 config.chordProgressionId = 2          // Komuro
-config.bpm = 0                         // デフォルト使用 (148)
+config.bpm = 0                         // デフォルト使用 (142)
 config.drumsEnabled = true
-config.arpeggioEnabled = true
-config.vocalNoteDensity = 150          // ボカロスタイルの高密度メロディ
-config.vocalAllowExtremLeap = true     // 広い音程跳躍を許可
+config.vocalStyle = 2                  // Vocaloidスタイル
+config.melodicComplexity = 2           // 複雑なメロディ
+config.hookIntensity = 3               // 強いフック
 ```
+
+::: tip ボカロ風メロディ
+YOASOBI/Ado風の高密度メロディ（広い音程跳躍）を作るには：
+- `vocalStyle: 2` (Vocaloid) または `vocalStyle: 3` (UltraVocaloid)
+- `melodicComplexity: 2` (Complex)
+- `melodyTemplate: 2` (RunUpTarget)
+:::
 
 ### チルバックグラウンド
 
 ```javascript
-// ChillMotifプリセットを使用
-const config = createDefaultConfig(10)  // ChillMotif
+// Background Motifプリセットを使用
+const config = createDefaultConfig(12)  // Background Motif
 config.key = 5                          // Fメジャー
 config.chordProgressionId = 5           // Minimal
 config.formId = 4                       // ShortForm
@@ -373,11 +413,15 @@ config.bpm = 95
 config.drumsEnabled = false             // アンビエント用ドラムなし
 ```
 
+::: info Background Motifスタイル
+Background Motifプリセット (ID 12) は、控えめなボーカルと繰り返しパターンを持つアンビエント/BGMスタイルのトラックに最適です。
+:::
+
 ### アイドルポップ（コール付き）
 
 ```javascript
-// IdolStandardプリセットを使用
-const config = createDefaultConfig(2)  // IdolStandard
+// Idol Standardプリセットを使用
+const config = createDefaultConfig(3)  // Idol Standard
 config.key = 0                         // Cメジャー
 config.callEnabled = true              // コールトラック有効化
 config.introChant = 1                  // ガチ恋イントロ

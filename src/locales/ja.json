@@ -670,10 +670,15 @@
       "tagline": "グルーヴィーで都会的、ノスタルジック",
       "description": "80年代の日本のシティポップにインスパイアされた洗練されたサウンド"
     },
-    "anime-op": {
-      "name": "アニメOP風",
+    "anime-song": {
+      "name": "アニメソング風",
       "tagline": "壮大でドラマチック、印象的",
       "description": "お気に入りのアニメのOPになりそうな力強い曲"
+    },
+    "rock-pop": {
+      "name": "ロックポップ",
+      "tagline": "ギターが映えるエネルギッシュサウンド",
+      "description": "ドライブ感のあるギターとパワフルなドラムのバンドサウンド"
     },
     "dance-pop": {
       "name": "ダンスポップ",
@@ -694,6 +699,26 @@
       "name": "切ないラブソング",
       "tagline": "切なくて美しい",
       "description": "恋と切なさを歌うミディアムテンポの曲"
+    },
+    "synthwave": {
+      "name": "シンセウェイブ",
+      "tagline": "レトロシンセ、ネオンの輝き",
+      "description": "80年代インスパイアのシンセサウンドをモダンにアレンジ"
+    },
+    "electronica": {
+      "name": "エレクトロニカ",
+      "tagline": "パターンが織りなすエレクトロ",
+      "description": "重なり合うエレクトロニックパターンと変化するテクスチャ"
+    },
+    "chill-relax": {
+      "name": "チル / リラックス",
+      "tagline": "ゆったり心地よい",
+      "description": "リラックスできる心地よいBGM"
+    },
+    "instrumental": {
+      "name": "インストゥルメンタル",
+      "tagline": "言葉のない音楽",
+      "description": "動画や配信のBGMにぴったりな楽曲"
     }
   },
   "chordProgressions": {

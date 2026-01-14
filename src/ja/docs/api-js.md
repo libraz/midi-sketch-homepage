@@ -10,6 +10,10 @@ WASM モジュールを初期化します。他の関数を使用する前に呼
 await midisketch.init()
 ```
 
+::: warning 最初に呼び出し必須
+他のAPI関数を使用する前に必ず`init()`を呼び出してください。初期化前に他の関数を呼び出すとエラーになります。
+:::
+
 ### `getVersion()`
 
 ライブラリのバージョン文字列を返します。
@@ -173,6 +177,10 @@ sketch.generateFromConfig({
   motifMaxChordCount: 0,      // 最大コード数 (0=制限なし, 2-8)
 })
 ```
+
+::: info パラメータの依存関係
+多くのパラメータは親オプションが有効な場合のみ効果があります。例えば、`arpeggioEnabled=false`の場合、`arpeggioPattern`を設定しても効果がありません。完全な依存関係ツリーは[オプション関係性](/ja/docs/option-relationships)を参照してください。
+:::
 
 ### `regenerateVocal(params)`
 
@@ -358,6 +366,18 @@ const reasonText = sketch.reasonToString(info.reason[60])
 ```javascript
 sketch.destroy()
 ```
+
+## 生成ワークフロー
+
+MIDI Sketchは、用途に応じて3つの生成ワークフローをサポートしています：
+
+::: tip ワークフローの選び方
+| ワークフロー | 用途 |
+|-------------|------|
+| **BGM先行** | ボーカル追加前に伴奏をプレビュー |
+| **ボーカル先行** | バッキングトラック生成前にメロディを反復調整 |
+| **カスタムボーカル** | 独自のメロディをインポートして伴奏を生成 |
+:::
 
 ## BGM先行ワークフロー
 
@@ -658,6 +678,20 @@ interface NoteInput {
   velocity: number   // ノートベロシティ (0-127)
 }
 ```
+
+::: details ティックについて
+MIDI Sketchは時間単位として**ティック**を使用します（四分音符 = 480ティック）：
+- **四分音符**: 480 ティック
+- **八分音符**: 240 ティック
+- **十六分音符**: 120 ティック
+- **全音符**: 1920 ティック
+- **1小節（4/4）**: 1920 ティック
+
+例：2拍目（ティック480）から1拍分のノート：
+```javascript
+{ startTick: 480, duration: 480, pitch: 60, velocity: 100 }
+```
+:::
 
 ### `PianoRollInfo`
 

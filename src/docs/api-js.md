@@ -10,6 +10,10 @@ Initialize the WASM module. Must be called before using other functions.
 await midisketch.init()
 ```
 
+::: warning Required First Call
+You must call `init()` before using any other API functions. Calling other functions before initialization will result in errors.
+:::
+
 ### `getVersion()`
 
 Returns the library version string.
@@ -173,6 +177,10 @@ sketch.generateFromConfig({
   motifMaxChordCount: 0,      // Max chord count (0=no limit, 2-8)
 })
 ```
+
+::: info Parameter Dependencies
+Many parameters depend on parent options being enabled. For example, `arpeggioPattern` has no effect if `arpeggioEnabled=false`. See [Option Relationships](/docs/option-relationships) for the full dependency tree.
+:::
 
 ### `regenerateVocal(params)`
 
@@ -358,6 +366,18 @@ Clean up resources.
 ```javascript
 sketch.destroy()
 ```
+
+## Generation Workflows
+
+MIDI Sketch supports three generation workflows, each suited to different use cases:
+
+::: tip Choosing a Workflow
+| Workflow | Use Case |
+|----------|----------|
+| **BGM-First** | Preview accompaniment before adding vocals |
+| **Vocal-First** | Iterate on melody before generating backing tracks |
+| **Custom Vocal** | Import your own melody and generate fitting accompaniment |
+:::
 
 ## BGM-First Workflow
 
@@ -639,8 +659,8 @@ interface AccompanimentConfig {
   // SE/Call
   seEnabled?: boolean
   callEnabled?: boolean
-  callDensity?: number        // 0=Sparse, 1=Light, 2=Standard, 3=Dense
-  introChant?: number         // 0=None, 1=Gachikoi, 2=Mix
+  callDensity?: number        // 0=None, 1=Minimal, 2=Standard, 3=Intense
+  introChant?: number         // 0=None, 1=Gachikoi, 2=Shouting
   mixPattern?: number         // 0=None, 1=Standard, 2=Tiger
   callNotesEnabled?: boolean
 }
@@ -658,6 +678,20 @@ interface NoteInput {
   velocity: number   // Note velocity (0-127)
 }
 ```
+
+::: details Understanding Ticks
+MIDI Sketch uses **ticks** as the time unit (480 ticks per quarter note):
+- **Quarter note**: 480 ticks
+- **Eighth note**: 240 ticks
+- **Sixteenth note**: 120 ticks
+- **Whole note**: 1920 ticks
+- **One bar (4/4)**: 1920 ticks
+
+Example: A note at beat 2 (tick 480) lasting one beat:
+```javascript
+{ startTick: 480, duration: 480, pitch: 60, velocity: 100 }
+```
+:::
 
 ### `PianoRollInfo`
 

@@ -670,10 +670,15 @@
       "tagline": "Groovy, urban, nostalgic vibes",
       "description": "Smooth, sophisticated sound inspired by 80s Japanese city pop"
     },
-    "anime-op": {
-      "name": "Anime Opening",
+    "anime-song": {
+      "name": "Anime Song",
       "tagline": "Epic, dramatic, and memorable",
       "description": "Powerful songs that could open your favorite anime"
+    },
+    "rock-pop": {
+      "name": "Rock Pop",
+      "tagline": "Guitar-driven energy",
+      "description": "Band sound with driving guitars and powerful drums"
     },
     "dance-pop": {
       "name": "Dance Pop",
@@ -694,6 +699,26 @@
       "name": "Love Song",
       "tagline": "Bittersweet and beautiful",
       "description": "Mid-tempo songs about love and longing"
+    },
+    "synthwave": {
+      "name": "Synthwave",
+      "tagline": "Retro synth, neon vibes",
+      "description": "80s inspired synth sounds with a modern twist"
+    },
+    "electronica": {
+      "name": "Electronica",
+      "tagline": "Pattern-driven electronic",
+      "description": "Layered electronic patterns with evolving textures"
+    },
+    "chill-relax": {
+      "name": "Chill / Relax",
+      "tagline": "Laid-back and soothing",
+      "description": "Relaxing background music for unwinding"
+    },
+    "instrumental": {
+      "name": "Instrumental",
+      "tagline": "Music without words",
+      "description": "Background music perfect for videos and streams"
     }
   },
   "chordProgressions": {

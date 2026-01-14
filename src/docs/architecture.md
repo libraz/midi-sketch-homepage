@@ -18,11 +18,11 @@ midi-sketch/
 │   │   └── basic_types.h          # Core type definitions
 │   ├── midi/              # MIDI output (SMF Type 1, MIDI 2.0)
 │   ├── track/             # Track generators
-│   │   ├── vocal.cpp              # Vocal coordination (~960 lines)
-│   │   ├── melody_designer.cpp    # Template-driven melody (~1280 lines)
-│   │   ├── aux_track.cpp          # Aux sub-melody (~1170 lines)
-│   │   ├── chord_track.cpp        # Chord voicing (~2000 lines)
-│   │   ├── bass.cpp               # Bass patterns (~1170 lines)
+│   │   ├── vocal.cpp              # Vocal coordination (~314 lines)
+│   │   ├── melody_designer.cpp    # Template-driven melody (~2048 lines)
+│   │   ├── aux_track.cpp          # Aux sub-melody (~1600 lines)
+│   │   ├── chord_track.cpp        # Chord voicing (~2050 lines)
+│   │   ├── bass.cpp               # Bass patterns (~1420 lines)
 │   │   └── ...                    # Other track generators
 │   ├── analysis/          # Dissonance analysis
 │   ├── preset/            # Preset definitions
@@ -38,6 +38,11 @@ midi-sketch/
 ### MidiSketch Class
 
 The main entry point providing a high-level API:
+
+::: tip Two Generation Workflows
+- **Vocal-First**: Use `generateVocal()` → iterate with `regenerateVocal()` → finalize with `generateAccompaniment()`
+- **Standard**: Use `generate()` or `generateFromConfig()` for one-shot generation
+:::
 
 ```cpp
 class MidiSketch {
@@ -93,6 +98,10 @@ struct Song {
   MidiTrack se;               // Channel 15 (markers)
 };
 ```
+
+::: info Channel Sharing
+Aux and Arpeggio share MIDI channel 5. In MelodyLead style, Aux is generated; in SynthDriven style, Arpeggio is generated instead. They are never active simultaneously.
+:::
 
 ## Data Flow
 
@@ -158,6 +167,13 @@ constexpr Tick TICKS_PER_BAR = 1920;    // 4/4 time signature
 constexpr uint8_t BEATS_PER_BAR = 4;
 ```
 
+::: tip Tick Calculation
+- Quarter note = 480 ticks
+- Eighth note = 240 ticks
+- Sixteenth note = 120 ticks
+- One bar (4/4) = 1920 ticks
+:::
+
 ## Note Representation
 
 Two-layer note representation:
@@ -206,6 +222,10 @@ Three composition styles affect the generation approach:
 | **BackgroundMotif** | Repeated motif as primary focus, subdued vocals |
 | **SynthDriven** | Synth/arpeggio-forward electronic style |
 
+::: warning BGM-Only Modes
+BackgroundMotif and SynthDriven are **BGM-only modes** - no vocal track is generated. Use MelodyLead for songs with vocals.
+:::
+
 ## Random Number Generation
 
 Deterministic generation using Mersenne Twister:
@@ -213,6 +233,11 @@ Deterministic generation using Mersenne Twister:
 ```cpp
 std::mt19937 rng(seed);  // Same seed = same output
 ```
+
+::: info Reproducibility
+- **seed > 0**: Fully deterministic - same seed with same parameters always produces identical output
+- **seed = 0**: Random - uses current clock time, different each run
+:::
 
 When seed is 0, current clock time is used for randomization.
 
