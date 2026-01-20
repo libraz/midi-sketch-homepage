@@ -2,6 +2,8 @@ import { ref, shallowRef } from 'vue'
 import type { WizardConfig } from '@/stores/useWizardStore'
 import type { PlacedNote } from '@/components/PianoRollEditor/types'
 import { placedNotesToNoteInput } from '@/utils/noteConversion'
+import { AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 
 // ============================================
 // Types
@@ -50,6 +52,7 @@ export interface BgmConfig {
   motifMaxChordCount: number
   melodicComplexity?: number
   hookIntensity?: number
+  blueprintId: number
 }
 
 export interface VocalParams {
@@ -86,6 +89,7 @@ export interface VocalConfig {
   hookIntensity: number
   vocalGroove: number
   compositionStyle: number
+  blueprintId: number
 }
 
 /**
@@ -122,6 +126,21 @@ let _midisketch: typeof import('../wasm/index.js') | null = null
 let _instance: any | null = null
 let _isInitialized = false
 let _initPromise: Promise<any> | null = null
+
+// ============================================
+// Utility Functions
+// ============================================
+
+/**
+ * Resolve blueprintId from config.
+ * If blueprintId is AUTO (255), resolve based on songImageId.
+ */
+function resolveBlueprintId(config: WizardConfig): number {
+  if (config.blueprintId !== AUTO_BLUEPRINT_ID) {
+    return config.blueprintId
+  }
+  return getRecommendedBlueprintId(config.songImageId)
+}
 
 // ============================================
 // Singleton accessors
@@ -293,7 +312,8 @@ export function useMidiGeneration() {
       motifFixedProgression: config.motifFixedProgression,
       motifMaxChordCount: config.motifMaxChordCount,
       melodicComplexity: config.melodicComplexity,
-      hookIntensity: config.hookIntensity
+      hookIntensity: config.hookIntensity,
+      blueprintId: resolveBlueprintId(config)
     }
   }
 
@@ -337,7 +357,8 @@ export function useMidiGeneration() {
       melodicComplexity: config.melodicComplexity,
       hookIntensity: config.hookIntensity,
       vocalGroove: config.vocalGroove,
-      compositionStyle: 0 // MelodyLead for vocal-first flow
+      compositionStyle: 0, // MelodyLead for vocal-first flow
+      blueprintId: resolveBlueprintId(config)
     }
   }
 

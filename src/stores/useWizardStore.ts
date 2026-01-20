@@ -83,6 +83,9 @@ export interface WizardConfig {
   humanizeTiming: number
   humanizeVelocity: number
 
+  // Production Blueprint
+  blueprintId: number
+
   // Legacy
   timbreId: string
 }
@@ -164,6 +167,9 @@ const DEFAULT_CONFIG: WizardConfig = {
   humanize: false,
   humanizeTiming: 50,
   humanizeVelocity: 50,
+
+  // Production Blueprint (255 = auto, resolved from songImage)
+  blueprintId: 255,
 
   // Legacy
   timbreId: 'pop_clean'

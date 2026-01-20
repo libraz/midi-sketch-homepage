@@ -32,6 +32,13 @@
       "pop": "Pop",
       "dance": "Dance / Electronic",
       "ballad": "Ballad"
+    },
+    "arrangementStyle": {
+      "title": "Arrangement Style",
+      "description": "How the song structure is built",
+      "recommended": " (Recommended)",
+      "recommendedBadge": "Rec",
+      "unknown": "Unknown"
     }
   },
   "chordStep": {

@@ -80,6 +80,8 @@ export interface SongConfig {
     vocalAttitude: number;
     /** Enable drums */
     drumsEnabled: boolean;
+    /** Blueprint ID: 0=Traditional, 1=Orangestar, 2=YOASOBI, 3=Ballad, 255=random */
+    blueprintId: number;
     /** Enable arpeggio */
     arpeggioEnabled: boolean;
     /** Arpeggio pattern: 0=Up, 1=Down, 2=UpDown, 3=Random */
@@ -445,6 +447,45 @@ export declare const VocalStylePreset: {
     readonly PowerfulShout: 12;
 };
 /**
+ * Generation paradigm for blueprint
+ */
+export declare const GenerationParadigm: {
+    /** Existing behavior */
+    readonly Traditional: 0;
+    /** Orangestar style (rhythm-synced) */
+    readonly RhythmSync: 1;
+    /** YOASOBI style (melody-driven) */
+    readonly MelodyDriven: 2;
+};
+export type GenerationParadigmType = (typeof GenerationParadigm)[keyof typeof GenerationParadigm];
+/**
+ * Riff policy for blueprint
+ */
+export declare const RiffPolicy: {
+    /** Free variation per section */
+    readonly Free: 0;
+    /** Same riff throughout song */
+    readonly Locked: 1;
+    /** Gradual evolution */
+    readonly Evolving: 2;
+};
+export type RiffPolicyType = (typeof RiffPolicy)[keyof typeof RiffPolicy];
+/**
+ * Blueprint information
+ */
+export interface BlueprintInfo {
+    /** Blueprint ID (0-3) */
+    id: number;
+    /** Blueprint name */
+    name: string;
+    /** Generation paradigm */
+    paradigm: GenerationParadigmType;
+    /** Riff policy */
+    riffPolicy: RiffPolicyType;
+    /** Selection weight (0-100) */
+    weight: number;
+}
+/**
  * Initialize the WASM module
  */
 export declare function init(options?: {
@@ -478,6 +519,34 @@ export declare function getProgressionsByStyle(styleId: number): number[];
  * Get forms compatible with a style
  */
 export declare function getFormsByStyle(styleId: number): number[];
+/**
+ * Get number of available blueprints
+ */
+export declare function getBlueprintCount(): number;
+/**
+ * Get blueprint name by ID
+ * @param id Blueprint ID (0-3)
+ */
+export declare function getBlueprintName(id: number): string;
+/**
+ * Get blueprint paradigm by ID
+ * @param id Blueprint ID (0-3)
+ */
+export declare function getBlueprintParadigm(id: number): GenerationParadigmType;
+/**
+ * Get blueprint riff policy by ID
+ * @param id Blueprint ID (0-3)
+ */
+export declare function getBlueprintRiffPolicy(id: number): RiffPolicyType;
+/**
+ * Get blueprint weight by ID
+ * @param id Blueprint ID (0-3)
+ */
+export declare function getBlueprintWeight(id: number): number;
+/**
+ * Get all blueprints as an array
+ */
+export declare function getBlueprints(): BlueprintInfo[];
 /**
  * Create a default song config for a style
  */
@@ -648,6 +717,15 @@ export declare class MidiSketch {
      * @internal
      */
     private parsePianoRollInfo;
+    /**
+     * Get the resolved blueprint ID after generation.
+     *
+     * Returns the actual blueprint ID used for generation.
+     * If blueprintId was set to 255 (random), this returns the selected ID.
+     *
+     * @returns Resolved blueprint ID (0-3), or 255 if not generated
+     */
+    getResolvedBlueprintId(): number;
     /**
      * Destroy the instance and free resources
      */

@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
+import { AUTO_BLUEPRINT_ID, blueprintIgnoresMotifScope } from '@/data/blueprints'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 
 defineProps<{
   compact?: boolean
@@ -8,6 +11,19 @@ defineProps<{
 
 const { t } = useI18n()
 const store = useWizardStore()
+
+// Get the effective blueprint ID (resolve Auto)
+const effectiveBlueprintId = computed(() => {
+  if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
+    return getRecommendedBlueprintId(store.config.songImageId)
+  }
+  return store.config.blueprintId
+})
+
+// Check if motifRepeatScope is controlled by Blueprint (should be hidden)
+const hideRepeatScope = computed(() => {
+  return blueprintIgnoresMotifScope(effectiveBlueprintId.value)
+})
 </script>
 
 <template>
@@ -17,9 +33,9 @@ const store = useWizardStore()
       <span class="motif-settings__title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.label') }}</span>
     </div>
 
-    <div class="motif-settings__grid">
-      <!-- Repeat Scope -->
-      <div class="motif-param">
+    <div class="motif-settings__grid" :class="{ 'motif-settings__grid--single': hideRepeatScope }">
+      <!-- Repeat Scope (hidden when Blueprint controls it) -->
+      <div v-if="!hideRepeatScope" class="motif-param">
         <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.repeatScope') }}</label>
         <div class="toggle-group">
           <button
@@ -108,6 +124,10 @@ const store = useWizardStore()
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.motif-settings__grid--single {
+  grid-template-columns: 1fr;
 }
 
 .motif-settings--compact .motif-settings__grid {

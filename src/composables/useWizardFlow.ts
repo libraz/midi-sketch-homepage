@@ -39,7 +39,7 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     component: 'StyleStep',
     label: 'wizard.steps.style',
     dependencies: [],
-    affectingKeys: ['songImageId', 'stylePresetId'],
+    affectingKeys: ['songImageId', 'stylePresetId', 'blueprintId'],
     hasGeneration: false
   },
   chord: {
@@ -157,6 +157,7 @@ export const BGM_AFFECTING_KEYS: Record<FlowType, string[]> = {
   'bgm-only': [
     // For bgm-only, all BGM settings matter
     'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
+    'blueprintId',
     'drumsEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
     'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
     'chordExtSus', 'chordExt7th', 'chordExt9th',
@@ -175,7 +176,7 @@ export const BGM_AFFECTING_KEYS: Record<FlowType, string[]> = {
 export const VOCAL_AFFECTING_KEYS: Record<FlowType, string[]> = {
   'vocal-first': [
     'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
-    'targetDurationSeconds',
+    'targetDurationSeconds', 'blueprintId',
     'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
     'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity'
   ],

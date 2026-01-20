@@ -32,6 +32,13 @@
       "pop": "ポップス",
       "dance": "ダンス / エレクトロ",
       "ballad": "バラード"
+    },
+    "arrangementStyle": {
+      "title": "アレンジスタイル",
+      "description": "曲の構成の組み立て方",
+      "recommended": "（推奨）",
+      "recommendedBadge": "推奨",
+      "unknown": "不明"
     }
   },
   "chordStep": {
