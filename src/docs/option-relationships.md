@@ -236,6 +236,7 @@ flowchart TD
 | `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
 | `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
 | `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
+| `blueprintId` | 0-8, 255 | (255=auto random) |
 
 ### 4.2 Style × Attitude Combinations
 
@@ -615,3 +616,101 @@ SongConfig
 ```
 
 **Application order**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity`
+
+---
+
+## 10. Production Blueprint Overrides
+
+Production Blueprints control **how** the music is generated, independent of style/mood settings.
+
+### 10.1 Blueprint List
+
+| ID | Name | Paradigm | RiffPolicy | Requires Drums | Overrides Form |
+|----|------|----------|------------|:--------------:|:--------------:|
+| 0 | Standard Pop | Traditional | Free | - | - |
+| 1 | Rhythm Lock | RhythmSync | Locked | **Yes** | **Yes** |
+| 2 | Story Build | MelodyDriven | Evolving | - | **Yes** |
+| 3 | Ballad | MelodyDriven | Free | - | **Yes** |
+| 4 | Classic Idol | MelodyDriven | Evolving | - | **Yes** |
+| 5 | High Energy | RhythmSync | Locked | **Yes** | **Yes** |
+| 6 | Sweet Bounce | MelodyDriven | Locked | **Yes** | **Yes** |
+| 7 | Groove Drive | RhythmSync | Locked | **Yes** | **Yes** |
+| 8 | Emotional Arc | MelodyDriven | Locked | - | **Yes** |
+| 255 | Auto | - | - | - | - |
+
+### 10.2 Paradigm Types
+
+| Paradigm | Description | Generation Order |
+|----------|-------------|------------------|
+| Traditional | Classic pop generation | Bass → Chord → Vocal (default) |
+| RhythmSync | Drums & bass sync with melody | Drums first, vocals sync |
+| MelodyDriven | Melody-centered arrangement | Melody first, accompaniment follows |
+
+### 10.3 RiffPolicy Types
+
+| Policy | Description | Effect on motifRepeatScope |
+|--------|-------------|---------------------------|
+| Free | Each section varies | Uses `motifRepeatScope` setting |
+| Locked | Same pattern throughout | **Ignores** `motifRepeatScope` |
+| Evolving | 30% chance to change every 2 sections | **Ignores** `motifRepeatScope` |
+
+### 10.4 Blueprint Override Rules
+
+When a Blueprint is selected (not Traditional/ID 0), several settings are automatically overridden:
+
+```mermaid
+flowchart TD
+    BP[blueprintId ≠ 0] --> SF{Has section_flow?}
+    SF -->|Yes| FO["formId overridden"]
+    SF -->|No| FK["formId kept"]
+
+    BP --> RP{riffPolicy}
+    RP -->|Free| MRS["motifRepeatScope used"]
+    RP -->|Locked/Evolving| MRI["motifRepeatScope ignored"]
+
+    BP --> DR{requiresDrums?}
+    DR -->|Yes| DE["drumsEnabled forced true"]
+    DR -->|No| DK["drumsEnabled kept"]
+```
+
+| Blueprint Setting | Override Target | Condition |
+|-------------------|-----------------|-----------|
+| `section_flow` | `formId` | All except Traditional (ID 0) |
+| `riff_policy` | `motifRepeatScope` | Free=use setting, Locked/Evolving=ignore |
+| `drums_sync_vocal` | Internal sync | Blueprint definition takes priority |
+| `drums_required` | `drumsEnabled` | When true, forces `drumsEnabled=true` |
+| `TrackMask::Motif` | Motif generation | Per-section control |
+
+### 10.5 Motif Generation Flow
+
+```
+CompositionStyle == BackgroundMotif? → Yes: Motif generated
+└─ No → Blueprint has section_flow? → No: No motif
+        └─ Yes → TrackMask::Motif in section? → Yes: Motif generated
+```
+
+::: warning Drums Required
+Blueprints with `requiresDrums=true` (ID: 1, 5, 6, 7) automatically enable drums. The drums toggle in UI is hidden for these blueprints.
+:::
+
+### 10.6 Example: Blueprint Override Behavior
+
+```javascript
+// Using Rhythm Lock blueprint
+{
+  blueprintId: 1,        // Rhythm Lock
+  formId: 5,             // ← Ignored! Blueprint section_flow used
+  motifRepeatScope: 1,   // ← Ignored! Locked policy forces same pattern
+  drumsEnabled: false,   // ← Ignored! drums_required=true forces enabled
+}
+```
+
+```javascript
+// Using Standard Pop blueprint (Traditional)
+{
+  blueprintId: 0,        // Standard Pop
+  formId: 5,             // ← Used as specified
+  motifRepeatScope: 1,   // ← Used as specified
+  drumsEnabled: false,   // ← Used as specified
+}
+```

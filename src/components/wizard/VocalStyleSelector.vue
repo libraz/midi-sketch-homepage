@@ -221,10 +221,11 @@ const selectedGrooveKey = computed(() =>
     <!-- Hook Intensity -->
     <section class="setting-section">
       <h3 class="setting-label">
-        <span class="setting-label__icon">🎯</span>
+        <span class="setting-label__icon">🔁</span>
         <span>{{ t('melodyStep.advanced.hookIntensity.label') }}</span>
       </h3>
       <p class="setting-description">{{ t('melodyStep.advanced.hookIntensity.description') }}</p>
+      <p class="setting-hint">{{ t('melodyStep.advanced.hookIntensity.affectsHint') }}</p>
 
       <div class="option-cards option-cards--row">
         <button
@@ -279,7 +280,18 @@ const selectedGrooveKey = computed(() =>
 .setting-description {
   font-size: 0.8rem;
   color: rgba(250, 250, 250, 0.45);
+  margin: 0 0 0.5rem;
+}
+
+.setting-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: rgba(236, 72, 153, 0.7);
   margin: 0 0 1rem;
+  padding: 0.375rem 0.5rem;
+  background: rgba(236, 72, 153, 0.08);
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .option-cards {

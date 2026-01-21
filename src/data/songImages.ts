@@ -158,6 +158,28 @@ export const songImages: SongImage[] = [
     defaultTimbre: 'pop_bright'
   },
   {
+    id: 'vocaloid-anime',
+    name: {
+      en: 'Vocaloid / Anime OP',
+      ja: 'ボカロ / アニメOP'
+    },
+    tagline: {
+      en: 'Fast tempos, dramatic builds',
+      ja: '速いテンポ、ドラマチックな展開'
+    },
+    description: {
+      en: 'Modern Vocaloid and anime opening style with fast tempos and dramatic song structures',
+      ja: '現代ボカロ・アニメOP風 - 速いテンポとドラマチックな曲展開'
+    },
+    icon: 'mdi-microphone-variant',
+    color: '#00E5FF',
+    category: 'pop',
+    stylePresetIds: [14],
+    recommendedChords: [2, 0, 6],
+    tempoRange: { min: 150, max: 180, default: 170 },
+    defaultTimbre: 'pop_bright'
+  },
+  {
     id: 'rock-pop',
     name: {
       en: 'Rock Pop',
@@ -379,7 +401,7 @@ export const songImageCategories: SongImageCategory[] = [
     id: 'pop',
     name: { en: 'Pop', ja: 'ポップス' },
     icon: 'mdi-music',
-    images: ['jpop-standard', 'citypop', 'anime-song', 'rock-pop']
+    images: ['jpop-standard', 'citypop', 'anime-song', 'vocaloid-anime', 'rock-pop']
   },
   {
     id: 'dance',

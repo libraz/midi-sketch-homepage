@@ -3,10 +3,13 @@ import { computed, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useWizardFlow } from '@/composables/useWizardFlow'
+import { blueprintRequiresDrums, blueprintRecommendsArpeggio, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import StepHeader from '@/components/wizard/StepHeader.vue'
 import SettingSection from '@/components/wizard/SettingSection.vue'
 import OptionCard from '@/components/wizard/OptionCard.vue'
 import MotifSettingsPanel from '@/components/wizard/MotifSettingsPanel.vue'
+import RangeSlider from '@/components/wizard/RangeSlider.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -21,6 +24,18 @@ const compositionStyleOptions = [
 
 // SynthDriven forces arpeggio on
 const isSynthDriven = computed(() => store.config.compositionStyle === 2)
+
+// Get effective blueprint ID (resolve Auto to recommended)
+const effectiveBlueprintId = computed(() => {
+  if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
+    return getRecommendedBlueprintId(store.config.songImageId)
+  }
+  return store.config.blueprintId
+})
+
+// Blueprint constraints
+const blueprintNeedsDrums = computed(() => blueprintRequiresDrums(effectiveBlueprintId.value))
+const blueprintWantsArpeggio = computed(() => blueprintRecommendsArpeggio(effectiveBlueprintId.value))
 
 // Arpeggio pattern options with icons
 const arpeggioPatternOptions = [
@@ -48,6 +63,13 @@ watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
     store.config.modulationTiming = 0
   }
 })
+
+// Auto-enable drums when blueprint requires it
+watch(blueprintNeedsDrums, (needsDrums) => {
+  if (needsDrums && !store.config.drumsEnabled) {
+    store.config.drumsEnabled = true
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -82,8 +104,9 @@ watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
         <MotifSettingsPanel v-if="store.config.compositionStyle === 1" class="motif-panel" />
       </SettingSection>
 
-      <!-- Drums -->
+      <!-- Drums (hidden when blueprint requires drums) -->
       <SettingSection
+        v-if="!blueprintNeedsDrums"
         icon="🥁"
         :title="t('settingsStep.advanced.drums.label')"
         :description="t('settingsStep.advanced.drums.description')"
@@ -127,6 +150,7 @@ watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
               @select="store.config.arpeggioEnabled = true"
             />
             <span v-if="isSynthDriven" class="auto-badge">AUTO</span>
+            <span v-else-if="blueprintWantsArpeggio && !store.config.arpeggioEnabled" class="recommended-badge">{{ t('bgmSettingsStep.recommendedByBlueprint') }}</span>
           </div>
 
           <template v-if="store.config.arpeggioEnabled">
@@ -200,19 +224,36 @@ watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
         :title="t('settingsStep.advanced.humanize.label')"
         :description="t('settingsStep.advanced.humanize.description')"
       >
-        <div class="option-cards option-cards--row">
-          <OptionCard
-            title="OFF"
-            :is-active="!store.config.humanize"
-            compact
-            @select="store.config.humanize = false"
-          />
-          <OptionCard
-            title="ON"
-            :is-active="store.config.humanize"
-            compact
-            @select="store.config.humanize = true"
-          />
+        <div class="humanize-settings">
+          <div class="option-cards option-cards--row">
+            <OptionCard
+              title="OFF"
+              :is-active="!store.config.humanize"
+              compact
+              @select="store.config.humanize = false"
+            />
+            <OptionCard
+              title="ON"
+              :is-active="store.config.humanize"
+              compact
+              @select="store.config.humanize = true"
+            />
+          </div>
+
+          <template v-if="store.config.humanize">
+            <div class="sub-setting">
+              <RangeSlider
+                v-model="store.config.humanizeTiming"
+                :label="t('settingsStep.advanced.humanize.timing')"
+              />
+            </div>
+            <div class="sub-setting">
+              <RangeSlider
+                v-model="store.config.humanizeVelocity"
+                :label="t('settingsStep.advanced.humanize.velocity')"
+              />
+            </div>
+          </template>
         </div>
       </SettingSection>
     </div>
@@ -262,8 +303,27 @@ watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
   margin-left: 0.5rem;
 }
 
+/* Recommended badge (for blueprint suggestions) */
+.recommended-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 4px;
+  color: #22C55E;
+  margin-left: 0.5rem;
+}
+
 /* Arpeggio Settings */
 .arpeggio-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Humanize Settings */
+.humanize-settings {
   display: flex;
   flex-direction: column;
   gap: 1rem;

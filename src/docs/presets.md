@@ -181,6 +181,43 @@ Style presets provide sensible defaults for BPM, structure, vocal attitude, and 
 BackgroundMotif and SynthDriven do not generate vocal tracks. Use MelodyLead for songs with vocals.
 :::
 
+## Production Blueprints
+
+10 production blueprints control **how** the music is generated (arrangement style), independent of style/mood:
+
+| ID | Name | Paradigm | RiffPolicy | Drums Required | Has Motif |
+|----|------|----------|------------|:--------------:|:---------:|
+| 0 | Standard Pop | Traditional | Free | - | - |
+| 1 | Rhythm Lock | RhythmSync | Locked | **Yes** | ✅ |
+| 2 | Story Build | MelodyDriven | Evolving | - | ✅ |
+| 3 | Ballad | MelodyDriven | Free | - | - |
+| 4 | Classic Idol | MelodyDriven | Evolving | - | ✅ |
+| 5 | High Energy | RhythmSync | Locked | **Yes** | ✅ |
+| 6 | Sweet Bounce | MelodyDriven | Locked | **Yes** | ✅ |
+| 7 | Groove Drive | RhythmSync | Locked | **Yes** | ✅ |
+| 8 | Emotional Arc | MelodyDriven | Locked | - | ✅ |
+| 255 | Auto | - | - | - | - |
+
+### Generation Paradigms
+
+| Paradigm | Description |
+|----------|-------------|
+| Traditional | Classic pop generation (Bass → Chord → Vocal) |
+| RhythmSync | Drums & bass sync with vocal melody |
+| MelodyDriven | Melody-centered, accompaniment follows |
+
+### RiffPolicy
+
+| Policy | Description |
+|--------|-------------|
+| Free | Each section varies independently |
+| Locked | Same pattern repeated throughout song |
+| Evolving | Gradual changes (30% chance every 2 sections) |
+
+::: tip Blueprint Override
+When using a non-Traditional blueprint (ID 1-8), the `formId` setting is overridden by the blueprint's section flow. Use ID 0 (Standard Pop) to keep full control of form structure.
+:::
+
 ### MelodyLead
 
 ```mermaid

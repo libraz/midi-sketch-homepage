@@ -67,6 +67,60 @@ const progressions = midisketch.getProgressionsByStyle(0)
 // [0, 1, 2, ...]
 ```
 
+### `getBlueprints()`
+
+利用可能な全プロダクション Blueprint を返します。
+
+```javascript
+const blueprints = midisketch.getBlueprints()
+// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42 }, ...]
+```
+
+### `getBlueprintCount()`
+
+利用可能な Blueprint の数を返します。
+
+```javascript
+const count = midisketch.getBlueprintCount()
+// 9
+```
+
+### `getBlueprintName(id)`
+
+ID で指定した Blueprint の名前を返します。
+
+```javascript
+const name = midisketch.getBlueprintName(1)
+// 'RhythmLock'
+```
+
+### `getBlueprintParadigm(id)`
+
+Blueprint の生成パラダイムを返します。
+
+```javascript
+const paradigm = midisketch.getBlueprintParadigm(1)
+// 1 (GenerationParadigm.RhythmSync)
+```
+
+### `getBlueprintRiffPolicy(id)`
+
+Blueprint の RiffPolicy を返します。
+
+```javascript
+const policy = midisketch.getBlueprintRiffPolicy(1)
+// 1 (RiffPolicy.Locked)
+```
+
+### `getBlueprintWeight(id)`
+
+Blueprint の選択重み（パーセンテージ）を返します。
+
+```javascript
+const weight = midisketch.getBlueprintWeight(0)
+// 42
+```
+
 ### `getFormsByStyle(styleId)`
 
 指定したスタイルと互換性のあるフォーム/構成 ID を返します。
@@ -175,6 +229,9 @@ sketch.generateFromConfig({
   motifRepeatScope: 0,        // 0=FullSong (同一モチーフ), 1=Section (セクション別)
   motifFixedProgression: true, // 全セクションで同じコード進行を使用
   motifMaxChordCount: 0,      // 最大コード数 (0=制限なし, 2-8)
+
+  // Blueprint 設定
+  blueprintId: 0,             // Production Blueprint (0=Traditional, 1-8=特定, 255=自動)
 })
 ```
 
@@ -357,6 +414,16 @@ for (const info of infos) {
 const info = sketch.getPianoRollSafetyAt(0)
 const reasonText = sketch.reasonToString(info.reason[60])
 // "ChordTone" または "LowRegister, Tritone"
+```
+
+### `getResolvedBlueprintId()`
+
+生成後に実際に使用された Blueprint ID を返します。`blueprintId=255`（自動）の場合、ランダムに選択された Blueprint が返されます。
+
+```javascript
+sketch.generateFromConfig({ blueprintId: 255 })  // 自動選択
+const actualId = sketch.getResolvedBlueprintId()
+console.log(`使用された Blueprint: ${midisketch.getBlueprintName(actualId)}`)
 ```
 
 ### `destroy()`
@@ -575,6 +642,22 @@ VocalGrooveFeel.Driving16th // 4 - ドライブ感のある16分音符
 VocalGrooveFeel.Bouncy8th  // 5 - バウンス感のある8分音符
 ```
 
+### `GenerationParadigm`
+
+```javascript
+GenerationParadigm.Traditional  // 0 - クラシック生成（Bass→Chord→Vocal）
+GenerationParadigm.RhythmSync   // 1 - ドラム＆ベースがメロディに同期
+GenerationParadigm.MelodyDriven // 2 - メロディ中心のアレンジ
+```
+
+### `RiffPolicy`
+
+```javascript
+RiffPolicy.Free     // 0 - セクションごとに変化（motifRepeatScope使用）
+RiffPolicy.Locked   // 1 - 曲全体で同一パターン
+RiffPolicy.Evolving // 2 - 2セクションごとに30%確率で変化
+```
+
 ### `NoteSafety`
 
 ```javascript
@@ -718,5 +801,19 @@ interface CollisionInfo {
   trackRole: number         // 衝突トラックの役割
   collidingPitch: number    // 衝突ノートのMIDIピッチ
   intervalSemitones: number // 衝突音程（半音、1, 6, または 11）
+}
+```
+
+### `BlueprintInfo`
+
+Production Blueprint の情報：
+
+```typescript
+interface BlueprintInfo {
+  id: number                // Blueprint ID (0-8)
+  name: string              // Blueprint 名
+  paradigm: number          // 生成パラダイム (0-2)
+  riffPolicy: number        // RiffPolicy (0-2)
+  weight: number            // 選択重みパーセンテージ
 }
 ```

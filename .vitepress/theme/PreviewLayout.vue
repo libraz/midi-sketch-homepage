@@ -6,8 +6,14 @@ import { useMidiPlayer } from '@/composables/useMidiPlayer'
 import { decodeShareUrl, type DecodedShare } from '@/utils/shareEncoder'
 import { KEY_NAMES } from '@/utils/midiUtils'
 import { songImages } from '@/data/songImages'
-import { chordProgressions } from '@/data/chordColors'
 import NoteFlowVisualizer from '@/components/NoteFlowVisualizer.vue'
+
+// Chord progression type from WASM
+interface ChordProgression {
+  id: number
+  name: string
+  display: string
+}
 
 const { t } = useI18n()
 const { lang } = useData()
@@ -30,6 +36,7 @@ const error = ref<string | null>(null)
 const decoded = ref<DecodedShare | null>(null)
 const eventData = ref<any>(null)
 const midiData = ref<Uint8Array | null>(null)
+const chordProgressions = ref<ChordProgression[]>([])
 
 let midisketch: any = null
 let instance: any = null
@@ -84,7 +91,7 @@ const summaryInfo = computed(() => {
 // Chord progression (separate row - can be long)
 const chordDisplay = computed(() => {
   if (!decoded.value) return '-'
-  const chord = chordProgressions.find(c => c.id === decoded.value!.config.chordProgressionId)
+  const chord = chordProgressions.value.find(c => c.id === decoded.value!.config.chordProgressionId)
   return chord ? chord.display : '-'
 })
 
@@ -149,6 +156,14 @@ onMounted(async () => {
     const wasmPath = new URL('@/wasm/midisketch.wasm', import.meta.url).href
     await mod.init({ wasmPath })
     instance = new mod.MidiSketch()
+
+    // Load chord progressions from WASM
+    const chords = midisketch.getChords()
+    chordProgressions.value = chords.map((c: { name: string; display: string }, index: number) => ({
+      id: index,
+      name: c.name,
+      display: c.display
+    }))
 
     isLoading.value = false
     isGenerating.value = true

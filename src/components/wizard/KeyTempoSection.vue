@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { songImages } from '@/data/songImages'
-import { chordProgressions } from '@/data/chordColors'
 import { transposeProgressionToKey } from '@/utils/midiUtils'
 import KeySelector from './KeySelector.vue'
 import BpmControl from './BpmControl.vue'
@@ -30,7 +29,7 @@ const recommendedMax = computed(() => currentSongImage.value?.tempoRange.max || 
 
 // Current chord progression with key-based display
 const currentChord = computed(() =>
-  chordProgressions.find(c => c.id === store.config.chordProgressionId)
+  store.getChordProgressionById(store.config.chordProgressionId)
 )
 const chordDisplay = computed(() => {
   if (!currentChord.value) return null

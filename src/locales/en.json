@@ -34,11 +34,12 @@
       "ballad": "Ballad"
     },
     "arrangementStyle": {
-      "title": "Arrangement Style",
-      "description": "How the song structure is built",
+      "title": "Song Structure",
+      "description": "How the song is built and develops",
       "recommended": " (Recommended)",
       "recommendedBadge": "Rec",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "affectsHint": "Affects: section flow, instrument layering, riff handling"
     }
   },
   "chordStep": {
@@ -112,7 +113,8 @@
   },
   "bgmSettingsStep": {
     "title": "BGM Settings",
-    "subtitle": "Configure your BGM parameters"
+    "subtitle": "Configure your BGM parameters",
+    "recommendedByBlueprint": "Recommended"
   },
   "bgmGenerationStep": {
     "title": "BGM Generation",
@@ -392,25 +394,26 @@
     "advanced": {
       "toggle": "Advanced Settings",
       "melodyTemplate": {
-        "label": "Melody Type",
-        "description": "Select a melodic shape pattern. Each pattern creates a distinct musical character",
+        "label": "Melody Shape",
+        "description": "How the melody moves - ascending, descending, or staying level",
+        "affectsHint": "Affects: pitch direction, phrase contour",
         "options": {
           "auto": "Auto",
-          "autoDesc": "Automatically select based on section and style",
-          "plateauTalk": "Plateau Talk",
-          "plateauTalkDesc": "Talk-sing style with same-note retention (NewJeans, Billie Eilish)",
-          "runUpTarget": "Run Up Target",
-          "runUpTargetDesc": "Ascending melody building to target pitch (YOASOBI, Ado)",
-          "downResolve": "Down Resolve",
+          "autoDesc": "Automatically select based on section",
+          "plateauTalk": "Stay Level",
+          "plateauTalkDesc": "Talk-sing style, maintains similar pitch",
+          "runUpTarget": "Build Up",
+          "runUpTargetDesc": "Ascending melody building toward chorus",
+          "downResolve": "Settle Down",
           "downResolveDesc": "Descending resolution, good for B-sections",
-          "hookRepeat": "Hook Repeat",
-          "hookRepeatDesc": "Short catchy hooks with high repetition (TikTok, K-POP)",
-          "sparseAnchor": "Sparse Anchor",
-          "sparseAnchorDesc": "Sparse anchored notes with breathing room (Official髭男dism)",
-          "callResponse": "Call Response",
-          "callResponseDesc": "Duet-style call and response patterns",
-          "jumpAccent": "Jump Accent",
-          "jumpAccentDesc": "Emotional peaks with dramatic interval jumps"
+          "hookRepeat": "Catchy Loop",
+          "hookRepeatDesc": "Short catchy phrase with high repetition",
+          "sparseAnchor": "Breathing Room",
+          "sparseAnchorDesc": "Sparse notes with space between phrases",
+          "callResponse": "Call & Response",
+          "callResponseDesc": "Back-and-forth conversational pattern",
+          "jumpAccent": "Dramatic Leap",
+          "jumpAccentDesc": "Big pitch jumps at emotional peaks"
         }
       },
       "vocalRange": {
@@ -456,36 +459,37 @@
         }
       },
       "vocalStyle": {
-        "label": "Vocal Style",
-        "description": "Select a style to auto-adjust note density, rhythm patterns, and pitch leaps",
-        "implicitNote": "※ Internal parameters are automatically set based on the selected style",
+        "label": "Vocal Character",
+        "description": "Sets the overall feel of the melody - note density, rhythm, and movement",
+        "affectsHint": "Affects: note density, rhythm patterns, pitch leap range",
+        "implicitNote": "Multiple parameters are auto-adjusted based on selection",
         "options": {
           "auto": "Auto",
-          "autoDesc": "Automatically selected based on the style preset",
+          "autoDesc": "Match to song style automatically",
           "standard": "Standard",
           "standardDesc": "Balanced, standard melody",
-          "vocaloid": "Vocaloid",
-          "vocaloidDesc": "16th-note heavy, fast passages, pitch leaps allowed",
-          "ultraVocaloid": "Ultra Vocaloid",
-          "ultraVocaloidDesc": "32nd notes, ultra-dense, extreme leaps OK, no rests",
-          "idol": "Idol",
-          "idolDesc": "8th-note based, catchy hooks, chorus builds up",
+          "vocaloid": "Synth Voice",
+          "vocaloidDesc": "Fast 16th notes, pitch leaps (singable range)",
+          "ultraVocaloid": "Ultra Synth",
+          "ultraVocaloidDesc": "Ultra-fast, extreme leaps (machine-level)",
+          "idol": "Idol Pop",
+          "idolDesc": "Catchy hooks, chorus builds up",
           "ballad": "Ballad",
-          "balladDesc": "Quarter-note focused, relaxed, long notes, narrow range",
+          "balladDesc": "Slow, long notes, narrow range",
           "rock": "Rock",
-          "rockDesc": "Powerful hooks, syncopation, range rises in chorus",
+          "rockDesc": "Powerful hooks, range rises in chorus",
           "cityPop": "City Pop",
-          "cityPopDesc": "Stylish syncopation, tension notes, sophisticated melody",
+          "cityPopDesc": "Sophisticated, stylish syncopation",
           "anime": "Anime",
-          "animeDesc": "Catchy hooks, chorus builds up, dramatic",
-          "brightKira": "Bright Kira",
-          "brightKiraDesc": "Bright and sparkling, shifts to high range in chorus",
+          "animeDesc": "Catchy, dramatic, builds to chorus",
+          "brightKira": "Bright & Sparkly",
+          "brightKiraDesc": "Bright feel, shifts high in chorus",
           "coolSynth": "Cool Synth",
-          "coolSynthDesc": "16th-note heavy, cool synth style, no long notes",
-          "cuteAffected": "Cute Affected",
-          "cuteAffectedDesc": "Cute and charming, subtle syncopation, rises a bit in chorus",
-          "powerfulShout": "Powerful Shout",
-          "powerfulShoutDesc": "Powerful vocals, quarter-note focused, denser in chorus"
+          "coolSynthDesc": "Dense 16th notes, cool electronic feel",
+          "cuteAffected": "Cute & Sweet",
+          "cuteAffectedDesc": "Charming, gentle syncopation",
+          "powerfulShout": "Powerful",
+          "powerfulShoutDesc": "Strong vocals, denser in chorus"
         }
       },
       "vocalGroove": {
@@ -516,13 +520,14 @@
         }
       },
       "hookIntensity": {
-        "label": "Hook Intensity",
-        "description": "Set the strength of catchy hooks and memorable phrases. Stronger hooks are more ear-catching",
+        "label": "Melody Repetition",
+        "description": "How much catchy repetitive phrases to use in the vocal melody",
+        "affectsHint": "Affects: Vocal only (backing patterns set in Song Structure)",
         "options": {
           "off": "Off",
-          "light": "Light",
+          "light": "Subtle",
           "normal": "Normal",
-          "strong": "Strong"
+          "strong": "Heavy"
         }
       }
     }
@@ -681,6 +686,11 @@
       "name": "Anime Song",
       "tagline": "Epic, dramatic, and memorable",
       "description": "Powerful songs that could open your favorite anime"
+    },
+    "vocaloid-anime": {
+      "name": "Vocaloid / Anime OP",
+      "tagline": "Fast tempos, dramatic builds",
+      "description": "Modern Vocaloid and anime opening style with fast tempos and dramatic song structures"
     },
     "rock-pop": {
       "name": "Rock Pop",

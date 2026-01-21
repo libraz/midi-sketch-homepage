@@ -7,7 +7,8 @@ import { useMidiRegeneration } from '@/composables/useMidiRegeneration'
 import { useSeedHistory } from '@/composables/useSeedHistory'
 import { useMidiGeneration } from '@/composables/useMidiGeneration'
 import { songImages } from '@/data/songImages'
-import { chordProgressions } from '@/data/chordColors'
+import { getBlueprintById, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import { KEY_NAMES, transposeProgressionToKey } from '@/utils/midiUtils'
 import { devLog } from '@/utils/devLog'
 import { parseChordProgression, generateChordTimings, type ChordTiming } from '@/utils/chordUtils'
@@ -29,7 +30,7 @@ const PianoRollStaffView = defineAsyncComponent(() =>
   import('@/components/PianoRollEditor/PianoRollStaffView.vue')
 )
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useWizardStore()
 const player = useMidiPlayer()
 const midiGen = useMidiGeneration()
@@ -493,7 +494,7 @@ const currentSongImage = computed(() =>
 )
 
 const currentChord = computed(() =>
-  chordProgressions.find(c => c.id === store.config.chordProgressionId)
+  store.getChordProgressionById(store.config.chordProgressionId)
 )
 
 // Chord progression display string for PianoRoll
@@ -539,10 +540,26 @@ const melodyTemplateName = computed(() => {
   return templates[store.config.melodyTemplate] || 'auto'
 })
 
+// Blueprint label for summary
+const currentBlueprintLabel = computed(() => {
+  const lang = locale.value as 'en' | 'ja'
+  if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
+    const recId = getRecommendedBlueprintId(store.config.songImage)
+    const rec = getBlueprintById(recId)
+    return `${rec?.label[lang] ?? ''}${t('styleStep.arrangementStyle.recommended')}`
+  }
+  const bp = getBlueprintById(store.config.blueprintId)
+  return bp?.label[lang] ?? t('styleStep.arrangementStyle.unknown')
+})
+
 const summaryItems = computed(() => [
   {
     label: t('bgmStep.summary.style'),
     value: currentSongImage.value ? t(`songImages.${currentSongImage.value.id}.name`) : '-'
+  },
+  {
+    label: t('styleStep.arrangementStyle.title'),
+    value: currentBlueprintLabel.value
   },
   {
     label: t('bgmStep.summary.key'),

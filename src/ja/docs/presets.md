@@ -181,6 +181,43 @@ flowchart TD
 BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。ボーカル付きの楽曲にはMelodyLeadを使用してください。
 :::
 
+## Production Blueprint
+
+10種類の Production Blueprint が、スタイル/ムードとは独立して音楽の**生成方法**（アレンジスタイル）を制御します：
+
+| ID | 名前 | パラダイム | RiffPolicy | ドラム必須 | モチーフ |
+|----|------|-----------|------------|:----------:|:--------:|
+| 0 | 定番ポップ | Traditional | Free | - | - |
+| 1 | リズムで刻む | RhythmSync | Locked | **必須** | ✅ |
+| 2 | 物語のように展開 | MelodyDriven | Evolving | - | ✅ |
+| 3 | 静かに始まる | MelodyDriven | Free | - | - |
+| 4 | アイドル王道 | MelodyDriven | Evolving | - | ✅ |
+| 5 | サビから攻める | RhythmSync | Locked | **必須** | ✅ |
+| 6 | かわいく弾む | MelodyDriven | Locked | **必須** | ✅ |
+| 7 | 踊れるビート | RhythmSync | Locked | **必須** | ✅ |
+| 8 | 静→爆発 | MelodyDriven | Locked | - | ✅ |
+| 255 | おまかせ | - | - | - | - |
+
+### 生成パラダイム
+
+| パラダイム | 説明 |
+|-----------|------|
+| Traditional | クラシックなポップ生成（Bass → Chord → Vocal） |
+| RhythmSync | ドラム＆ベースがボーカルメロディに同期 |
+| MelodyDriven | メロディ中心、伴奏が追従 |
+
+### RiffPolicy
+
+| ポリシー | 説明 |
+|---------|------|
+| Free | セクションごとに独立して変化 |
+| Locked | 曲全体で同一パターンを繰り返し |
+| Evolving | 徐々に変化（2セクションごとに30%確率） |
+
+::: tip Blueprint のオーバーライド
+Traditional 以外の Blueprint（ID 1-8）を使用すると、`formId` 設定は Blueprint の section_flow でオーバーライドされます。フォーム構造を完全に制御したい場合は ID 0（定番ポップ）を使用してください。
+:::
+
 ### MelodyLead
 
 ```mermaid

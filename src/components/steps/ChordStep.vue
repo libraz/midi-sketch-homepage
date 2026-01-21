@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { useWizardStore } from '@/stores/useWizardStore'
+import { useWizardStore, type ChordProgression } from '@/stores/useWizardStore'
 import { useChordPlayer, warmupChordPlayer } from '@/composables/useChordPlayer'
-import { chordProgressions, chordDegreeColors } from '@/data/chordColors'
+import { chordDegreeColors } from '@/data/chordColors'
 import { songImages } from '@/data/songImages'
 import StepHeader from '@/components/wizard/StepHeader.vue'
 import SectionHeader from '@/components/wizard/SectionHeader.vue'
@@ -15,10 +15,13 @@ const playingChordId = ref<number | null>(null)
 const clickedBadgeKey = ref<string | null>(null)
 const chordFlowRefs = ref<Map<number, HTMLElement>>(new Map())
 
-// WASM module for getting valid progressions
+// WASM module for getting chord progressions
 let midisketch: any = null
 const validProgressionIds = ref<number[]>([])
 const isWasmLoaded = ref(false)
+
+// Use store's chordProgressions
+const chordProgressions = computed(() => store.chordProgressions.value)
 
 onMounted(async () => {
   if (typeof window === 'undefined') return
@@ -30,12 +33,25 @@ onMounted(async () => {
     await mod.init({ wasmPath })
     isWasmLoaded.value = true
     store.libVersion.value = mod.getVersion()
+    // Load chord progressions from WASM and store in store
+    loadChordProgressions()
     updateValidProgressions()
   } catch {
-    // WASM load failed, fall back to showing all progressions
-    validProgressionIds.value = chordProgressions.map(c => c.id)
+    // WASM load failed - no fallback data available
+    validProgressionIds.value = []
   }
 })
+
+function loadChordProgressions() {
+  if (!midisketch || !isWasmLoaded.value) return
+  const chords = midisketch.getChords()
+  const progressions = chords.map((c: { name: string; display: string }, index: number) => ({
+    id: index,
+    name: c.name,
+    display: c.display
+  }))
+  store.setChordProgressions(progressions)
+}
 
 function updateValidProgressions() {
   if (!midisketch || !isWasmLoaded.value) return
@@ -113,8 +129,8 @@ const recommendedChordIds = computed(() => {
 const recommendedChords = computed(() => {
   const ids = recommendedChordIds.value
   return ids
-    .map(id => chordProgressions.find(c => c.id === id))
-    .filter((c): c is typeof chordProgressions[0] => c !== undefined)
+    .map(id => chordProgressions.value.find(c => c.id === id))
+    .filter((c): c is ChordProgression => c !== undefined)
 })
 
 // Other chords (valid for style but not recommended)
@@ -122,9 +138,9 @@ const otherChords = computed(() => {
   const ids = recommendedChordIds.value
   // Only show valid progressions that are not already recommended
   if (validProgressionIds.value.length === 0) {
-    return chordProgressions.filter(c => !ids.includes(c.id))
+    return chordProgressions.value.filter(c => !ids.includes(c.id))
   }
-  return chordProgressions.filter(c =>
+  return chordProgressions.value.filter(c =>
     validProgressionIds.value.includes(c.id) && !ids.includes(c.id)
   )
 })
@@ -177,7 +193,7 @@ function selectChord(id: number) {
 async function togglePlay(id: number) {
   // Ensure audio is warmed up
   await warmupChordPlayer()
-  const chord = chordProgressions.find(c => c.id === id)
+  const chord = chordProgressions.value.find(c => c.id === id)
   if (!chord) return
 
   if (playingChordId.value === id && isPlaying.value) {

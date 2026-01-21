@@ -3,6 +3,13 @@ import { songImages } from '@/data/songImages'
 import { useWizardFlow, STEP_DEFINITIONS, type FlowType } from '@/composables/useWizardFlow'
 import type { PlacedNote } from '@/components/PianoRollEditor/types'
 
+// Chord progression type from WASM
+export interface ChordProgression {
+  id: number
+  name: string
+  display: string
+}
+
 // ============================================
 // Flow Type Definitions
 // ============================================
@@ -184,6 +191,9 @@ const vocalGenerated = ref(false)
 const bgmVersion = ref(0)
 const vocalVersion = ref(0)
 const libVersion = ref<string | null>(null)
+
+// Chord progressions loaded from WASM
+const chordProgressions = ref<ChordProgression[]>([])
 
 const config = reactive<WizardConfig>({ ...DEFAULT_CONFIG })
 
@@ -445,6 +455,20 @@ export function useWizardStore() {
     return editedVocalNotes.value !== null
   }
 
+  /**
+   * Set chord progressions from WASM
+   */
+  function setChordProgressions(progressions: ChordProgression[]) {
+    chordProgressions.value = progressions
+  }
+
+  /**
+   * Get chord progression by ID
+   */
+  function getChordProgressionById(id: number): ChordProgression | undefined {
+    return chordProgressions.value.find(c => c.id === id)
+  }
+
   return {
     // State
     currentStep,
@@ -454,6 +478,7 @@ export function useWizardStore() {
     bgmVersion,
     vocalVersion,
     libVersion,
+    chordProgressions,
     config,
     editedVocalNotes,
 
@@ -487,6 +512,10 @@ export function useWizardStore() {
     // Vocal editing
     setEditedVocalNotes,
     clearEditedVocalNotes,
-    hasEditedVocalNotes
+    hasEditedVocalNotes,
+
+    // Chord progressions
+    setChordProgressions,
+    getChordProgressionById
   }
 }

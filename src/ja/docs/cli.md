@@ -45,6 +45,7 @@ make midisketch_cli
 | `--key N` | キー（0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B） | 0 |
 | `--form N` | フォーム/構成パターンID（0-17） | - |
 | `--duration N` | 目標再生時間（秒）（0 = パターン使用） | 0 |
+| `--blueprint N` | Production Blueprint ID または名前（0-8, 255=自動） | 0 |
 
 ### ボーカルパラメータ
 
@@ -226,6 +227,30 @@ Vocal:
 ```
 
 CLIはMIDIフォーマット（SMF1、SMF2/ktmidi、SMF2/Clip）を自動検出し、ファイルに埋め込まれた生成パラメータを抽出します。
+
+### Blueprint パラメータ
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--blueprint N` | Production Blueprint（ID 0-8 または名前で指定） | 0 |
+
+Blueprint オプション（10プリセット）：
+- 0: Traditional（クラシックなポップ生成）
+- 1: RhythmLock（ドラム＆ベースがメロディに同期）
+- 2: StoryPop（メロディ主導、徐々に盛り上がる）
+- 3: Ballad（静かに始まり、徐々に楽器が増える）
+- 4: IdolStandard（パートが徐々に増え、ラストサビで最高潮）
+- 5: IdolHyper（最初からサビ感、高密度）
+- 6: IdolKawaii（控えめで可愛らしい弾む感じ）
+- 7: IdolCoolPop（四つ打ちでダンスブレイクあり）
+- 8: IdolEmo（静かな始まりから感情的に爆発）
+- 255: Auto（重み付きランダム選択）
+
+名前での指定も可能（大文字小文字区別なし）：
+```bash
+./midisketch_cli --blueprint rhythmlock
+./midisketch_cli --blueprint ballad
+```
 
 ## ワークフロー例
 

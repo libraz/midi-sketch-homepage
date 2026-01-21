@@ -45,6 +45,7 @@ The binary will be at `build/midisketch_cli`.
 | `--key N` | Key (0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | 0 |
 | `--form N` | Form/structure pattern ID (0-17) | - |
 | `--duration N` | Target duration in seconds (0 = use pattern) | 0 |
+| `--blueprint N` | Production blueprint ID or name (0-8, 255=auto) | 0 |
 
 ### Vocal Parameters
 
@@ -226,6 +227,30 @@ Regenerate a song from its embedded metadata:
 ```
 
 The CLI auto-detects MIDI format (SMF1, SMF2/ktmidi, SMF2/Clip) and extracts generation parameters embedded in the file.
+
+### Blueprint Parameters
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--blueprint N` | Production blueprint by ID (0-8) or name | 0 |
+
+Blueprint options (10 presets):
+- 0: Traditional (classic pop generation)
+- 1: RhythmLock (drums & bass sync with melody)
+- 2: StoryPop (melody-driven, gradual build)
+- 3: Ballad (quiet start, gradual build)
+- 4: IdolStandard (layers build, big last chorus)
+- 5: IdolHyper (chorus-first, high intensity)
+- 6: IdolKawaii (gentle dynamics, cute vibe)
+- 7: IdolCoolPop (four-on-floor with dance break)
+- 8: IdolEmo (quiet to explosive climax)
+- 255: Auto (weighted random selection)
+
+You can specify by name (case-insensitive):
+```bash
+./midisketch_cli --blueprint rhythmlock
+./midisketch_cli --blueprint ballad
+```
 
 ## Workflow Examples
 

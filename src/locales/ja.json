@@ -34,11 +34,12 @@
       "ballad": "バラード"
     },
     "arrangementStyle": {
-      "title": "アレンジスタイル",
-      "description": "曲の構成の組み立て方",
+      "title": "曲の組み立て方",
+      "description": "曲全体の構成・展開パターンを選びます",
       "recommended": "（推奨）",
       "recommendedBadge": "推奨",
-      "unknown": "不明"
+      "unknown": "不明",
+      "affectsHint": "影響: 曲構成、セクション展開、リフの扱い"
     }
   },
   "chordStep": {
@@ -112,7 +113,8 @@
   },
   "bgmSettingsStep": {
     "title": "BGM設定",
-    "subtitle": "バッキングトラックのパラメータを調整します"
+    "subtitle": "バッキングトラックのパラメータを調整します",
+    "recommendedByBlueprint": "推奨"
   },
   "bgmGenerationStep": {
     "title": "BGM生成",
@@ -392,25 +394,26 @@
     "advanced": {
       "toggle": "詳細設定",
       "melodyTemplate": {
-        "label": "メロディタイプ",
-        "description": "メロディの形状パターンを選択。パターンごとに異なる音楽的特徴を持ちます",
+        "label": "メロディの動き",
+        "description": "音がどう動くかのパターン。上昇・下降・キープなど",
+        "affectsHint": "影響: 音の上下動、フレーズの形",
         "options": {
-          "auto": "自動",
-          "autoDesc": "セクションとスタイルに応じて自動選択",
-          "plateauTalk": "プラトートーク",
-          "plateauTalkDesc": "トークシング風、同音保持が高い（NewJeans、Billie Eilish風）",
-          "runUpTarget": "ランアップターゲット",
-          "runUpTargetDesc": "上昇系メロディ、目標音に向かって構築（YOASOBI、Ado風）",
-          "downResolve": "ダウンリゾルブ",
-          "downResolveDesc": "下降解決型、Bメロに適している",
-          "hookRepeat": "フックリピート",
-          "hookRepeatDesc": "短いキャッチーなフックの反復（TikTok、K-POP風）",
-          "sparseAnchor": "スパースアンカー",
-          "sparseAnchorDesc": "疎なアンカーノート、呼吸感のある（Official髭男dism風）",
-          "callResponse": "コールレスポンス",
-          "callResponseDesc": "デュエット風の掛け合いパターン",
-          "jumpAccent": "ジャンプアクセント",
-          "jumpAccentDesc": "感情的なピーク、ドラマチックな跳躍"
+          "auto": "おまかせ",
+          "autoDesc": "セクションに合わせて自動選択",
+          "plateauTalk": "同じ音キープ",
+          "plateauTalkDesc": "同じ音を保ちながら語るような動き",
+          "runUpTarget": "駆け上がり",
+          "runUpTargetDesc": "サビに向かって音が上昇していく",
+          "downResolve": "下降で落ち着く",
+          "downResolveDesc": "高い音から下がって解決する、Bメロ向き",
+          "hookRepeat": "キャッチーリピート",
+          "hookRepeatDesc": "短いフレーズを繰り返す、耳に残りやすい",
+          "sparseAnchor": "ゆったり間をとる",
+          "sparseAnchorDesc": "音数少なめで呼吸感のあるメロディ",
+          "callResponse": "掛け合い",
+          "callResponseDesc": "呼びかけと応答のパターン",
+          "jumpAccent": "ドラマチック跳躍",
+          "jumpAccentDesc": "感情のピークで大きく音が跳ぶ"
         }
       },
       "vocalRange": {
@@ -456,36 +459,37 @@
         }
       },
       "vocalStyle": {
-        "label": "ボーカルスタイル",
-        "description": "スタイルを選ぶと、音符密度・リズムパターン・音程跳躍などが自動調整されます",
-        "implicitNote": "※ 選択したスタイルに応じて内部パラメータが自動設定されます",
+        "label": "歌い方キャラ",
+        "description": "メロディの雰囲気を決めます。音の細かさ・跳躍・リズム感が変わります",
+        "affectsHint": "影響: 音符密度、リズムパターン、音程の動き幅",
+        "implicitNote": "※ 選択に応じて複数のパラメータが自動調整されます",
         "options": {
-          "auto": "自動",
-          "autoDesc": "曲のスタイルプリセットに合わせて自動選択",
+          "auto": "おまかせ",
+          "autoDesc": "曲イメージに合わせて自動選択",
           "standard": "スタンダード",
           "standardDesc": "バランスの取れた標準的なメロディ",
-          "vocaloid": "ボカロ",
-          "vocaloidDesc": "16分音符多め・速いパッセージ・跳躍音程あり",
-          "ultraVocaloid": "超ボカロ",
-          "ultraVocaloidDesc": "32分音符・超高密度・極端な跳躍OK・休符なし",
-          "idol": "アイドル",
-          "idolDesc": "8分音符基調・覚えやすいフック・サビ盛り上げ",
-          "ballad": "バラード",
-          "balladDesc": "4分音符中心・ゆったり・長い音符多め・狭い音域",
-          "rock": "ロック",
-          "rockDesc": "力強いフック・シンコペーション・サビで音域上昇",
-          "cityPop": "シティポップ",
-          "cityPopDesc": "おしゃれなシンコペ・テンション多用・洗練されたメロディ",
-          "anime": "アニメ",
-          "animeDesc": "キャッチーなフック・サビ盛り上げ・ドラマチック",
-          "brightKira": "ブライト・キラキラ",
-          "brightKiraDesc": "明るく華やか・サビで高音域にシフト",
-          "coolSynth": "クール・シンセ",
-          "coolSynthDesc": "16分音符多め・クールでシンセ的・長音なし",
-          "cuteAffected": "キュート・あざとい",
-          "cuteAffectedDesc": "可愛らしい・控えめなシンコペ・サビで少し上へ",
-          "powerfulShout": "パワフル・シャウト",
-          "powerfulShoutDesc": "力強く叫ぶ・4分音符中心・サビ密度アップ"
+          "vocaloid": "ボカロ風",
+          "vocaloidDesc": "音が細かく速い・跳躍あり（人が歌える範囲）",
+          "ultraVocaloid": "超ボカロ風",
+          "ultraVocaloidDesc": "超高速・極端な跳躍OK（機械向け）",
+          "idol": "アイドル風",
+          "idolDesc": "覚えやすいフック・サビで盛り上がる",
+          "ballad": "バラード風",
+          "balladDesc": "ゆったり・長い音符・狭い音域",
+          "rock": "ロック風",
+          "rockDesc": "力強いフック・サビで音域上昇",
+          "cityPop": "シティポップ風",
+          "cityPopDesc": "おしゃれ・テンション使用・洗練されたメロディ",
+          "anime": "アニソン風",
+          "animeDesc": "キャッチー・ドラマチック・サビ盛り上げ",
+          "brightKira": "キラキラ明るい",
+          "brightKiraDesc": "明るく華やか・サビで高音域へ",
+          "coolSynth": "クールシンセ",
+          "coolSynthDesc": "細かい音符・クールな雰囲気",
+          "cuteAffected": "あざとかわいい",
+          "cuteAffectedDesc": "可愛らしい・控えめなリズム",
+          "powerfulShout": "パワフル",
+          "powerfulShoutDesc": "力強く叫ぶ・サビで密度アップ"
         }
       },
       "vocalGroove": {
@@ -516,13 +520,14 @@
         }
       },
       "hookIntensity": {
-        "label": "フック強度",
-        "description": "サビや印象的なフレーズの強さを設定します。強いほど耳に残りやすくなります",
+        "label": "メロディの繰り返し感",
+        "description": "ボーカルメロディでキャッチーな繰り返しフレーズをどれくらい使うか",
+        "affectsHint": "影響: ボーカルのみ（伴奏パターンは「曲の組み立て方」で設定）",
         "options": {
           "off": "なし",
-          "light": "弱め",
+          "light": "控えめ",
           "normal": "標準",
-          "strong": "強め"
+          "strong": "多め"
         }
       }
     }
@@ -681,6 +686,11 @@
       "name": "アニメソング風",
       "tagline": "壮大でドラマチック、印象的",
       "description": "お気に入りのアニメのOPになりそうな力強い曲"
+    },
+    "vocaloid-anime": {
+      "name": "ボカロ / アニメOP",
+      "tagline": "速いテンポ、ドラマチックな展開",
+      "description": "現代ボカロ・アニメOP風 - 速いテンポとドラマチックな曲展開"
     },
     "rock-pop": {
       "name": "ロックポップ",

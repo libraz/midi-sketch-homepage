@@ -25,6 +25,7 @@ export const SONG_IMAGE_BLUEPRINT_MAP: Record<string, number> = {
   'jpop-standard': 0, // Traditional
   citypop: 2, // StoryPop
   'anime-song': 0, // Traditional
+  'vocaloid-anime': 2, // StoryPop (gradual build, evolving)
   'rock-pop': 1, // RhythmLock
 
   // Dance / Electronic category

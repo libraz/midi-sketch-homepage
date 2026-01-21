@@ -67,6 +67,60 @@ const progressions = midisketch.getProgressionsByStyle(0)
 // [0, 1, 2, ...]
 ```
 
+### `getBlueprints()`
+
+Returns all available production blueprints.
+
+```javascript
+const blueprints = midisketch.getBlueprints()
+// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42 }, ...]
+```
+
+### `getBlueprintCount()`
+
+Returns the number of available blueprints.
+
+```javascript
+const count = midisketch.getBlueprintCount()
+// 9
+```
+
+### `getBlueprintName(id)`
+
+Returns the name of a blueprint by ID.
+
+```javascript
+const name = midisketch.getBlueprintName(1)
+// 'RhythmLock'
+```
+
+### `getBlueprintParadigm(id)`
+
+Returns the generation paradigm of a blueprint.
+
+```javascript
+const paradigm = midisketch.getBlueprintParadigm(1)
+// 1 (GenerationParadigm.RhythmSync)
+```
+
+### `getBlueprintRiffPolicy(id)`
+
+Returns the riff policy of a blueprint.
+
+```javascript
+const policy = midisketch.getBlueprintRiffPolicy(1)
+// 1 (RiffPolicy.Locked)
+```
+
+### `getBlueprintWeight(id)`
+
+Returns the selection weight (percentage) of a blueprint.
+
+```javascript
+const weight = midisketch.getBlueprintWeight(0)
+// 42
+```
+
 ### `getFormsByStyle(styleId)`
 
 Returns form/structure IDs compatible with the given style.
@@ -175,6 +229,9 @@ sketch.generateFromConfig({
   motifRepeatScope: 0,        // 0=FullSong (same motif), 1=Section (per-section motif)
   motifFixedProgression: true, // Use same chord progression for all sections
   motifMaxChordCount: 0,      // Max chord count (0=no limit, 2-8)
+
+  // Blueprint settings
+  blueprintId: 0,             // Production blueprint (0=Traditional, 1-8=specific, 255=auto)
 })
 ```
 
@@ -357,6 +414,16 @@ Convert reason flags to human-readable string.
 const info = sketch.getPianoRollSafetyAt(0)
 const reasonText = sketch.reasonToString(info.reason[60])
 // "ChordTone" or "LowRegister, Tritone"
+```
+
+### `getResolvedBlueprintId()`
+
+Returns the actually used blueprint ID after generation. When `blueprintId=255` (auto), this returns the randomly selected blueprint.
+
+```javascript
+sketch.generateFromConfig({ blueprintId: 255 })  // Auto-select
+const actualId = sketch.getResolvedBlueprintId()
+console.log(`Used blueprint: ${midisketch.getBlueprintName(actualId)}`)
 ```
 
 ### `destroy()`
@@ -575,6 +642,22 @@ VocalGrooveFeel.Driving16th // 4 - Driving 16th note feel
 VocalGrooveFeel.Bouncy8th  // 5 - Bouncy 8th note feel
 ```
 
+### `GenerationParadigm`
+
+```javascript
+GenerationParadigm.Traditional  // 0 - Classic generation (Bass→Chord→Vocal)
+GenerationParadigm.RhythmSync   // 1 - Drums & bass sync with melody
+GenerationParadigm.MelodyDriven // 2 - Melody-centered arrangement
+```
+
+### `RiffPolicy`
+
+```javascript
+RiffPolicy.Free     // 0 - Each section varies (uses motifRepeatScope)
+RiffPolicy.Locked   // 1 - Same pattern throughout song
+RiffPolicy.Evolving // 2 - 30% chance to change every 2 sections
+```
+
 ### `NoteSafety`
 
 ```javascript
@@ -718,5 +801,19 @@ interface CollisionInfo {
   trackRole: number         // Track role of colliding track
   collidingPitch: number    // MIDI pitch of colliding note
   intervalSemitones: number // Collision interval in semitones (1, 6, or 11)
+}
+```
+
+### `BlueprintInfo`
+
+Information about a production blueprint:
+
+```typescript
+interface BlueprintInfo {
+  id: number                // Blueprint ID (0-8)
+  name: string              // Blueprint name
+  paradigm: number          // Generation paradigm (0-2)
+  riffPolicy: number        // Riff policy (0-2)
+  weight: number            // Selection weight percentage
 }
 ```

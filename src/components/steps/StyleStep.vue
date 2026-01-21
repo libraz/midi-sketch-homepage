@@ -156,10 +156,16 @@ function getStyleIcon(category: string): string {
     <!-- Arrangement Style Section (Collapsible) -->
     <details class="arrangement-section" :open="arrangementOpen" @toggle="arrangementOpen = ($event.target as HTMLDetailsElement).open">
       <summary class="arrangement-summary">
+        <span class="arrangement-icon">🏗️</span>
         <span class="arrangement-title">{{ t('styleStep.arrangementStyle.title') }}</span>
         <span class="arrangement-value">{{ currentBlueprintLabel }}</span>
         <span class="arrangement-chevron">{{ arrangementOpen ? '▼' : '▶' }}</span>
       </summary>
+
+      <div class="arrangement-body">
+        <p class="arrangement-description">{{ t('styleStep.arrangementStyle.description') }}</p>
+        <span class="arrangement-hint">{{ t('styleStep.arrangementStyle.affectsHint') }}</span>
+      </div>
 
       <div class="blueprint-grid">
         <article
@@ -363,7 +369,7 @@ function getStyleIcon(category: string): string {
 .arrangement-summary {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   padding: 1rem 1.25rem;
   cursor: pointer;
   user-select: none;
@@ -372,6 +378,10 @@ function getStyleIcon(category: string): string {
 
 .arrangement-summary:hover {
   background: rgba(139, 92, 246, 0.05);
+}
+
+.arrangement-icon {
+  font-size: 1rem;
 }
 
 .arrangement-title {
@@ -390,6 +400,27 @@ function getStyleIcon(category: string): string {
 .arrangement-chevron {
   font-size: 0.7rem;
   color: rgba(250, 250, 250, 0.4);
+}
+
+.arrangement-body {
+  padding: 0 1.25rem 1rem;
+}
+
+.arrangement-description {
+  font-size: 0.8rem;
+  color: rgba(250, 250, 250, 0.5);
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.arrangement-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: rgba(139, 92, 246, 0.7);
+  padding: 0.375rem 0.5rem;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 6px;
+  display: inline-block;
 }
 
 /* Blueprint Grid - 3 column card layout */

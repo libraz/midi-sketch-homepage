@@ -23,6 +23,10 @@ export interface BlueprintOption {
   overridesForm: boolean
   /** True if this blueprint generates motif tracks */
   hasMotif: boolean
+  /** True if drums are required for this blueprint to work properly */
+  requiresDrums: boolean
+  /** True if arpeggio is recommended for this blueprint */
+  recommendsArpeggio: boolean
 }
 
 export const BLUEPRINT_OPTIONS: BlueprintOption[] = [
@@ -31,130 +35,150 @@ export const BLUEPRINT_OPTIONS: BlueprintOption[] = [
     label: { en: 'Auto', ja: 'おまかせ' },
     description: {
       en: 'Automatically select based on style',
-      ja: 'スタイルに合った構成を自動選択',
+      ja: '曲イメージに合わせて自動選択',
     },
     icon: '🔮',
     paradigm: 'traditional',
     riffPolicy: 'free',
     overridesForm: false,
     hasMotif: false,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
   {
     id: 0,
-    label: { en: 'Standard Pop', ja: '王道ポップ' },
+    label: { en: 'Standard Pop', ja: '定番ポップ' },
     description: {
       en: 'Classic A→B→Chorus structure',
-      ja: 'A→B→サビの定番構成',
+      ja: 'イントロ→A→B→サビの王道展開',
     },
     icon: '🎵',
     paradigm: 'traditional',
     riffPolicy: 'free',
     overridesForm: false,
     hasMotif: false,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
   {
     id: 1,
-    label: { en: 'Rhythm First', ja: 'リズム先行' },
+    label: { en: 'Rhythm Lock', ja: 'リズムで刻む' },
     description: {
-      en: 'Drums lead, drop-in at chorus. Motif in A/B/Chorus',
-      ja: 'ドラムから始まり、サビでドロップイン。A/B/サビにモチーフ',
+      en: 'Drums & bass sync with melody',
+      ja: 'ドラムとベースがメロディに同期',
     },
     icon: '🥁',
     paradigm: 'rhythm',
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: true, // drums_sync_vocal = true
+    recommendsArpeggio: false,
   },
   {
     id: 2,
-    label: { en: 'Narrative Build', ja: '物語展開' },
+    label: { en: 'Story Build', ja: '物語のように展開' },
     description: {
-      en: 'Full arrangement, motif in chorus only',
-      ja: 'フルアレンジ、サビのみモチーフ',
+      en: 'Full arrangement, gradual build',
+      ja: 'フルアレンジで徐々に盛り上がる',
     },
     icon: '📖',
     paradigm: 'melody',
     riffPolicy: 'evolving',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
   {
     id: 3,
-    label: { en: 'Ballad', ja: 'バラード' },
+    label: { en: 'Ballad', ja: '静かに始まる' },
     description: {
-      en: 'Quiet start, gradual build. No motif',
-      ja: '静かに始まり、徐々に盛り上がる。モチーフなし',
+      en: 'Quiet start, gradual build',
+      ja: '静かに始まり、徐々に楽器が増える',
     },
     icon: '🌙',
     paradigm: 'melody',
     riffPolicy: 'free',
     overridesForm: true,
     hasMotif: false,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
   {
     id: 4,
-    label: { en: 'Classic Idol', ja: '王道アイドル' },
+    label: { en: 'Classic Idol', ja: 'アイドル王道' },
     description: {
-      en: 'Gradual layers, extended last chorus',
-      ja: '徐々にレイヤー追加、ラストサビ長め',
+      en: 'Layers build, big last chorus',
+      ja: 'パートが徐々に増え、ラストサビで最高潮',
     },
     icon: '⭐',
     paradigm: 'melody',
     riffPolicy: 'evolving',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
   {
     id: 5,
-    label: { en: 'High Energy', ja: 'ハイエナジー' },
+    label: { en: 'High Energy', ja: 'サビから攻める' },
     description: {
-      en: 'Chorus-first, high density, short A/B',
-      ja: 'サビ先行、高密度、短いAB',
+      en: 'Chorus-first, high intensity',
+      ja: '最初からサビ感・高密度で攻める',
     },
     icon: '⚡',
     paradigm: 'rhythm',
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: true, // drums_sync_vocal = true
+    recommendsArpeggio: false,
   },
   {
     id: 6,
-    label: { en: 'Sweet Bounce', ja: 'スイート' },
+    label: { en: 'Sweet Bounce', ja: 'かわいく弾む' },
     description: {
-      en: 'Restrained dynamics, cute vibe',
-      ja: '控えめダイナミクス、かわいい雰囲気',
+      en: 'Gentle dynamics, cute vibe',
+      ja: '控えめで可愛らしい弾む感じ',
     },
     icon: '🍬',
     paradigm: 'melody',
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: true, // drums_sync_vocal = true
+    recommendsArpeggio: false,
   },
   {
     id: 7,
-    label: { en: 'Groove Drive', ja: 'グルーヴ' },
+    label: { en: 'Groove Drive', ja: '踊れるビート' },
     description: {
-      en: 'Four-on-floor, with dance break',
-      ja: 'Four-on-floor、ダンスブレイクあり',
+      en: 'Four-on-floor with dance break',
+      ja: '四つ打ちでダンスブレイクあり',
     },
     icon: '🎧',
     paradigm: 'rhythm',
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: true, // four-on-floor needs drums
+    recommendsArpeggio: true, // dance break uses arpeggio
   },
   {
     id: 8,
-    label: { en: 'Emotional Arc', ja: 'エモーショナル' },
+    label: { en: 'Emotional Arc', ja: '静→爆発' },
     description: {
-      en: 'Quiet→Explosion, emotional climax',
-      ja: '静→爆発、感情的クライマックス',
+      en: 'Quiet to explosive climax',
+      ja: '静かな始まりから感情的に爆発',
     },
     icon: '💫',
     paradigm: 'melody',
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
+    requiresDrums: false,
+    recommendsArpeggio: false,
   },
 ]
 
@@ -185,4 +209,20 @@ export function blueprintOverridesForm(id: number): boolean {
 export function blueprintIgnoresMotifScope(id: number): boolean {
   const bp = getBlueprintById(id)
   return bp?.riffPolicy !== 'free'
+}
+
+/**
+ * Check if drums are required for this blueprint
+ */
+export function blueprintRequiresDrums(id: number): boolean {
+  const bp = getBlueprintById(id)
+  return bp?.requiresDrums ?? false
+}
+
+/**
+ * Check if arpeggio is recommended for this blueprint
+ */
+export function blueprintRecommendsArpeggio(id: number): boolean {
+  const bp = getBlueprintById(id)
+  return bp?.recommendsArpeggio ?? false
 }

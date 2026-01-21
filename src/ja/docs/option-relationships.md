@@ -236,6 +236,7 @@ flowchart TD
 | `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
 | `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
 | `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
+| `blueprintId` | 0-8, 255 | (255=自動ランダム) |
 
 ### 4.2 スタイル × vocalAttitude の組み合わせ
 
@@ -615,3 +616,101 @@ SongConfig
 ```
 
 **適用順序**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity`
+
+---
+
+## 10. Production Blueprint によるオーバーライド
+
+Production Blueprintは、スタイル/ムード設定とは独立して、音楽の**生成方法**を制御します。
+
+### 10.1 Blueprint 一覧
+
+| ID | 名前 | パラダイム | RiffPolicy | ドラム必須 | フォーム上書き |
+|----|------|-----------|------------|:----------:|:-------------:|
+| 0 | 定番ポップ | Traditional | Free | - | - |
+| 1 | リズムで刻む | RhythmSync | Locked | **必須** | **有** |
+| 2 | 物語のように展開 | MelodyDriven | Evolving | - | **有** |
+| 3 | 静かに始まる | MelodyDriven | Free | - | **有** |
+| 4 | アイドル王道 | MelodyDriven | Evolving | - | **有** |
+| 5 | サビから攻める | RhythmSync | Locked | **必須** | **有** |
+| 6 | かわいく弾む | MelodyDriven | Locked | **必須** | **有** |
+| 7 | 踊れるビート | RhythmSync | Locked | **必須** | **有** |
+| 8 | 静→爆発 | MelodyDriven | Locked | - | **有** |
+| 255 | おまかせ | - | - | - | - |
+
+### 10.2 パラダイムの種類
+
+| パラダイム | 説明 | 生成順序 |
+|-----------|------|---------|
+| Traditional | クラシックなポップ生成 | Bass → Chord → Vocal（デフォルト） |
+| RhythmSync | ドラム＆ベースがメロディに同期 | ドラム先行、ボーカル同期 |
+| MelodyDriven | メロディ中心のアレンジ | メロディ先行、伴奏追従 |
+
+### 10.3 RiffPolicy の種類
+
+| ポリシー | 説明 | motifRepeatScope への影響 |
+|---------|------|--------------------------|
+| Free | セクションごとに変化 | `motifRepeatScope` 設定を使用 |
+| Locked | 曲全体で同一パターン | `motifRepeatScope` を**無視** |
+| Evolving | 2セクションごとに30%確率で変化 | `motifRepeatScope` を**無視** |
+
+### 10.4 Blueprint によるオーバーライドルール
+
+Blueprint が選択されると（Traditional/ID 0 以外）、いくつかの設定が自動的にオーバーライドされます：
+
+```mermaid
+flowchart TD
+    BP[blueprintId ≠ 0] --> SF{section_flowあり?}
+    SF -->|Yes| FO["formId がオーバーライドされる"]
+    SF -->|No| FK["formId は維持"]
+
+    BP --> RP{riffPolicy}
+    RP -->|Free| MRS["motifRepeatScope が使用される"]
+    RP -->|Locked/Evolving| MRI["motifRepeatScope は無視"]
+
+    BP --> DR{requiresDrums?}
+    DR -->|Yes| DE["drumsEnabled が強制 true"]
+    DR -->|No| DK["drumsEnabled は維持"]
+```
+
+| Blueprint 設定 | オーバーライド対象 | 条件 |
+|----------------|-------------------|------|
+| `section_flow` | `formId` | Traditional (ID 0) 以外で全て |
+| `riff_policy` | `motifRepeatScope` | Free=設定使用、Locked/Evolving=無視 |
+| `drums_sync_vocal` | 内部同期設定 | Blueprint 定義が優先 |
+| `drums_required` | `drumsEnabled` | true の場合、`drumsEnabled=true` を強制 |
+| `TrackMask::Motif` | モチーフ生成 | セクションごとに制御 |
+
+### 10.5 モチーフ生成フロー
+
+```
+CompositionStyle == BackgroundMotif? → Yes: モチーフ生成
+└─ No → Blueprint に section_flow がある? → No: モチーフなし
+        └─ Yes → セクションに TrackMask::Motif がある? → Yes: モチーフ生成
+```
+
+::: warning ドラム必須
+`requiresDrums=true` の Blueprint（ID: 1, 5, 6, 7）は自動的にドラムを有効化します。これらの Blueprint では UI 上のドラム切り替えは非表示になります。
+:::
+
+### 10.6 例：Blueprint のオーバーライド動作
+
+```javascript
+// リズムで刻む Blueprint を使用
+{
+  blueprintId: 1,        // リズムで刻む
+  formId: 5,             // ← 無視！Blueprint の section_flow が使用される
+  motifRepeatScope: 1,   // ← 無視！Locked ポリシーで同一パターン強制
+  drumsEnabled: false,   // ← 無視！drums_required=true で強制有効
+}
+```
+
+```javascript
+// 定番ポップ Blueprint を使用（Traditional）
+{
+  blueprintId: 0,        // 定番ポップ
+  formId: 5,             // ← 指定通り使用
+  motifRepeatScope: 1,   // ← 指定通り使用
+  drumsEnabled: false,   // ← 指定通り使用
+}
+```

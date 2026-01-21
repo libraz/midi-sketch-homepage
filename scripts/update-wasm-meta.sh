@@ -3,11 +3,18 @@ WASM_FILE="src/wasm/midisketch.wasm"
 META_FILE="src/wasm/meta.json"
 
 if [ -f "$WASM_FILE" ]; then
-  SIZE=$(stat -c%s "$WASM_FILE")
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    SIZE=$(stat -f%z "$WASM_FILE")
+    MD5=$(md5 -q "$WASM_FILE")
+  else
+    # Linux
+    SIZE=$(stat -c%s "$WASM_FILE")
+    MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
+  fi
   SIZE_KB=$((SIZE / 1024))
   GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
   GZIP_KB=$((GZIP_SIZE / 1024))
-  MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
 
   # Get old MD5 if meta.json exists
   OLD_MD5=""

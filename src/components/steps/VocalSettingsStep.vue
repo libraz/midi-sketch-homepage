@@ -163,9 +163,10 @@ const advancedSummary = computed(() => {
     <div class="vocal-settings">
       <!-- Melody Template (Primary setting) -->
       <SettingSection
-        icon="🎹"
+        icon="📐"
         :title="t('melodyStep.advanced.melodyTemplate.label')"
         :description="t('melodyStep.advanced.melodyTemplate.description')"
+        :hint="t('melodyStep.advanced.melodyTemplate.affectsHint')"
         featured
       >
         <div class="compact-btns compact-btns--grid compact-btns--melody-template">
@@ -188,9 +189,10 @@ const advancedSummary = computed(() => {
 
       <!-- Vocal Style -->
       <SettingSection
-        icon="🎼"
+        icon="🎭"
         :title="t('melodyStep.advanced.vocalStyle.label')"
         :description="t('melodyStep.advanced.vocalStyle.description')"
+        :hint="t('melodyStep.advanced.vocalStyle.affectsHint')"
       >
         <div class="compact-btns compact-btns--grid">
           <button

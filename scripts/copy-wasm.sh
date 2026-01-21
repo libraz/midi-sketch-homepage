@@ -77,7 +77,13 @@ done
 
 # Remove sourceMappingURL from index.js (not needed in homepage)
 if [ -f "$DEST_DIR/index.js" ]; then
-  sed -i '/^\/\/# sourceMappingURL=/d' "$DEST_DIR/index.js"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS (BSD sed requires '' after -i)
+    sed -i '' '/^\/\/# sourceMappingURL=/d' "$DEST_DIR/index.js"
+  else
+    # Linux (GNU sed)
+    sed -i '/^\/\/# sourceMappingURL=/d' "$DEST_DIR/index.js"
+  fi
 fi
 
 # Update meta.json

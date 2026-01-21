@@ -3,6 +3,7 @@ defineProps<{
   icon?: string
   title: string
   description?: string
+  hint?: string
   featured?: boolean
 }>()
 </script>
@@ -14,6 +15,7 @@ defineProps<{
       <span>{{ title }}</span>
     </h3>
     <p v-if="description" class="setting-description">{{ description }}</p>
+    <p v-if="hint" class="setting-hint">{{ hint }}</p>
     <slot />
   </section>
 </template>
@@ -53,8 +55,19 @@ defineProps<{
 .setting-description {
   font-size: 0.8rem;
   color: rgba(250, 250, 250, 0.45);
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
   line-height: 1.5;
+}
+
+.setting-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: rgba(var(--accent-rgb, 139, 92, 246), 0.7);
+  margin: 0 0 1rem;
+  padding: 0.375rem 0.5rem;
+  background: rgba(var(--accent-rgb, 139, 92, 246), 0.08);
+  border-radius: 6px;
+  display: inline-block;
 }
 
 @media (max-width: 640px) {
