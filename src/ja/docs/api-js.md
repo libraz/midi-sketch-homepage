@@ -653,9 +653,12 @@ GenerationParadigm.MelodyDriven // 2 - メロディ中心のアレンジ
 ### `RiffPolicy`
 
 ```javascript
-RiffPolicy.Free     // 0 - セクションごとに変化（motifRepeatScope使用）
-RiffPolicy.Locked   // 1 - 曲全体で同一パターン
-RiffPolicy.Evolving // 2 - 2セクションごとに30%確率で変化
+RiffPolicy.Free          // 0 - セクションごとに独立して変化
+RiffPolicy.LockedContour // 1 - 輪郭固定、リズムは変化
+RiffPolicy.LockedPitch   // 2 - ピッチ固定、輪郭は変化
+RiffPolicy.LockedAll     // 3 - 全要素固定
+RiffPolicy.Evolving      // 4 - 徐々に変化（2セクションごとに30%）
+RiffPolicy.Locked        // LockedContour (1) のエイリアス
 ```
 
 ### `NoteSafety`

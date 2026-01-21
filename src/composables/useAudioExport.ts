@@ -237,7 +237,7 @@ export function useAudioExport() {
     const leftInt16 = floatTo16BitPCM(left)
     const rightInt16 = floatTo16BitPCM(right)
 
-    const mp3Data: Int8Array[] = []
+    const mp3Data: BlobPart[] = []
     const sampleBlockSize = 1152
 
     for (let i = 0; i < leftInt16.length; i += sampleBlockSize) {

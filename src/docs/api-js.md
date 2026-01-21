@@ -653,9 +653,12 @@ GenerationParadigm.MelodyDriven // 2 - Melody-centered arrangement
 ### `RiffPolicy`
 
 ```javascript
-RiffPolicy.Free     // 0 - Each section varies (uses motifRepeatScope)
-RiffPolicy.Locked   // 1 - Same pattern throughout song
-RiffPolicy.Evolving // 2 - 30% chance to change every 2 sections
+RiffPolicy.Free          // 0 - Each section varies independently
+RiffPolicy.LockedContour // 1 - Contour locked, rhythm varies
+RiffPolicy.LockedPitch   // 2 - Pitch locked, contour varies
+RiffPolicy.LockedAll     // 3 - All aspects locked
+RiffPolicy.Evolving      // 4 - Gradual changes (30% every 2 sections)
+RiffPolicy.Locked        // Alias for LockedContour (1)
 ```
 
 ### `NoteSafety`

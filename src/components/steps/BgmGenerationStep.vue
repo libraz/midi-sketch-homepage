@@ -131,7 +131,7 @@ const advancedSummary = computed(() => {
 const currentBlueprintLabel = computed(() => {
   const lang = locale.value as 'en' | 'ja'
   if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
-    const recId = getRecommendedBlueprintId(store.config.songImage)
+    const recId = getRecommendedBlueprintId(store.config.songImageId)
     const rec = getBlueprintById(recId)
     return `${rec?.label[lang] ?? ''}${t('styleStep.arrangementStyle.recommended')}`
   }

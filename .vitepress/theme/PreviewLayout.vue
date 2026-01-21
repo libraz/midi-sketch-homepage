@@ -71,7 +71,7 @@ const blueprintLabel = computed(() => {
   if (blueprintId === AUTO_BLUEPRINT_ID) {
     // Find songImage by stylePresetId to get recommended blueprint
     const style = songImages.find(s => s.stylePresetIds.includes(config.stylePresetId ?? 0))
-    const recId = getRecommendedBlueprintId(style?.id)
+    const recId = getRecommendedBlueprintId(style?.id ?? '')
     const rec = getBlueprintById(recId)
     return `${rec?.label[langKey] ?? ''}${t('styleStep.arrangementStyle.recommended')}`
   }

@@ -8,11 +8,15 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
+    "typecheck": "vue-tsc --noEmit",
     "copy:wasm": "./scripts/copy-wasm.sh"
   },
   "devDependencies": {
+    "@types/node": "^25.0.9",
+    "typescript": "^5.9.3",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.26"
+    "vue": "^3.5.26",
+    "vue-tsc": "^3.2.2"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

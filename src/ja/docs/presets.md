@@ -4,7 +4,7 @@
 
 ## 構造パターン
 
-11の楽曲構造パターン：
+18の楽曲構造パターン：
 
 | ID | 名前 | 小節 | 再生時間 @120 BPM | セクション |
 |----|------|------|-------------------|------------|
@@ -19,6 +19,13 @@
 | 8 | Ballad | 56 | 4:40 | Intro(8)-A-B-Chorus-Interlude-B-Chorus-Outro |
 | 9 | AnthemStyle | 52 | 4:20 | Intro-A-Chorus-A-B-Chorus-Chorus-Outro |
 | 10 | ExtendedFull | 90 | 7:30 | 拡張セクション付きフル形式 |
+| 11 | ChorusFirst | 32 | 2:40 | Chorus(8)-A(8)-B(8)-Chorus(8) |
+| 12 | ChorusFirstShort | 24 | 2:00 | Chorus(8)-A(8)-Chorus(8) |
+| 13 | ChorusFirstFull | 56 | 4:40 | Chorus-A-B-Chorus-A-B-Chorus |
+| 14 | ImmediateVocal | 24 | 2:00 | A(8)-B(8)-Chorus(8) (イントロなし) |
+| 15 | ImmediateVocalFull | 48 | 4:00 | A-B-Chorus-A-B-Chorus (イントロなし) |
+| 16 | AChorusB | 32 | 2:40 | A(8)-Chorus(8)-B(8)-Chorus(8) |
+| 17 | DoubleVerse | 32 | 2:40 | A(8)-A(8)-B(8)-Chorus(8) |
 
 ### セクションタイプ
 
@@ -183,20 +190,21 @@ BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。
 
 ## Production Blueprint
 
-10種類の Production Blueprint が、スタイル/ムードとは独立して音楽の**生成方法**（アレンジスタイル）を制御します：
+9種類の Production Blueprint が、スタイル/ムードとは独立して音楽の**生成方法**（アレンジスタイル）を制御します：
 
-| ID | 名前 | パラダイム | RiffPolicy | ドラム必須 | モチーフ |
-|----|------|-----------|------------|:----------:|:--------:|
-| 0 | 定番ポップ | Traditional | Free | - | - |
-| 1 | リズムで刻む | RhythmSync | Locked | **必須** | ✅ |
-| 2 | 物語のように展開 | MelodyDriven | Evolving | - | ✅ |
-| 3 | 静かに始まる | MelodyDriven | Free | - | - |
-| 4 | アイドル王道 | MelodyDriven | Evolving | - | ✅ |
-| 5 | サビから攻める | RhythmSync | Locked | **必須** | ✅ |
-| 6 | かわいく弾む | MelodyDriven | Locked | **必須** | ✅ |
-| 7 | 踊れるビート | RhythmSync | Locked | **必須** | ✅ |
-| 8 | 静→爆発 | MelodyDriven | Locked | - | ✅ |
-| 255 | おまかせ | - | - | - | - |
+| ID | 名前 | パラダイム | RiffPolicy | ドラム必須 | 重み |
+|----|------|-----------|------------|:----------:|:----:|
+| 0 | Traditional (定番ポップ) | Traditional | Free | - | 42 |
+| 1 | RhythmLock (リズムで刻む) | RhythmSync | Locked | **必須** | 14 |
+| 2 | StoryPop (物語のように展開) | MelodyDriven | Evolving | - | 10 |
+| 3 | Ballad (静かに始まる) | MelodyDriven | Free | - | 4 |
+| 4 | IdolStandard (アイドル王道) | MelodyDriven | Evolving | - | 10 |
+| 5 | IdolHyper (サビから攻める) | RhythmSync | Locked | **必須** | 6 |
+| 6 | IdolKawaii (かわいく弾む) | MelodyDriven | Locked | **必須** | 5 |
+| 7 | IdolCoolPop (踊れるビート) | RhythmSync | Locked | **必須** | 5 |
+| 8 | IdolEmo (静→爆発) | MelodyDriven | Locked | - | 4 |
+
+`blueprintId: 255` で重み付き自動選択
 
 ### 生成パラダイム
 
@@ -208,14 +216,18 @@ BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。
 
 ### RiffPolicy
 
-| ポリシー | 説明 |
-|---------|------|
-| Free | セクションごとに独立して変化 |
-| Locked | 曲全体で同一パターンを繰り返し |
-| Evolving | 徐々に変化（2セクションごとに30%確率） |
+| ポリシー | 値 | 説明 |
+|---------|:--:|------|
+| Free | 0 | セクションごとに独立して変化 |
+| LockedContour | 1 | 輪郭固定、リズムは変化 |
+| LockedPitch | 2 | ピッチ固定、輪郭は変化 |
+| LockedAll | 3 | 全要素固定 |
+| Evolving | 4 | 徐々に変化（2セクションごとに30%確率） |
+
+※ `Locked` は `LockedContour` (1) のエイリアス
 
 ::: tip Blueprint のオーバーライド
-Traditional 以外の Blueprint（ID 1-8）を使用すると、`formId` 設定は Blueprint の section_flow でオーバーライドされます。フォーム構造を完全に制御したい場合は ID 0（定番ポップ）を使用してください。
+Traditional 以外の Blueprint（ID 1-8）を使用すると、`formId` 設定は Blueprint の section_flow でオーバーライドされます。フォーム構造を完全に制御したい場合は ID 0（Traditional）を使用してください。
 :::
 
 ### MelodyLead

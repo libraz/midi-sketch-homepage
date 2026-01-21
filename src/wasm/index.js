@@ -211,10 +211,16 @@ export const GenerationParadigm = {
 export const RiffPolicy = {
     /** Free variation per section */
     Free: 0,
-    /** Same riff throughout song */
+    /** Pitch contour fixed, expression variable (recommended) */
+    LockedContour: 1,
+    /** Pitch completely fixed, velocity variable */
+    LockedPitch: 2,
+    /** Completely fixed (monotonous, not recommended) */
+    LockedAll: 3,
+    /** Gradual evolution with variations */
+    Evolving: 4,
+    /** Alias for LockedContour (backward compatibility) */
     Locked: 1,
-    /** Gradual evolution */
-    Evolving: 2,
 };
 let moduleInstance = null;
 let api = null;

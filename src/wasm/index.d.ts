@@ -464,10 +464,16 @@ export type GenerationParadigmType = (typeof GenerationParadigm)[keyof typeof Ge
 export declare const RiffPolicy: {
     /** Free variation per section */
     readonly Free: 0;
-    /** Same riff throughout song */
+    /** Pitch contour fixed, expression variable (recommended) */
+    readonly LockedContour: 1;
+    /** Pitch completely fixed, velocity variable */
+    readonly LockedPitch: 2;
+    /** Completely fixed (monotonous, not recommended) */
+    readonly LockedAll: 3;
+    /** Gradual evolution with variations */
+    readonly Evolving: 4;
+    /** Alias for LockedContour (backward compatibility) */
     readonly Locked: 1;
-    /** Gradual evolution */
-    readonly Evolving: 2;
 };
 export type RiffPolicyType = (typeof RiffPolicy)[keyof typeof RiffPolicy];
 /**

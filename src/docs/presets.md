@@ -4,7 +4,7 @@ This document lists all available presets in [MIDI Sketch](https://github.com/li
 
 ## Structure Patterns
 
-11 song structure patterns are available:
+18 song structure patterns are available:
 
 | ID | Name | Bars | Duration @120 BPM | Sections |
 |----|------|------|-------------------|----------|
@@ -19,6 +19,13 @@ This document lists all available presets in [MIDI Sketch](https://github.com/li
 | 8 | Ballad | 56 | 4:40 | Intro(8)-A-B-Chorus-Interlude-B-Chorus-Outro |
 | 9 | AnthemStyle | 52 | 4:20 | Intro-A-Chorus-A-B-Chorus-Chorus-Outro |
 | 10 | ExtendedFull | 90 | 7:30 | Full form with extended sections |
+| 11 | ChorusFirst | 32 | 2:40 | Chorus(8)-A(8)-B(8)-Chorus(8) |
+| 12 | ChorusFirstShort | 24 | 2:00 | Chorus(8)-A(8)-Chorus(8) |
+| 13 | ChorusFirstFull | 56 | 4:40 | Chorus-A-B-Chorus-A-B-Chorus |
+| 14 | ImmediateVocal | 24 | 2:00 | A(8)-B(8)-Chorus(8) (no intro) |
+| 15 | ImmediateVocalFull | 48 | 4:00 | A-B-Chorus-A-B-Chorus (no intro) |
+| 16 | AChorusB | 32 | 2:40 | A(8)-Chorus(8)-B(8)-Chorus(8) |
+| 17 | DoubleVerse | 32 | 2:40 | A(8)-A(8)-B(8)-Chorus(8) |
 
 ### Section Types
 
@@ -183,20 +190,21 @@ BackgroundMotif and SynthDriven do not generate vocal tracks. Use MelodyLead for
 
 ## Production Blueprints
 
-10 production blueprints control **how** the music is generated (arrangement style), independent of style/mood:
+9 production blueprints control **how** the music is generated (arrangement style), independent of style/mood:
 
-| ID | Name | Paradigm | RiffPolicy | Drums Required | Has Motif |
-|----|------|----------|------------|:--------------:|:---------:|
-| 0 | Standard Pop | Traditional | Free | - | - |
-| 1 | Rhythm Lock | RhythmSync | Locked | **Yes** | ✅ |
-| 2 | Story Build | MelodyDriven | Evolving | - | ✅ |
-| 3 | Ballad | MelodyDriven | Free | - | - |
-| 4 | Classic Idol | MelodyDriven | Evolving | - | ✅ |
-| 5 | High Energy | RhythmSync | Locked | **Yes** | ✅ |
-| 6 | Sweet Bounce | MelodyDriven | Locked | **Yes** | ✅ |
-| 7 | Groove Drive | RhythmSync | Locked | **Yes** | ✅ |
-| 8 | Emotional Arc | MelodyDriven | Locked | - | ✅ |
-| 255 | Auto | - | - | - | - |
+| ID | Name | Paradigm | RiffPolicy | Drums Required | Weight |
+|----|------|----------|------------|:--------------:|:------:|
+| 0 | Traditional | Traditional | Free | - | 42 |
+| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14 |
+| 2 | StoryPop | MelodyDriven | Evolving | - | 10 |
+| 3 | Ballad | MelodyDriven | Free | - | 4 |
+| 4 | IdolStandard | MelodyDriven | Evolving | - | 10 |
+| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6 |
+| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5 |
+| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5 |
+| 8 | IdolEmo | MelodyDriven | Locked | - | 4 |
+
+Use `blueprintId: 255` for auto-selection based on weights.
 
 ### Generation Paradigms
 
@@ -208,14 +216,18 @@ BackgroundMotif and SynthDriven do not generate vocal tracks. Use MelodyLead for
 
 ### RiffPolicy
 
-| Policy | Description |
-|--------|-------------|
-| Free | Each section varies independently |
-| Locked | Same pattern repeated throughout song |
-| Evolving | Gradual changes (30% chance every 2 sections) |
+| Policy | Value | Description |
+|--------|:-----:|-------------|
+| Free | 0 | Each section varies independently |
+| LockedContour | 1 | Contour locked, rhythm varies |
+| LockedPitch | 2 | Pitch locked, contour varies |
+| LockedAll | 3 | All aspects locked |
+| Evolving | 4 | Gradual changes (30% chance every 2 sections) |
+
+Note: `Locked` is an alias for `LockedContour` (1).
 
 ::: tip Blueprint Override
-When using a non-Traditional blueprint (ID 1-8), the `formId` setting is overridden by the blueprint's section flow. Use ID 0 (Standard Pop) to keep full control of form structure.
+When using a non-Traditional blueprint (ID 1-8), the `formId` setting is overridden by the blueprint's section flow. Use ID 0 (Traditional) to keep full control of form structure.
 :::
 
 ### MelodyLead
