@@ -13,7 +13,8 @@ import type { WizardConfig } from '@/stores/useWizardStore'
 // V1: Original schema with vocalNoteDensity, vocalMinNoteDivision, vocalRestRatio, etc.
 // V2: Replaced with melodyTemplate (0-7)
 // V3: Added vocalSeed for vocal-first flow deterministic regeneration, added seEnabled
-const VERSION = 2
+// V4: Added blueprintId (0-8, 255=auto)
+const VERSION = 3
 
 // Share types
 export type ShareType = 'bgm' | 'vocal'
@@ -74,6 +75,7 @@ const FIELD_SCHEMA: FieldDef[] = [
 
   // Arrangement
   ['arrangementGrowth', 1],   // 0-1
+  ['blueprintId', 8],         // 0-8, 255=auto
   ['motifRepeatScope', 1],    // 0-1
   ['motifFixedProgression', 1],
   ['motifMaxChordCount', 4],  // 0-8

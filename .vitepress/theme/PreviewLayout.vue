@@ -6,6 +6,8 @@ import { useMidiPlayer } from '@/composables/useMidiPlayer'
 import { decodeShareUrl, type DecodedShare } from '@/utils/shareEncoder'
 import { KEY_NAMES } from '@/utils/midiUtils'
 import { songImages } from '@/data/songImages'
+import { getBlueprintById, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import NoteFlowVisualizer from '@/components/NoteFlowVisualizer.vue'
 
 // Chord progression type from WASM
@@ -59,6 +61,24 @@ const {
   play
 } = player
 
+// Blueprint label for summary
+const blueprintLabel = computed(() => {
+  if (!decoded.value) return '-'
+  const config = decoded.value.config
+  const blueprintId = config.blueprintId ?? AUTO_BLUEPRINT_ID
+  const langKey = lang.value as 'en' | 'ja'
+
+  if (blueprintId === AUTO_BLUEPRINT_ID) {
+    // Find songImage by stylePresetId to get recommended blueprint
+    const style = songImages.find(s => s.stylePresetIds.includes(config.stylePresetId ?? 0))
+    const recId = getRecommendedBlueprintId(style?.id)
+    const rec = getBlueprintById(recId)
+    return `${rec?.label[langKey] ?? ''}${t('styleStep.arrangementStyle.recommended')}`
+  }
+  const bp = getBlueprintById(blueprintId)
+  return bp?.label[langKey] ?? '-'
+})
+
 // Summary info - main row (compact items)
 const summaryInfo = computed(() => {
   if (!decoded.value) return []
@@ -83,8 +103,7 @@ const summaryInfo = computed(() => {
     { label: t('preview.summary.key'), value: KEY_NAMES[config.key || 0] || '-' },
     { label: t('preview.summary.bpm'), value: config.bpm || '-' },
     { label: t('preview.summary.length'), value: durationStr },
-    { label: t('preview.summary.options'), value: optionsStr },
-    { label: t('preview.summary.type'), value: decoded.value.shareType === 'vocal' ? t('preview.typeVocal') : t('preview.typeBgm') }
+    { label: t('preview.summary.options'), value: optionsStr }
   ]
 })
 
@@ -227,6 +246,7 @@ onMounted(async () => {
       callDensity: config.callDensity ?? 2,
       melodyTemplate: config.melodyTemplate ?? 0,
       arrangementGrowth: config.arrangementGrowth ?? 0,
+      blueprintId: config.blueprintId ?? 255,
       arpeggioSyncChord: config.arpeggioSyncChord ?? true,
       motifRepeatScope: config.motifRepeatScope ?? 0,
       motifFixedProgression: config.motifFixedProgression ?? true,
@@ -349,9 +369,15 @@ onUnmounted(() => {
                 <span class="summary-item__value">{{ item.value }}</span>
               </div>
             </div>
-            <div class="summary-row summary-row--chord">
-              <span class="summary-item__label">{{ t('preview.summary.chord') }}</span>
-              <span class="summary-item__value summary-item__value--chord">{{ chordDisplay }}</span>
+            <div class="summary-row summary-row--secondary">
+              <div class="summary-chip">
+                <span class="summary-chip__label">{{ t('styleStep.arrangementStyle.title') }}</span>
+                <span class="summary-chip__value">{{ blueprintLabel }}</span>
+              </div>
+              <div class="summary-chip summary-chip--chord">
+                <span class="summary-chip__label">{{ t('preview.summary.chord') }}</span>
+                <span class="summary-chip__value">{{ chordDisplay }}</span>
+              </div>
             </div>
           </div>
 
@@ -641,12 +667,46 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(139, 92, 246, 0.08);
 }
 
-.summary-row--chord {
+.summary-row--secondary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 100px;
+}
+
+.summary-chip__label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-chip__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(168, 85, 247, 0.9);
+}
+
+.summary-chip--chord .summary-chip__value {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-item {
@@ -689,10 +749,6 @@ onUnmounted(() => {
   color: var(--preview-text);
 }
 
-.summary-item__value--chord {
-  font-size: 0.75rem;
-  color: rgba(168, 85, 247, 0.9);
-}
 
 /* Controls */
 .preview-card__controls {
@@ -879,8 +935,16 @@ onUnmounted(() => {
     font-size: 0.75rem;
   }
 
-  .summary-item__value--chord {
-    font-size: 0.7rem;
+  .summary-chip {
+    padding: 0.2rem 0.5rem;
+  }
+
+  .summary-chip__value {
+    font-size: 0.65rem;
+  }
+
+  .summary-chip--chord .summary-chip__value {
+    max-width: 140px;
   }
 
   .preview-card__controls {
