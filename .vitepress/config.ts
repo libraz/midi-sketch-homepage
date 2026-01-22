@@ -176,6 +176,7 @@ export default withMermaid(defineConfig({
             {
               text: 'Guide',
               items: [
+                { text: 'Features', link: '/docs/features' },
                 { text: 'Getting Started', link: '/docs/getting-started' },
                 { text: 'Installation', link: '/docs/installation' },
               ]
@@ -186,6 +187,7 @@ export default withMermaid(defineConfig({
                 { text: 'Architecture', link: '/docs/architecture' },
                 { text: 'Generation Pipeline', link: '/docs/generation-pipeline' },
                 { text: 'Track Generators', link: '/docs/track-generators' },
+                { text: 'Melody Evaluation', link: '/docs/melody-evaluation' },
                 { text: 'Harmony', link: '/docs/harmony' },
                 { text: 'Presets', link: '/docs/presets' },
               ]
@@ -218,6 +220,7 @@ export default withMermaid(defineConfig({
             {
               text: 'ガイド',
               items: [
+                { text: '特徴', link: '/ja/docs/features' },
                 { text: 'はじめに', link: '/ja/docs/getting-started' },
                 { text: 'インストール', link: '/ja/docs/installation' },
               ]
@@ -228,6 +231,7 @@ export default withMermaid(defineConfig({
                 { text: 'アーキテクチャ', link: '/ja/docs/architecture' },
                 { text: '生成パイプライン', link: '/ja/docs/generation-pipeline' },
                 { text: 'トラック生成', link: '/ja/docs/track-generators' },
+                { text: 'メロディ評価', link: '/ja/docs/melody-evaluation' },
                 { text: 'ハーモニー', link: '/ja/docs/harmony' },
                 { text: 'プリセット', link: '/ja/docs/presets' },
               ]

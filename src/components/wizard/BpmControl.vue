@@ -78,6 +78,10 @@ function updateBpm(event: Event) {
 function selectPreset(bpm: number) {
   emit('update:modelValue', bpm)
 }
+
+// Hide boundary labels when they're too close to edge labels (60 or 180)
+const showLeftBoundaryLabel = computed(() => props.recommendedMin > 68)
+const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 </script>
 
 <template>
@@ -139,10 +143,10 @@ function selectPreset(bpm: number) {
 
         <!-- Boundary markers -->
         <div class="bpm-boundary bpm-boundary--left" :style="{ left: `${((recommendedMin - 60) / 120) * 100}%` }">
-          <span class="bpm-boundary__label">{{ recommendedMin }}</span>
+          <span v-if="showLeftBoundaryLabel" class="bpm-boundary__label">{{ recommendedMin }}</span>
         </div>
         <div class="bpm-boundary bpm-boundary--right" :style="{ left: `${((recommendedMax - 60) / 120) * 100}%` }">
-          <span class="bpm-boundary__label">{{ recommendedMax }}</span>
+          <span v-if="showRightBoundaryLabel" class="bpm-boundary__label">{{ recommendedMax }}</span>
         </div>
       </div>
 

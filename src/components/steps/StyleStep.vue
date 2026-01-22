@@ -156,7 +156,7 @@ function getStyleIcon(category: string): string {
     <!-- Arrangement Style Section (Collapsible) -->
     <details class="arrangement-section" :open="arrangementOpen" @toggle="arrangementOpen = ($event.target as HTMLDetailsElement).open">
       <summary class="arrangement-summary">
-        <span class="arrangement-icon">🏗️</span>
+        <span class="arrangement-icon">🎛️</span>
         <span class="arrangement-title">{{ t('styleStep.arrangementStyle.title') }}</span>
         <span class="arrangement-value">{{ currentBlueprintLabel }}</span>
         <span class="arrangement-chevron">{{ arrangementOpen ? '▼' : '▶' }}</span>
@@ -307,6 +307,7 @@ function getStyleIcon(category: string): string {
   color: rgba(250, 250, 250, 0.55);
   margin: 0;
   line-height: 1.4;
+  padding-bottom: 1.75rem; /* Space for BPM badge */
 }
 
 .style-card__bpm {

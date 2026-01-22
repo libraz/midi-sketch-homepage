@@ -2,8 +2,8 @@
 
 This document explains the harmonic system in [MIDI Sketch](https://github.com/libraz/midi-sketch).
 
-::: info For Non-Musicians
-This page uses music theory terminology. Don't worry if you're not familiar with it - MIDI Sketch handles all the complex harmony automatically. Understanding these concepts can help you make more informed choices, but it's not required to create great music.
+::: info Note
+This page uses music theory terminology. These concepts are handled automatically by the system, but understanding them allows for more precise parameter selection.
 :::
 
 ## Chord Progressions

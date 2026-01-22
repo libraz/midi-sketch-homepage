@@ -7,28 +7,36 @@
 ```text
 midi-sketch/
 ├── src/
-│   ├── core/              # コア生成エンジン（約4500行）
-│   │   ├── pitch_utils.h/cpp      # ピッチ操作（テッシトゥーラ、音程）
-│   │   ├── chord_utils.h/cpp      # コード操作（コードトーン）
+│   ├── core/              # コアエンジン（約16000行、46ヘッダー）
+│   │   ├── generator.h/cpp        # 中央オーケストレーター
+│   │   ├── harmony_context.h      # トラック間衝突検出ファサード
+│   │   ├── chord_progression_tracker.h/cpp
+│   │   ├── track_collision_detector.h/cpp
+│   │   ├── safe_pitch_resolver.h/cpp
+│   │   ├── melody_evaluator.h/cpp # 候補スコアリングシステム
 │   │   ├── melody_templates.h/cpp # 7つのメロディテンプレート定義
 │   │   ├── melody_embellishment.h/cpp # NCT挿入システム
-│   │   ├── harmony_context.h/cpp  # トラック間衝突検出
-│   │   ├── piano_roll_safety.h/cpp # ピアノロール可視化API
-│   │   ├── generator.h/cpp        # 中央オーケストレーター
-│   │   └── basic_types.h          # コア型定義
-│   ├── midi/              # MIDI出力（SMF Type 1, MIDI 2.0）
-│   ├── track/             # トラック生成器
-│   │   ├── vocal.cpp              # ボーカル調整（約314行）
-│   │   ├── melody_designer.cpp    # テンプレート駆動メロディ（約2048行）
-│   │   ├── aux_track.cpp          # Aux副旋律（約1600行）
-│   │   ├── chord_track.cpp        # コードボイシング（約2050行）
-│   │   ├── bass.cpp               # ベースパターン（約1420行）
-│   │   └── ...                    # その他のトラック生成器
+│   │   ├── pitch_utils.h/cpp      # ピッチ操作
+│   │   ├── chord_utils.h/cpp      # コード操作
+│   │   ├── piano_roll_safety.h/cpp
+│   │   ├── modulation_calculator.h/cpp
+│   │   ├── preset_data.h/cpp      # スタイルプリセット
+│   │   └── ...                    # 型、ユーティリティ等
+│   ├── track/             # トラック生成器（約13000行、14ヘッダー）
+│   │   ├── melody_designer.h/cpp  # テンプレート駆動メロディ
+│   │   ├── vocal.h/cpp            # ボーカル調整
+│   │   ├── aux_track.h/cpp        # Aux副旋律
+│   │   ├── chord_track.h/cpp      # コードボイシング
+│   │   ├── bass.h/cpp             # ベースパターン
+│   │   ├── drums.h/cpp            # ドラムパターン
+│   │   ├── motif.h/cpp            # バックグラウンドモチーフ
+│   │   ├── arpeggio.h/cpp         # アルペジオパターン
+│   │   └── se.h/cpp               # セクションマーカー
+│   ├── midi/              # MIDI出力（8ヘッダー）
 │   ├── analysis/          # 不協和音分析
-│   ├── preset/            # プリセット定義
 │   ├── midisketch.h       # 公開C++ API
-│   └── midisketch_c.h     # C API（WASMインターフェース、約650行）
-├── tests/                 # Google Testスイート（770+テスト）
+│   └── midisketch_c.h     # C API（WASMインターフェース）
+├── tests/                 # Google Testスイート（63テストファイル）
 ├── dist/                  # WASM配布物
 └── demo/                  # ブラウザデモ
 ```
@@ -245,7 +253,7 @@ std::mt19937 rng(seed);  // 同じシード = 同じ出力
 
 Emscripten経由でWebAssemblyにコンパイル：
 
-- **出力**: 約155KB WASM + 約37KB JS（ラッパー + グルー）
+- **出力**: 約309KB WASM + 約69KB JS（ラッパー + グルー）
 - **外部依存なし**: 純粋なC++17
 - **ES6モジュール**: モジュラーJavaScriptラッパー
 

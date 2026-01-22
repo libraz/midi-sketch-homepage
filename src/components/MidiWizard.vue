@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useWizardFlow } from '@/composables/useWizardFlow'
@@ -144,9 +144,48 @@ function handleBack() {
   }
 }
 
+// Browser history integration
+const isNavigatingFromHistory = ref(false)
+
+function handlePopState(event: PopStateEvent) {
+  const step = event.state?.step
+  if (typeof step === 'number' && step >= 1 && step <= store.totalSteps.value) {
+    isNavigatingFromHistory.value = true
+    store.goToStep(step)
+    nextTick(() => {
+      isNavigatingFromHistory.value = false
+    })
+  }
+}
+
+// Push history state when step changes (but not when navigating via popstate)
+watch(() => store.currentStep.value, (newStep, oldStep) => {
+  if (!isNavigatingFromHistory.value && typeof window !== 'undefined') {
+    // Only push state when moving forward
+    if (newStep > oldStep) {
+      history.pushState({ step: newStep }, '', '')
+    } else if (newStep < oldStep) {
+      // When going back via UI button, replace current state
+      history.replaceState({ step: newStep }, '', '')
+    }
+  }
+})
+
 onMounted(() => {
   isAnimating.value = true
   setTimeout(() => isAnimating.value = false, 600)
+
+  // Initialize history state
+  if (typeof window !== 'undefined') {
+    history.replaceState({ step: store.currentStep.value }, '', '')
+    window.addEventListener('popstate', handlePopState)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('popstate', handlePopState)
+  }
 })
 </script>
 

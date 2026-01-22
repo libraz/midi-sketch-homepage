@@ -7,28 +7,36 @@ This document explains the internal architecture of [MIDI Sketch](https://github
 ```
 midi-sketch/
 ├── src/
-│   ├── core/              # Core generation engine (~4500 lines total)
-│   │   ├── pitch_utils.h/cpp      # Pitch operations (tessitura, intervals)
-│   │   ├── chord_utils.h/cpp      # Chord operations (chord tones)
+│   ├── core/              # Core engine (~16000 lines, 46 headers)
+│   │   ├── generator.h/cpp        # Central orchestrator
+│   │   ├── harmony_context.h      # Inter-track collision detection facade
+│   │   ├── chord_progression_tracker.h/cpp
+│   │   ├── track_collision_detector.h/cpp
+│   │   ├── safe_pitch_resolver.h/cpp
+│   │   ├── melody_evaluator.h/cpp # Candidate scoring system
 │   │   ├── melody_templates.h/cpp # 7 melody template definitions
 │   │   ├── melody_embellishment.h/cpp # NCT insertion system
-│   │   ├── harmony_context.h/cpp  # Inter-track collision detection
-│   │   ├── piano_roll_safety.h/cpp # Piano roll visualization API
-│   │   ├── generator.h/cpp        # Central orchestrator
-│   │   └── basic_types.h          # Core type definitions
-│   ├── midi/              # MIDI output (SMF Type 1, MIDI 2.0)
-│   ├── track/             # Track generators
-│   │   ├── vocal.cpp              # Vocal coordination (~314 lines)
-│   │   ├── melody_designer.cpp    # Template-driven melody (~2048 lines)
-│   │   ├── aux_track.cpp          # Aux sub-melody (~1600 lines)
-│   │   ├── chord_track.cpp        # Chord voicing (~2050 lines)
-│   │   ├── bass.cpp               # Bass patterns (~1420 lines)
-│   │   └── ...                    # Other track generators
+│   │   ├── pitch_utils.h/cpp      # Pitch operations
+│   │   ├── chord_utils.h/cpp      # Chord operations
+│   │   ├── piano_roll_safety.h/cpp
+│   │   ├── modulation_calculator.h/cpp
+│   │   ├── preset_data.h/cpp      # Style presets
+│   │   └── ...                    # Types, utilities, etc.
+│   ├── track/             # Track generators (~13000 lines, 14 headers)
+│   │   ├── melody_designer.h/cpp  # Template-driven melody
+│   │   ├── vocal.h/cpp            # Vocal coordination
+│   │   ├── aux_track.h/cpp        # Aux sub-melody
+│   │   ├── chord_track.h/cpp      # Chord voicing
+│   │   ├── bass.h/cpp             # Bass patterns
+│   │   ├── drums.h/cpp            # Drum patterns
+│   │   ├── motif.h/cpp            # Background motif
+│   │   ├── arpeggio.h/cpp         # Arpeggio patterns
+│   │   └── se.h/cpp               # Section markers
+│   ├── midi/              # MIDI output (8 headers)
 │   ├── analysis/          # Dissonance analysis
-│   ├── preset/            # Preset definitions
 │   ├── midisketch.h       # Public C++ API
-│   └── midisketch_c.h     # C API (WASM interface, ~650 lines)
-├── tests/                 # Google Test suite (770+ tests)
+│   └── midisketch_c.h     # C API (WASM interface)
+├── tests/                 # Google Test suite (63 test files)
 ├── dist/                  # WASM distribution
 └── demo/                  # Browser demo
 ```
@@ -245,7 +253,7 @@ When seed is 0, current clock time is used for randomization.
 
 The library compiles to WebAssembly via Emscripten:
 
-- **Output**: ~155KB WASM + ~37KB JS (wrapper + glue)
+- **Output**: ~309KB WASM + ~69KB JS (wrapper + glue)
 - **No external dependencies**: Pure C++17
 - **ES6 module**: Modular JavaScript wrapper
 
