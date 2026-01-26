@@ -5,15 +5,15 @@
 
 /**
  * Blueprint IDs:
- * 0 = Traditional (王道ポップ)
- * 1 = RhythmLock (リズム先行)
- * 2 = StoryPop (物語展開)
- * 3 = Ballad (バラード)
- * 4 = IdolStandard (王道アイドル)
- * 5 = IdolHyper (ハイエナジー)
- * 6 = IdolKawaii (スイート)
- * 7 = IdolCoolPop (グルーヴ)
- * 8 = IdolEmo (エモーショナル)
+ * 0 = Traditional (standard pop)
+ * 1 = RhythmLock (rhythm-driven)
+ * 2 = StoryPop (narrative progression)
+ * 3 = Ballad (ballad style)
+ * 4 = IdolStandard (classic idol)
+ * 5 = IdolHyper (high energy)
+ * 6 = IdolKawaii (sweet/cute)
+ * 7 = IdolCoolPop (groove)
+ * 8 = IdolEmo (emotional)
  */
 export const SONG_IMAGE_BLUEPRINT_MAP: Record<string, number> = {
   // Idol category

@@ -242,16 +242,16 @@ function invalidateBgm() {
 
 /**
  * Get step IDs that should be reset when navigating back.
- * Only returns steps when jumping back 2+ steps.
+ * Returns all steps after the target step (up to and including fromStep).
  * @param targetStep - Destination step (1-based)
  * @param fromStep - Current step (1-based)
  */
 function getStepsToReset(targetStep: number, fromStep: number): string[] {
-  // Only reset when jumping back 2+ steps
-  if (targetStep >= fromStep - 1) return []
+  // Only reset when going back
+  if (targetStep >= fromStep) return []
 
   const stepsToReset: string[] = []
-  // targetStep+1 から fromStep まで（targetStep自体は含まない）
+  // From targetStep+1 to fromStep (excluding targetStep itself)
   for (let i = targetStep + 1; i <= fromStep; i++) {
     const stepDef = wizardFlow.getStepByIndex(i)
     if (stepDef) {
@@ -343,13 +343,24 @@ export function useWizardStore() {
 
     const oldStep = currentStep.value
 
-    // 2つ以上前に戻る場合、スキップされるステップの設定をリセット
-    if (step < oldStep - 1) {
+    // Reset everything when going back to the first step
+    if (step === 1 && oldStep > 1) {
+      Object.assign(config, DEFAULT_CONFIG)
+      wizardFlow.setFlowType('vocal-first')
+      invalidateVocal()
+      invalidateBgm()
+      editedVocalNotes.value = null
+      currentStep.value = 1
+      return
+    }
+
+    // Reset skipped step configs when going back
+    if (step < oldStep) {
       const stepsToReset = getStepsToReset(step, oldStep)
       const targetStepDef = wizardFlow.getStepByIndex(step)
       resetStepConfigs(stepsToReset, targetStepDef?.id)
 
-      // 生成ステップがリセット対象に含まれる場合、生成状態も無効化
+      // Invalidate generation state if generation steps are in the reset list
       for (const stepId of stepsToReset) {
         if (stepId === 'vocalGeneration' || stepId === 'vocalSettings') {
           invalidateVocal()

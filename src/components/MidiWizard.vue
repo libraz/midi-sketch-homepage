@@ -34,7 +34,7 @@ const stepIcons: Record<string, string> = {
 // Dynamic steps based on flow type
 const steps = computed(() => {
   return flowSteps.value.map((stepId, index) => {
-    // vocal-firstフローの最終ステップ（bgmGeneration）は「完成」として表示
+    // Display the final step (bgmGeneration) in vocal-first flow as "complete"
     const isVocalFirstFinalStep = isVocalFirst.value && stepId === 'bgmGeneration'
     const labelKey = isVocalFirstFinalStep ? 'complete' : (stepId === 'chord' ? 'chords' : stepId)
     const icon = isVocalFirstFinalStep ? '✓' : (stepIcons[stepId] || '◆')
