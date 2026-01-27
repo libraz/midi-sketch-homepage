@@ -83,16 +83,17 @@ The Gap Ratio penalty targets scattered, disconnected note patterns. Higher gap 
 
 ### Stage 2: Scoring
 
-Candidates that pass culling are scored on 5 dimensions:
+Candidates that pass culling are scored on 6 dimensions:
 
 ```mermaid
 flowchart TB
-    subgraph Scoring ["Melody Score (5 Dimensions)"]
+    subgraph Scoring ["Melody Score (6 Dimensions)"]
         S1[Singability]
         S2[Chord Tone Ratio]
         S3[Contour Shape]
         S4[Surprise Element]
         S5[AAAB Pattern]
+        S6[Rhythm-Interval Correlation]
     end
 
     S1 --> T[Total Score]
@@ -100,6 +101,7 @@ flowchart TB
     S3 --> T
     S4 --> T
     S5 --> T
+    S6 --> T
 ```
 
 #### Singability Score
@@ -117,8 +119,8 @@ Measures interval distribution:
 
 Measures chord tone frequency on strong beats:
 
-- **Strong beat**: Every 2 beats (tick % 960 == 0)
-- Higher ratio indicates more consonant results
+- **Strong beat**: Beats 1 and 3 in 4/4 time (every 2 beats, tick % 960 == 0)
+- Higher ratio indicates more harmonically grounded melodies
 
 #### Contour Shape
 
@@ -134,6 +136,18 @@ Measures large leaps (5+ semitones) per phrase. Target: 1-2 leaps.
 #### AAAB Pattern
 
 Detects repetition with variation - same phrase repeats 3 times then varies.
+
+#### Rhythm-Interval Correlation
+
+Measures how well note durations match interval sizes:
+
+| Combination | Score | Reason |
+|-------------|-------|--------|
+| Long note + large leap | High | Singers need time for large jumps |
+| Short note + step | High | Quick passages work best stepwise |
+| Short note + large leap | Low | Difficult to sing |
+
+Based on pop vocal theory: singers need preparation time for large pitch changes. This scoring rewards melodies that are naturally singable.
 
 ## Style-Specific Weights
 
@@ -154,6 +168,19 @@ Different vocal styles use different evaluation weights:
 - **Plateau Bias**: Preference for same-pitch continuation
 - **High Register**: Preference for higher pitches
 :::
+
+### Style-Specific Cohesion Thresholds
+
+Different styles require different levels of melodic cohesion:
+
+| Style | Cohesion Threshold | Notes |
+|-------|-------------------|-------|
+| Ballad | Higher | Needs smooth, connected lines |
+| CityPop | Higher | Legato phrases preferred |
+| Vocaloid | Lower | Tolerates angular melodies |
+| Rock | Lower | Accepts disconnected patterns |
+
+Melodies below the cohesion threshold receive penalties during culling.
 
 ### Style-Specific Gap Thresholds
 

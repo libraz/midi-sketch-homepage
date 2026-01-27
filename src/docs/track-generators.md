@@ -163,18 +163,22 @@ struct VocalRange {
 };
 ```
 
-### Melodic Embellishment
+### Non-Chord Tone Decoration
 
-The vocal track uses a melodic embellishment system that adds musical "play" to chord-tone melodies:
+The vocal track uses non-chord tones (NCT) to add melodic interest beyond simple chord-tone melodies:
+
+::: info Strong Beats and Weak Beats
+In 4/4 time, **strong beats** are beats 1 and 3 (where you naturally tap your foot), while **weak beats** are beats 2 and 4. Chord tones on strong beats create stability; non-chord tones on weak beats add movement without disrupting the harmony.
+:::
 
 | NCT Type | Description | Placement |
 |----------|-------------|-----------|
-| **ChordTone** | Harmonic tone (baseline) | Strong beats |
-| **PassingTone** | Stepwise motion between chord tones | Weak beats |
-| **NeighborTone** | Step away and return to same chord tone | Weak beats |
-| **Appoggiatura** | Accented dissonance resolving by step | Strong beats |
-| **Anticipation** | Early arrival of next chord's tone | Before chord change |
-| **Tension** | 9th, 11th, 13th from chord extensions | Based on style |
+| **ChordTone** | Notes belonging to the current chord (baseline) | Strong beats |
+| **PassingTone** | Stepwise connection between two chord tones | Weak beats |
+| **NeighborTone** | Step away from a chord tone and return | Weak beats |
+| **Appoggiatura** | Accented dissonance that resolves by step | Strong beats |
+| **Anticipation** | Early arrival of the next chord's tone | Before chord change |
+| **Tension** | Extended chord tones (9th, 11th, 13th) | Based on style |
 
 Configuration varies by mood:
 - **Bright**: More chord tones, less dissonance
@@ -194,6 +198,13 @@ Each vocal style has a unified profile that controls both **generation bias** an
 | **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
 | **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
 | **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
+
+### UltraVocaloid Mode
+
+Enhanced Vocaloid-style generation with:
+- **Machine-gun rhythm**: Rapid-fire 16th note sequences characteristic of Vocaloid songs
+- **Breathing points**: Automatic insertion of micro-pauses for phrasing even in dense passages
+- **Per-section rhythm lock**: Each section maintains consistent rhythmic identity
 
 ::: details Profile Parameters
 - **Plateau Bias**: Preference for staying on the same pitch (higher = more repetitive)
@@ -522,6 +533,57 @@ Velocity-reduced snare articulations for groove:
 // Main snare: velocity 100
 // Ghost note: velocity 40-60
 ```
+
+Ghost note density adapts to mood:
+- **Energetic moods** (BrightUpbeat, IdolPop): Higher density for livelier feel
+- **Calm moods** (Ballad, Chill): Sparse ghost notes
+
+### Swing Timing
+
+Continuous swing control varies by section type and progress:
+
+```cpp
+float calculateSwingAmount(SectionType section, int bar_in_section, int total_bars);
+// Returns 0.0 (straight) to 0.7 (heavy swing)
+```
+
+| Section | Base Swing | Behavior |
+|---------|-----------|----------|
+| Verse | Low | Builds gradually |
+| Chorus | Medium | Consistent groove |
+| Bridge | Variable | Context-dependent |
+
+Swing is applied to off-beat notes (8th and 16th subdivisions).
+
+### Triplet Grids
+
+Drum patterns support triplet subdivisions for shuffle and swing feels:
+- **Straight**: Standard 8th/16th note grid
+- **Triplet**: 12/24 subdivisions per beat
+- **Hybrid**: Mix of straight and triplet patterns
+
+### Humanization
+
+Subtle timing and velocity variations make patterns feel less mechanical:
+- **Timing jitter**: ±5-15 ticks from grid
+- **Velocity variation**: ±5-10 from base velocity
+- **Hi-hat accent patterns**: Natural emphasis on downbeats
+
+### Vocal Synchronization
+
+When `drums_sync_vocal` is enabled, kick drums align with vocal onset positions:
+
+```cpp
+void generateDrumsTrackWithVocal(
+    MidiTrack& track,
+    const Song& song,
+    const GeneratorParams& params,
+    std::mt19937& rng,
+    const VocalAnalysis& vocal_analysis  // Pre-analyzed vocal data
+);
+```
+
+This "rhythm lock" effect makes the groove follow the melody, common in modern pop production.
 
 ---
 

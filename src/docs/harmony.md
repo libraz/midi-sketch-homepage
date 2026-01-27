@@ -171,7 +171,7 @@ struct ChordExtensionParams {
 ## Voice Leading
 
 ::: info What is Voice Leading?
-Voice leading is how individual notes move from one chord to the next. Good voice leading creates smooth, connected chord transitions. Poor voice leading sounds choppy and amateurish. MIDI Sketch automatically applies professional voice leading to all generated chord progressions.
+Voice leading is how individual notes move from one chord to the next. Good voice leading creates smooth, connected chord transitions. Poor voice leading sounds choppy and disconnected. MIDI Sketch automatically applies optimized voice leading to all generated chord progressions.
 :::
 
 ### Principles
@@ -223,7 +223,7 @@ flowchart TB
 ::: details Voicing Explained
 - **Close Position**: All notes within one octave. Sounds compact and direct. Common in pop.
 - **Open Position**: Notes spread across multiple octaves. Sounds spacious and full. Great for ballads.
-- **Rootless**: Omits the root note (bass plays it). Creates clarity and avoids muddiness. Professional arranging technique.
+- **Rootless**: Omits the root note (bass plays it). Creates clarity and avoids muddiness. Common arranging technique.
 :::
 
 ## Bass-Chord Coordination
@@ -242,6 +242,36 @@ struct BassAnalysis {
 if (bassAnalysis.hasRootOnBeat1) {
     voicing = generateRootlessVoicing(chord);
 }
+```
+
+## Secondary Dominants
+
+Secondary dominants are dominant chords (V7) that resolve to diatonic chords other than the tonic. They create stronger harmonic pull and add harmonic variety.
+
+::: tip What are Secondary Dominants?
+Instead of going directly from IV to V, inserting V/V (a dominant chord that resolves to V) creates a stronger sense of motion. For example, in C major: F → D7 → G is more compelling than F → G because D7 (V/V) "wants to" resolve to G.
+:::
+
+### Common Secondary Dominants
+
+| Symbol | Resolves To | Example in C |
+|--------|-------------|--------------|
+| V/V | V (dominant) | D7 → G |
+| V/vi | vi (relative minor) | E7 → Am |
+| V/ii | ii (supertonic) | A7 → Dm |
+| V/IV | IV (subdominant) | C7 → F |
+
+### Automatic Insertion
+
+MIDI Sketch automatically inserts secondary dominants based on:
+- **Chord duration**: Longer chords are candidates for preparation
+- **Section type**: Pre-chorus sections favor secondary dominants
+- **Style**: Jazz and city pop use more secondary dominants
+
+```cpp
+// Example: V/V insertion before V
+// Original: IV → V → I
+// Enhanced: IV → V/V → V → I
 ```
 
 ## Key Modulation
@@ -326,10 +356,14 @@ Non-chord tones used for melodic interest:
 
 ### Usage by Vocal Attitude
 
+::: info Beat Placement
+**Weak beats** (beats 2 and 4 in 4/4 time) are safer places for tension notes because they don't disrupt the harmonic foundation established on strong beats (1 and 3).
+:::
+
 | Attitude | Tensions Allowed | Musical Effect |
 |----------|------------------|----------------|
 | Clean | None (chord tones only) | Safe, consonant, easy to sing |
-| Expressive | 9th, 13th on weak beats | Colorful, emotional, sophisticated |
+| Expressive | 9th, 13th on weak beats | Colorful, emotional, expressive |
 | Raw | All tensions, any beat | Edgy, unpredictable, intense |
 
 ::: tip Choosing Vocal Attitude

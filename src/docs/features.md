@@ -58,15 +58,19 @@ MIDI Sketch doesn't use machine learning or neural networks. It implements class
 - Avoid note detection (minor 2nd with chord tones, tritone with root)
 :::
 
-### Non-Chord Tone (NCT) Embellishment
+### Non-Chord Tone (NCT) Decoration
 
 Based on Kostka & Payne's *Tonal Harmony* framework:
+
+::: info Strong Beats and Weak Beats
+In 4/4 time, **strong beats** (1 and 3) feel accented and stable, while **weak beats** (2 and 4) feel lighter. Melodies typically place chord tones on strong beats for harmonic clarity.
+:::
 
 ::: details NCT Types
 | Type | Placement | Description |
 |------|-----------|-------------|
-| Passing Tone | Weak beat | Stepwise motion between chord tones |
-| Neighbor Tone | Weak beat | Step away and return |
+| Passing Tone | Weak beat | Stepwise connection between chord tones |
+| Neighbor Tone | Weak beat | Step away from chord tone and return |
 | Appoggiatura | Strong beat | Accented dissonance resolving by step |
 | Anticipation | Before beat | Early arrival of next chord tone |
 | Tension | Context-dependent | 9th, 11th, 13th extensions |
@@ -85,6 +89,41 @@ Based on Kostka & Payne's *Tonal Harmony* framework:
 - **Track collision detection**: Registers all notes from vocal, bass, chord, aux tracks
 - **Low register strictness**: 3-semitone threshold below C4 to prevent muddiness
 - **Safe pitch resolution**: Multi-strategy fallback (chord tones → consonant intervals → range search)
+:::
+
+### Emotion Curve System
+
+::: details Song Emotional Arc
+The Emotion Curve system plans the emotional journey of a song, assigning specific characteristics to each section:
+- **Intro**: Anticipation (low tension, building energy)
+- **Verse (A)**: Expectation (moderate tension)
+- **Pre-chorus (B)**: Tension build (high tension, upward pitch tendency)
+- **Chorus**: Release/resolution (peak energy, maximum density)
+- **Bridge**: Reflection (lower energy, contrast)
+- **Outro**: Closure (decreasing tension)
+
+Each section receives emotion parameters (tension, energy, resolution need, pitch tendency, density) that guide generation across all tracks.
+:::
+
+### Euclidean Rhythms
+
+::: details Mathematical Rhythm Patterns
+Drum patterns use Bjorklund's algorithm to distribute hits evenly across steps, creating natural-sounding rhythms found in many musical traditions:
+
+| Pattern | Hits/Steps | Traditional Name |
+|---------|-----------|------------------|
+| E(3,8) | [x..x..x.] | Cuban tresillo |
+| E(5,8) | [x.xx.xx.] | Cuban cinquillo |
+| E(5,16) | Bossa nova feel | - |
+| E(4,16) | Four-on-the-floor | - |
+
+These mathematically-spaced patterns feel more natural than probability-based random placement.
+:::
+
+### Secondary Dominants
+
+::: details Harmonic Enrichment
+Secondary dominants (V/V, V/vi, etc.) are automatically inserted to create stronger harmonic pull toward target chords. This enriches chord progressions without requiring manual configuration.
 :::
 
 ::: info Academic Foundation

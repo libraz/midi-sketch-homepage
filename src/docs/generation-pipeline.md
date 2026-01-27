@@ -225,7 +225,7 @@ void Generator::generateChord() {
 4. Apply inversions to optimize transitions
 
 ::: info Rootless Voicing
-When bass plays the root on beat 1, chord voicing automatically omits the root to avoid muddiness. This creates cleaner, more professional-sounding arrangements.
+When bass plays the root on beat 1, chord voicing automatically omits the root to avoid muddiness. This creates cleaner, less cluttered arrangements.
 :::
 
 ### Drums Generation
