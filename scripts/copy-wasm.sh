@@ -7,7 +7,7 @@ DEST_DIR="src/wasm"
 
 # Required files from dist/
 WASM_FILES=("midisketch.wasm" "midisketch.js")
-JS_FILES=("index.js" "index.d.ts")
+JS_FILES=("index.mjs" "index.d.ts")
 
 echo "📦 Copying WASM files from midi-sketch..."
 
@@ -74,6 +74,12 @@ for file in "${JS_FILES[@]}"; do
   cp "$DIST_DIR/$file" "$DEST_DIR/"
   echo "   ✓ $file"
 done
+
+# Rename index.mjs to index.js (used as index.js in imports)
+if [ -f "$DEST_DIR/index.mjs" ]; then
+  mv "$DEST_DIR/index.mjs" "$DEST_DIR/index.js"
+  echo "   ✓ Renamed index.mjs → index.js"
+fi
 
 # Remove sourceMappingURL from index.js (not needed in homepage)
 if [ -f "$DEST_DIR/index.js" ]; then
