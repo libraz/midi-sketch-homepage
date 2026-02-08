@@ -114,7 +114,22 @@
   "bgmSettingsStep": {
     "title": "BGM設定",
     "subtitle": "バッキングトラックのパラメータを調整します",
-    "recommendedByBlueprint": "推奨"
+    "recommendedByBlueprint": "推奨",
+    "drumsRequiredWarning": "このブループリントはドラム有効時に最適です",
+    "guitar": {
+      "label": "ギター",
+      "description": "ギタートラックを追加してハーモニーに彩りを"
+    },
+    "energyCurve": {
+      "label": "エネルギーカーブ",
+      "description": "曲全体のエネルギーの推移パターン",
+      "options": {
+        "gradualBuild": "徐々に盛り上がる",
+        "frontLoaded": "最初から全開",
+        "wavePattern": "波形パターン",
+        "steadyState": "一定"
+      }
+    }
   },
   "bgmGenerationStep": {
     "title": "BGM生成",
@@ -245,7 +260,38 @@
           "fixedProgression": "固定進行",
           "fixedProgressionDesc": "全セクションで同じコード進行を使用",
           "maxChordCount": "最大コード数",
-          "maxChordCountHint": "0=制限なし"
+          "maxChordCountHint": "0=制限なし",
+          "detailLabel": "詳細設定",
+          "motifLength": "モチーフ長",
+          "motifLengthOptions": {
+            "auto": "自動",
+            "1beat": "1拍",
+            "2beat": "2拍",
+            "4beat": "4拍"
+          },
+          "motifNoteCount": "音数",
+          "motifMotion": "動き方",
+          "motifMotionOptions": {
+            "auto": "自動",
+            "stepwise": "順次進行",
+            "gentleLeap": "ゆるい跳躍",
+            "wideLeap": "大きな跳躍",
+            "narrowStep": "狭い順次",
+            "disjunct": "離散的"
+          },
+          "motifRegister": "音域",
+          "motifRegisterOptions": {
+            "auto": "自動",
+            "low": "低音域",
+            "high": "高音域"
+          },
+          "motifRhythmDensity": "リズム密度",
+          "motifRhythmDensityOptions": {
+            "auto": "自動",
+            "sparse": "疎",
+            "medium": "中間",
+            "driving": "密"
+          }
         }
       },
       "arrangement": {
@@ -271,7 +317,11 @@
           "up": "上昇",
           "down": "下降",
           "updown": "上下",
-          "random": "ランダム"
+          "random": "ランダム",
+          "pinwheel": "ピンホイール",
+          "pedalRoot": "ペダルルート",
+          "alberti": "アルベルティ",
+          "brokenChord": "分散和音"
         },
         "speed": "スピード",
         "speedHint": "音が鳴る速さ",
@@ -489,7 +539,9 @@
           "cuteAffected": "あざとかわいい",
           "cuteAffectedDesc": "可愛らしい・控えめなリズム",
           "powerfulShout": "パワフル",
-          "powerfulShoutDesc": "力強く叫ぶ・サビで密度アップ"
+          "powerfulShoutDesc": "力強く叫ぶ・サビで密度アップ",
+          "kpop": "K-Pop",
+          "kpopDesc": "K-Pop風のタイトなリズムとダイナミックなフック"
         }
       },
       "vocalGroove": {
@@ -528,6 +580,44 @@
           "light": "控えめ",
           "normal": "標準",
           "strong": "多め"
+        }
+      },
+      "enableSyncopation": {
+        "label": "シンコペーション",
+        "description": "シンコペーション効果のマスタースイッチ。OFFの場合、グルーブはタイミングオフセットのみ有効",
+        "disabledHint": "シンコペーション効果は無効です。グルーブはタイミングオフセットのみ適用されます。"
+      },
+      "driveFeel": {
+        "label": "ドライブ感",
+        "description": "リズム全体のエネルギーとアグレッシブさを調整",
+        "relaxed": "リラックス",
+        "neutral": "標準",
+        "aggressive": "アグレッシブ"
+      },
+      "moraRhythmMode": {
+        "label": "モーラリズム",
+        "description": "日本語の音節に基づいたリズムモード。歌詞付きJ-POPに最適",
+        "options": {
+          "standard": "スタンダード",
+          "moraTimed": "モーラタイム",
+          "auto": "自動"
+        }
+      },
+      "melodyDetail": {
+        "label": "メロディ詳細",
+        "description": "メロディの詳細パラメータを微調整。デフォルト値はプリセットの設定を使用",
+        "preset": "おまかせ",
+        "maxLeap": "最大跳躍（半音数）",
+        "syncopationProb": "シンコペ確率",
+        "phraseLength": "フレーズ長（小節数）",
+        "longNoteRatio": "ロングノート比率",
+        "chorusRegisterShift": "サビ音域シフト",
+        "hookRepetition": "フック反復",
+        "useLeadingTone": "導音の使用",
+        "triState": {
+          "preset": "おまかせ",
+          "off": "OFF",
+          "on": "ON"
         }
       }
     }
@@ -627,7 +717,8 @@
           "brightKira": "ブライト・キラキラ",
           "coolSynth": "クール・シンセ",
           "cuteAffected": "キュート・あざとい",
-          "powerfulShout": "パワフル・シャウト"
+          "powerfulShout": "パワフル・シャウト",
+          "kpop": "K-Pop"
         }
       },
       "groove": {

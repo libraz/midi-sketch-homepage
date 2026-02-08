@@ -7,6 +7,7 @@ import StepHeader from '@/components/wizard/StepHeader.vue'
 import SettingSection from '@/components/wizard/SettingSection.vue'
 import OptionCard from '@/components/wizard/OptionCard.vue'
 import VocalRangeSelector from '@/components/wizard/VocalRangeSelector.vue'
+import RangeSlider from '@/components/wizard/RangeSlider.vue'
 
 const { t } = useI18n()
 const store = useWizardStore()
@@ -100,7 +101,8 @@ const vocalStyleOptions = [
   { key: 'brightKira', value: 9, icon: '☀' },
   { key: 'coolSynth', value: 10, icon: '🔷' },
   { key: 'cuteAffected', value: 11, icon: '🍬' },
-  { key: 'powerfulShout', value: 12, icon: '🔥' }
+  { key: 'powerfulShout', value: 12, icon: '🔥' },
+  { key: 'kpop', value: 13, icon: '🇰🇷' }
 ]
 
 // Vocal groove options with visual rhythm patterns
@@ -126,6 +128,20 @@ const hookIntensityOptions = [
   { key: 'light', value: 1 },
   { key: 'normal', value: 2 },
   { key: 'strong', value: 3 }
+]
+
+// Mora rhythm mode options
+const moraRhythmModeOptions = [
+  { key: 'standard', value: 0 },
+  { key: 'moraTimed', value: 1 },
+  { key: 'auto', value: 2 }
+]
+
+// Tri-state options (preset / off / on)
+const triStateOptions = [
+  { key: 'preset', value: 0 },
+  { key: 'off', value: 1 },
+  { key: 'on', value: 2 }
 ]
 
 // Summary for advanced settings
@@ -261,6 +277,31 @@ const advancedSummary = computed(() => {
                 </div>
               </SettingSection>
 
+              <!-- Enable Syncopation -->
+              <SettingSection
+                icon="⚡"
+                :title="t('melodyStep.advanced.enableSyncopation.label')"
+                :description="t('melodyStep.advanced.enableSyncopation.description')"
+              >
+                <div class="option-cards option-cards--row">
+                  <OptionCard
+                    title="OFF"
+                    :is-active="!store.config.enableSyncopation"
+                    compact
+                    @select="store.config.enableSyncopation = false"
+                  />
+                  <OptionCard
+                    title="ON"
+                    :is-active="store.config.enableSyncopation"
+                    compact
+                    @select="store.config.enableSyncopation = true"
+                  />
+                </div>
+                <div v-if="!store.config.enableSyncopation && store.config.vocalGroove >= 3" class="selected-desc">
+                  <span class="selected-desc__text">{{ t('melodyStep.advanced.enableSyncopation.disabledHint') }}</span>
+                </div>
+              </SettingSection>
+
               <!-- Vocal Groove -->
               <SettingSection
                 icon="🎸"
@@ -318,6 +359,129 @@ const advancedSummary = computed(() => {
                     compact
                     @select="store.config.hookIntensity = opt.value"
                   />
+                </div>
+              </SettingSection>
+
+              <!-- Drive Feel -->
+              <SettingSection
+                icon="🏎"
+                :title="t('melodyStep.advanced.driveFeel.label')"
+                :description="t('melodyStep.advanced.driveFeel.description')"
+              >
+                <RangeSlider
+                  v-model="store.config.driveFeel"
+                  :min="0"
+                  :max="100"
+                  :label="t('melodyStep.advanced.driveFeel.label')"
+                />
+                <div class="slider-labels">
+                  <span>{{ t('melodyStep.advanced.driveFeel.relaxed') }}</span>
+                  <span>{{ t('melodyStep.advanced.driveFeel.neutral') }}</span>
+                  <span>{{ t('melodyStep.advanced.driveFeel.aggressive') }}</span>
+                </div>
+              </SettingSection>
+
+              <!-- Mora Rhythm Mode -->
+              <SettingSection
+                icon="🇯🇵"
+                :title="t('melodyStep.advanced.moraRhythmMode.label')"
+                :description="t('melodyStep.advanced.moraRhythmMode.description')"
+              >
+                <div class="option-cards option-cards--row">
+                  <OptionCard
+                    v-for="opt in moraRhythmModeOptions"
+                    :key="opt.key"
+                    :title="t(`melodyStep.advanced.moraRhythmMode.options.${opt.key}`)"
+                    :is-active="store.config.moraRhythmMode === opt.value"
+                    compact
+                    @select="store.config.moraRhythmMode = opt.value"
+                  />
+                </div>
+              </SettingSection>
+
+              <!-- Melody Detail Overrides -->
+              <SettingSection
+                icon="🎶"
+                :title="t('melodyStep.advanced.melodyDetail.label')"
+                :description="t('melodyStep.advanced.melodyDetail.description')"
+              >
+                <div class="detail-panel">
+                  <!-- Row 1: Max Leap / Phrase Length -->
+                  <div class="detail-panel__grid">
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.maxLeap') }}</label>
+                      <div class="detail-param__slider-row">
+                        <input type="range" v-model.number="store.config.melodyMaxLeap" min="0" max="12" class="detail-param__slider" />
+                        <span class="detail-param__value">{{ store.config.melodyMaxLeap === 0 ? t('melodyStep.advanced.melodyDetail.preset') : store.config.melodyMaxLeap }}</span>
+                      </div>
+                    </div>
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.phraseLength') }}</label>
+                      <div class="detail-param__slider-row">
+                        <input type="range" v-model.number="store.config.melodyPhraseLength" min="0" max="8" class="detail-param__slider" />
+                        <span class="detail-param__value">{{ store.config.melodyPhraseLength === 0 ? t('melodyStep.advanced.melodyDetail.preset') : store.config.melodyPhraseLength }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Row 2: Syncopation Prob / Long Note Ratio -->
+                  <div class="detail-panel__grid">
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.syncopationProb') }}</label>
+                      <div class="detail-param__slider-row">
+                        <input type="range" v-model.number="store.config.melodySyncopationProb" min="0" max="255" class="detail-param__slider" :disabled="!store.config.enableSyncopation" />
+                        <span class="detail-param__value">{{ store.config.melodySyncopationProb === 255 ? t('melodyStep.advanced.melodyDetail.preset') : Math.min(store.config.melodySyncopationProb, 100) + '%' }}</span>
+                      </div>
+                    </div>
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.longNoteRatio') }}</label>
+                      <div class="detail-param__slider-row">
+                        <input type="range" v-model.number="store.config.melodyLongNoteRatio" min="0" max="255" class="detail-param__slider" />
+                        <span class="detail-param__value">{{ store.config.melodyLongNoteRatio === 255 ? t('melodyStep.advanced.melodyDetail.preset') : Math.min(store.config.melodyLongNoteRatio, 100) + '%' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Row 3: Chorus Register Shift (full width) -->
+                  <div class="detail-param">
+                    <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.chorusRegisterShift') }}</label>
+                    <div class="detail-param__slider-row">
+                      <input type="range" v-model.number="store.config.melodyChorusRegisterShift" min="-128" max="12" class="detail-param__slider" />
+                      <span class="detail-param__value">{{ store.config.melodyChorusRegisterShift === -128 ? t('melodyStep.advanced.melodyDetail.preset') : (store.config.melodyChorusRegisterShift > 0 ? '+' : '') + store.config.melodyChorusRegisterShift }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Row 4: Hook Repetition / Leading Tone (toggle groups) -->
+                  <div class="detail-panel__grid">
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.hookRepetition') }}</label>
+                      <div class="detail-toggle-group">
+                        <button
+                          v-for="opt in triStateOptions"
+                          :key="opt.key"
+                          class="detail-toggle-btn"
+                          :class="{ 'detail-toggle-btn--active': store.config.melodyHookRepetition === opt.value }"
+                          @click="store.config.melodyHookRepetition = opt.value"
+                        >
+                          {{ t(`melodyStep.advanced.melodyDetail.triState.${opt.key}`) }}
+                        </button>
+                      </div>
+                    </div>
+                    <div class="detail-param">
+                      <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.useLeadingTone') }}</label>
+                      <div class="detail-toggle-group">
+                        <button
+                          v-for="opt in triStateOptions"
+                          :key="opt.key"
+                          class="detail-toggle-btn"
+                          :class="{ 'detail-toggle-btn--active': store.config.melodyUseLeadingTone === opt.value }"
+                          @click="store.config.melodyUseLeadingTone = opt.value"
+                        >
+                          {{ t(`melodyStep.advanced.melodyDetail.triState.${opt.key}`) }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </SettingSection>
             </div>
@@ -443,6 +607,122 @@ const advancedSummary = computed(() => {
   font-size: 0.8rem;
   color: rgba(250, 250, 250, 0.75);
   line-height: 1.5;
+}
+
+/* Slider labels (for driveFeel) */
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.65rem;
+  color: rgba(250, 250, 250, 0.4);
+}
+
+/* Detail Panel (matches MotifSettingsPanel pattern) */
+.detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(var(--accent-rgb), 0.05);
+  border: 1px solid rgba(var(--accent-rgb), 0.15);
+  border-radius: 10px;
+}
+
+.detail-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .detail-panel__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-param__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.7);
+}
+
+.detail-param__slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-param__slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(var(--accent-rgb), 0.15);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.detail-param__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--step-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.4);
+}
+
+.detail-param__slider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.detail-param__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* Toggle group (matches MotifSettingsPanel) */
+.detail-toggle-group {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(20, 20, 28, 0.6);
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.detail-toggle-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(250, 250, 250, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detail-toggle-btn:hover {
+  color: rgba(250, 250, 250, 0.8);
+}
+
+.detail-toggle-btn--active {
+  background: rgba(var(--accent-rgb), 0.2);
+  color: #FAFAFA;
 }
 
 /* Advanced Settings Accordion */

@@ -147,7 +147,7 @@ export const BLUEPRINT_OPTIONS: BlueprintOption[] = [
     riffPolicy: 'locked',
     overridesForm: true,
     hasMotif: true,
-    requiresDrums: true, // drums_sync_vocal = true
+    requiresDrums: false,
     recommendsArpeggio: false,
   },
   {

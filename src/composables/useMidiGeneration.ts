@@ -16,8 +16,11 @@ export interface BgmConfig {
   seed: number
   chordProgressionId: number
   formId: number
+  formExplicit: boolean
   vocalAttitude: number
   drumsEnabled: boolean
+  drumsEnabledExplicit: boolean
+  guitarEnabled: boolean
   arpeggioEnabled: boolean
   arpeggioPattern: number
   arpeggioSpeed: number
@@ -36,10 +39,12 @@ export interface BgmConfig {
   chordExtSusProb: number
   chordExt7thProb: number
   chordExt9thProb: number
+  chordExtProbExplicit: boolean
   compositionStyle: number
   targetDurationSeconds: number
   modulationTiming: number
   modulationSemitones: number
+  seEnabled: boolean
   callEnabled: boolean
   callNotesEnabled: boolean
   introChant: number
@@ -52,6 +57,26 @@ export interface BgmConfig {
   motifMaxChordCount: number
   melodicComplexity?: number
   hookIntensity?: number
+  enableSyncopation: boolean
+  energyCurve: number
+  driveFeel: number
+  moraRhythmMode: number
+  vocalStyle: number
+  vocalGroove: number
+  // Melody overrides
+  melodyMaxLeap: number
+  melodySyncopationProb: number
+  melodyPhraseLength: number
+  melodyLongNoteRatio: number
+  melodyChorusRegisterShift: number
+  melodyHookRepetition: number
+  melodyUseLeadingTone: number
+  // Motif overrides
+  motifLength: number
+  motifNoteCount: number
+  motifMotion: number
+  motifRegisterHigh: number
+  motifRhythmDensity: number
   blueprintId: number
 }
 
@@ -79,6 +104,7 @@ export interface VocalConfig {
   seed: number
   chordProgressionId: number
   formId: number
+  formExplicit: boolean
   targetDurationSeconds: number
   vocalLow: number
   vocalHigh: number
@@ -89,6 +115,18 @@ export interface VocalConfig {
   hookIntensity: number
   vocalGroove: number
   compositionStyle: number
+  enableSyncopation: boolean
+  driveFeel: number
+  moraRhythmMode: number
+  energyCurve: number
+  // Melody overrides
+  melodyMaxLeap: number
+  melodySyncopationProb: number
+  melodyPhraseLength: number
+  melodyLongNoteRatio: number
+  melodyChorusRegisterShift: number
+  melodyHookRepetition: number
+  melodyUseLeadingTone: number
   blueprintId: number
 }
 
@@ -98,6 +136,7 @@ export interface VocalConfig {
 export interface AccompanimentConfig {
   seed?: number
   drumsEnabled?: boolean
+  guitarEnabled?: boolean
   arpeggioEnabled?: boolean
   arpeggioPattern?: number
   arpeggioSpeed?: number
@@ -277,8 +316,11 @@ export function useMidiGeneration() {
       seed,
       chordProgressionId: config.chordProgressionId,
       formId: config.formId,
+      formExplicit: config.formExplicit,
       vocalAttitude: config.vocalAttitude,
       drumsEnabled: config.drumsEnabled,
+      drumsEnabledExplicit: config.drumsEnabledExplicit,
+      guitarEnabled: config.guitarEnabled,
       arpeggioEnabled: config.arpeggioEnabled,
       arpeggioPattern: config.arpeggioPattern,
       arpeggioSpeed: config.arpeggioSpeed,
@@ -297,10 +339,12 @@ export function useMidiGeneration() {
       chordExtSusProb: config.chordExtSusProb,
       chordExt7thProb: config.chordExt7thProb,
       chordExt9thProb: config.chordExt9thProb,
+      chordExtProbExplicit: config.chordExtProbExplicit,
       compositionStyle: config.compositionStyle,
       targetDurationSeconds: config.targetDurationSeconds,
       modulationTiming: config.modulationTiming,
       modulationSemitones: config.modulationSemitones,
+      seEnabled: config.seEnabled,
       callEnabled: config.callEnabled,
       callNotesEnabled: config.callNotesEnabled,
       introChant: config.introChant,
@@ -313,6 +357,24 @@ export function useMidiGeneration() {
       motifMaxChordCount: config.motifMaxChordCount,
       melodicComplexity: config.melodicComplexity,
       hookIntensity: config.hookIntensity,
+      enableSyncopation: config.enableSyncopation,
+      energyCurve: config.energyCurve,
+      driveFeel: config.driveFeel,
+      moraRhythmMode: config.moraRhythmMode,
+      vocalStyle: config.vocalStyle,
+      vocalGroove: config.vocalGroove,
+      melodyMaxLeap: config.melodyMaxLeap,
+      melodySyncopationProb: config.melodySyncopationProb,
+      melodyPhraseLength: config.melodyPhraseLength,
+      melodyLongNoteRatio: config.melodyLongNoteRatio,
+      melodyChorusRegisterShift: config.melodyChorusRegisterShift,
+      melodyHookRepetition: config.melodyHookRepetition,
+      melodyUseLeadingTone: config.melodyUseLeadingTone,
+      motifLength: config.motifLength,
+      motifNoteCount: config.motifNoteCount,
+      motifMotion: config.motifMotion,
+      motifRegisterHigh: config.motifRegisterHigh,
+      motifRhythmDensity: config.motifRhythmDensity,
       blueprintId: resolveBlueprintId(config)
     }
   }
@@ -348,6 +410,7 @@ export function useMidiGeneration() {
       seed,
       chordProgressionId: config.chordProgressionId,
       formId: config.formId,
+      formExplicit: config.formExplicit,
       targetDurationSeconds: config.targetDurationSeconds,
       vocalLow: config.vocalLow,
       vocalHigh: config.vocalHigh,
@@ -358,6 +421,17 @@ export function useMidiGeneration() {
       hookIntensity: config.hookIntensity,
       vocalGroove: config.vocalGroove,
       compositionStyle: 0, // MelodyLead for vocal-first flow
+      enableSyncopation: config.enableSyncopation,
+      driveFeel: config.driveFeel,
+      moraRhythmMode: config.moraRhythmMode,
+      energyCurve: config.energyCurve,
+      melodyMaxLeap: config.melodyMaxLeap,
+      melodySyncopationProb: config.melodySyncopationProb,
+      melodyPhraseLength: config.melodyPhraseLength,
+      melodyLongNoteRatio: config.melodyLongNoteRatio,
+      melodyChorusRegisterShift: config.melodyChorusRegisterShift,
+      melodyHookRepetition: config.melodyHookRepetition,
+      melodyUseLeadingTone: config.melodyUseLeadingTone,
       blueprintId: resolveBlueprintId(config)
     }
   }
@@ -371,6 +445,7 @@ export function useMidiGeneration() {
     return {
       seed,
       drumsEnabled: config.drumsEnabled,
+      guitarEnabled: config.guitarEnabled,
       arpeggioEnabled: config.arpeggioEnabled,
       arpeggioPattern: config.arpeggioPattern,
       arpeggioSpeed: config.arpeggioSpeed,
@@ -624,7 +699,17 @@ export function useMidiGeneration() {
     }
 
     const midiData = getMidi()
-    const finalFilename = filename || `midi-sketch-${Date.now()}.mid`
+    let finalFilename = filename
+    if (!finalFilename) {
+      const now = new Date()
+      const ts = now.getFullYear().toString() +
+        (now.getMonth() + 1).toString().padStart(2, '0') +
+        now.getDate().toString().padStart(2, '0') + '_' +
+        now.getHours().toString().padStart(2, '0') +
+        now.getMinutes().toString().padStart(2, '0') +
+        now.getSeconds().toString().padStart(2, '0')
+      finalFilename = `midi-sketch-${ts}.mid`
+    }
     _midisketch.downloadMidi(midiData, finalFilename)
   }
 

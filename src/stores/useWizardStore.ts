@@ -85,10 +85,44 @@ export interface WizardConfig {
   motifFixedProgression: boolean
   motifMaxChordCount: number
 
+  // Guitar
+  guitarEnabled: boolean
+
+  // Syncopation
+  enableSyncopation: boolean
+
+  // Energy & Drive
+  energyCurve: number
+  driveFeel: number
+
+  // Mora rhythm
+  moraRhythmMode: number
+
+  // Melody overrides
+  melodyMaxLeap: number
+  melodySyncopationProb: number
+  melodyPhraseLength: number
+  melodyLongNoteRatio: number
+  melodyChorusRegisterShift: number
+  melodyHookRepetition: number
+  melodyUseLeadingTone: number
+
+  // Motif overrides
+  motifLength: number
+  motifNoteCount: number
+  motifMotion: number
+  motifRegisterHigh: number
+  motifRhythmDensity: number
+
   // Humanize
   humanize: boolean
   humanizeTiming: number
   humanizeVelocity: number
+
+  // Explicit flags
+  chordExtProbExplicit: boolean
+  drumsEnabledExplicit: boolean
+  formExplicit: boolean
 
   // Production Blueprint
   blueprintId: number
@@ -144,7 +178,7 @@ const DEFAULT_CONFIG: WizardConfig = {
   chordExt7th: false,
   chordExt9th: false,
   chordExtSusProb: 20,
-  chordExt7thProb: 30,
+  chordExt7thProb: 15,
   chordExt9thProb: 25,
 
   // Composition style
@@ -170,10 +204,44 @@ const DEFAULT_CONFIG: WizardConfig = {
   motifFixedProgression: true,
   motifMaxChordCount: 4,
 
+  // Guitar
+  guitarEnabled: false,
+
+  // Syncopation
+  enableSyncopation: false,
+
+  // Energy & Drive
+  energyCurve: 0,
+  driveFeel: 50,
+
+  // Mora rhythm
+  moraRhythmMode: 2,
+
+  // Melody overrides (sentinel values = use preset)
+  melodyMaxLeap: 0,
+  melodySyncopationProb: 255,
+  melodyPhraseLength: 0,
+  melodyLongNoteRatio: 255,
+  melodyChorusRegisterShift: -128,
+  melodyHookRepetition: 0,
+  melodyUseLeadingTone: 0,
+
+  // Motif overrides (sentinel values = auto/preset)
+  motifLength: 0,
+  motifNoteCount: 0,
+  motifMotion: 255,
+  motifRegisterHigh: 0,
+  motifRhythmDensity: 255,
+
   // Humanize
   humanize: false,
-  humanizeTiming: 50,
-  humanizeVelocity: 50,
+  humanizeTiming: 40,
+  humanizeVelocity: 30,
+
+  // Explicit flags
+  chordExtProbExplicit: false,
+  drumsEnabledExplicit: false,
+  formExplicit: false,
 
   // Production Blueprint (255 = auto, resolved from songImage)
   blueprintId: 255,
@@ -406,7 +474,7 @@ export function useWizardStore() {
   }
 
   function setBpm(bpm: number) {
-    config.bpm = Math.max(60, Math.min(180, bpm))
+    config.bpm = Math.max(40, Math.min(240, bpm))
     if (vocalGenerated.value) invalidateVocal()
     if (bgmGenerated.value) invalidateBgm()
   }

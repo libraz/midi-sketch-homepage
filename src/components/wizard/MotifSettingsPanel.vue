@@ -24,6 +24,39 @@ const effectiveBlueprintId = computed(() => {
 const hideRepeatScope = computed(() => {
   return blueprintIgnoresMotifScope(effectiveBlueprintId.value)
 })
+
+// Motif length options
+const motifLengthOptions = [
+  { key: 'auto', value: 0 },
+  { key: '1beat', value: 1 },
+  { key: '2beat', value: 2 },
+  { key: '4beat', value: 4 }
+]
+
+// Motif motion options
+const motifMotionOptions = [
+  { key: 'auto', value: 255 },
+  { key: 'stepwise', value: 0 },
+  { key: 'gentleLeap', value: 1 },
+  { key: 'wideLeap', value: 2 },
+  { key: 'narrowStep', value: 3 },
+  { key: 'disjunct', value: 4 }
+]
+
+// Motif register options
+const motifRegisterOptions = [
+  { key: 'auto', value: 0 },
+  { key: 'low', value: 1 },
+  { key: 'high', value: 2 }
+]
+
+// Motif rhythm density options
+const motifRhythmDensityOptions = [
+  { key: 'auto', value: 255 },
+  { key: 'sparse', value: 0 },
+  { key: 'medium', value: 1 },
+  { key: 'driving', value: 2 }
+]
 </script>
 
 <template>
@@ -80,6 +113,97 @@ const hideRepeatScope = computed(() => {
         <span class="switch-desc">{{ t('settingsStep.advanced.compositionStyle.motifSettings.fixedProgressionDesc') }}</span>
       </div>
     </label>
+
+    <!-- Motif Detail Overrides -->
+    <div class="motif-detail">
+      <div class="motif-detail__header">
+        <span class="motif-settings__icon">🔧</span>
+        <span class="motif-settings__title">{{ t('settingsStep.advanced.compositionStyle.motifSettings.detailLabel') }}</span>
+      </div>
+
+      <div class="motif-settings__grid">
+        <!-- Motif Length -->
+        <div class="motif-param">
+          <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.motifLength') }}</label>
+          <div class="toggle-group">
+            <button
+              v-for="opt in motifLengthOptions"
+              :key="opt.key"
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': store.config.motifLength === opt.value }"
+              @click="store.config.motifLength = opt.value"
+            >
+              {{ t(`settingsStep.advanced.compositionStyle.motifSettings.motifLengthOptions.${opt.key}`) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Motif Note Count -->
+        <div class="motif-param">
+          <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.motifNoteCount') }}</label>
+          <div class="slider-row">
+            <input
+              type="range"
+              v-model.number="store.config.motifNoteCount"
+              min="0"
+              max="8"
+              class="motif-slider"
+            />
+            <span class="motif-value">{{ store.config.motifNoteCount === 0 ? 'Auto' : store.config.motifNoteCount }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="motif-settings__grid">
+        <!-- Motif Motion -->
+        <div class="motif-param">
+          <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.motifMotion') }}</label>
+          <div class="toggle-group toggle-group--wrap">
+            <button
+              v-for="opt in motifMotionOptions"
+              :key="opt.key"
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': store.config.motifMotion === opt.value }"
+              @click="store.config.motifMotion = opt.value"
+            >
+              {{ t(`settingsStep.advanced.compositionStyle.motifSettings.motifMotionOptions.${opt.key}`) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Motif Register -->
+        <div class="motif-param">
+          <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.motifRegister') }}</label>
+          <div class="toggle-group">
+            <button
+              v-for="opt in motifRegisterOptions"
+              :key="opt.key"
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': store.config.motifRegisterHigh === opt.value }"
+              @click="store.config.motifRegisterHigh = opt.value"
+            >
+              {{ t(`settingsStep.advanced.compositionStyle.motifSettings.motifRegisterOptions.${opt.key}`) }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Motif Rhythm Density -->
+      <div class="motif-param">
+        <label class="motif-param__label">{{ t('settingsStep.advanced.compositionStyle.motifSettings.motifRhythmDensity') }}</label>
+        <div class="toggle-group">
+          <button
+            v-for="opt in motifRhythmDensityOptions"
+            :key="opt.key"
+            class="toggle-btn"
+            :class="{ 'toggle-btn--active': store.config.motifRhythmDensity === opt.value }"
+            @click="store.config.motifRhythmDensity = opt.value"
+          >
+            {{ t(`settingsStep.advanced.compositionStyle.motifSettings.motifRhythmDensityOptions.${opt.key}`) }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -290,5 +414,23 @@ const hideRepeatScope = computed(() => {
 .switch-desc {
   font-size: 0.7rem;
   color: rgba(250, 250, 250, 0.45);
+}
+
+/* Motif Detail */
+.motif-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(var(--accent-rgb), 0.1);
+}
+
+.motif-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.toggle-group--wrap {
+  flex-wrap: wrap;
 }
 </style>

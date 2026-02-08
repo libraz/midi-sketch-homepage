@@ -266,7 +266,14 @@ function handleRewind() {
 
 function downloadMidi() {
   try {
-    midiGen.downloadMidi(`midi-sketch-${Date.now()}.mid`)
+    const now = new Date()
+    const timestamp = now.getFullYear().toString() +
+      (now.getMonth() + 1).toString().padStart(2, '0') +
+      now.getDate().toString().padStart(2, '0') + '_' +
+      now.getHours().toString().padStart(2, '0') +
+      now.getMinutes().toString().padStart(2, '0') +
+      now.getSeconds().toString().padStart(2, '0')
+    midiGen.downloadMidi(`midi-sketch-bgm-${timestamp}.mid`)
   } catch {
     // Download failed silently
   }

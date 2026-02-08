@@ -114,7 +114,22 @@
   "bgmSettingsStep": {
     "title": "BGM Settings",
     "subtitle": "Configure your BGM parameters",
-    "recommendedByBlueprint": "Recommended"
+    "recommendedByBlueprint": "Recommended",
+    "drumsRequiredWarning": "This blueprint works best with drums enabled",
+    "guitar": {
+      "label": "Guitar",
+      "description": "Enable guitar track for additional harmonic texture"
+    },
+    "energyCurve": {
+      "label": "Energy Curve",
+      "description": "How the energy level changes throughout the song",
+      "options": {
+        "gradualBuild": "Gradual Build",
+        "frontLoaded": "Front Loaded",
+        "wavePattern": "Wave Pattern",
+        "steadyState": "Steady State"
+      }
+    }
   },
   "bgmGenerationStep": {
     "title": "BGM Generation",
@@ -245,7 +260,38 @@
           "fixedProgression": "Fixed Progression",
           "fixedProgressionDesc": "Use the same chord progression across all sections",
           "maxChordCount": "Max Chord Count",
-          "maxChordCountHint": "0 = no limit"
+          "maxChordCountHint": "0 = no limit",
+          "detailLabel": "Detail Settings",
+          "motifLength": "Motif Length",
+          "motifLengthOptions": {
+            "auto": "Auto",
+            "1beat": "1 Beat",
+            "2beat": "2 Beats",
+            "4beat": "4 Beats"
+          },
+          "motifNoteCount": "Note Count",
+          "motifMotion": "Motion",
+          "motifMotionOptions": {
+            "auto": "Auto",
+            "stepwise": "Stepwise",
+            "gentleLeap": "Gentle Leap",
+            "wideLeap": "Wide Leap",
+            "narrowStep": "Narrow Step",
+            "disjunct": "Disjunct"
+          },
+          "motifRegister": "Register",
+          "motifRegisterOptions": {
+            "auto": "Auto",
+            "low": "Low",
+            "high": "High"
+          },
+          "motifRhythmDensity": "Rhythm Density",
+          "motifRhythmDensityOptions": {
+            "auto": "Auto",
+            "sparse": "Sparse",
+            "medium": "Medium",
+            "driving": "Driving"
+          }
         }
       },
       "arrangement": {
@@ -271,7 +317,11 @@
           "up": "Up",
           "down": "Down",
           "updown": "Up-Down",
-          "random": "Random"
+          "random": "Random",
+          "pinwheel": "Pinwheel",
+          "pedalRoot": "Pedal Root",
+          "alberti": "Alberti",
+          "brokenChord": "Broken Chord"
         },
         "speed": "Speed",
         "speedHint": "How fast the notes are played",
@@ -489,7 +539,9 @@
           "cuteAffected": "Cute & Sweet",
           "cuteAffectedDesc": "Charming, gentle syncopation",
           "powerfulShout": "Powerful",
-          "powerfulShoutDesc": "Strong vocals, denser in chorus"
+          "powerfulShoutDesc": "Strong vocals, denser in chorus",
+          "kpop": "K-Pop",
+          "kpopDesc": "K-Pop style with tight rhythm and dynamic hooks"
         }
       },
       "vocalGroove": {
@@ -528,6 +580,44 @@
           "light": "Subtle",
           "normal": "Normal",
           "strong": "Heavy"
+        }
+      },
+      "enableSyncopation": {
+        "label": "Syncopation",
+        "description": "Master switch for syncopation effects. When off, groove settings only affect timing offset",
+        "disabledHint": "Syncopation effects are disabled. Groove will only affect timing offset."
+      },
+      "driveFeel": {
+        "label": "Drive Feel",
+        "description": "Controls the overall energy and aggression of the rhythm",
+        "relaxed": "Relaxed",
+        "neutral": "Neutral",
+        "aggressive": "Aggressive"
+      },
+      "moraRhythmMode": {
+        "label": "Mora Rhythm",
+        "description": "Japanese syllable-timed rhythm mode. Best for J-POP with lyrics",
+        "options": {
+          "standard": "Standard",
+          "moraTimed": "Mora-Timed",
+          "auto": "Auto"
+        }
+      },
+      "melodyDetail": {
+        "label": "Melody Detail",
+        "description": "Fine-tune melody parameters. Default values use the preset's settings",
+        "preset": "Preset",
+        "maxLeap": "Max Leap (semitones)",
+        "syncopationProb": "Syncopation Prob.",
+        "phraseLength": "Phrase Length (bars)",
+        "longNoteRatio": "Long Note Ratio",
+        "chorusRegisterShift": "Chorus Register Shift",
+        "hookRepetition": "Hook Repetition",
+        "useLeadingTone": "Leading Tone",
+        "triState": {
+          "preset": "Preset",
+          "off": "Off",
+          "on": "On"
         }
       }
     }
@@ -627,7 +717,8 @@
           "brightKira": "Bright Kira",
           "coolSynth": "Cool Synth",
           "cuteAffected": "Cute Affected",
-          "powerfulShout": "Powerful Shout"
+          "powerfulShout": "Powerful Shout",
+          "kpop": "K-Pop"
         }
       },
       "groove": {

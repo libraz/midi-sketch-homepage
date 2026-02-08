@@ -73,7 +73,11 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     dependencies: ['flowSelection'],
     affectingKeys: [
       'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
-      'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity'
+      'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity',
+      'enableSyncopation', 'driveFeel', 'moraRhythmMode',
+      'melodyMaxLeap', 'melodySyncopationProb', 'melodyPhraseLength',
+      'melodyLongNoteRatio', 'melodyChorusRegisterShift',
+      'melodyHookRepetition', 'melodyUseLeadingTone'
     ],
     hasGeneration: false
   },
@@ -92,13 +96,15 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     dependencies: ['flowSelection'],
     affectingKeys: [
       'key', 'bpm', 'formId', 'targetDurationSeconds',
-      'drumsEnabled', 'arpeggioEnabled',
+      'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled',
       'arpeggioPattern', 'arpeggioSpeed', 'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
       'chordExtSus', 'chordExt7th', 'chordExt9th',
       'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
       'modulationTiming', 'modulationSemitones',
-      'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+      'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
       'arrangementGrowth', 'motifRepeatScope', 'motifFixedProgression', 'motifMaxChordCount',
+      'motifLength', 'motifNoteCount', 'motifMotion', 'motifRegisterHigh', 'motifRhythmDensity',
+      'energyCurve', 'compositionStyle',
       'humanize', 'humanizeTiming', 'humanizeVelocity'
     ],
     hasGeneration: false
@@ -147,25 +153,32 @@ export const FLOW_STEPS: Record<FlowType, string[]> = {
 export const BGM_AFFECTING_KEYS: Record<FlowType, string[]> = {
   'vocal-first': [
     // For vocal-first, BGM is generated after vocal
-    'drumsEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
+    'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
     'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
     'chordExtSus', 'chordExt7th', 'chordExt9th',
     'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
-    'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+    'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+    'energyCurve',
     'humanize', 'humanizeTiming', 'humanizeVelocity'
   ],
   'bgm-only': [
     // For bgm-only, all BGM settings matter
     'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
     'blueprintId',
-    'drumsEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
+    'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
     'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
     'chordExtSus', 'chordExt7th', 'chordExt9th',
     'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
     'compositionStyle', 'targetDurationSeconds',
     'modulationTiming', 'modulationSemitones',
-    'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
+    'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
     'arrangementGrowth', 'motifRepeatScope', 'motifFixedProgression', 'motifMaxChordCount',
+    'motifLength', 'motifNoteCount', 'motifMotion', 'motifRegisterHigh', 'motifRhythmDensity',
+    'energyCurve', 'enableSyncopation', 'driveFeel', 'moraRhythmMode',
+    'vocalStyle', 'vocalGroove',
+    'melodyMaxLeap', 'melodySyncopationProb', 'melodyPhraseLength',
+    'melodyLongNoteRatio', 'melodyChorusRegisterShift',
+    'melodyHookRepetition', 'melodyUseLeadingTone',
     'humanize', 'humanizeTiming', 'humanizeVelocity'
   ]
 }
@@ -178,7 +191,11 @@ export const VOCAL_AFFECTING_KEYS: Record<FlowType, string[]> = {
     'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
     'targetDurationSeconds', 'blueprintId',
     'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
-    'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity'
+    'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity',
+    'enableSyncopation', 'driveFeel', 'moraRhythmMode',
+    'melodyMaxLeap', 'melodySyncopationProb', 'melodyPhraseLength',
+    'melodyLongNoteRatio', 'melodyChorusRegisterShift',
+    'melodyHookRepetition', 'melodyUseLeadingTone'
   ],
   'bgm-only': [] // No vocal in bgm-only flow
 }

@@ -22,9 +22,6 @@ const compositionStyleOptions = [
   { key: 'synthDriven', value: 2, icon: '🎛️' }
 ]
 
-// SynthDriven forces arpeggio on
-const isSynthDriven = computed(() => store.config.compositionStyle === 2)
-
 // Get effective blueprint ID (resolve Auto to recommended)
 const effectiveBlueprintId = computed(() => {
   if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
@@ -42,7 +39,28 @@ const arpeggioPatternOptions = [
   { key: 'up', value: 0, icon: '↑' },
   { key: 'down', value: 1, icon: '↓' },
   { key: 'updown', value: 2, icon: '↕' },
-  { key: 'random', value: 3, icon: '⚡' }
+  { key: 'random', value: 3, icon: '⚡' },
+  { key: 'pinwheel', value: 4, icon: '🔄' },
+  { key: 'pedalRoot', value: 5, icon: '🎹' },
+  { key: 'alberti', value: 6, icon: '🎶' },
+  { key: 'brokenChord', value: 7, icon: '💫' }
+]
+
+// Energy curve options
+const energyCurveOptions = [
+  { key: 'gradualBuild', value: 0, icon: '📈' },
+  { key: 'frontLoaded', value: 1, icon: '⚡' },
+  { key: 'wavePattern', value: 2, icon: '🌊' },
+  { key: 'steadyState', value: 3, icon: '▬' }
+]
+
+// Modulation timing options
+const modulationTimingOptions = [
+  { key: 'none', value: 0 },
+  { key: 'lastChorus', value: 1 },
+  { key: 'afterBridge', value: 2 },
+  { key: 'eachChorus', value: 3 },
+  { key: 'random', value: 4 }
 ]
 
 // Arpeggio speed options
@@ -52,17 +70,8 @@ const arpeggioSpeedOptions = [
   { key: 'triplet', value: 2, icon: '³' }
 ]
 
-// Sync implicit settings when compositionStyle changes
-watch(() => store.config.compositionStyle, (newStyle, oldStyle) => {
-  if (newStyle === 2) {
-    store.config.arpeggioEnabled = true
-  } else if (oldStyle === 2) {
-    store.config.arpeggioEnabled = false
-  }
-  if (newStyle === 1 || newStyle === 2) {
-    store.config.modulationTiming = 0
-  }
-})
+// No automatic overrides for compositionStyle changes
+// User controls arpeggio and modulation explicitly
 
 // Auto-enable drums when blueprint requires it
 watch(blueprintNeedsDrums, (needsDrums) => {
@@ -104,9 +113,8 @@ watch(blueprintNeedsDrums, (needsDrums) => {
         <MotifSettingsPanel v-if="store.config.compositionStyle === 1" class="motif-panel" />
       </SettingSection>
 
-      <!-- Drums (hidden when blueprint requires drums) -->
+      <!-- Drums -->
       <SettingSection
-        v-if="!blueprintNeedsDrums"
         icon="🥁"
         :title="t('settingsStep.advanced.drums.label')"
         :description="t('settingsStep.advanced.drums.description')"
@@ -116,13 +124,38 @@ watch(blueprintNeedsDrums, (needsDrums) => {
             title="OFF"
             :is-active="!store.config.drumsEnabled"
             compact
-            @select="store.config.drumsEnabled = false"
+            @select="store.config.drumsEnabled = false; store.config.drumsEnabledExplicit = true"
           />
           <OptionCard
             title="ON"
             :is-active="store.config.drumsEnabled"
             compact
-            @select="store.config.drumsEnabled = true"
+            @select="store.config.drumsEnabled = true; store.config.drumsEnabledExplicit = true"
+          />
+        </div>
+        <div v-if="blueprintNeedsDrums && !store.config.drumsEnabled" class="warning-hint">
+          {{ t('bgmSettingsStep.drumsRequiredWarning') }}
+        </div>
+      </SettingSection>
+
+      <!-- Guitar -->
+      <SettingSection
+        icon="🎸"
+        :title="t('bgmSettingsStep.guitar.label')"
+        :description="t('bgmSettingsStep.guitar.description')"
+      >
+        <div class="option-cards option-cards--row">
+          <OptionCard
+            title="OFF"
+            :is-active="!store.config.guitarEnabled"
+            compact
+            @select="store.config.guitarEnabled = false"
+          />
+          <OptionCard
+            title="ON"
+            :is-active="store.config.guitarEnabled"
+            compact
+            @select="store.config.guitarEnabled = true"
           />
         </div>
       </SettingSection>
@@ -138,26 +171,23 @@ watch(blueprintNeedsDrums, (needsDrums) => {
             <OptionCard
               title="OFF"
               :is-active="!store.config.arpeggioEnabled"
-              :disabled="isSynthDriven"
               compact
               @select="store.config.arpeggioEnabled = false"
             />
             <OptionCard
               title="ON"
               :is-active="store.config.arpeggioEnabled"
-              :disabled="isSynthDriven"
               compact
               @select="store.config.arpeggioEnabled = true"
             />
-            <span v-if="isSynthDriven" class="auto-badge">AUTO</span>
-            <span v-else-if="blueprintWantsArpeggio && !store.config.arpeggioEnabled" class="recommended-badge">{{ t('bgmSettingsStep.recommendedByBlueprint') }}</span>
+            <span v-if="blueprintWantsArpeggio && !store.config.arpeggioEnabled" class="recommended-badge">{{ t('bgmSettingsStep.recommendedByBlueprint') }}</span>
           </div>
 
           <template v-if="store.config.arpeggioEnabled">
             <!-- Pattern -->
             <div class="sub-setting">
               <label class="sub-setting__label">{{ t('settingsStep.advanced.arpeggio.pattern') }}</label>
-              <div class="compact-btns">
+              <div class="compact-btns compact-btns--grid">
                 <button
                   v-for="opt in arpeggioPatternOptions"
                   :key="opt.key"
@@ -216,6 +246,64 @@ watch(blueprintNeedsDrums, (needsDrums) => {
             @select="store.config.chordExt9th = !store.config.chordExt9th"
           />
         </div>
+      </SettingSection>
+
+      <!-- Energy Curve -->
+      <SettingSection
+        icon="📊"
+        :title="t('bgmSettingsStep.energyCurve.label')"
+        :description="t('bgmSettingsStep.energyCurve.description')"
+      >
+        <div class="compact-btns compact-btns--grid">
+          <button
+            v-for="opt in energyCurveOptions"
+            :key="opt.key"
+            class="compact-btn"
+            :class="{ 'compact-btn--active': store.config.energyCurve === opt.value }"
+            @click="store.config.energyCurve = opt.value"
+          >
+            <span class="compact-btn__icon">{{ opt.icon }}</span>
+            <span>{{ t(`bgmSettingsStep.energyCurve.options.${opt.key}`) }}</span>
+          </button>
+        </div>
+      </SettingSection>
+
+      <!-- Modulation (Key Change) -->
+      <SettingSection
+        icon="🔀"
+        :title="t('settingsStep.tabs.modulation')"
+        :description="t('settingsStep.advanced.modulation.description')"
+      >
+        <div class="sub-setting">
+          <label class="sub-setting__label">{{ t('settingsStep.advanced.modulation.timing') }}</label>
+          <div class="compact-btns compact-btns--grid">
+            <button
+              v-for="opt in modulationTimingOptions"
+              :key="opt.key"
+              class="compact-btn"
+              :class="{ 'compact-btn--active': store.config.modulationTiming === opt.value }"
+              @click="store.config.modulationTiming = opt.value"
+            >
+              {{ t(`settingsStep.advanced.modulation.timingOptions.${opt.key}`) }}
+            </button>
+          </div>
+        </div>
+        <template v-if="store.config.modulationTiming > 0">
+          <div class="sub-setting">
+            <label class="sub-setting__label">{{ t('settingsStep.advanced.modulation.semitones') }}</label>
+            <div class="compact-btns">
+              <button
+                v-for="n in 4"
+                :key="n"
+                class="compact-btn"
+                :class="{ 'compact-btn--active': store.config.modulationSemitones === n }"
+                @click="store.config.modulationSemitones = n"
+              >
+                +{{ n }}
+              </button>
+            </div>
+          </div>
+        </template>
       </SettingSection>
 
       <!-- Humanize -->
@@ -345,11 +433,34 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   color: rgba(250, 250, 250, 0.6);
 }
 
+/* Warning hint */
+.warning-hint {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: rgba(234, 179, 8, 0.9);
+}
+
 /* Compact Buttons */
 .compact-btns {
   display: flex;
   width: 100%;
   gap: 0.375rem;
+}
+
+.compact-btns--grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+}
+
+@media (max-width: 640px) {
+  .compact-btns--grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .compact-btn {
