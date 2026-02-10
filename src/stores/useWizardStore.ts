@@ -1,6 +1,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { songImages } from '@/data/songImages'
 import { useWizardFlow, STEP_DEFINITIONS, type FlowType } from '@/composables/useWizardFlow'
+import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import type { PlacedNote } from '@/components/PianoRollEditor/types'
 
 // Chord progression type from WASM
@@ -243,8 +244,8 @@ const DEFAULT_CONFIG: WizardConfig = {
   drumsEnabledExplicit: false,
   formExplicit: false,
 
-  // Production Blueprint (255 = auto, resolved from songImage)
-  blueprintId: 255,
+  // Production Blueprint (default matches initial songImageId 'idol-classic' → 4)
+  blueprintId: 4,
 
   // Legacy
   timbreId: 'pop_clean'
@@ -450,6 +451,7 @@ export function useWizardStore() {
     config.stylePresetId = image.stylePresetIds[0]
     config.bpm = image.tempoRange.default
     config.timbreId = image.defaultTimbre
+    config.blueprintId = getRecommendedBlueprintId(id)
 
     // Select first recommended chord
     if (image.recommendedChords.length > 0) {

@@ -36,10 +36,10 @@
     "arrangementStyle": {
       "title": "アレンジスタイル",
       "description": "曲全体の構成・展開パターンを選びます",
-      "recommended": "（推奨）",
       "recommendedBadge": "推奨",
       "unknown": "不明",
-      "affectsHint": "影響: 曲構成、セクション展開、リフの扱い"
+      "affectsHint": "影響: 曲構成、セクション展開、リフの扱い",
+      "rhythmSyncTag": "リズム同期"
     }
   },
   "chordStep": {
@@ -115,7 +115,8 @@
     "title": "BGM設定",
     "subtitle": "バッキングトラックのパラメータを調整します",
     "recommendedByBlueprint": "推奨",
-    "drumsRequiredWarning": "このブループリントはドラム有効時に最適です",
+    "drumsRequiredWarning": "リズム同期モードではドラムが必須です（メロディとベースがドラムグリッドに同期）",
+    "rhythmSyncInfo": "リズム同期モード — ドラム・ベース・メロディがリズムグリッドで同期します",
     "guitar": {
       "label": "ギター",
       "description": "ギタートラックを追加してハーモニーに彩りを"

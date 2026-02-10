@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { songImages, songImageCategories } from '@/data/songImages'
-import { BLUEPRINT_OPTIONS, AUTO_BLUEPRINT_ID, getBlueprintById } from '@/data/blueprints'
+import { BLUEPRINT_OPTIONS, AUTO_BLUEPRINT_ID, getBlueprintById, blueprintIsRhythmSync } from '@/data/blueprints'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import { warmupChordPlayer } from '@/composables/useChordPlayer'
 import StepHeader from '@/components/wizard/StepHeader.vue'
@@ -19,36 +19,37 @@ const filteredImages = computed(() => {
   return songImages.filter(img => category.images.includes(img.id))
 })
 
-// Arrangement style (Blueprint) section state
-const arrangementOpen = ref(false)
-
 // Recommended blueprint based on current songImage
 const recommendedBlueprintId = computed(() => {
   return getRecommendedBlueprintId(store.config.songImageId)
 })
 
+// Whether the current blueprint is RhythmSync
+const effectiveIsRhythmSync = computed(() => {
+  return blueprintIsRhythmSync(store.config.blueprintId)
+})
+
 // Current blueprint label for the summary
 const currentBlueprintLabel = computed(() => {
   const lang = locale.value as 'en' | 'ja'
-  if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
-    const rec = getBlueprintById(recommendedBlueprintId.value)
-    return `${rec?.label[lang] ?? ''}${t('styleStep.arrangementStyle.recommended')}`
-  }
   const bp = getBlueprintById(store.config.blueprintId)
   return bp?.label[lang] ?? t('styleStep.arrangementStyle.unknown')
 })
 
-// Blueprint options with recommended badge and override info
+// Blueprint options with recommended badge and override info (excludes Auto)
 const blueprintOptions = computed(() => {
   const lang = locale.value as 'en' | 'ja'
-  return BLUEPRINT_OPTIONS.map(bp => ({
-    ...bp,
-    label: bp.label[lang],
-    description: bp.description[lang],
-    isRecommended: bp.id === recommendedBlueprintId.value,
-    overridesForm: bp.overridesForm,
-    ignoresMotifScope: bp.riffPolicy !== 'free',
-  }))
+  return BLUEPRINT_OPTIONS
+    .filter(bp => bp.id !== AUTO_BLUEPRINT_ID)
+    .map(bp => ({
+      ...bp,
+      label: bp.label[lang],
+      description: bp.description[lang],
+      isRecommended: bp.id === recommendedBlueprintId.value,
+      isRhythmSync: bp.paradigm === 'rhythm',
+      overridesForm: bp.overridesForm,
+      ignoresMotifScope: bp.riffPolicy !== 'free',
+    }))
 })
 
 function selectStyle(id: string) {
@@ -153,14 +154,16 @@ function getStyleIcon(category: string): string {
       </article>
     </div>
 
-    <!-- Arrangement Style Section (Collapsible) -->
-    <details class="arrangement-section" :open="arrangementOpen" @toggle="arrangementOpen = ($event.target as HTMLDetailsElement).open">
-      <summary class="arrangement-summary">
+    <!-- Arrangement Style Section -->
+    <div class="arrangement-section">
+      <div class="arrangement-header">
         <span class="arrangement-icon">🎛️</span>
         <span class="arrangement-title">{{ t('styleStep.arrangementStyle.title') }}</span>
-        <span class="arrangement-value">{{ currentBlueprintLabel }}</span>
-        <span class="arrangement-chevron">{{ arrangementOpen ? '▼' : '▶' }}</span>
-      </summary>
+        <span class="arrangement-value">
+          {{ currentBlueprintLabel }}
+          <span v-if="effectiveIsRhythmSync" class="arrangement-rhythm-tag">{{ t('styleStep.arrangementStyle.rhythmSyncTag') }}</span>
+        </span>
+      </div>
 
       <div class="arrangement-body">
         <p class="arrangement-description">{{ t('styleStep.arrangementStyle.description') }}</p>
@@ -184,18 +187,21 @@ function getStyleIcon(category: string): string {
 
           <!-- Card Content -->
           <div class="blueprint-card__content">
-            <!-- Icon -->
-            <div class="blueprint-card__icon-wrap">
-              <span class="blueprint-card__icon">{{ bp.icon }}</span>
+            <!-- Icon row: icon left, chips right -->
+            <div class="blueprint-card__head">
+              <div class="blueprint-card__icon-wrap">
+                <span class="blueprint-card__icon">{{ bp.icon }}</span>
+              </div>
+              <div class="blueprint-card__chips">
+                <span v-if="bp.isRecommended" class="blueprint-card__badge">{{ t('styleStep.arrangementStyle.recommendedBadge') }}</span>
+                <span v-if="bp.isRhythmSync" class="blueprint-card__rhythm-tag">{{ t('styleStep.arrangementStyle.rhythmSyncTag') }}</span>
+              </div>
             </div>
 
             <!-- Text -->
             <h3 class="blueprint-card__name">{{ bp.label }}</h3>
             <p class="blueprint-card__desc">{{ bp.description }}</p>
           </div>
-
-          <!-- Recommended Badge -->
-          <span v-if="bp.isRecommended" class="blueprint-card__badge">{{ t('styleStep.arrangementStyle.recommendedBadge') }}</span>
 
           <!-- Selection Indicator -->
           <div class="blueprint-card__check" v-if="store.config.blueprintId === bp.id">
@@ -204,7 +210,7 @@ function getStyleIcon(category: string): string {
         </article>
       </div>
 
-    </details>
+    </div>
   </div>
 </template>
 
@@ -367,18 +373,11 @@ function getStyleIcon(category: string): string {
   overflow: hidden;
 }
 
-.arrangement-summary {
+.arrangement-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s ease;
-}
-
-.arrangement-summary:hover {
-  background: rgba(139, 92, 246, 0.05);
 }
 
 .arrangement-icon {
@@ -398,9 +397,19 @@ function getStyleIcon(category: string): string {
   text-align: right;
 }
 
-.arrangement-chevron {
-  font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.4);
+.arrangement-rhythm-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
 }
 
 .arrangement-body {
@@ -488,6 +497,13 @@ function getStyleIcon(category: string): string {
   z-index: 1;
 }
 
+.blueprint-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .blueprint-card__icon-wrap {
   width: 36px;
   height: 36px;
@@ -496,12 +512,45 @@ function getStyleIcon(category: string): string {
   justify-content: center;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
   border-radius: 10px;
-  margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .blueprint-card__icon {
   font-size: 1.25rem;
   filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.4));
+}
+
+.blueprint-card__chips {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.blueprint-card__badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  background: rgba(139, 92, 246, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.blueprint-card__rhythm-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .blueprint-card__name {
@@ -518,21 +567,6 @@ function getStyleIcon(category: string): string {
   color: rgba(250, 250, 250, 0.5);
   margin: 0;
   line-height: 1.4;
-}
-
-.blueprint-card__badge {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--step-accent);
-  background: rgba(139, 92, 246, 0.2);
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  z-index: 2;
 }
 
 .blueprint-card__check {
@@ -561,7 +595,7 @@ function getStyleIcon(category: string): string {
 }
 
 @media (max-width: 640px) {
-  .arrangement-summary {
+  .arrangement-header {
     padding: 0.875rem 1rem;
   }
 

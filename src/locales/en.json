@@ -36,10 +36,10 @@
     "arrangementStyle": {
       "title": "Song Structure",
       "description": "How the song is built and develops",
-      "recommended": " (Recommended)",
       "recommendedBadge": "Rec",
       "unknown": "Unknown",
-      "affectsHint": "Affects: section flow, instrument layering, riff handling"
+      "affectsHint": "Affects: section flow, instrument layering, riff handling",
+      "rhythmSyncTag": "RhythmSync"
     }
   },
   "chordStep": {
@@ -115,7 +115,8 @@
     "title": "BGM Settings",
     "subtitle": "Configure your BGM parameters",
     "recommendedByBlueprint": "Recommended",
-    "drumsRequiredWarning": "This blueprint works best with drums enabled",
+    "drumsRequiredWarning": "RhythmSync requires drums — melody and bass synchronize to the drum grid",
+    "rhythmSyncInfo": "RhythmSync is active — drums, bass, and melody are tightly synchronized to a rhythmic grid",
     "guitar": {
       "label": "Guitar",
       "description": "Enable guitar track for additional harmonic texture"

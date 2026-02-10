@@ -226,3 +226,11 @@ export function blueprintRecommendsArpeggio(id: number): boolean {
   const bp = getBlueprintById(id)
   return bp?.recommendsArpeggio ?? false
 }
+
+/**
+ * Check if this blueprint uses the RhythmSync paradigm
+ */
+export function blueprintIsRhythmSync(id: number): boolean {
+  const bp = getBlueprintById(id)
+  return bp?.paradigm === 'rhythm'
+}

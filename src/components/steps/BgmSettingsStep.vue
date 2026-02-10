@@ -3,7 +3,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useWizardFlow } from '@/composables/useWizardFlow'
-import { blueprintRequiresDrums, blueprintRecommendsArpeggio, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { blueprintRequiresDrums, blueprintRecommendsArpeggio, blueprintIsRhythmSync, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import StepHeader from '@/components/wizard/StepHeader.vue'
 import SettingSection from '@/components/wizard/SettingSection.vue'
@@ -33,6 +33,7 @@ const effectiveBlueprintId = computed(() => {
 // Blueprint constraints
 const blueprintNeedsDrums = computed(() => blueprintRequiresDrums(effectiveBlueprintId.value))
 const blueprintWantsArpeggio = computed(() => blueprintRecommendsArpeggio(effectiveBlueprintId.value))
+const blueprintIsRhythmSyncActive = computed(() => blueprintIsRhythmSync(effectiveBlueprintId.value))
 
 // Arpeggio pattern options with icons
 const arpeggioPatternOptions = [
@@ -88,6 +89,12 @@ watch(blueprintNeedsDrums, (needsDrums) => {
       :title="t('bgmSettingsStep.title')"
       :subtitle="t('bgmSettingsStep.subtitle')"
     />
+
+    <!-- RhythmSync Info Banner -->
+    <div v-if="blueprintIsRhythmSyncActive" class="rhythm-sync-banner">
+      <span class="rhythm-sync-banner__icon">🥁</span>
+      <span class="rhythm-sync-banner__text">{{ t('bgmSettingsStep.rhythmSyncInfo') }}</span>
+    </div>
 
     <div class="bgm-settings">
       <!-- Composition Style (BGM-only flow) -->
@@ -352,6 +359,29 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 .bgm-settings-step {
   --step-accent: #60A5FA;
   --accent-rgb: 96, 165, 250;
+}
+
+/* RhythmSync Info Banner */
+.rhythm-sync-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 10px;
+}
+
+.rhythm-sync-banner__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.rhythm-sync-banner__text {
+  font-size: 0.8rem;
+  color: rgba(167, 139, 250, 0.9);
+  line-height: 1.5;
 }
 
 .bgm-settings {
