@@ -82,7 +82,7 @@ Returns the number of available blueprints.
 
 ```javascript
 const count = midisketch.getBlueprintCount()
-// 9
+// 10
 ```
 
 ### `getBlueprintName(id)`
@@ -162,30 +162,30 @@ Generate MIDI from a SongConfig object.
 ```javascript
 sketch.generateFromConfig({
   // Basic settings
-  stylePresetId: 0,           // Style preset ID
+  stylePresetId: 0,           // Style preset ID (0-16)
   key: 0,                     // Key (0-11: C to B)
   bpm: 120,                   // Tempo (0=use style default)
   seed: 12345,                // Random seed (0=random)
-  chordProgressionId: 0,      // Chord progression ID
-  formId: 0,                  // Form/structure ID
+  chordProgressionId: 0,      // Chord progression ID (0-21)
+  formId: 0,                  // Form/structure ID (0-17)
   vocalAttitude: 0,           // 0=Clean, 1=Expressive, 2=Raw
   drumsEnabled: true,         // Enable drums track
 
   // Arpeggio settings
   arpeggioEnabled: false,     // Enable arpeggio track
-  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange: 2,     // 1-3 octaves
-  arpeggioGate: 80,           // Gate length (0-100)
+  arpeggioGate: 0.8,          // Gate length (0.0-1.0)
   arpeggioSyncChord: true,    // Sync arpeggio with chord changes
 
   // Vocal settings
-  vocalLow: 55,               // Vocal range lower bound (MIDI note)
-  vocalHigh: 74,              // Vocal range upper bound (MIDI note)
+  vocalLow: 60,               // Vocal range lower bound (MIDI note, default C4)
+  vocalHigh: 79,              // Vocal range upper bound (MIDI note, default G5)
   skipVocal: false,           // Skip vocal generation (for BGM-first workflow)
 
   // Vocal style settings
-  vocalStyle: 0,              // Vocal style preset (0=Auto, 1-12=specific presets)
+  vocalStyle: 0,              // Vocal style preset (0=Auto, 1-13=specific presets)
   melodyTemplate: 0,          // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,       // Melody complexity (0=Simple, 1=Standard, 2=Complex)
   hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
@@ -193,16 +193,16 @@ sketch.generateFromConfig({
 
   // Humanization
   humanize: true,             // Enable humanization
-  humanizeTiming: 50,         // Timing variation (0-100)
-  humanizeVelocity: 50,       // Velocity variation (0-100)
+  humanizeTiming: 0.4,        // Timing variation (0.0-1.0)
+  humanizeVelocity: 0.3,      // Velocity variation (0.0-1.0)
 
   // Chord extensions
   chordExtSus: false,         // Enable sus2/sus4 chords
   chordExt7th: false,         // Enable 7th chords
   chordExt9th: false,         // Enable 9th chords
-  chordExtSusProb: 20,        // Sus chord probability (0-100)
-  chordExt7thProb: 30,        // 7th chord probability (0-100)
-  chordExt9thProb: 25,        // 9th chord probability (0-100)
+  chordExtSusProb: 0.2,       // Sus chord probability (0.0-1.0)
+  chordExt7thProb: 0.15,      // 7th chord probability (0.0-1.0)
+  chordExt9thProb: 0.25,      // 9th chord probability (0.0-1.0)
 
   // Composition style
   compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
@@ -212,15 +212,15 @@ sketch.generateFromConfig({
 
   // Modulation settings
   modulationTiming: 0,        // 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random
-  modulationSemitones: 1,     // Modulation amount (+1 to +4 semitones)
+  modulationSemitones: 2,     // Modulation amount (+1 to +4 semitones)
 
   // Call/SE settings (for idol-style music)
-  seEnabled: false,           // Enable SE track
-  callEnabled: false,         // Enable call feature
-  callNotesEnabled: false,    // Output calls as notes
+  seEnabled: true,            // Enable SE track
+  callEnabled: false,         // Enable call feature (false=Auto, true=Enabled; Disabled is C API only)
+  callNotesEnabled: true,     // Output calls as notes
   introChant: 0,              // 0=None, 1=Gachikoi, 2=Shouting
   mixPattern: 0,              // 0=None, 1=Standard, 2=Tiger
-  callDensity: 0,             // 0=None, 1=Minimal, 2=Standard, 3=Intense
+  callDensity: 2,             // 0=None, 1=Minimal, 2=Standard, 3=Intense
 
   // Arrangement settings
   arrangementGrowth: 0,       // 0=LayerAdd (add instruments), 1=RegisterAdd (expand register)
@@ -228,10 +228,57 @@ sketch.generateFromConfig({
   // Motif settings
   motifRepeatScope: 0,        // 0=FullSong (same motif), 1=Section (per-section motif)
   motifFixedProgression: true, // Use same chord progression for all sections
-  motifMaxChordCount: 0,      // Max chord count (0=no limit, 2-8)
+  motifMaxChordCount: 4,      // Max chord count (default 4)
 
   // Blueprint settings
-  blueprintId: 0,             // Production blueprint (0=Traditional, 1-8=specific, 255=auto)
+  blueprintId: 0,             // Production blueprint (0=Traditional, 1-9=specific, 255=random)
+
+  // Guitar settings
+  guitarEnabled: false,       // Enable guitar track
+
+  // Drums explicit
+  drumsEnabledExplicit: false, // True if drumsEnabled was explicitly set (allows overriding blueprint drums_required)
+
+  // Mood settings
+  mood: 0,                    // Mood preset override (0-23, used when moodExplicit=true)
+  moodExplicit: false,        // Use explicit mood (true) or derive from stylePresetId (false)
+
+  // Form settings
+  formExplicit: false,        // Use formId exactly (true) or allow blueprint/randomization (false)
+
+  // Drive feel
+  driveFeel: 50,              // Drive feel: 0=laid-back, 50=neutral, 100=aggressive
+
+  // Behavioral Loop
+  addictiveMode: false,       // Enable Behavioral Loop mode (fixed riff, maximum hook)
+
+  // Mora rhythm
+  moraRhythmMode: 2,          // Mora rhythm mode: 0=Standard, 1=MoraTimed, 2=Auto
+
+  // Syncopation
+  enableSyncopation: false,   // Enable syncopation effects for VocalGroove
+
+  // Energy curve
+  energyCurve: 0,             // Energy curve: 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
+
+  // Chord extension explicit
+  chordExtProbExplicit: false, // True if chord extension probabilities were explicitly set (suppresses mood-based auto-adjustment)
+
+  // Melody fine-grained control
+  melodyMaxLeap: 0,           // Max leap interval: 0=preset, 1-12=semitones override
+  melodySyncopationProb: 0xFF, // Syncopation probability: 0xFF=preset, 0-100=% override
+  melodyPhraseLength: 0,      // Phrase length: 0=preset, 1-8=bars
+  melodyLongNoteRatio: 0xFF,  // Long note ratio: 0xFF=preset, 0-100=% override
+  melodyChorusRegisterShift: -128, // Chorus register shift: -128=preset, -12 to +12=semitones
+  melodyHookRepetition: 0,    // Hook repetition: 0=preset, 1=off, 2=on (tri-state)
+  melodyUseLeadingTone: 0,    // Leading tone insertion: 0=preset, 1=off, 2=on (tri-state)
+
+  // Motif fine-grained control
+  motifLength: 0,             // Motif length: 0=auto, 1/2/4=beats
+  motifNoteCount: 0,          // Motif note count: 0=auto, 3-8
+  motifMotion: 0xFF,          // Motif motion: 0xFF=preset, 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
+  motifRegisterHigh: 0,       // Motif register: 0=auto, 1=low, 2=high
+  motifRhythmDensity: 0xFF,   // Motif rhythm density: 0xFF=preset, 0=Sparse, 1=Medium, 2=Driving
 })
 ```
 
@@ -239,26 +286,31 @@ sketch.generateFromConfig({
 Many parameters depend on parent options being enabled. For example, `arpeggioPattern` has no effect if `arpeggioEnabled=false`. See [Option Relationships](/docs/option-relationships) for the full dependency tree.
 :::
 
-### `regenerateVocal(params)`
+### `regenerateVocal(configOrSeed)`
 
-Regenerate only the vocal track (and Aux track). BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
-Use after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
+Regenerate only the vocal track (and Aux track). Keeps the same chord progression and structure.
+Use after `generateVocal()` for vocal-first trial-and-error, or after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
+Accepts either a `VocalConfig` object or a seed number (default: 0 = new random).
 
 ```javascript
+// With VocalConfig object
 sketch.regenerateVocal({
   seed: 0,                     // Random seed (0=new random)
-  vocalLow: 55,                // Vocal range lower bound (MIDI note)
-  vocalHigh: 74,               // Vocal range upper bound (MIDI note)
+  vocalLow: 60,                // Vocal range lower bound (MIDI note, 36-96)
+  vocalHigh: 79,               // Vocal range upper bound (MIDI note, 36-96)
   vocalAttitude: 1,            // 0=Clean, 1=Expressive, 2=Raw
 
   // Optional: Fine-tune vocal generation
-  vocalStyle: 0,               // Vocal style preset (0=Auto, 1-12=specific presets)
+  vocalStyle: 0,               // Vocal style preset (0=Auto, 1-13=specific presets)
   melodyTemplate: 0,           // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,        // Melody complexity (0=Simple, 1=Standard, 2=Complex)
   hookIntensity: 2,            // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
   vocalGroove: 0,              // Groove feel (0=Straight, 1=OffBeat, 2=Swing, etc.)
   compositionStyle: 0,         // Composition style (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
 })
+
+// Or with seed only
+sketch.regenerateVocal(12345)
 ```
 
 ### `getMidi()`
@@ -290,8 +342,8 @@ sketch.generateVocal({
   seed: 0,
   chordProgressionId: 0,
   formId: 0,
-  vocalLow: 55,
-  vocalHigh: 74,
+  vocalLow: 60,
+  vocalHigh: 79,
   vocalAttitude: 1,
   // ... other SongConfig options
 })
@@ -299,7 +351,7 @@ sketch.generateVocal({
 
 ### `generateAccompaniment(config?)`
 
-Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux → Bass → Chord → Drums (adapting to vocal).
+Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE (adapting to vocal).
 
 ```javascript
 // Simple: use default settings
@@ -309,20 +361,30 @@ sketch.generateAccompaniment()
 sketch.generateAccompaniment({
   seed: 12345,                // Random seed (0 = auto)
   drumsEnabled: true,
+  guitarEnabled: false,       // Enable guitar track
   arpeggioEnabled: false,
-  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange: 2,
-  arpeggioGate: 80,
+  arpeggioGate: 80,           // 0-100
   arpeggioSyncChord: true,
   chordExtSus: false,
   chordExt7th: false,
   chordExt9th: false,
-  humanize: true,
-  humanizeTiming: 50,
-  humanizeVelocity: 50,
-  seEnabled: false,
+  chordExtTritoneSub: false,  // Tritone substitution (V7 -> bII7)
+  chordExtSusProb: 20,        // 0-100
+  chordExt7thProb: 30,        // 0-100
+  chordExt9thProb: 25,        // 0-100
+  chordExtTritoneSubProb: 50, // 0-100
+  humanize: false,
+  humanizeTiming: 50,         // 0-100
+  humanizeVelocity: 50,       // 0-100
+  seEnabled: true,
   callEnabled: false,
+  callDensity: 2,             // 0=None, 1=Minimal, 2=Standard, 3=Intense
+  introChant: 0,              // 0=None, 1=Gachikoi, 2=Shouting
+  mixPattern: 0,              // 0=None, 1=Standard, 2=Tiger
+  callNotesEnabled: true,
 })
 ```
 
@@ -345,7 +407,7 @@ sketch.regenerateAccompaniment({
 
 ### `generateWithVocal(config)`
 
-Generate all tracks with vocal-first priority. Generation order: Vocal → Aux → Bass → Chord → Drums. Accompaniment adapts to vocal melody.
+Generate all tracks with vocal-first priority. Generation order: Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE. Accompaniment adapts to vocal melody.
 
 ```javascript
 sketch.generateWithVocal({
@@ -416,12 +478,25 @@ const reasonText = sketch.reasonToString(info.reason[60])
 // "ChordTone" or "LowRegister, Tritone"
 ```
 
-### `getResolvedBlueprintId()`
+### `generateFromBuilder(builder)`
 
-Returns the actually used blueprint ID after generation. When `blueprintId=255` (auto), this returns the randomly selected blueprint.
+Generate MIDI from a SongConfigBuilder instance. The builder provides a fluent API with cascade detection for parameter changes.
 
 ```javascript
-sketch.generateFromConfig({ blueprintId: 255 })  // Auto-select
+const builder = new midisketch.SongConfigBuilder(0)
+  .setBpm(165)
+  .setBlueprint(1)
+  .setSeed(12345)
+
+sketch.generateFromBuilder(builder)
+```
+
+### `getResolvedBlueprintId()`
+
+Returns the actually used blueprint ID after generation. When `blueprintId=255` (random), this returns the randomly selected blueprint.
+
+```javascript
+sketch.generateFromConfig({ blueprintId: 255 })  // Random select
 const actualId = sketch.getResolvedBlueprintId()
 console.log(`Used blueprint: ${midisketch.getBlueprintName(actualId)}`)
 ```
@@ -463,8 +538,8 @@ sketch.generateFromConfig(config)
 // Step 2: Add vocals
 sketch.regenerateVocal({
   seed: 0,
-  vocalLow: 55,
-  vocalHigh: 74,
+  vocalLow: 60,
+  vocalHigh: 79,
   vocalAttitude: 1,
 })
 
@@ -516,6 +591,201 @@ sketch.generateAccompaniment()
 const midiData = sketch.getMidi()
 ```
 
+## Advanced Examples
+
+### Energy Curve Control
+
+```javascript
+// FrontLoaded - high energy from the start
+sketch.generateFromConfig({
+  ...midisketch.createDefaultConfig(0),
+  energyCurve: 1
+})
+```
+
+### Melody Fine-Grained Control
+
+```javascript
+// Custom melody behavior: max 5 semitone leaps, 4-bar phrases, hook enabled
+sketch.generateFromConfig({
+  ...midisketch.createDefaultConfig(0),
+  melodyMaxLeap: 5,
+  melodyPhraseLength: 4,
+  melodyHookRepetition: 2  // on
+})
+```
+
+### Motif Fine-Grained Control
+
+```javascript
+// 4-beat motif with 5 notes, gentle leap motion
+sketch.generateFromConfig({
+  ...midisketch.createDefaultConfig(0),
+  motifLength: 4,
+  motifNoteCount: 5,
+  motifMotion: 1  // GentleLeap
+})
+```
+
+### Guitar Track
+
+```javascript
+sketch.generateFromConfig({
+  ...midisketch.createDefaultConfig(0),
+  guitarEnabled: true
+})
+```
+
+### Syncopation + Groove
+
+```javascript
+sketch.generateFromConfig({
+  ...midisketch.createDefaultConfig(0),
+  enableSyncopation: true,
+  vocalGroove: 3  // Syncopated
+})
+```
+
+### Using SongConfigBuilder
+
+```javascript
+const builder = new midisketch.SongConfigBuilder(0)
+  .setBpm(165)
+  .setBlueprint(1)
+  .setSeed(12345)
+
+// Check for cascade changes
+const changes = builder.getLastChangeResult()
+if (changes) {
+  for (const change of changes.changes) {
+    console.log(`${change.field}: ${change.oldValue} → ${change.newValue}`)
+  }
+}
+
+// Generate using the builder
+sketch.generateFromBuilder(builder)
+```
+
+## SongConfigBuilder
+
+The `SongConfigBuilder` provides a fluent API for building `SongConfig` with automatic cascade detection. When you change one parameter, related parameters may be auto-adjusted.
+
+### Constructor
+
+```javascript
+const builder = new midisketch.SongConfigBuilder(styleId)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `styleId` | number | 0 | Style preset ID to create defaults from |
+
+### Setter Methods
+
+All setter methods return `this` for chaining:
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `setSeed(seed)` | number | Set random seed (0=random) |
+| `setKey(key)` | number | Set key (0-11, 0=C) |
+| `setBpm(bpm)` | number | Set BPM (0=style default). Warns if outside 160-175 for RhythmSync blueprints |
+| `setBlueprint(id)` | number | Set blueprint (0-9, 255=random). May cascade: drums, hookIntensity |
+| `setStylePreset(id)` | number | Set style preset. Resets mood, chord, form, BPM to style defaults |
+| `setVocalStyle(style)` | number | Set vocal style (0=Auto, 1-13). Idol styles auto-enable call |
+| `setVocalAttitude(attitude)` | number | Set vocal attitude (0=Clean, 1=Expressive, 2=Raw) |
+| `setVocalRange(low, high)` | number, number | Set vocal range (MIDI note bounds) |
+| `setCompositionStyle(style)` | number | Set composition style (0-2). May cascade: skipVocal, arpeggioEnabled |
+| `setModulation(timing, semitones?)` | number, number | Set modulation (timing 0-4, semitones 1-4) |
+| `setChordExtensions(opts)` | object | Set chord extensions ({sus, seventh, ninth, susProb, seventhProb, ninthProb}) |
+| `setArpeggio(enabled, opts?)` | boolean, object | Set arpeggio ({pattern, speed, octaveRange, gate, syncChord}) |
+| `setMotif(opts)` | object | Set motif ({repeatScope, fixedProgression, maxChordCount}) |
+| `setCall(opts)` | object | Set call/SE ({enabled, notesEnabled, density, introChant, mixPattern, seEnabled}) |
+| `setMelodicComplexity(complexity)` | number | Set melodic complexity (0-2) |
+| `setHookIntensity(intensity)` | number | Set hook intensity (0-3) |
+| `setVocalGroove(groove)` | number | Set vocal groove feel (0-5) |
+| `setMelodyTemplate(template)` | number | Set melody template (0-7) |
+| `setArrangementGrowth(growth)` | number | Set arrangement growth (0-1) |
+| `setTargetDuration(seconds)` | number | Set target duration (0=use formId) |
+| `setSkipVocal(skip)` | boolean | Skip vocal generation |
+| `setDriveFeel(feel)` | number | Set drive feel (0=laid-back, 50=neutral, 100=aggressive) |
+| `setAddictiveMode(enabled)` | boolean | Enable Behavioral Loop mode |
+| `setMoraRhythmMode(mode)` | number | Set mora rhythm mode (0=Standard, 1=MoraTimed, 2=Auto) |
+| `setMood(mood)` | number | Set mood preset override (0-23, sets moodExplicit=true) |
+| `setFormExplicit(explicit)` | boolean | Use formId exactly (no randomization) |
+| `setHumanize(enabled, timing?, velocity?)` | boolean, number, number | Set humanization |
+| `setDrums(enabled)` | boolean | Set drums enabled. Warns if disabling with drums-required blueprint |
+
+### Query Methods
+
+```javascript
+// Build the final SongConfig
+const config = builder.build()
+
+// Get the result of the last setter call (cascade info)
+const changes = builder.getLastChangeResult()
+// Returns: ParameterChangeResult | null
+
+// Get list of explicitly set field names
+const explicit = builder.getExplicitFields()
+// ['bpm', 'blueprintId', 'seed']
+
+// Get list of auto-derived field names
+const derived = builder.getDerivedFields()
+// ['drumsEnabled', 'hookIntensity']
+```
+
+### Reset Methods
+
+```javascript
+// Reset all settings to defaults
+builder.reset(styleId?)
+
+// Reset to defaults but keep explicitly set values
+builder.resetKeepExplicit(styleId?)
+```
+
+### Cascade Detection
+
+Certain parameter changes trigger cascading updates to related parameters:
+
+- **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 6, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum)
+- **Composition style change**: May auto-adjust `skipVocal`, `arpeggioEnabled` (SynthDriven enables arpeggio)
+- **Vocal style change**: Idol-style presets (4=Idol, 9=BrightKira, 11=CuteAffected) auto-enable call if not explicitly set
+- **BPM change**: Warns if BPM is outside 160-175 range for RhythmSync blueprints
+- **Drums change**: Warns if disabling drums for a blueprint that requires them
+
+```javascript
+const builder = new midisketch.SongConfigBuilder(0)
+  .setBlueprint(1)  // RhythmLock - requires drums
+
+const changes = builder.getLastChangeResult()
+if (changes) {
+  for (const change of changes.changes) {
+    console.log(`${change.field}: ${change.oldValue} → ${change.newValue} (${change.reason})`)
+  }
+  // e.g. "drumsEnabled: false → true (Blueprint RhythmLock requires drums)"
+}
+```
+
+### ParameterChangeResult
+
+```typescript
+interface ParameterChangeResult {
+  changedCount: number                // Number of fields that changed
+  changedCategories: ParameterCategory[] // Categories of changes
+  changes: ParameterChange[]          // Detailed list of changes
+  warnings: string[]                  // Warning messages
+}
+
+interface ParameterChange {
+  category: ParameterCategory         // Category (e.g. 'drums', 'hook', 'vocal')
+  field: string                       // Field name that was changed
+  oldValue: unknown                   // Previous value
+  newValue: unknown                   // New value
+  reason: string                      // Reason for the change
+}
+```
+
 ## Constants
 
 ### `VocalAttitude`
@@ -530,7 +800,7 @@ VocalAttitude.Raw        // 2 - Raw, emotional vocals
 
 ```javascript
 CompositionStyle.MelodyLead     // 0 - Traditional melody-driven
-CompositionStyle.BackgroundMotif // 1 - Motif-driven with subdued vocals
+CompositionStyle.BackgroundMotif // 1 - Motif-driven BGM (vocal disabled, aux active)
 CompositionStyle.SynthDriven    // 2 - Arpeggio-forward electronic
 ```
 
@@ -599,6 +869,7 @@ VocalStylePreset.BrightKira    // 9 - Bright/kira-kira (high, sparkling)
 VocalStylePreset.CoolSynth     // 10 - Cool synth (electronic, precise)
 VocalStylePreset.CuteAffected  // 11 - Cute/affected (playful)
 VocalStylePreset.PowerfulShout // 12 - Powerful shout (intense)
+VocalStylePreset.KPop          // 13 - K-Pop style
 ```
 
 ### `MelodyTemplate`
@@ -642,22 +913,62 @@ VocalGrooveFeel.Driving16th // 4 - Driving 16th note feel
 VocalGrooveFeel.Bouncy8th  // 5 - Bouncy 8th note feel
 ```
 
+### `ArpeggioPattern`
+
+```javascript
+ArpeggioPattern.Up          // 0 - Ascending arpeggio
+ArpeggioPattern.Down        // 1 - Descending arpeggio
+ArpeggioPattern.UpDown      // 2 - Ascending then descending
+ArpeggioPattern.Random      // 3 - Random order
+ArpeggioPattern.Pinwheel    // 4 - Pinwheel pattern
+ArpeggioPattern.PedalRoot   // 5 - Pedal root pattern
+ArpeggioPattern.Alberti     // 6 - Alberti bass pattern
+ArpeggioPattern.BrokenChord // 7 - Broken chord pattern
+```
+
+### `EnergyCurve`
+
+```javascript
+EnergyCurve.GradualBuild // 0 - Gradually increasing energy
+EnergyCurve.FrontLoaded  // 1 - High energy from the start
+EnergyCurve.WavePattern  // 2 - Alternating energy levels
+EnergyCurve.SteadyState  // 3 - Consistent energy throughout
+```
+
+### `MoraRhythmMode`
+
+```javascript
+MoraRhythmMode.Standard  // 0 - Standard rhythm timing
+MoraRhythmMode.MoraTimed // 1 - Mora-based timing (Japanese syllable rhythm)
+MoraRhythmMode.Auto      // 2 - Automatic selection (default)
+```
+
+### `DriveFeel`
+
+Continuous value from 0 to 100 controlling the rhythmic intensity:
+
+| Value | Feel |
+|-------|------|
+| 0 | Laid-back |
+| 50 | Neutral (default) |
+| 100 | Aggressive |
+
 ### `GenerationParadigm`
 
 ```javascript
-GenerationParadigm.Traditional  // 0 - Classic generation (Bass→Chord→Vocal)
-GenerationParadigm.RhythmSync   // 1 - Drums & bass sync with melody
-GenerationParadigm.MelodyDriven // 2 - Melody-centered arrangement
+GenerationParadigm.Traditional  // 0 - Classic generation (Vocal→Aux→Motif→Bass→Chord→Guitar→Arpeggio→Drums→SE)
+GenerationParadigm.RhythmSync   // 1 - Rhythm-synced (Motif→Vocal→Aux→Bass→Chord→Guitar→Arpeggio→Drums→SE)
+GenerationParadigm.MelodyDriven // 2 - Melody-centered (Vocal→Aux→Motif→Bass→Chord→Guitar→Arpeggio→Drums→SE)
 ```
 
 ### `RiffPolicy`
 
 ```javascript
 RiffPolicy.Free          // 0 - Each section varies independently
-RiffPolicy.LockedContour // 1 - Contour locked, rhythm varies
-RiffPolicy.LockedPitch   // 2 - Pitch locked, contour varies
-RiffPolicy.LockedAll     // 3 - All aspects locked
-RiffPolicy.Evolving      // 4 - Gradual changes (30% every 2 sections)
+RiffPolicy.LockedContour // 1 - Pitch contour fixed, expression variable
+RiffPolicy.LockedPitch   // 2 - Pitch completely fixed, velocity variable
+RiffPolicy.LockedAll     // 3 - Completely fixed (monotonous, not recommended)
+RiffPolicy.Evolving      // 4 - 30% chance of change every 2 sections
 RiffPolicy.Locked        // Alias for LockedContour (1)
 ```
 
@@ -682,7 +993,7 @@ NoteReason.ScaleTone    // 4 - Scale tone (not chord but in scale)
 // Warning reasons (yellow)
 NoteReason.LowRegister  // 8 - Low register (below C4), may sound muddy
 NoteReason.Tritone      // 16 - Tritone interval (unstable except on V7)
-NoteReason.LargeLeap    // 32 - Large leap (6+ semitones from prev note)
+NoteReason.LargeLeap    // 32 - Large leap (9+ semitones from prev note)
 // Dissonant reasons (red)
 NoteReason.Minor2nd     // 64 - Minor 2nd (1 semitone) collision
 NoteReason.Major7th     // 128 - Major 7th (11 semitones) collision
@@ -724,9 +1035,11 @@ interface AccompanimentConfig {
   seed?: number               // Random seed (0 = auto)
   // Drums
   drumsEnabled?: boolean
+  // Guitar
+  guitarEnabled?: boolean     // Enable guitar track
   // Arpeggio
   arpeggioEnabled?: boolean
-  arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random
+  arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed?: number      // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange?: number // 1-3
   arpeggioGate?: number       // 0-100
@@ -738,6 +1051,8 @@ interface AccompanimentConfig {
   chordExtSusProb?: number    // 0-100
   chordExt7thProb?: number    // 0-100
   chordExt9thProb?: number    // 0-100
+  chordExtTritoneSub?: boolean   // Enable tritone substitution (V7 → bII7)
+  chordExtTritoneSubProb?: number // Tritone substitution probability (0-100)
   // Humanization
   humanize?: boolean
   humanizeTiming?: number     // 0-100
@@ -807,16 +1122,66 @@ interface CollisionInfo {
 }
 ```
 
+### `ChordEvent`
+
+Chord event from generation timeline (includes secondary dominant info):
+
+```typescript
+interface ChordEvent {
+  tick: number              // Start tick
+  endTick: number           // End tick
+  degree: number            // Scale degree (0-6)
+  isSecondaryDominant: boolean // Whether this is a secondary dominant (V/x)
+}
+```
+
+### `EventData`
+
+Event data from generation:
+
+```typescript
+interface EventData {
+  bpm: number
+  division: number
+  duration_ticks: number
+  duration_seconds: number
+  tracks: Array<{
+    name: string
+    channel: number
+    program: number
+    notes: Array<{
+      pitch: number
+      velocity: number
+      start_ticks: number
+      duration_ticks: number
+      start_seconds: number
+      duration_seconds: number
+    }>
+  }>
+  sections: Array<{
+    name: string
+    type: string
+    startTick: number
+    endTick: number
+    start_bar: number
+    bars: number
+    start_seconds: number
+    end_seconds: number
+  }>
+  chords?: ChordEvent[]    // Chord timeline with secondary dominant info
+}
+```
+
 ### `BlueprintInfo`
 
 Information about a production blueprint:
 
 ```typescript
 interface BlueprintInfo {
-  id: number                // Blueprint ID (0-8)
+  id: number                // Blueprint ID (0-9)
   name: string              // Blueprint name
   paradigm: number          // Generation paradigm (0-2)
-  riffPolicy: number        // Riff policy (0-2)
+  riffPolicy: number        // Riff policy (0-4)
   weight: number            // Selection weight percentage
 }
 ```

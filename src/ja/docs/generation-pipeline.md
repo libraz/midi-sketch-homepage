@@ -24,7 +24,7 @@ flowchart TD
 
     subgraph Step2 ["ステップ2: 伴奏"]
         A1[generateAccompaniment]
-        A1 --> A2["Aux → ベース → コード → ドラム"]
+        A1 --> A2["Aux → Bass → Chord → Guitar → Drums"]
     end
 
     V2 -->|満足| A1
@@ -40,21 +40,29 @@ flowchart LR
         B1["構造"] --> B2["モチーフ/アルペジオ"]
         B2 --> B3["ベース"]
         B3 --> B4["コード"]
-        B4 --> B5["ドラム"]
+        B4 --> B5["ギター"]
+        B5 --> B6["ドラム"]
     end
 ```
 
 ## CompositionStyleによる分岐
 
-| スタイル | 主要トラック | ボーカル | 生成順序 |
-|----------|--------------|----------|----------|
-| **MelodyLead** | ボーカル | あり | Vocal → Aux → Bass → Chord → Drums |
-| **BackgroundMotif** | モチーフ | なし | Motif → Bass → Chord → Drums |
-| **SynthDriven** | アルペジオ | なし | Bass → Chord → Arpeggio → Drums |
+| スタイル | 主要トラック | ボーカル | Aux | 生成順序 |
+|----------|--------------|----------|-----|----------|
+| **MelodyLead** | ボーカル | あり | あり | Vocal → Aux → Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **BackgroundMotif** | モチーフ | なし | あり | Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **SynthDriven** | アルペジオ | なし | なし | Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio (手動) → Drums → SE |
+
+::: info 生成パラダイム
+3つのパラダイムがトラック生成の正確な順序に影響します：
+- **Traditional**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+- **RhythmSync**: Motif → Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE
+- **MelodyDriven**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+:::
 
 ## フェーズ1: 構造構築
 
-`StructurePattern`に基づいて楽曲構造を作成：
+`StructurePattern`に基づいて楽曲構造を作成。**エナジーカーブ**が指定されている場合（GradualBuild、FrontLoaded、WavePattern、SteadyState）、構造構築時にセクションのエネルギーレベルを調整し、楽曲全体のダイナミクスアークを形作ります。
 
 ```cpp
 void Generator::buildStructure() {
@@ -92,7 +100,7 @@ struct Section {
 
 ### ボーカルトラック（MelodyLeadのみ）
 
-フレーズキャッシュとテンプレート駆動設計を持つ最も複雑な生成器：
+フレーズキャッシュとテンプレート駆動設計を持つ最も複雑な生成器。**メロディオーバーライド**が指定されている場合、最大跳躍幅、シンコペーション確率、フレーズ長、長音符比率、サビの音域シフト、フック繰り返し、リーディングトーンの振る舞いなどのパラメータがテンプレートのデフォルトより優先されます：
 
 ```mermaid
 flowchart TD
@@ -170,6 +178,7 @@ flowchart TD
 | Unison | ボーカルユニゾンダブリング | サビ強調 |
 | MelodicHook | メロディックフックリフ | フック重視セクション |
 | MotifCounter | カウンターメロディ（反進行） | ポリフォニックテクスチャ |
+| SustainPad | 全音符コードトーンパッド | 持続的な和声サポート |
 
 ### ベース生成
 
@@ -194,6 +203,9 @@ flowchart TD
 
 **ベースパターン:**
 
+ベースシステムは17以上のパターンタイプ（BassPattern）をサポートしており、Sparse、Standard、Driving、ジャンル固有のバリエーションを含みます。使用するパターンはムードとセクションに基づいて自動選択されるか、BlueprintのSectionSlot設定で`bass_style_hint`（0=自動、1-17はBassPattern+1にマッピング）を指定してセクションごとに影響を与えることができます。
+
+一般的なパターンカテゴリ：
 - **Sparse**: 1拍目と3拍目に4分音符（バラード、チル）
 - **Standard**: 時々8分音符を含む4分音符リズム
 - **Driving**: アプローチノート付き8分音符パターン
@@ -230,6 +242,12 @@ void Generator::generateChord() {
 ベースが1拍目にルート音を弾いている場合、コードボイシングは自動的にルートを省略して濁りを避けます。これにより、よりクリーンで整理されたアレンジが生まれます。
 :::
 
+### ギタートラック
+
+専用のMIDIチャンネルに伴奏ギターパターンを生成します。`guitarEnabled`で制御（JSデフォルト：`false`、C++デフォルト：`true`）。ギタートラックはBlueprintの制約に影響を受けます。`guitar_skill`（スキルレベル：パターンの複雑さに影響）や`guitar_below_vocal`（ボーカル音域の下にギターボイシングを配置してマスキングを回避）などが含まれます。コード生成の後に行われ、既存の和声ボイシングを補完します。
+
+セクションごとのギタースタイルは、BlueprintのSectionSlot設定で`guitar_style_hint`（0-7）を指定して影響を与えることができます。0はムードとエネルギーに基づいて自動選択されます。
+
 ### ドラム生成
 
 ドラムパターンはムードに基づいて選択：
@@ -243,6 +261,8 @@ void Generator::generateChord() {
 | Rock | ライドシンバル、クラッシュアクセント | LightRock |
 | Synth | タイトな16分ハイハット | Yoasobi, Synthwave |
 
+Blueprintで`euclidean_drums_percent`を指定することで、ユークリッドリズムパターンの使用確率を制御できます。また、セクションごとの`drum_role`（Full、Ambient、Minimal、FXOnly）で、アレンジメント全体のドラム挙動を調整できます。
+
 **フィル生成:**
 
 - タムの下降/上昇パターン
@@ -251,13 +271,13 @@ void Generator::generateChord() {
 
 ### モチーフトラック（BackgroundMotifスタイル）
 
-主要なメロディ要素として繰り返しパターンを生成：
+主要なメロディ要素として繰り返しパターンを生成。**モチーフオーバーライド**が指定されている場合、モチーフ長（0=自動、1/2/4拍）、音数（0=自動、3-8）、モーション（APIでは0-4、内部的に5=OstinatoはBlueprint専用）、レジスター（0=自動、1=低、2=高）、リズム密度（0=Sparse、1=Medium、2=Driving）などのパラメータがスタイルのデフォルトより優先されます：
 
 ```cpp
 MotifParams params {
     .length = MotifLength::TwoBars,    // 2または4小節
     .rhythm_density = RhythmDensity::Medium,
-    .motion = MotifMotion::Stepwise,
+    .motion = MotifMotion::Stepwise,   // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
     .repeat_scope = RepeatScope::FullSong
 };
 ```
@@ -347,6 +367,7 @@ flowchart TD
 | Bass | 3 | 33（エレベ） |
 | Motif | 4 | 81（シンセリード） |
 | Arpeggio | 5 | 81（ソウリード） |
+| Guitar | 6 | 25（アコギ） |
 | Drums | 9 | GMドラム |
 | SE | 15 | テキストイベント |
 

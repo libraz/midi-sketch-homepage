@@ -4,17 +4,18 @@
 
 ## トラック概要
 
-MIDI Sketchは8つのトラックを異なるMIDIチャンネルに生成します：
+MIDI Sketchは9つのトラックを異なるMIDIチャンネルに生成します：
 
 ```mermaid
 flowchart TB
     subgraph Melody ["メロディレイヤー"]
         Vocal["ボーカル (Ch 0)"]
-        Aux["Aux (Ch 5)"]
+        Aux["Aux (Ch 1)"]
     end
 
     subgraph Harmony ["ハーモニー"]
         Chord["コード (Ch 2)"]
+        Guitar["ギター (Ch 6)"]
     end
 
     subgraph Rhythm ["リズムセクション"]
@@ -37,11 +38,12 @@ flowchart TB
 | トラック | チャンネル | プログラム | 役割 |
 |----------|---------|---------|------|
 | Vocal | 0 | Piano (0) | 主旋律 |
-| Aux | 5 | Pad (89) | 副旋律サポート |
+| Aux | 1 | E.Piano (4) | 副旋律サポート |
 | Chord | 2 | E.Piano (4) | 和声バッキング |
 | Bass | 3 | E.Bass (33) | ベース |
 | Motif | 4 | Synth (81) | BackgroundMotifスタイル |
 | Arpeggio | 5 | Synth (81) | SynthDrivenスタイル |
+| Guitar | 6 | Acoustic Guitar (25) | 伴奏ギター |
 | Drums | 9 | GMドラム | リズム |
 | SE | 15 | - | セクションマーカー |
 
@@ -198,6 +200,7 @@ struct VocalRange {
 | **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
 | **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
 | **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
+| **KPop** (13) | 1.0 | 1.2 | 0.25 | 0.20 |
 
 ### UltraVocaloidモード
 
@@ -328,15 +331,19 @@ Aux（補助）トラックは主旋律に対する**副旋律サポート**を�
 
 ### Aux機能
 
-5つの補助機能が利用可能：
+9つの補助機能が利用可能：
 
 | ID | 機能 | 説明 |
 |----|----------|------|
-| A | PulseLoop | 同音または固定音程の繰り返しパターン |
-| B | TargetHint | コードトーンで主旋律のターゲットを暗示 |
-| C | GrooveAccent | スタッカートでリズミックなアクセント |
-| D | PhraseTail | フレーズ終端の下降解決 |
-| E | EmotionalPad | 長い持続音のコードトーン |
+| 0 | PulseLoop | 同音または固定音程の繰り返しパターン |
+| 1 | TargetHint | コードトーンで主旋律のターゲットを暗示 |
+| 2 | GrooveAccent | スタッカートでリズミックなアクセント |
+| 3 | PhraseTail | フレーズ終端の下降解決 |
+| 4 | EmotionalPad | 長い持続音のコードトーン |
+| 5 | Unison | ボーカルユニゾンダブリング |
+| 6 | MelodicHook | メロディックフックリフ |
+| 7 | MotifCounter | カウンターメロディ（反行） |
+| 8 | SustainPad | 全音符コードトーンパッド |
 
 ### テンプレート → Auxマッピング
 
@@ -355,6 +362,15 @@ Aux（補助）トラックは主旋律に対する**副旋律サポート**を�
 - ボーカルより狭い音域（50-70%）
 - 低いベロシティ（0.5-0.8×ボーカル）
 - HarmonyContextでボーカルとの不協和音を回避
+
+### サビでの挙動
+
+サビセクションではAuxトラックの挙動が適応されます：
+
+- **密度低下**: ボーカルを引き立てるためAuxは控えめに
+- **低音域化**: ボーカルとの衝突を避けるため低い音域へ移動
+- **パターン簡素化**: より持続的なノート、ビジーさの軽減
+- **フレーズ終端**: 適切な解決を伴いフレーズ境界を尊重
 
 ---
 
@@ -423,6 +439,37 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ---
 
+## ギタートラック
+
+**ソース:** `src/track/guitar.cpp`
+
+ギタートラックは専用のMIDIチャンネル（Ch 6）に伴奏ギターパターンを生成します。コードトラックを補完するリズミック＆ハーモニックサポートを提供します。
+
+### パラメータ
+
+| パラメータ | デフォルト（JS） | デフォルト（C++） | 説明 |
+|-----------|----------------|------------------|------|
+| `guitarEnabled` | `false` | `true` | ギタートラック生成の有効/無効 |
+
+### Blueprintの制約
+
+ギター生成はBlueprintの制約に影響を受けます：
+
+| 制約 | 説明 |
+|------|------|
+| `guitar_skill` | スキルレベル（Beginner/Intermediate/Advanced/Virtuoso）がパターンの複雑さやボイシングの洗練度に影響 |
+| `guitar_below_vocal` | 有効にすると、メロディのマスキングを避けるためギターボイシングをボーカル音域の下（vocal_low - 2半音）に配置 |
+| `guitar_style_hint` | BlueprintのSectionSlotで定義されるセクションごとのスタイルヒント（0-7）。0 = ムードとエネルギーに基づいて自動選択 |
+
+### 生成
+
+- ギターはコードトラックの**後**に生成され、既存の和声ボイシングを補完
+- パターンはセクションエネルギーとムードに適応
+- セクションごとの`guitar_style_hint`（0-7）でギター伴奏スタイルに影響を与えることが可能
+- デフォルトではMIDIチャンネル6にAcoustic Guitar（プログラム25）で出力
+
+---
+
 ## ベーストラック
 
 **ソース:** `src/track/bass.cpp`（約1170行）
@@ -430,6 +477,8 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 ルート重視のパターンで和声的基盤を生成。
 
 ### パターンタイプ
+
+ベースシステムは17以上のBassPatternタイプをサポートしています。使用するパターンはムードとセクションに基づいて自動選択されるか、BlueprintのSectionSlotで`bass_style_hint`（0=自動、1-17はBassPattern+1にマッピング）を指定してセクションごとに影響を与えることができます。一般的なパターンカテゴリ：
 
 | パターン | 説明 | リズム |
 |----------|------|--------|
@@ -517,6 +566,21 @@ enum class FillType {
 - 4または8小節ごと
 - サビ前
 
+### ユークリッドドラム
+
+Blueprintで`euclidean_drums_percent`を指定することで、ユークリッドリズムパターンの使用確率を制御できます。ユークリッドリズムは指定されたステップ数に対してヒットをできるだけ均等に分配するパターンです。
+
+### ドラムロール（Drum Role）
+
+BlueprintのSectionSlotでセクションごとの`drum_role`を指定してドラム挙動を制御：
+
+| ロール | 説明 |
+|--------|------|
+| Full | 標準フルドラムキット |
+| Ambient | 控えめ、アトモスフェリック |
+| Minimal | スパース、ミニマルパターン |
+| FXOnly | エフェクトのみ、標準キットなし |
+
 ### ゴーストノート
 
 グルーブのためのベロシティ軽減スネアアーティキュレーション：
@@ -589,30 +653,60 @@ void generateDrumsTrackWithVocal(
 
 ```cpp
 struct MotifParams {
-    MotifLength length;           // TwoBars, FourBars
-    RhythmDensity rhythm_density; // Sparse, Medium, Driving
-    MotifMotion motion;           // Stepwise, GentleLeap
+    MotifLength length;           // 0=auto(2 bars), 1, 2, or 4 beats
+    RhythmDensity rhythm_density; // 0=Sparse, 1=Medium, 2=Driving
+    MotifMotion motion;           // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
     RepeatScope repeat_scope;     // FullSong, PerSection
-    MotifRegister register_;      // Mid, High
+    MotifRegister register_;      // 0=auto(mid), 1=low, 2=high
+    uint8_t note_count;           // 0=auto(6), 3-8
 };
 ```
+
+### オーバーライドパラメータ
+
+設定でモチーフオーバーライドが指定されている場合、以下のパラメータがスタイルのデフォルトより優先されます：
+
+| パラメータ | 型 | 説明 |
+|-----------|------|------|
+| `motifLength` | int (0=auto, 1/2/4) | モチーフ長のオーバーライド（拍単位、0はデフォルトで2小節） |
+| `motifNoteCount` | int (0=auto, 3-8) | モチーフの音数をオーバーライド（0はデフォルトで6） |
+| `motifMotion` | int (0xFF=preset, 0-4) | モーションタイプのオーバーライド（0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; 内部5=OstinatoはBlueprint専用） |
+| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | レジスター範囲のオーバーライド |
+| `motifRhythmDensity` | int (0xFF=preset, 0-2) | リズム密度のオーバーライド（0=Sparse, 1=Medium, 2=Driving） |
 
 ### パターン生成
 
 ```mermaid
 flowchart TD
     A[パターン作成] --> B[長さ決定]
-    B --> C[3-5音を生成]
+    B --> C[3-8音を生成]
     C --> D{モーションタイプ?}
-    D -->|Stepwise| E[最大音程: 2]
-    D -->|GentleLeap| F[最大音程: 5]
+    D -->|Stepwise 0| E[スケールステップのみ]
+    D -->|GentleLeap 1| F[3度まで]
+    D -->|WideLeap 2| G2[5度まで]
+    D -->|NarrowStep 3| G3[狭いスケール度数]
+    D -->|Disjunct 4| G4[不規則な跳躍]
     E --> G[テンションノート追加]
     F --> G
-    G --> H[リズム設定]
+    G2 --> G
+    G3 --> G
+    G4 --> G
+    G --> H[リズム密度設定]
     H --> I{リピートスコープ?}
     I -->|FullSong| J[全セクションで同じパターン]
     I -->|PerSection| K[セクションごとに新パターン]
 ```
+
+**MotifMotionの値**（API: 0-4、内部: 0-5）:
+
+| 値 | 名前 | 説明 |
+|----|------|------|
+| 0 | Stepwise | スケールステップのみ（2度） |
+| 1 | GentleLeap | 3度まで |
+| 2 | WideLeap | 5度まで |
+| 3 | NarrowStep | 狭いスケール度数（ジャジー） |
+| 4 | Disjunct | 不規則な跳躍（実験的） |
+| 5 | Ostinato | 同一ピッチクラスの繰り返し（**内部Blueprint専用**） |
 
 ### 音域レンジ
 
@@ -633,7 +727,7 @@ flowchart TD
 
 ```cpp
 struct ArpeggioParams {
-    ArpeggioPattern pattern;  // Up, Down, UpDown, Random
+    ArpeggioPattern pattern;  // Up, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord
     ArpeggioSpeed speed;      // Eighth, Sixteenth, Triplet
     uint8_t octave_range;     // 1-3オクターブ
     float gate;               // ノート長比率 (0.0-1.0)
@@ -641,7 +735,7 @@ struct ArpeggioParams {
 };
 ```
 
-### パターンタイプ
+### パターンタイプ（全8種類）
 
 ```mermaid
 flowchart LR
@@ -657,6 +751,17 @@ flowchart LR
         UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
     end
 ```
+
+| ID | パターン | 説明 |
+|----|---------|------|
+| 0 | Up | コードトーンを上昇 |
+| 1 | Down | コードトーンを下降 |
+| 2 | UpDown | 上昇後に下降 |
+| 3 | Random | ランダムなコードトーン選択 |
+| 4 | Pinwheel | 方向が交互に変わるパターン |
+| 5 | PedalRoot | 各音の間にルートに戻る |
+| 6 | Alberti | クラシック的な分散和音（低-高-中-高） |
+| 7 | BrokenChord | 不規則なコードトーン配列 |
 
 ### スピード変換
 
@@ -721,6 +826,7 @@ uint8_t calculateVelocity(
 | Aux | 0.50-0.80 | 副旋律サポート |
 | Chord | 0.75 | サポート |
 | Bass | 0.85 | ベース |
+| Guitar | 0.70 | 伴奏 |
 | Drums | 0.90 | タイミングドライバー |
 | Motif | 0.70 | バックグラウンド |
 | Arpeggio | 0.85 | 中レベル |

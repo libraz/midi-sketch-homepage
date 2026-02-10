@@ -162,12 +162,20 @@ flowchart TD
 
 ```cpp
 struct ChordExtensionParams {
-    bool enabled = true;
-    float sus_probability = 0.3f;     // 30%確率
-    float seventh_probability = 0.4f;  // 40%確率
-    float ninth_probability = 0.2f;    // 20%確率
+    bool enable_sus = false;
+    bool enable_7th = false;
+    bool enable_9th = false;
+    bool tritone_sub = false;          // AccompanimentConfig only
+    float sus_probability = 0.2f;     // 20% chance
+    float seventh_probability = 0.15f; // 15% chance
+    float ninth_probability = 0.25f;   // 25% chance
+    float tritone_sub_probability;     // AccompanimentConfig only
 };
 ```
+
+::: info ムード依存の確率自動調整
+`chordExtProbExplicit=false`（デフォルト）の場合、ムードがスタイルに合わせてコードエクステンション確率を自動調整します。`chordExtProbExplicit=true`に設定すると全てのエクステンション確率を手動制御できます。
+:::
 
 ## ボイスリーディング
 
@@ -275,10 +283,53 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 // 強化後: IV → V/V → V → I
 ```
 
+### トライトーン代理
+
+トライトーン代理はV7コードをbII7コード（トライトーン離れたドミナント7th）で置き換えます。これにより半音進行のベースモーションが生まれ、和声的な洗練さが加わります。
+
+::: details 設定
+トライトーン代理は以下から利用可能：
+- **AccompanimentConfig**: `chordExtTritoneSub`（有効化）と`chordExtTritoneSubProb`（確率 0.0-1.0）
+- **C++ SongConfig JSON**: `chord_extension.tritone_sub`と`chord_extension.tritone_sub_probability`（C++ readFrom経由）
+
+注：これらのパラメータは現在JS `SongConfig`型（`types.ts`）では公開されていません。アクセスには`AccompanimentConfig`またはC++ JSON APIを使用してください。
+:::
+
+### ムード依存のコードエクステンション確率
+
+`chordExtProbExplicit=false`の場合、ムードがスタイルに合わせてコードエクステンション確率を自動調整します：
+
+| ムード | 7th確率 | 9th確率 | Sus確率 | 備考 |
+|--------|--------|--------|--------|------|
+| CityPop | 40% | 25% | - | ジャズ影響のボイシング |
+| RnBNeoSoul | 50% | 35% | - | リッチな拡張ハーモニー |
+| Ballad/Sentimental | 30% | - | 25% | 表現力豊かなsus解決 |
+| Nostalgic/Chill | 25% | - | - | 穏やかなエクステンション |
+| Lofi | 40% | 30% | - | 暖かいローファイキャラクター |
+
+::: tip 明示的 vs 自動
+`chordExtProbExplicit=true`に設定すると全てのエクステンション確率を手動制御でき、`false`のままにするとムードシステムが自動的に適切な値を選択します。
+:::
+
+### EventDataにおけるChordEvent
+
+`EventData`のJSON出力にはセクションごとの詳細なコード情報を含む`chords`配列が含まれるようになり、セカンダリードミナントのアノテーションも含まれます。これにより外部ツールで和声構造を可視化・分析できます。
+
 ## キー転調
 
 ::: tip なぜ転調するのか？
 キー転調（曲の途中でキーを変える）は、興奮と感情的な高揚を加える強力なテクニックです。最後のサビで1-2半音上げる転調は「次のレベルに引き上げる」感覚を生み出します。これは数え切れないほどのヒット曲で使われる定番テクニックです。
+:::
+
+### 転調パラメータ
+
+| パラメータ | 範囲 | 説明 |
+|-----------|------|------|
+| `modulationTiming` | 0-4 | 転調タイミング（0=無効） |
+| `modulationSemitones` | 1-4 | 転調量（timingが0でない場合は必須） |
+
+::: warning
+`modulationTiming`が0以外の場合、`modulationSemitones`は1-4に設定する必要があります。ボーカルの高音域は、転調後に最終セクションが音域を超えないよう自動的に調整されます。
 :::
 
 ### 転調ポイント
@@ -288,14 +339,14 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 | StandardPop | B → Chorus | +1半音 |
 | RepeatChorus | Chorus 1 → 2 | +1半音 |
 | Ballad | B → Chorus | +2半音 |
-| Full patterns | 様々 | +1 ～ +2 |
+| Full patterns | 様々 | +1 ～ +4 |
 
 ### 実装
 
 ```cpp
 struct Modulation {
     Tick tick;           // 転調タイミング
-    int8_t semitones;    // 量（+1, +2）
+    int8_t semitones;    // 量（1-4半音）
 };
 
 // MIDI出力時に適用

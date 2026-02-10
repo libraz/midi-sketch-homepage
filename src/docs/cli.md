@@ -39,13 +39,19 @@ The binary will be at `build/midisketch_cli`.
 |------|-------------|---------|
 | `--seed N` | Random seed (0 = auto-random) | 0 |
 | `--style N` | Style preset ID (0-16) | 0 |
-| `--mood N` | Mood ID (0-19), overrides style mapping | - |
-| `--chord N` | Chord progression ID (0-19) | - |
+| `--mood N` | Mood ID (0-23), overrides style mapping | - |
+| `--chord N` | Chord progression ID (0-21) | - |
 | `--bpm N` | BPM (40-240) | Style preset |
 | `--key N` | Key (0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | 0 |
 | `--form N` | Form/structure pattern ID (0-17) | - |
 | `--duration N` | Target duration in seconds (0 = use pattern) | 0 |
-| `--blueprint N` | Production blueprint ID or name (0-8, 255=auto) | 0 |
+| `--blueprint N` | Production blueprint ID or name (0-9, 255=auto) | 0 |
+| `--guitar` / `--no-guitar` | Enable/disable guitar track | enabled |
+| `--drive-feel N` | Drive feel (0=laid-back, 50=neutral, 100=aggressive) | 50 |
+| `--energy-curve N` | Energy curve (0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState) | 0 |
+| `--enable-syncopation` / `--no-syncopation` | Enable/disable syncopation effects | disabled |
+| `--mora-rhythm-mode N` | Mora rhythm (0=Standard, 1=MoraTimed, 2=Auto) | 2 |
+| `--addictive-mode` | Enable Behavioral Loop mode | disabled |
 
 ### Vocal Parameters
 
@@ -54,12 +60,12 @@ The binary will be at `build/midisketch_cli`.
 | `--skip-vocal` | Skip vocal in initial generation (BGM-first workflow) | - |
 | `--regenerate-vocal` | Regenerate vocal after initial generation | - |
 | `--vocal-seed N` | Seed for vocal regeneration | - |
-| `--vocal-attitude N` | Vocal attitude (0=Clean, 1=Expressive, 2=Raw) | 1 |
-| `--vocal-low N` | Vocal range lower bound (MIDI note) | 57 |
+| `--vocal-attitude N` | Vocal attitude (0=Clean, 1=Expressive, 2=Raw) | 0 |
+| `--vocal-low N` | Vocal range lower bound (MIDI note) | 60 |
 | `--vocal-high N` | Vocal range upper bound (MIDI note) | 79 |
 | `--vocal-style N` | Vocal style preset | 0 (Auto) |
 
-Vocal style options (13 presets):
+Vocal style options (14 presets):
 - 0: Auto (selects based on style preset)
 - 1: Standard
 - 2: Vocaloid (fast, wide leaps)
@@ -73,6 +79,29 @@ Vocal style options (13 presets):
 - 10: CoolSynth (electronic, precise)
 - 11: CuteAffected (playful)
 - 12: PowerfulShout (intense)
+- 13: KPop (tight rhythm, dance-oriented)
+
+### Melody Overrides
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--melody-max-leap N` | Max melody leap in semitones (0-12, 0=preset) | 0 |
+| `--melody-syncopation-prob N` | Syncopation probability (0-100, 255=preset) | 255 |
+| `--melody-phrase-length N` | Phrase length (0-8, 0=preset) | 0 |
+| `--melody-long-note-ratio N` | Long note ratio (0-100, 255=preset) | 255 |
+| `--melody-chorus-register-shift N` | Chorus register shift (-12 to 12, -128=preset) | -128 |
+| `--melody-hook-repetition N` | Hook repetition (0=preset, 1=off, 2=on) | 0 |
+| `--melody-use-leading-tone N` | Leading tone (0=preset, 1=off, 2=on) | 0 |
+
+### Motif Overrides
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--motif-length N` | Motif length in beats (0=default, 1, 2, or 4) | 0 |
+| `--motif-note-count N` | Motif note count (0=default, 3-8) | 0 |
+| `--motif-motion N` | Motif motion (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 255=preset) | 255 |
+| `--motif-register-high N` | Motif register (0=default, 1=low, 2=high) | 0 |
+| `--motif-rhythm-density N` | Motif rhythm density (0=Sparse, 1=Medium, 2=Driving, 255=preset) | 255 |
 
 ### File Operations
 
@@ -232,7 +261,7 @@ The CLI auto-detects MIDI format (SMF1, SMF2/ktmidi, SMF2/Clip) and extracts gen
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--blueprint N` | Production blueprint by ID (0-8) or name | 0 |
+| `--blueprint N` | Production blueprint by ID (0-9) or name | 0 |
 
 Blueprint options (10 presets):
 - 0: Traditional (classic pop generation)
@@ -244,6 +273,7 @@ Blueprint options (10 presets):
 - 6: IdolKawaii (gentle dynamics, cute vibe)
 - 7: IdolCoolPop (four-on-floor with dance break)
 - 8: IdolEmo (quiet to explosive climax)
+- 9: BehavioralLoop (addictive loop mode, explicit selection only)
 - 255: Auto (weighted random selection)
 
 You can specify by name (case-insensitive):
@@ -264,6 +294,25 @@ Generate accompaniment first, then add vocal:
 
 # Listen and decide on vocal style, then regenerate with vocal
 ./midisketch_cli --regenerate bgm.mid --regenerate-vocal --vocal-attitude 2
+```
+
+### Advanced Generation
+
+Use new features for fine-tuned control:
+
+```bash
+# Generate with guitar, aggressive drive feel, and front-loaded energy
+./midisketch_cli --style 6 --guitar --drive-feel 80 --energy-curve 1
+
+# K-Pop style with syncopation and behavioral loop
+./midisketch_cli --style 0 --vocal-style 13 --enable-syncopation --addictive-mode
+
+# Custom melody overrides with motif control
+./midisketch_cli --style 3 --melody-max-leap 7 --melody-chorus-register-shift 4 \
+  --motif-motion 2 --motif-rhythm-density 2
+
+# Disable guitar and set mora-timed rhythm
+./midisketch_cli --style 0 --no-guitar --mora-rhythm-mode 1
 ```
 
 ### Quality Iteration

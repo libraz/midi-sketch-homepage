@@ -30,6 +30,7 @@ midi-sketch/
 │   │   ├── bass.h/cpp             # Bass patterns
 │   │   ├── drums.h/cpp            # Drum patterns
 │   │   ├── motif.h/cpp            # Background motif
+│   │   ├── guitar.h/cpp           # Accompaniment guitar
 │   │   ├── arpeggio.h/cpp         # Arpeggio patterns
 │   │   └── se.h/cpp               # Section markers
 │   ├── midi/              # MIDI output (8 headers)
@@ -50,20 +51,24 @@ The main entry point providing a high-level API:
 ::: tip Two Generation Workflows
 - **Vocal-First**: Use `generateVocal()` → iterate with `regenerateVocal()` → finalize with `generateAccompaniment()`
 - **Standard**: Use `generate()` or `generateFromConfig()` for one-shot generation
+
+Configurations can be constructed using the **SongConfigBuilder**, a fluent API with cascade change detection that automatically recalculates dependent parameters when upstream values change.
 :::
 
 ```cpp
 class MidiSketch {
   void generate(const GeneratorParams& params);
   void generateFromConfig(const SongConfig& config);
-  void regenerateVocal(const VocalConfig& config);
+  void generateWithVocal(const SongConfig& config);   // Vocal-priority full generation
   void generateVocal(const SongConfig& config);
+  void regenerateVocal(const VocalConfig& config);
   void generateAccompaniment(const AccompanimentConfig& config);
   void regenerateAccompaniment(uint32_t seed);
   void setVocalNotes(const SongConfig& config, const NoteInput* notes, size_t count);
 
   std::vector<uint8_t> getMidi() const;
   std::string getEventsJson() const;
+  std::string getChordTimeline() const;               // Chord progression timeline
   const Song& getSong() const;
 };
 ```
@@ -77,13 +82,15 @@ class Generator {
   Song generate(const GeneratorParams& params);
 private:
   void buildStructure();
+  void generateVocal();
+  void generateAux();
+  void generateMotif();
   void generateBass();
   void generateChord();
-  void generateVocal();
-  void generateAux();         // NEW: Aux sub-melody generation
-  void generateDrums();
-  void generateMotif();
+  void generateGuitar();      // Accompaniment guitar generation
   void generateArpeggio();
+  void generateDrums();
+  void generateSE();          // Section markers / sound effects
   void applyTransitionDynamics();
   void applyHumanization();
 };
@@ -91,16 +98,17 @@ private:
 
 ### Song Container
 
-Holds all generated data (8 tracks):
+Holds all generated data (9 tracks):
 
 ```cpp
 struct Song {
   Arrangement arrangement;     // Section layout
   MidiTrack vocal;            // Channel 0 - Main melody
-  MidiTrack aux;              // Channel 5 - Sub-melody (NEW)
+  MidiTrack aux;              // Channel 1 - Sub-melody
   MidiTrack chord;            // Channel 2 - Harmony
   MidiTrack bass;             // Channel 3 - Foundation
   MidiTrack motif;            // Channel 4 - BackgroundMotif style
+  MidiTrack guitar;           // Channel 6 - Accompaniment guitar
   MidiTrack arpeggio;         // Channel 5 - SynthDriven style
   MidiTrack drums;            // Channel 9 - Rhythm
   MidiTrack se;               // Channel 15 (markers)
@@ -113,7 +121,7 @@ Aux and Arpeggio share MIDI channel 5. In MelodyLead style, Aux is generated; in
 
 ## Data Flow
 
-### Standard Generation (BGM-first)
+### Standard Generation (Traditional paradigm)
 
 ```mermaid
 flowchart TD
@@ -123,22 +131,30 @@ flowchart TD
     end
 
     subgraph Generator
-        G[Generator] --> S1[buildStructure]
-        S1 --> S2[generateBass]
-        S2 --> S3[generateChord]
-        S3 --> S4[generateVocal]
-        S4 --> S5[generateAux]
-        S5 --> S6[generateDrums]
-        S6 --> S7[generateMotif]
-        S7 --> S8[generateArpeggio]
-        S8 --> S9[applyTransitionDynamics]
-        S9 --> S10[applyHumanization]
+        G[Generator] --> S0[buildStructure]
+        S0 --> S1[generateVocal]
+        S1 --> S2[generateAux]
+        S2 --> S3[generateMotif]
+        S3 --> S4[generateBass]
+        S4 --> S5[generateChord]
+        S5 --> S6[generateGuitar]
+        S6 --> S7[generateArpeggio]
+        S7 --> S8[generateDrums]
+        S8 --> S9[generateSE]
+        S9 --> S10[applyTransitionDynamics]
+        S10 --> S11[applyHumanization]
     end
 
-    S10 --> Song
+    S11 --> Song
     Song --> MW[MidiWriter]
     MW --> MIDI["SMF Type 1 Binary"]
 ```
+
+::: details Generation Order by Paradigm
+The track generation order varies depending on the Blueprint paradigm:
+- **Traditional / MelodyDriven**: Vocal -> Aux -> Motif -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE
+- **RhythmSync**: Motif -> Vocal -> Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE
+:::
 
 ### Vocal-First Generation
 
@@ -150,16 +166,20 @@ flowchart TD
 
     subgraph VocalFirst ["Vocal-First Workflow"]
         GV[generateVocal] --> V[Vocal Track]
+        V --> RV[regenerateVocal - iterate]
+        RV --> V
         V --> GA[generateAccompaniment]
         GA --> S1[generateAux]
-        S1 --> S2[generateBass]
-        S2 --> S3[generateChord]
-        S3 --> S4[generateDrums]
-        S4 --> S5[generateMotif]
+        S1 --> S2[generateMotif]
+        S2 --> S3[generateBass]
+        S3 --> S4[generateChord]
+        S4 --> S5[generateGuitar]
         S5 --> S6[generateArpeggio]
+        S6 --> S7[generateDrums]
+        S7 --> S8[generateSE]
     end
 
-    S6 --> Song
+    S8 --> Song
     Song --> MW[MidiWriter]
     MW --> MIDI["SMF Type 1 Binary"]
 ```
@@ -224,15 +244,72 @@ struct Section {
 
 Three composition styles affect the generation approach:
 
-| Style | Description |
-|-------|-------------|
-| **MelodyLead** | Traditional arrangement with prominent vocal melody |
-| **BackgroundMotif** | Repeated motif as primary focus, subdued vocals |
-| **SynthDriven** | Synth/arpeggio-forward electronic style |
+| Style | Vocal | Aux | Motif | Arpeggio | Description |
+|-------|:-----:|:---:|:-----:|:--------:|-------------|
+| **MelodyLead (0)** | Yes | Yes | Blueprint-dependent | Optional | Traditional arrangement with prominent vocal melody |
+| **BackgroundMotif (1)** | No | Yes | Yes | Optional | Vocal disabled, Aux enabled, Motif as primary focus |
+| **SynthDriven (2)** | No | No | Blueprint-dependent | Optional (manual enable) | Vocal/Aux disabled, synth/arpeggio-forward electronic style |
 
 ::: warning BGM-Only Modes
-BackgroundMotif and SynthDriven are **BGM-only modes** - no vocal track is generated. Use MelodyLead for songs with vocals.
+BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux; Arpeggio must be manually enabled with `arpeggioEnabled=true`. Use MelodyLead for songs with vocals.
 :::
+
+## Production Blueprints
+
+Blueprints are high-level production templates that control track generation order, motif behavior, and implicit overrides. There are 10 blueprints (ID 0-9), plus ID 255 for random selection.
+
+| ID | Name | Paradigm | RiffPolicy | Drums Required | Weight |
+|----|------|----------|------------|:--------------:|--------|
+| 0 | Traditional | Traditional | Free | - | 42% |
+| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14% |
+| 2 | StoryPop | MelodyDriven | Evolving | - | 10% |
+| 3 | Ballad | MelodyDriven | Free | - | 4% |
+| 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
+| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
+| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
+| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
+| 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
+| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+
+\* BehavioralLoop (ID 9) has weight 0% and must be explicitly selected (never chosen randomly). It forces `addictive_mode=true`, `RiffPolicy::LockedPitch`, and `HookIntensity::Maximum`.
+
+::: details Paradigms
+- **Traditional**: Vocal -> Aux -> Motif -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE
+- **RhythmSync**: Motif -> Vocal -> Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE (Motif as coordinate axis)
+- **MelodyDriven**: Vocal -> Aux -> Motif -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE (same order as Traditional but Motif follows melody)
+:::
+
+::: details RiffPolicy
+The API exposes three RiffPolicy values:
+- **Free (0)**: Motif varies per section (MotifRepeatScope controls cross-section behavior)
+- **Locked (1)**: Pitch contour fixed, expression varies (internally LockedContour)
+- **Evolving (2)**: 30% chance of change every 2 sections
+
+Internally, Blueprints use a finer-grained set: Free(0), LockedContour(1), LockedPitch(2), LockedAll(3), Evolving(4).
+:::
+
+::: details Blueprint Overrides
+Blueprints can override several SongConfig parameters:
+- `section_flow` overrides `formId` (when present and `formExplicit=false`)
+- `riff_policy` overrides `motifRepeatScope` (only when Free)
+- `drums_required` forces `drums_enabled=true` (unless `drumsEnabledExplicit=true` and `drumsEnabled=false`)
+- `drums_sync_vocal` overrides the SongConfig setting
+- `mood_mask` restricts compatible moods (check with `isMoodCompatible()`)
+:::
+
+## Parameter Application Order
+
+Parameters are applied in a specific cascade order, where later stages can override earlier ones:
+
+```
+StylePreset → VocalStylePreset → MelodicComplexity → SongConfig Overrides → Master Switch
+```
+
+1. **StylePreset**: Sets base parameters including melody configuration
+2. **VocalStylePreset**: Adjusts max_leap, syncopation, density, and other vocal characteristics
+3. **MelodicComplexity**: Applies density/leap multipliers (Simple reduces, Complex amplifies)
+4. **SongConfig Overrides**: User-specified melody/motif override parameters take highest priority
+5. **Master Switch**: `enableSyncopation=false` forces syncopation_prob=0.0 and allow_bar_crossing=false
 
 ## Random Number Generation
 
@@ -253,7 +330,7 @@ When seed is 0, current clock time is used for randomization.
 
 The library compiles to WebAssembly via Emscripten:
 
-- **Output**: ~309KB WASM + ~69KB JS (wrapper + glue)
+- **Output**: ~555KB WASM (gzip: ~225KB) + ~80KB JS (wrapper + glue)
 - **No external dependencies**: Pure C++17
 - **ES6 module**: Modular JavaScript wrapper
 
@@ -278,7 +355,15 @@ midisketch_destroy(handle);
 
 Key functions:
 - `midisketch_generate()` - Core generation
-- `midisketch_regenerate_melody()` - Melody variation
+- `midisketch_generate_vocal_from_json()` - Vocal-only generation
+- `midisketch_regenerate_vocal_from_json()` - Vocal regeneration
+- `midisketch_generate_accompaniment_from_json()` - Accompaniment generation
+- `midisketch_regenerate_accompaniment_from_json()` - Accompaniment regeneration
+- `midisketch_generate_with_vocal_from_json()` - Vocal-priority full generation
+- `midisketch_set_vocal_notes_from_json()` - Custom vocal injection
+- `midisketch_get_piano_roll_safety()` - Piano roll safety analysis
+- `midisketch_get_chord_timeline()` - Chord timeline retrieval
 - `midisketch_get_midi()` - MIDI binary output
 - `midisketch_get_events()` - JSON event data
 - `midisketch_get_info()` - Metadata (bars, ticks, BPM)
+- `midisketch_blueprint_count()` / `midisketch_blueprint_name()` - Blueprint information

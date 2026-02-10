@@ -24,7 +24,7 @@ flowchart TD
 
     subgraph Step2 [Step 2: Accompaniment]
         A1[generateAccompaniment]
-        A1 --> A2[Aux → Bass → Chord → Drums]
+        A1 --> A2[Aux → Bass → Chord → Guitar → Drums]
     end
 
     V2 -->|Satisfied| A1
@@ -40,21 +40,29 @@ flowchart LR
         B1[Structure] --> B2[Motif/Arpeggio]
         B2 --> B3[Bass]
         B3 --> B4[Chord]
-        B4 --> B5[Drums]
+        B4 --> B5[Guitar]
+        B5 --> B6[Drums]
     end
 ```
 
 ## CompositionStyle Branching
 
-| Style | Primary Track | Vocal | Generation Order |
-|-------|---------------|-------|------------------|
-| **MelodyLead** | Vocal | Yes | Vocal → Aux → Bass → Chord → Drums |
-| **BackgroundMotif** | Motif | No | Motif → Bass → Chord → Drums |
-| **SynthDriven** | Arpeggio | No | Bass → Chord → Arpeggio → Drums |
+| Style | Primary Track | Vocal | Aux | Generation Order |
+|-------|---------------|-------|-----|------------------|
+| **MelodyLead** | Vocal | Yes | Yes | Vocal → Aux → Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **BackgroundMotif** | Motif | No | Yes | Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **SynthDriven** | Arpeggio | No | No | Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio (manual) → Drums → SE |
+
+::: info Generation Paradigms
+Three paradigms affect the precise ordering of track generation:
+- **Traditional**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+- **RhythmSync**: Motif → Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE
+- **MelodyDriven**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+:::
 
 ## Phase 1: Structure Building
 
-The generator first creates the song structure based on `StructurePattern`:
+The generator first creates the song structure based on `StructurePattern`. If an **Energy Curve** is specified (GradualBuild, FrontLoaded, WavePattern, or SteadyState), it adjusts section energy levels during structure building to shape the overall dynamic arc of the song.
 
 ```cpp
 void Generator::buildStructure() {
@@ -92,7 +100,7 @@ struct Section {
 
 ### Vocal Track (MelodyLead only)
 
-The most complex generator with phrase caching and template-driven design:
+The most complex generator with phrase caching and template-driven design. When **melody overrides** are specified, parameters such as max leap, syncopation probability, phrase length, long note ratio, chorus register shift, hook repetition, and leading tone behavior take precedence over template defaults:
 
 ```mermaid
 flowchart TD
@@ -170,6 +178,7 @@ flowchart TD
 | Unison | Vocal unison doubling | Chorus emphasis |
 | MelodicHook | Melodic hook riff | Hook-focused sections |
 | MotifCounter | Counter melody (contrary motion) | Polyphonic textures |
+| SustainPad | Whole-note chord tone pad | Sustained harmonic support |
 
 ### Bass Generation
 
@@ -193,6 +202,10 @@ flowchart TD
 ```
 
 **Bass Patterns:**
+
+The bass system supports 17+ pattern types (BassPattern) including Sparse, Standard, Driving, and genre-specific variants. The active pattern is selected automatically based on mood and section, or can be influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot configuration (0=auto, 1-17 maps to BassPattern+1).
+
+Common pattern categories:
 - **Sparse**: Quarter notes on beats 1 and 3 (ballad, chill)
 - **Standard**: Quarter note rhythm with occasional eighths
 - **Driving**: Eighth note patterns with approach notes
@@ -228,6 +241,12 @@ void Generator::generateChord() {
 When bass plays the root on beat 1, chord voicing automatically omits the root to avoid muddiness. This creates cleaner, less cluttered arrangements.
 :::
 
+### Guitar Track
+
+Generates accompaniment guitar patterns on a dedicated MIDI channel. Controlled by `guitarEnabled` (JS default: `false`, C++ default: `true`). The guitar track is influenced by Blueprint constraints including `guitar_skill` (skill level affecting pattern complexity) and `guitar_below_vocal` (keeps guitar voicings below the vocal register to avoid masking). Guitar generation occurs after chord generation, allowing it to complement the existing harmonic voicing.
+
+Per-section guitar style can be influenced via `guitar_style_hint` (0-7) in the Blueprint's SectionSlot configuration, where 0 selects automatically based on mood and energy.
+
 ### Drums Generation
 
 Drum patterns are selected based on mood:
@@ -241,6 +260,8 @@ Drum patterns are selected based on mood:
 | Rock | Ride cymbal, crash accents | LightRock |
 | Synth | Tight 16th hi-hat | Yoasobi, Synthwave |
 
+Blueprints can specify `euclidean_drums_percent` to control the probability of using Euclidean rhythm patterns, and per-section `drum_role` (Full, Ambient, Minimal, FXOnly) to shape drum behavior across the arrangement.
+
 **Fill Generation:**
 - Tom descend/ascend patterns
 - Snare rolls
@@ -248,13 +269,13 @@ Drum patterns are selected based on mood:
 
 ### Motif Track (BackgroundMotif style)
 
-Generates repeating patterns as the primary melodic element:
+Generates repeating patterns as the primary melodic element. When **motif overrides** are specified, parameters such as motif length (0=auto, 1/2/4 beats), note count (0=auto, 3-8), motion (0-4 via API, internal 5=Ostinato for Blueprints only), register (0=auto, 1=low, 2=high), and rhythm density (0=Sparse, 1=Medium, 2=Driving) take precedence over style defaults:
 
 ```cpp
 MotifParams params {
     .length = MotifLength::TwoBars,    // 2 or 4 bars
     .rhythm_density = RhythmDensity::Medium,
-    .motion = MotifMotion::Stepwise,
+    .motion = MotifMotion::Stepwise,   // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
     .repeat_scope = RepeatScope::FullSong
 };
 ```
@@ -344,6 +365,7 @@ flowchart TD
 | Bass | 3 | 33 (E.Bass) |
 | Motif | 4 | 81 (Synth Lead) |
 | Arpeggio | 5 | 81 (Saw Lead) |
+| Guitar | 6 | 25 (Acoustic Guitar) |
 | Drums | 9 | GM Drums |
 | SE | 15 | Text events |
 

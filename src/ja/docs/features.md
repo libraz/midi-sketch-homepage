@@ -15,7 +15,7 @@ AI音声生成ツール（Suno、Udio など）と異なり、MIDI Sketch は**�
 | 再現性 | しばしば不安定 | 決定的（シードベース） |
 
 ::: tip 得られるもの
-- 8つの分離トラック（vocal, aux, chord, bass, drums, motif, arpeggio, SE）
+- 9つの分離トラック（vocal, aux, chord, bass, motif, guitar, arpeggio, drums, SE）
 - 各トラックは個別のMIDIチャンネル
 - 任意のDAWに直接インポート
 - 自分の音源とエフェクトを使用
@@ -126,6 +126,83 @@ Kostka & Payne の *Tonal Harmony* フレームワークに基づく：
 セカンダリードミナント（V/V、V/vi など）は自動的に挿入され、ターゲットコードへのより強い和声的引力を生み出します。手動設定なしでコード進行を豊かにします。
 :::
 
+### ギタートラック
+
+::: details 伴奏ギター生成
+専用のギタートラックがBlueprintの制約（ギタースキルレベル、ギターをボーカルの下に配置するフラグなど）に基づいて伴奏パターンを生成します。ギターは独自のMIDIチャンネルに出力され、個別に有効/無効を切り替えられます。
+:::
+
+### エナジーカーブ
+
+::: details 楽曲エネルギーの進行
+エナジーカーブシステムは、セクションごとの設定を超えて、楽曲全体のエネルギー進行を高レベルで制御します：
+- **GradualBuild**: 最初から最後まで徐々にエネルギーが増加
+- **FrontLoaded**: 冒頭でハイエナジー、終盤に向けて減衰
+- **WavePattern**: セクション間でハイとローを交互に繰り返す
+- **SteadyState**: 楽曲全体で一定のエネルギーレベル
+:::
+
+### メロディ＆モチーフオーバーライド
+
+::: details きめ細かいパラメータ制御
+**メロディオーバーライド**はメロディ生成パラメータのきめ細かい制御を提供：
+- 最大跳躍幅、シンコペーション確率、フレーズ長
+- 長音符比率、サビの音域シフト
+- フック繰り返し、リーディングトーンの振る舞い
+
+**モチーフオーバーライド**はモチーフ生成パラメータのきめ細かい制御を提供：
+- モチーフ長、音数、モーション（0-4）
+- レジスター（高/中）、リズム密度
+:::
+
+### 拡張アルペジオパターン
+
+::: details 8種類のアルペジオパターン
+基本のUp、Down、UpDown、Randomパターンに加え、以下のパターンが追加：
+- **Pinwheel**: 方向が交互に変わるパターン
+- **PedalRoot**: 各音の間にルートに戻る
+- **Alberti**: クラシック的な分散和音パターン（低-高-中-高）
+- **BrokenChord**: 不規則なコードトーン配列
+:::
+
+### パフォーマンスコントロール
+
+::: details DriveFeel、シンコペーション＆モーラリズム
+- **DriveFeel**: レイドバック（0）からアグレッシブ（100）まで演奏の強度を制御。タイミングのタイトさやベロシティ強調に影響
+- **シンコペーション**: `enableSyncopation`トグルでノートをグリッドからずらしてグルーブ効果を付加
+- **MoraRhythmMode**: 日本語のモーラ（拍）に合わせたリズムモードをサポート。音符の長さを音節タイミングパターンに揃える
+:::
+
+### ピアノロールセーフティAPI
+
+::: details ノートの安全性分析
+ピアノロールセーフティAPIは、生成された楽曲の任意の位置でピッチの安全性を分析します。各MIDIピッチ（0-127）について以下を報告：
+- **安全レベル**: Safe（コードトーン）、Warning（テンション/低音域/経過音）、またはDissonant（非スケール/衝突）
+- **理由フラグ**: そのレベルに判定された詳細なビットフラグ（例：ChordTone、Tension、LargeLeap、Minor2nd衝突）
+- **衝突検出**: 指定ピッチと衝突するトラックを特定
+- **推奨ピッチ**: 現在の和声コンテキストに基づく最大8つの推奨ピッチ
+
+任意の生成呼び出し（`generateVocal`、`generateFromConfig`等）の後に使用し、ピアノロールエディタでリアルタイムのピッチガイダンスを提供します。
+:::
+
+### カスタムボーカルAPI
+
+::: details ユーザー定義メロディ入力
+`setVocalNotes` APIを使用すると、内蔵メロディ生成器の代わりにカスタムメロディ（ノートイベントの配列）を注入できます。伴奏はユーザー提供のボーカルに基づいて生成され、コード認識、衝突回避、Auxトラック生成を含む完全なハーモニーコンテキスト協調が行われます。
+:::
+
+### コードタイムラインAPI
+
+::: details 和声コンテキストの取得
+`getChordTimeline` APIは、生成された楽曲のコード進行タイムラインを返します。ティック位置、コードディグリー、セカンダリードミナント情報が含まれます。再生同期や和声分析に使用します。
+:::
+
+### SongConfigBuilder
+
+::: details 流暢な設定API
+`SongConfigBuilder`はカスケード変更検出付きの流暢なAPIで楽曲設定を構築します。パラメータが変更されると依存パラメータが自動的に再計算され、手動調整なしで一貫した設定が保証されます。
+:::
+
 ::: info 学術的基盤
 実装の参考文献：
 - [Kostka & Payne: *Tonal Harmony*](https://www.mheducation.com/highered/product/tonal-harmony-kostka.html) - NCT分類とボイスリーディング
@@ -171,13 +248,14 @@ Kostka & Payne の *Tonal Harmony* フレームワークに基づく：
 
 ## スタイルプリセット
 
-20のムードプリセットをカバー：
+17のスタイルプリセット（stylePresetId 0-16）が全体的な楽曲の性格を決定し、それぞれが24の内部ムードのいずれかにマッピングされます。ムード（0-23）は `moodExplicit` で直接設定することも可能で、以下をカバー：
 
 - J-Pop / K-Pop / シティポップ
-- EDM / エレクトロポップ / シンセウェイブ
-- バラード / R&B / チル
+- EDM / エレクトロポップ / シンセウェイブ / フューチャーベース
+- バラード / R&B / R&Bネオソウル / チル / Lofi
 - ロック / ライトロック
 - アニメ / ボカロ
+- ラテンポップ / トラップ
 - その他
 
 ::: details 各プリセットが設定するもの
@@ -186,20 +264,23 @@ Kostka & Payne の *Tonal Harmony* フレームワークに基づく：
 - コードボイシングスタイル
 - メロディテンプレートの傾向
 - 評価の重み
+- ムード依存のコードエクステンション確率
 :::
+
+14のボーカルスタイルプリセット（Auto、Standard、Vocaloid、UltraVocaloid、Idol、Ballad、Rock、CityPop、Anime、BrightKira、CoolSynth、CuteAffected、PowerfulShout、KPop）が利用可能で、ムードとは独立してメロディ生成特性を微調整できます。
 
 ## 複数の作曲スタイル
 
 3つの作曲パラダイム：
 
-| スタイル | 主要素 | 用途 |
-|---------|--------|------|
-| **MelodyLead** | ボーカルメロディ | 歌ありの曲 |
-| **BackgroundMotif** | 繰り返しモチーフ | BGM、Lo-Fi |
-| **SynthDriven** | アルペジオ | エレクトロニック、EDM |
+| スタイル | Vocal | Aux | Motif | Arpeggio | 用途 |
+|---------|:-----:|:---:|:-----:|:--------:|------|
+| **MelodyLead (0)** | Yes | Yes | Blueprint依存 | Optional | 歌ありの曲 |
+| **BackgroundMotif (1)** | No | Yes | Yes | Optional | BGM、Lo-Fi |
+| **SynthDriven (2)** | No | No | Blueprint依存 | Optional（手動有効化） | エレクトロニック、EDM |
 
 ::: warning BGM専用モード
-BackgroundMotif と SynthDriven は BGM専用モードです。ボーカルトラックは生成されません。
+BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif生成を強制します。SynthDrivenはVocalとAuxの両方を無効にし、Arpeggioは`arpeggioEnabled=true`で手動で有効にする必要があります。
 :::
 
 ## ボーカルファーストワークフロー
@@ -208,21 +289,21 @@ MelodyLead スタイルでは、伴奏を生成する前にメロディを反復
 
 ```mermaid
 flowchart LR
-    A[ボーカル生成] --> B[プレビュー]
-    B --> C{満足?}
-    C -->|No| D[シード変更]
-    D --> A
-    C -->|Yes| E[伴奏生成]
-    E --> F[MIDIエクスポート]
+    A[generateVocal] --> B[Preview]
+    B --> C{Satisfied?}
+    C -->|No| D[regenerateVocal]
+    D --> B
+    C -->|Yes| E[generateAccompaniment]
+    E --> F[Export MIDI]
 ```
 
 ::: tip 納得するまで反復
-気に入るメロディが見つかるまで異なるシードで再生成し、その後バッキングトラックを生成。
+`generateVocal()`で初期メロディを作成し、`regenerateVocal()`で新しいシードやVocalConfigを使ってバリエーションを試します。納得したら`generateAccompaniment()`でバッキングトラックを追加します。または、`generateWithVocal()`を使ってボーカル優先のワンショット生成も可能です。
 :::
 
 ## 軽量＆ポータブル
 
-- **約309KB WASM** + 約69KB JS
+- **約555KB WASM**（gzip: 約225KB）+ 約80KB JS
 - **外部依存なし**（純粋なC++17）
 - ブラウザ、Node.js、ネイティブCLIで動作
 - API呼び出し不要、インターネット不要
@@ -267,4 +348,3 @@ Apache 2.0 ライセンス - 生成したMIDIを商用利用可能、改変・�
 - **機械学習ではない** - 明示的な音楽理論ルールを使用
 - **クラウドベースではない** - すべてローカルで実行
 :::
-

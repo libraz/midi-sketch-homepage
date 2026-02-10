@@ -55,7 +55,7 @@ At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact 
 
 ## Mood Presets
 
-20 mood presets define the overall feel:
+24 mood presets define the overall feel:
 
 | ID | Name | BPM | Drum Style | Character |
 |----|------|-----|------------|-----------|
@@ -79,15 +79,23 @@ At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact 
 | 17 | Synthwave | 118 | Synth | Retro synth, neon |
 | 18 | FutureBass | 145 | Synth | Modern electronic |
 | 19 | CityPop | 110 | Standard | 80s city pop vibe |
+| 20 | RnBNeoSoul | 85-100 | Standard | R&B/Neo-Soul, strong swing, extended chords |
+| 21 | LatinPop | 95 | Standard | Latin Pop, dembow rhythm, tresillo bass |
+| 22 | Trap | 70 | Synth | Trap, half-time feel, 808 sub-bass, hi-hat rolls |
+| 23 | Lofi | 80 | Sparse | Lo-fi, strong swing, max velocity 90 |
 
 ### Mood Categories
 
 ```mermaid
 flowchart TD
-    subgraph Slow ["Slow (80-100 BPM)"]
+    subgraph Slow ["Slow (70-100 BPM)"]
         S1[Ballad]
         S2[Sentimental]
         S3[Chill]
+        S4[RnBNeoSoul]
+        S5[LatinPop]
+        S6[Trap]
+        S7[Lofi]
     end
 
     subgraph Mid ["Mid (100-125 BPM)"]
@@ -178,41 +186,45 @@ Style presets provide sensible defaults for BPM, structure, vocal attitude, and 
 
 3 composition approaches:
 
-| Style | Focus | Vocal Role | Key Features |
-|-------|-------|------------|--------------|
-| MelodyLead | Vocal melody | Primary | Full melodic expression |
-| BackgroundMotif | Repeating pattern | Secondary | Motif as main element |
-| SynthDriven | Synth/Arpeggio | Secondary | Electronic, arpeggiated |
+| Style | Focus | Vocal | Aux | Key Features |
+|-------|-------|-------|-----|--------------|
+| MelodyLead (0) | Vocal melody | Yes | Yes | Full melodic expression |
+| BackgroundMotif (1) | Repeating pattern | No | Yes | Motif as main element, Aux stays active |
+| SynthDriven (2) | Synth/Arpeggio | No | No | Electronic, arpeggio requires manual `arpeggioEnabled=true` |
 
 ::: warning BGM-Only Modes
-BackgroundMotif and SynthDriven do not generate vocal tracks. Use MelodyLead for songs with vocals.
+BackgroundMotif and SynthDriven do not generate vocal tracks. BackgroundMotif keeps Aux active for sub-melody support. SynthDriven disables both Vocal and Aux. Use MelodyLead for songs with vocals.
 :::
 
 ## Production Blueprints
 
-9 production blueprints control **how** the music is generated (arrangement style), independent of style/mood:
+10 production blueprints control **how** the music is generated (arrangement style), independent of style/mood:
 
 | ID | Name | Paradigm | RiffPolicy | Drums Required | Weight |
 |----|------|----------|------------|:--------------:|:------:|
-| 0 | Traditional | Traditional | Free | - | 42 |
-| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14 |
-| 2 | StoryPop | MelodyDriven | Evolving | - | 10 |
-| 3 | Ballad | MelodyDriven | Free | - | 4 |
-| 4 | IdolStandard | MelodyDriven | Evolving | - | 10 |
-| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6 |
-| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5 |
-| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5 |
-| 8 | IdolEmo | MelodyDriven | Locked | - | 4 |
+| 0 | Traditional | Traditional | Free | - | 42% |
+| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14% |
+| 2 | StoryPop | MelodyDriven | Evolving | - | 10% |
+| 3 | Ballad | MelodyDriven | Free | - | 4% |
+| 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
+| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
+| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
+| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
+| 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
+| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+| 255 | (Random) | - | - | - | - |
+
+\*BehavioralLoop: explicit selection only (weight 0%, not randomly selected). Forces `addictive_mode=true`, `HookIntensity=Maximum`, `RiffPolicy=LockedPitch`.
 
 Use `blueprintId: 255` for auto-selection based on weights.
 
 ### Generation Paradigms
 
-| Paradigm | Description |
-|----------|-------------|
-| Traditional | Classic pop generation (Bass → Chord → Vocal) |
-| RhythmSync | Drums & bass sync with vocal melody |
-| MelodyDriven | Melody-centered, accompaniment follows |
+| Paradigm | Track Order | Description |
+|----------|-------------|-------------|
+| Traditional | Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE | Classic pop generation |
+| RhythmSync | Motif → Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE | Motif-first, rhythm-locked groove |
+| MelodyDriven | Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE | Melody-centered, accompaniment follows |
 
 ### RiffPolicy
 
@@ -220,14 +232,14 @@ Use `blueprintId: 255` for auto-selection based on weights.
 |--------|:-----:|-------------|
 | Free | 0 | Each section varies independently |
 | LockedContour | 1 | Contour locked, rhythm varies |
-| LockedPitch | 2 | Pitch locked, contour varies |
+| LockedPitch | 2 | Pitch fully locked, velocity varies |
 | LockedAll | 3 | All aspects locked |
 | Evolving | 4 | Gradual changes (30% chance every 2 sections) |
 
 Note: `Locked` is an alias for `LockedContour` (1).
 
 ::: tip Blueprint Override
-When using a non-Traditional blueprint (ID 1-8), the `formId` setting is overridden by the blueprint's section flow. Use ID 0 (Traditional) to keep full control of form structure.
+When using a non-Traditional blueprint (ID 1-9), the `formId` setting is overridden by the blueprint's section flow. Use ID 0 (Traditional) to keep full control of form structure.
 :::
 
 ### MelodyLead
@@ -245,20 +257,44 @@ flowchart LR
 ```mermaid
 flowchart LR
     MT[Motif] -->|Lead| M[Mix]
-    V[Vocal] -->|Background| M
+    AX[Aux] -->|Support| M
     C[Chord] -->|Support| M
     B[Bass] -->|Foundation| M
+    D[Drums] -->|Rhythm| M
 ```
+
+::: info No Vocal in BackgroundMotif
+BackgroundMotif disables the Vocal track. The Aux track remains active and provides sub-melody support alongside the motif.
+:::
 
 ### SynthDriven
 
 ```mermaid
 flowchart LR
     A[Arpeggio] -->|Lead| M[Mix]
-    V[Vocal] -->|Background| M
     C[Chord] -->|Pad| M
     B[Bass] -->|Foundation| M
+    D[Drums] -->|Rhythm| M
 ```
+
+::: info No Vocal/Aux in SynthDriven
+SynthDriven disables both the Vocal and Aux tracks. Arpeggio must be manually enabled (`arpeggioEnabled=true`) as it is not auto-enabled.
+:::
+
+## Arpeggio Patterns
+
+8 arpeggio patterns for SynthDriven composition style:
+
+| ID | Name | Description |
+|----|------|-------------|
+| 0 | Up | Ascending pattern |
+| 1 | Down | Descending pattern |
+| 2 | UpDown | Up then down pattern |
+| 3 | Random | Random note order |
+| 4 | Pinwheel | Rotating pattern |
+| 5 | PedalRoot | Root pedal tone with moving upper voices |
+| 6 | Alberti | Classical Alberti bass pattern |
+| 7 | BrokenChord | Broken chord pattern |
 
 ## Vocal Attitudes
 
@@ -290,7 +326,7 @@ flowchart LR
 
 ## Vocal Style Presets
 
-13 vocal style presets that automatically select melody templates:
+14 vocal style presets that automatically select melody templates:
 
 | ID | Name | Template | Character |
 |----|------|----------|-----------|
@@ -307,6 +343,7 @@ flowchart LR
 | 10 | CoolSynth | PlateauTalk | Electronic, precise |
 | 11 | CuteAffected | HookRepeat | Playful, cute |
 | 12 | PowerfulShout | RunUpTarget | Intense, shout-y |
+| 13 | KPop | HookRepeat | K-POP style with syncopation focus and hook-driven melody |
 
 ### Vocal Style Categories
 
@@ -323,6 +360,7 @@ flowchart TD
         V4[Idol]
         V8[Anime]
         V9[BrightKira]
+        V13[KPop]
     end
 
     subgraph Slow ["Slow/Sparse"]
@@ -367,6 +405,69 @@ flowchart TD
 | Syncopated (3) | Syncopated rhythm | Latin, funk |
 | Driving16th (4) | 16th note drive | Electronic, fast pop |
 | Bouncy8th (5) | Bouncy 8th notes | Upbeat pop |
+
+::: warning Syncopation Dependency
+The syncopation effects of VocalGroove (OffBeat, Swing, Syncopated, Driving16th, Bouncy8th) only take effect when `enableSyncopation=true`. When `enableSyncopation=false`, syncopation weight is forced to 0.0, `syncopation_prob` is set to 0.0, and `allow_bar_crossing` is set to `false`. Timing offsets (e.g., +30 ticks for OffBeat) are applied regardless of the `enableSyncopation` setting.
+:::
+
+## Energy Curve
+
+4 energy curve options control how energy progresses throughout the song:
+
+| Value | Name | Description |
+|-------|------|-------------|
+| 0 | GradualBuild | Gradually building energy (default) |
+| 1 | FrontLoaded | High energy from the start, settling later |
+| 2 | WavePattern | Wave-like energy progression |
+| 3 | SteadyState | Maintain consistent energy level |
+
+## Mora Rhythm Mode
+
+3 rhythm modes for syllable timing:
+
+| Value | Name | Description |
+|-------|------|-------------|
+| 0 | Standard | English stress-timed rhythm |
+| 1 | MoraTimed | Japanese mora-timed (equal syllable groups) |
+| 2 | Auto | Auto-select from VocalStylePreset (default) |
+
+## Melody Overrides
+
+Fine-grained melody parameters that override VocalStylePreset and MelodicComplexity defaults. Sentinel values (0, 0xFF, -128) preserve preset defaults.
+
+| Parameter | Range | Default | Description |
+|-----------|-------|---------|-------------|
+| `melodyMaxLeap` | 0=preset, 1-12 | 0 | Maximum melodic leap in semitones |
+| `melodySyncopationProb` | 0-100, 0xFF=preset | 0xFF | Syncopation probability (%) |
+| `melodyPhraseLength` | 0=preset, 1-8 | 0 | Phrase length in bars |
+| `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0xFF | Long note ratio (%) |
+| `melodyChorusRegisterShift` | -12 to +12, -128=preset | -128 | Chorus register shift in semitones |
+| `melodyHookRepetition` | 0=preset, 1=off, 2=on | 0 | Hook repetition (tri-state) |
+| `melodyUseLeadingTone` | 0=preset, 1=off, 2=on | 0 | Leading tone insertion at section boundaries (tri-state) |
+
+::: tip Parameter Application Order
+Melody overrides are applied after StylePreset, VocalStylePreset, and MelodicComplexity. User-specified values always take the highest priority.
+:::
+
+## Motif Overrides
+
+Fine-grained motif parameters that override style defaults:
+
+| Parameter | Range | Default | Description |
+|-----------|-------|---------|-------------|
+| `motifLength` | 0=auto, 1/2/4 | 0 | Motif length in beats |
+| `motifNoteCount` | 0=auto, 3-8 | 0 | Number of notes in the motif |
+| `motifMotion` | 0xFF=preset, 0-4 | 0xFF | Motion type (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; internal 5=Ostinato) |
+| `motifRegisterHigh` | 0=auto, 1=low, 2=high | 0 | Register range |
+| `motifRhythmDensity` | 0xFF=preset, 0-2 | 0xFF | Rhythm density (0=Sparse, 1=Medium, 2=Driving) |
+
+## Drive Feel
+
+Continuous value 0-100 controlling performance intensity:
+
+- **0** = Laid-back (relaxed timing, lower velocity)
+- **50** = Neutral (default)
+- **100** = Aggressive (ahead timing, higher velocity, enhanced syncopation with `enableSyncopation=true`)
 
 ## Key Options
 
@@ -478,4 +579,76 @@ config.mixPattern = 1                  // Standard mix
 config.callDensity = 2                 // Standard density
 config.modulationTiming = 1            // Modulate at last chorus
 config.modulationSemitones = 2         // Up 2 semitones
+```
+
+### Syncopation & Groove
+
+```javascript
+const config = createDefaultConfig(0)
+config.enableSyncopation = true        // Enable syncopation
+config.vocalGroove = 3                 // Syncopated rhythm
+```
+
+### Energy Curve
+
+```javascript
+const config = createDefaultConfig(0)
+config.energyCurve = 1                 // FrontLoaded energy
+```
+
+### Melody Fine-Grained Control
+
+```javascript
+const config = createDefaultConfig(0)
+config.melodyMaxLeap = 5              // Max melodic leap in semitones
+config.melodyPhraseLength = 4         // Phrase length in bars
+config.melodyHookRepetition = 2       // Hook repetition ON (tri-state: 0=preset, 1=off, 2=on)
+```
+
+### Motif Fine-Grained Control
+
+```javascript
+const config = createDefaultConfig(12) // Background Motif
+config.motifLength = 4                 // Motif length in beats
+config.motifNoteCount = 5             // Number of notes in motif
+config.motifMotion = 1                // Motif motion type
+config.motifRhythmDensity = 2         // Rhythm density level
+```
+
+### Guitar Track
+
+```javascript
+const config = createDefaultConfig(0)
+config.guitarEnabled = true            // Enable guitar track
+```
+
+### R&B / Neo-Soul
+
+```javascript
+const config = createDefaultConfig(0)
+config.stylePresetId = 20             // RnBNeoSoul mood
+config.chordExt7th = true             // Enable 7th extensions
+config.chordExt9th = true             // Enable 9th extensions
+```
+
+### Lo-fi BGM
+
+```javascript
+const config = createDefaultConfig(12) // Background Motif
+config.stylePresetId = 23             // Lofi mood
+config.compositionStyle = 1           // BackgroundMotif
+```
+
+### Mora Timing
+
+```javascript
+const config = createDefaultConfig(0)
+config.moraRhythmMode = 1             // MoraTimed (Japanese mora-timed)
+```
+
+### BehavioralLoop
+
+```javascript
+const config = createDefaultConfig(0)
+config.blueprintId = 9                // BehavioralLoop (addictive loop)
 ```

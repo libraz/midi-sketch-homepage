@@ -49,7 +49,7 @@ MIDI Sketch generates multi-track MIDI files with:
 ::: info Track Availability
 Not all tracks are generated for every style:
 - **Motif** track: Only in `BackgroundMotif` composition style
-- **Arpeggio** track: Only when `arpeggioEnabled: true` or in `SynthDriven` style
+- **Arpeggio** track: Only when `arpeggioEnabled: true` (must be explicitly enabled, even in `SynthDriven` style)
 - **Vocal/Aux**: Can be skipped with `skipVocal: true` for BGM-only generation
 :::
 

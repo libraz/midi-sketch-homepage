@@ -39,13 +39,19 @@ make midisketch_cli
 |--------|------|-----------|
 | `--seed N` | ランダムシード（0 = 自動ランダム） | 0 |
 | `--style N` | スタイルプリセットID（0-16） | 0 |
-| `--mood N` | ムードID（0-19）、スタイルマッピングを上書き | - |
-| `--chord N` | コード進行ID（0-19） | - |
+| `--mood N` | ムードID（0-23）、スタイルマッピングを上書き | - |
+| `--chord N` | コード進行ID（0-21） | - |
 | `--bpm N` | BPM（40-240） | スタイルプリセット |
 | `--key N` | キー（0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B） | 0 |
 | `--form N` | フォーム/構成パターンID（0-17） | - |
 | `--duration N` | 目標再生時間（秒）（0 = パターン使用） | 0 |
-| `--blueprint N` | Production Blueprint ID または名前（0-8, 255=自動） | 0 |
+| `--blueprint N` | Production Blueprint ID または名前（0-9, 255=自動） | 0 |
+| `--guitar` / `--no-guitar` | ギタートラックの有効化/無効化 | 有効 |
+| `--drive-feel N` | ドライブ感（0=レイドバック, 50=ニュートラル, 100=アグレッシブ） | 50 |
+| `--energy-curve N` | エネルギーカーブ（0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState） | 0 |
+| `--enable-syncopation` / `--no-syncopation` | シンコペーション効果の有効化/無効化 | 無効 |
+| `--mora-rhythm-mode N` | モーラリズム（0=Standard, 1=MoraTimed, 2=Auto） | 2 |
+| `--addictive-mode` | Behavioral Loop モードを有効化 | 無効 |
 
 ### ボーカルパラメータ
 
@@ -54,12 +60,12 @@ make midisketch_cli
 | `--skip-vocal` | 初期生成でボーカルをスキップ（BGM先行ワークフロー） | - |
 | `--regenerate-vocal` | 初期生成後にボーカルを再生成 | - |
 | `--vocal-seed N` | ボーカル再生成用シード | - |
-| `--vocal-attitude N` | ボーカル態度（0=Clean, 1=Expressive, 2=Raw） | 1 |
-| `--vocal-low N` | ボーカル音域下限（MIDIノート） | 57 |
+| `--vocal-attitude N` | ボーカル態度（0=Clean, 1=Expressive, 2=Raw） | 0 |
+| `--vocal-low N` | ボーカル音域下限（MIDIノート） | 60 |
 | `--vocal-high N` | ボーカル音域上限（MIDIノート） | 79 |
 | `--vocal-style N` | ボーカルスタイルプリセット | 0（自動） |
 
-ボーカルスタイルオプション（13プリセット）：
+ボーカルスタイルオプション（14プリセット）：
 - 0: Auto（スタイルプリセットに基づいて自動選択）
 - 1: Standard
 - 2: Vocaloid（高速、広い跳躍）
@@ -73,6 +79,29 @@ make midisketch_cli
 - 10: CoolSynth（エレクトロニック、正確）
 - 11: CuteAffected（プレイフル）
 - 12: PowerfulShout（激しい、シャウト系）
+- 13: KPop（タイトなリズム、ダンス志向）
+
+### メロディオーバーライド
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--melody-max-leap N` | メロディの最大跳躍（半音数、0-12、0=プリセット） | 0 |
+| `--melody-syncopation-prob N` | シンコペーション確率（0-100、255=プリセット） | 255 |
+| `--melody-phrase-length N` | フレーズ長（0-8、0=プリセット） | 0 |
+| `--melody-long-note-ratio N` | 長音比率（0-100、255=プリセット） | 255 |
+| `--melody-chorus-register-shift N` | サビの音域シフト（-12〜12、-128=プリセット） | -128 |
+| `--melody-hook-repetition N` | フック繰り返し（0=プリセット, 1=オフ, 2=オン） | 0 |
+| `--melody-use-leading-tone N` | 導音（0=プリセット, 1=オフ, 2=オン） | 0 |
+
+### モチーフオーバーライド
+
+| フラグ | 説明 | デフォルト |
+|--------|------|-----------|
+| `--motif-length N` | モチーフ長（拍数、0=デフォルト, 1, 2, 4） | 0 |
+| `--motif-note-count N` | モチーフ音数（0=デフォルト, 3-8） | 0 |
+| `--motif-motion N` | モチーフの動き（0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 255=プリセット） | 255 |
+| `--motif-register-high N` | モチーフ音域（0=デフォルト, 1=低, 2=高） | 0 |
+| `--motif-rhythm-density N` | モチーフリズム密度（0=Sparse, 1=Medium, 2=Driving, 255=プリセット） | 255 |
 
 ### ファイル操作
 
@@ -232,7 +261,7 @@ CLIはMIDIフォーマット（SMF1、SMF2/ktmidi、SMF2/Clip）を自動検出�
 
 | フラグ | 説明 | デフォルト |
 |--------|------|-----------|
-| `--blueprint N` | Production Blueprint（ID 0-8 または名前で指定） | 0 |
+| `--blueprint N` | Production Blueprint（ID 0-9 または名前で指定） | 0 |
 
 Blueprint オプション（10プリセット）：
 - 0: Traditional（クラシックなポップ生成）
@@ -244,6 +273,7 @@ Blueprint オプション（10プリセット）：
 - 6: IdolKawaii（控えめで可愛らしい弾む感じ）
 - 7: IdolCoolPop（四つ打ちでダンスブレイクあり）
 - 8: IdolEmo（静かな始まりから感情的に爆発）
+- 9: BehavioralLoop（中毒性のあるループモード、明示的選択のみ）
 - 255: Auto（重み付きランダム選択）
 
 名前での指定も可能（大文字小文字区別なし）：
@@ -264,6 +294,25 @@ Blueprint オプション（10プリセット）：
 
 # 試聴してボーカルスタイルを決定、ボーカル付きで再生成
 ./midisketch_cli --regenerate bgm.mid --regenerate-vocal --vocal-attitude 2
+```
+
+### 高度な生成
+
+新機能を使用した詳細なコントロール：
+
+```bash
+# ギター有効、アグレッシブなドライブ感、フロントロード型エネルギーで生成
+./midisketch_cli --style 6 --guitar --drive-feel 80 --energy-curve 1
+
+# K-Popスタイルでシンコペーションとビヘイビアループを有効化
+./midisketch_cli --style 0 --vocal-style 13 --enable-syncopation --addictive-mode
+
+# メロディオーバーライドとモチーフ制御のカスタマイズ
+./midisketch_cli --style 3 --melody-max-leap 7 --melody-chorus-register-shift 4 \
+  --motif-motion 2 --motif-rhythm-density 2
+
+# ギターを無効化し、モーラタイミングリズムを設定
+./midisketch_cli --style 0 --no-guitar --mora-rhythm-mode 1
 ```
 
 ### 品質イテレーション

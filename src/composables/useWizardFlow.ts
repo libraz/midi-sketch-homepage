@@ -55,7 +55,7 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     component: 'KeyTempoStep',
     label: 'wizard.steps.keyTempo',
     dependencies: ['style', 'chord'],
-    affectingKeys: ['key', 'bpm'],
+    affectingKeys: ['key', 'bpm', 'targetDurationSeconds', 'modulationTiming', 'modulationSemitones'],
     hasGeneration: false
   },
   flowSelection: {
@@ -95,7 +95,6 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     label: 'wizard.steps.bgmSettings',
     dependencies: ['flowSelection'],
     affectingKeys: [
-      'key', 'bpm', 'formId', 'targetDurationSeconds',
       'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled',
       'arpeggioPattern', 'arpeggioSpeed', 'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
       'chordExtSus', 'chordExt7th', 'chordExt9th',

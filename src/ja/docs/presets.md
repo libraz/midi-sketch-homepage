@@ -55,7 +55,7 @@ flowchart LR
 
 ## ムードプリセット
 
-20のムードプリセットが全体の雰囲気を定義：
+24のムードプリセットが全体の雰囲気を定義：
 
 | ID | 名前 | BPM | ドラムスタイル | 特徴 |
 |----|------|-----|---------------|------|
@@ -79,15 +79,23 @@ flowchart LR
 | 17 | Synthwave | 118 | Synth | レトロシンセ、ネオン |
 | 18 | FutureBass | 145 | Synth | モダンエレクトロニック |
 | 19 | CityPop | 110 | Standard | 80年代シティポップ |
+| 20 | RnBNeoSoul | 85-100 | Standard | R&B/ネオソウル、強スウィング、テンションコード |
+| 21 | LatinPop | 95 | Standard | ラテンポップ、デンボウリズム、トレシージョベース |
+| 22 | Trap | 70 | Synth | トラップ、ハーフタイム、808サブベース、ハイハットロール |
+| 23 | Lofi | 80 | Sparse | Lo-fi、強スウィング、最大ベロシティ90 |
 
 ### ムードカテゴリ
 
 ```mermaid
 flowchart TD
-    subgraph Slow ["スロー (80-100 BPM)"]
+    subgraph Slow ["スロー (70-100 BPM)"]
         S1[Ballad]
         S2[Sentimental]
         S3[Chill]
+        S4[RnBNeoSoul]
+        S5[LatinPop]
+        S6[Trap]
+        S7[Lofi]
     end
 
     subgraph Mid ["ミッド (100-125 BPM)"]
@@ -178,41 +186,45 @@ flowchart TD
 
 3つのコンポジションアプローチ：
 
-| スタイル | フォーカス | ボーカルの役割 | 主な特徴 |
-|----------|-----------|---------------|----------|
-| MelodyLead | ボーカルメロディ | プライマリ | フルメロディ表現 |
-| BackgroundMotif | 繰り返しパターン | セカンダリ | モチーフがメイン要素 |
-| SynthDriven | シンセ/アルペジオ | セカンダリ | エレクトロニック、アルペジオ |
+| スタイル | フォーカス | ボーカル | Aux | 主な特徴 |
+|----------|-----------|---------|-----|----------|
+| MelodyLead (0) | ボーカルメロディ | あり | あり | フルメロディ表現 |
+| BackgroundMotif (1) | 繰り返しパターン | なし | あり | モチーフがメイン要素、Auxは有効のまま |
+| SynthDriven (2) | シンセ/アルペジオ | なし | なし | エレクトロニック、アルペジオは手動で`arpeggioEnabled=true`が必要 |
 
 ::: warning BGM専用モード
-BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。BackgroundMotifではAuxが副旋律サポートのために有効のまま残ります。SynthDrivenではボーカルとAuxの両方が無効になります。ボーカル付きの楽曲にはMelodyLeadを使用してください。
 :::
 
 ## Production Blueprint
 
-9種類の Production Blueprint が、スタイル/ムードとは独立して音楽の**生成方法**（アレンジスタイル）を制御します：
+10種類の Production Blueprint が、スタイル/ムードとは独立して音楽の**生成方法**（アレンジスタイル）を制御します：
 
 | ID | 名前 | パラダイム | RiffPolicy | ドラム必須 | 重み |
 |----|------|-----------|------------|:----------:|:----:|
-| 0 | Traditional (定番ポップ) | Traditional | Free | - | 42 |
-| 1 | RhythmLock (リズムで刻む) | RhythmSync | Locked | **必須** | 14 |
-| 2 | StoryPop (物語のように展開) | MelodyDriven | Evolving | - | 10 |
-| 3 | Ballad (静かに始まる) | MelodyDriven | Free | - | 4 |
-| 4 | IdolStandard (アイドル王道) | MelodyDriven | Evolving | - | 10 |
-| 5 | IdolHyper (サビから攻める) | RhythmSync | Locked | **必須** | 6 |
-| 6 | IdolKawaii (かわいく弾む) | MelodyDriven | Locked | **必須** | 5 |
-| 7 | IdolCoolPop (踊れるビート) | RhythmSync | Locked | **必須** | 5 |
-| 8 | IdolEmo (静→爆発) | MelodyDriven | Locked | - | 4 |
+| 0 | Traditional (定番ポップ) | Traditional | Free | - | 42% |
+| 1 | RhythmLock (リズムで刻む) | RhythmSync | Locked | **必須** | 14% |
+| 2 | StoryPop (物語のように展開) | MelodyDriven | Evolving | - | 10% |
+| 3 | Ballad (静かに始まる) | MelodyDriven | Free | - | 4% |
+| 4 | IdolStandard (アイドル王道) | MelodyDriven | Evolving | - | 10% |
+| 5 | IdolHyper (サビから攻める) | RhythmSync | Locked | **必須** | 6% |
+| 6 | IdolKawaii (かわいく弾む) | MelodyDriven | Locked | **必須** | 5% |
+| 7 | IdolCoolPop (踊れるビート) | RhythmSync | Locked | **必須** | 5% |
+| 8 | IdolEmo (静→爆発) | MelodyDriven | Locked | - | 4% |
+| 9 | BehavioralLoop (中毒ループ) | Traditional | LockedPitch | - | 0%* |
+| 255 | (ランダム) | - | - | - | - |
+
+\*BehavioralLoop: 明示的な選択のみ（重み0%、ランダム選択されません）。`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch` を強制します。
 
 `blueprintId: 255` で重み付き自動選択
 
 ### 生成パラダイム
 
-| パラダイム | 説明 |
-|-----------|------|
-| Traditional | クラシックなポップ生成（Bass → Chord → Vocal） |
-| RhythmSync | ドラム＆ベースがボーカルメロディに同期 |
-| MelodyDriven | メロディ中心、伴奏が追従 |
+| パラダイム | トラック順序 | 説明 |
+|-----------|-------------|------|
+| Traditional | Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE | クラシックなポップ生成 |
+| RhythmSync | Motif → Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE | モチーフ先行、リズムロックグルーヴ |
+| MelodyDriven | Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE | メロディ中心、伴奏が追従 |
 
 ### RiffPolicy
 
@@ -220,14 +232,14 @@ BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。
 |---------|:--:|------|
 | Free | 0 | セクションごとに独立して変化 |
 | LockedContour | 1 | 輪郭固定、リズムは変化 |
-| LockedPitch | 2 | ピッチ固定、輪郭は変化 |
+| LockedPitch | 2 | ピッチ完全固定、ベロシティは変化 |
 | LockedAll | 3 | 全要素固定 |
 | Evolving | 4 | 徐々に変化（2セクションごとに30%確率） |
 
 ※ `Locked` は `LockedContour` (1) のエイリアス
 
 ::: tip Blueprint のオーバーライド
-Traditional 以外の Blueprint（ID 1-8）を使用すると、`formId` 設定は Blueprint の section_flow でオーバーライドされます。フォーム構造を完全に制御したい場合は ID 0（Traditional）を使用してください。
+Traditional 以外の Blueprint（ID 1-9）を使用すると、`formId` 設定は Blueprint の section_flow でオーバーライドされます。フォーム構造を完全に制御したい場合は ID 0（Traditional）を使用してください。
 :::
 
 ### MelodyLead
@@ -244,21 +256,45 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    MT[モチーフ] -->|リード| M[ミックス]
-    V[ボーカル] -->|バックグラウンド| M
-    C[コード] -->|サポート| M
-    B[ベース] -->|基盤| M
+    MT[Motif] -->|Lead| M[Mix]
+    AX[Aux] -->|Support| M
+    C[Chord] -->|Support| M
+    B[Bass] -->|Foundation| M
+    D[Drums] -->|Rhythm| M
 ```
+
+::: info BackgroundMotifではボーカルなし
+BackgroundMotifではボーカルトラックが無効になります。Auxトラックは有効なままで、モチーフと共に副旋律サポートを提供します。
+:::
 
 ### SynthDriven
 
 ```mermaid
 flowchart LR
-    A[アルペジオ] -->|リード| M[ミックス]
-    V[ボーカル] -->|バックグラウンド| M
-    C[コード] -->|パッド| M
-    B[ベース] -->|基盤| M
+    A[Arpeggio] -->|Lead| M[Mix]
+    C[Chord] -->|Pad| M
+    B[Bass] -->|Foundation| M
+    D[Drums] -->|Rhythm| M
 ```
+
+::: info SynthDrivenではボーカル/Auxなし
+SynthDrivenではボーカルトラックとAuxトラックの両方が無効になります。アルペジオは手動で有効化が必要です（`arpeggioEnabled=true`）。自動有効化はされません。
+:::
+
+## アルペジオパターン
+
+SynthDrivenコンポジションスタイル用の8つのアルペジオパターン：
+
+| ID | 名前 | 説明 |
+|----|------|------|
+| 0 | Up | 上昇パターン |
+| 1 | Down | 下降パターン |
+| 2 | UpDown | 上昇→下降パターン |
+| 3 | Random | ランダム音順 |
+| 4 | Pinwheel | 回転パターン |
+| 5 | PedalRoot | ルートペダルトーン＋上声部移動 |
+| 6 | Alberti | クラシカルなアルベルティバスパターン |
+| 7 | BrokenChord | 分散和音パターン |
 
 ## ボーカルアティチュード
 
@@ -290,7 +326,7 @@ flowchart LR
 
 ## ボーカルスタイルプリセット
 
-メロディテンプレートを自動選択する13のボーカルスタイルプリセット：
+メロディテンプレートを自動選択する14のボーカルスタイルプリセット：
 
 | ID | 名前 | テンプレート | 特徴 |
 |----|------|----------|-----------|
@@ -307,6 +343,7 @@ flowchart LR
 | 10 | CoolSynth | PlateauTalk | エレクトロニック |
 | 11 | CuteAffected | HookRepeat | プレイフル、キュート |
 | 12 | PowerfulShout | RunUpTarget | 激しい、シャウト系 |
+| 13 | KPop | HookRepeat | K-POPスタイル、シンコペーション重視、フック駆動メロディ |
 
 ### ボーカルスタイルカテゴリ
 
@@ -323,6 +360,7 @@ flowchart TD
         V4[Idol]
         V8[Anime]
         V9[BrightKira]
+        V13[KPop]
     end
 
     subgraph Slow ["低速/低密度"]
@@ -367,6 +405,69 @@ flowchart TD
 | Syncopated (3) | シンコペーションリズム | ラテン、ファンク |
 | Driving16th (4) | 16分音符ドライブ | エレクトロニック、高速ポップ |
 | Bouncy8th (5) | バウンス8分音符 | アップビートポップ |
+
+::: warning シンコペーション依存
+VocalGrooveのシンコペーション効果（OffBeat、Swing、Syncopated、Driving16th、Bouncy8th）は`enableSyncopation=true`の場合のみ有効です。`enableSyncopation=false`の場合、シンコペーションウェイトは0.0に強制され、`syncopation_prob`は0.0に設定され、`allow_bar_crossing`は`false`に設定されます。タイミングオフセット（例：OffBeatの+30ティック）は`enableSyncopation`設定に関係なく適用されます。
+:::
+
+## エネルギーカーブ
+
+楽曲全体のエネルギー推移を制御する4つのオプション：
+
+| 値 | 名前 | 説明 |
+|----|------|------|
+| 0 | GradualBuild | 徐々にエネルギーが上昇（デフォルト） |
+| 1 | FrontLoaded | 最初からハイエナジー、後半は落ち着く |
+| 2 | WavePattern | 波のようなエネルギー推移 |
+| 3 | SteadyState | 一定のエネルギーレベルを維持 |
+
+## モーラリズムモード
+
+音節タイミングの3つのリズムモード：
+
+| 値 | 名前 | 説明 |
+|----|------|------|
+| 0 | Standard | 英語のストレスタイムドリズム |
+| 1 | MoraTimed | 日本語のモーラ拍（等間隔音節グループ） |
+| 2 | Auto | VocalStylePresetから自動選択（デフォルト） |
+
+## メロディオーバーライド
+
+VocalStylePresetとMelodicComplexityのデフォルトを上書きする細かいメロディパラメータ。センチネル値（0、0xFF、-128）はプリセットのデフォルトを維持します。
+
+| パラメータ | 範囲 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `melodyMaxLeap` | 0=preset, 1-12 | 0 | 最大メロディ跳躍（半音単位） |
+| `melodySyncopationProb` | 0-100, 0xFF=preset | 0xFF | シンコペーション確率（%） |
+| `melodyPhraseLength` | 0=preset, 1-8 | 0 | フレーズ長（小節単位） |
+| `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0xFF | 長音符比率（%） |
+| `melodyChorusRegisterShift` | -12 to +12, -128=preset | -128 | サビの音域シフト（半音単位） |
+| `melodyHookRepetition` | 0=preset, 1=off, 2=on | 0 | フック反復（トライステート） |
+| `melodyUseLeadingTone` | 0=preset, 1=off, 2=on | 0 | セクション境界でのリーディングトーン挿入（トライステート） |
+
+::: tip パラメータ適用順序
+メロディオーバーライドはStylePreset、VocalStylePreset、MelodicComplexityの後に適用されます。ユーザー指定の値は常に最高優先度を持ちます。
+:::
+
+## モチーフオーバーライド
+
+スタイルのデフォルトを上書きする細かいモチーフパラメータ：
+
+| パラメータ | 範囲 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `motifLength` | 0=auto, 1/2/4 | 0 | モチーフ長（拍単位） |
+| `motifNoteCount` | 0=auto, 3-8 | 0 | モチーフ内の音数 |
+| `motifMotion` | 0xFF=preset, 0-4 | 0xFF | モーションタイプ（0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; 内部5=Ostinato） |
+| `motifRegisterHigh` | 0=auto, 1=low, 2=high | 0 | レジスター範囲 |
+| `motifRhythmDensity` | 0xFF=preset, 0-2 | 0xFF | リズム密度（0=Sparse, 1=Medium, 2=Driving） |
+
+## ドライブ感
+
+パフォーマンスの強度を制御する0-100の連続値：
+
+- **0** = レイドバック（リラックスしたタイミング、低ベロシティ）
+- **50** = ニュートラル（デフォルト）
+- **100** = アグレッシブ（前のめりタイミング、高ベロシティ、`enableSyncopation=true`でシンコペーション強化）
 
 ## キーオプション
 
@@ -478,4 +579,76 @@ config.mixPattern = 1                  // スタンダードミックス
 config.callDensity = 2                 // 標準密度
 config.modulationTiming = 1            // ラスサビで転調
 config.modulationSemitones = 2         // 2半音上げ
+```
+
+### シンコペーション＆グルーヴ
+
+```javascript
+const config = createDefaultConfig(0)
+config.enableSyncopation = true        // シンコペーション有効化
+config.vocalGroove = 3                 // シンコペーションリズム
+```
+
+### エネルギーカーブ
+
+```javascript
+const config = createDefaultConfig(0)
+config.energyCurve = 1                 // FrontLoadedエネルギー
+```
+
+### メロディ詳細制御
+
+```javascript
+const config = createDefaultConfig(0)
+config.melodyMaxLeap = 5              // 最大メロディ跳躍（半音単位）
+config.melodyPhraseLength = 4         // フレーズ長（小節単位）
+config.melodyHookRepetition = 2       // フック反復ON（トライステート: 0=preset, 1=off, 2=on）
+```
+
+### モチーフ詳細制御
+
+```javascript
+const config = createDefaultConfig(12) // Background Motif
+config.motifLength = 4                 // モチーフ長（拍単位）
+config.motifNoteCount = 5             // モチーフ内音数
+config.motifMotion = 1                // モチーフの動きタイプ
+config.motifRhythmDensity = 2         // リズム密度レベル
+```
+
+### ギタートラック
+
+```javascript
+const config = createDefaultConfig(0)
+config.guitarEnabled = true            // ギタートラック有効化
+```
+
+### R&B / ネオソウル
+
+```javascript
+const config = createDefaultConfig(0)
+config.stylePresetId = 20             // RnBNeoSoulムード
+config.chordExt7th = true             // 7thエクステンション有効化
+config.chordExt9th = true             // 9thエクステンション有効化
+```
+
+### Lo-fi BGM
+
+```javascript
+const config = createDefaultConfig(12) // Background Motif
+config.stylePresetId = 23             // Lofiムード
+config.compositionStyle = 1           // BackgroundMotif
+```
+
+### モーラタイミング
+
+```javascript
+const config = createDefaultConfig(0)
+config.moraRhythmMode = 1             // MoraTimed（日本語モーラ拍）
+```
+
+### BehavioralLoop
+
+```javascript
+const config = createDefaultConfig(0)
+config.blueprintId = 9                // BehavioralLoop（中毒ループ）
 ```

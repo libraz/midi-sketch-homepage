@@ -28,8 +28,8 @@ config.style_preset_id = 0;       // スタイルプリセット ID (0-16)
 config.key = Key::C;              // キー (C=0 〜 B=11)
 config.bpm = 120;                 // テンポ (0=スタイルのデフォルトを使用)
 config.seed = 12345;              // 乱数シード (0=ランダム)
-config.chord_progression_id = 0;  // コード進行 ID
-config.form = StructurePattern::StandardPop;  // フォーム/構成
+config.chord_progression_id = 0;  // コード進行 ID (0-21)
+config.form = StructurePattern::StandardPop;  // フォーム/構成 (0-17)
 config.vocal_attitude = VocalAttitude::Clean; // 0=Clean, 1=Expressive, 2=Raw
 config.drums_enabled = true;      // ドラムトラックを有効化
 
@@ -42,8 +42,8 @@ config.arpeggio.gate = 0.8f;
 config.arpeggio.sync_chord = true;
 
 // ボーカル設定
-config.vocal_low = 55;            // ボーカル音域の下限 (MIDI ノート番号)
-config.vocal_high = 74;           // ボーカル音域の上限 (MIDI ノート番号)
+config.vocal_low = 60;            // ボーカル音域の下限 (MIDIノート、デフォルトC4)
+config.vocal_high = 79;           // ボーカル音域の上限 (MIDIノート、デフォルトG5)
 config.skip_vocal = false;        // ボーカル生成をスキップ (BGM優先ワークフロー用)
 
 // ボーカルスタイル設定
@@ -71,11 +71,34 @@ config.modulation_timing = ModulationTiming::None;
 config.modulation_semitones = 2;  // +1 〜 +4
 
 // コール/SE 設定 (アイドル系音楽用)
-config.se_enabled = false;
-config.call_setting = CallSetting::Auto;
+config.se_enabled = true;
+config.call_setting = CallSetting::Auto;    // 0=Auto, 1=Enabled, 2=Disabled
+config.call_notes_enabled = true;
 config.intro_chant = IntroChant::None;
 config.mix_pattern = MixPattern::None;
 config.call_density = CallDensity::Standard;
+
+// Blueprint
+config.blueprint_id = 0;         // 0=Traditional, 1-9=特定, 255=ランダム
+
+// ギター
+config.guitar_enabled = true;    // ギタートラックを有効化
+
+// アレンジメント
+config.motif_repeat_scope = 0;   // 0=FullSong, 1=Section
+config.arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
+config.target_duration_seconds = 0; // 0 = formId に従う
+
+// ムード
+config.mood = 0;                  // 0-23 (mood_explicit=true 時に使用)
+config.mood_explicit = false;     // 明示的ムードを使用 vs スタイルから導出
+
+// フィール＆表現
+config.drive_feel = 50;          // 0=レイドバック, 50=ニュートラル, 100=アグレッシブ
+config.enable_syncopation = false;
+config.energy_curve = 0;         // 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
+config.mora_rhythm_mode = 2;     // 0=Standard, 1=MoraTimed, 2=Auto
+config.addictive_mode = false;   // Behavioral Loop モードを有効化
 
 sketch.generateFromConfig(config);
 ```
@@ -86,8 +109,8 @@ sketch.generateFromConfig(config);
 
 ### `regenerateVocal(config)`
 
-ボーカルトラック（および Aux トラック）のみを再生成します。BGM トラック（コード、ベース、ドラム、アルペジオ）は変更されません。
-BGM 優先ワークフローで `generateFromConfig()` を `skip_vocal=true` で呼び出した後に使用します。
+ボーカルトラック（および Aux トラック）のみを再生成します。同じコード進行と構成を維持します。
+`generateVocal()` 後のボーカル優先の試行錯誤や、`generateFromConfig()` を `skip_vocal=true` で呼び出した後のBGM優先ワークフローで使用します。
 
 ```cpp
 // シードのみ指定
@@ -96,8 +119,8 @@ sketch.regenerateVocal(12345);
 // 完全な設定で指定
 VocalConfig vocal_config;
 vocal_config.seed = 0;                    // 乱数シード (0=新規ランダム)
-vocal_config.vocal_low = 55;              // ボーカル音域の下限
-vocal_config.vocal_high = 74;             // ボーカル音域の上限
+vocal_config.vocal_low = 60;              // ボーカル音域の下限 (C4)
+vocal_config.vocal_high = 79;             // ボーカル音域の上限 (G5)
 vocal_config.vocal_attitude = VocalAttitude::Expressive;
 vocal_config.vocal_style = VocalStylePreset::Auto;
 vocal_config.melody_template = MelodyTemplateId::Auto;
@@ -145,7 +168,7 @@ sketch.generateVocal(config);
 
 ### `generateAccompanimentForVocal(config?)`
 
-既存のボーカルに対して伴奏トラックを生成します。`generateVocal()` または `setVocalNotes()` の後に呼び出す必要があります。生成順序: Aux -> Bass -> Chord -> Drums（ボーカルに適応）。
+既存のボーカルに対して伴奏トラックを生成します。`generateVocal()` または `setVocalNotes()` の後に呼び出す必要があります。生成順序: Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE（ボーカルに適応）。
 
 ```cpp
 // シンプル: デフォルト設定を使用
@@ -182,7 +205,7 @@ sketch.regenerateAccompaniment(acc_config);
 
 ### `generateWithVocal(config)`
 
-ボーカル優先でのすべてのトラックを生成します。生成順序: Vocal -> Aux -> Bass -> Chord -> Drums。伴奏はボーカルメロディに適応します。
+ボーカル優先でのすべてのトラックを生成します。生成順序: Vocal -> Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE。伴奏はボーカルメロディに適応します。
 
 ```cpp
 SongConfig config;
@@ -293,8 +316,8 @@ sketch.generateFromConfig(config);
 // ステップ 2: ボーカルを追加
 VocalConfig vocal_config;
 vocal_config.seed = 0;
-vocal_config.vocal_low = 55;
-vocal_config.vocal_high = 74;
+vocal_config.vocal_low = 60;
+vocal_config.vocal_high = 79;
 vocal_config.vocal_attitude = VocalAttitude::Expressive;
 
 sketch.regenerateVocal(vocal_config);
@@ -363,21 +386,87 @@ MIDI 生成のメイン設定構造体。
 ```cpp
 struct SongConfig {
   uint8_t style_preset_id = 0;      // スタイルプリセット ID (0-16)
+  uint8_t blueprint_id = 0;         // Production Blueprint (0-9, 255=ランダム)
   Key key = Key::C;                 // 音楽キー
   uint16_t bpm = 0;                 // テンポ (0 = スタイルのデフォルトを使用)
   uint32_t seed = 0;                // 乱数シード (0 = ランダム)
   uint8_t chord_progression_id = 0; // コード進行 ID
-  StructurePattern form;            // 曲構成
-  VocalAttitude vocal_attitude;     // ボーカル表現スタイル
+  StructurePattern form;            // 曲構成 (formId 0-17)
+  bool form_explicit = false;       // formId をそのまま使用 vs ランダム化を許可
+  uint16_t target_duration_seconds = 0; // 目標尺 (0 = formId に従う)
+  VocalAttitude vocal_attitude;     // ボーカル表現スタイル (0-2)
+  VocalStylePreset vocal_style = VocalStylePreset::Auto; // ボーカルスタイルプリセット (0-13)
   bool drums_enabled = true;
+  bool drums_enabled_explicit = false; // ドラム設定がユーザーにより明示的に指定された場合 true
+  bool guitar_enabled = true;       // ギタートラックを有効化 (C++ デフォルト=true, JS デフォルト=false)
   bool arpeggio_enabled = false;
   bool skip_vocal = false;          // ボーカルをスキップ (BGM 優先)
   uint8_t vocal_low = 60;           // C4
   uint8_t vocal_high = 79;          // G5
-  ArpeggioParams arpeggio;          // アルペジオ設定
+  CompositionStyle composition_style; // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+  uint8_t motif_repeat_scope = 0;   // 0=FullSong, 1=Section
+  uint8_t arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
+
+  // アルペジオ設定
+  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate, sync_chord
+
+  // コード拡張
   ChordExtensionParams chord_extension;
-  CompositionStyle composition_style;
-  // ... その他
+  bool chord_ext_prob_explicit = false; // コード拡張確率を明示的に指定
+
+  // ヒューマナイズ
+  bool humanize = false;
+  float humanize_timing = 0.4f;     // 0.0-1.0
+  float humanize_velocity = 0.3f;   // 0.0-1.0
+
+  // 転調
+  ModulationTiming modulation_timing = ModulationTiming::None;
+  int8_t modulation_semitones = 2;  // +1 〜 +4
+
+  // コール/SE設定
+  bool se_enabled = true;
+  uint8_t call_setting = 0;         // 0=Auto, 1=Enabled, 2=Disabled
+  bool call_notes_enabled = true;   // コールをノートとして出力
+  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
+  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
+  uint8_t call_density = 2;         // 0=None, 1=Minimal, 2=Standard, 3=Intense
+
+  // ボーカルスタイル設定
+  MelodyTemplateId melody_template = MelodyTemplateId::Auto; // 0-7
+  MelodicComplexity melodic_complexity = MelodicComplexity::Standard; // 0-2
+  HookIntensity hook_intensity = HookIntensity::Normal; // 0-3 (4=Maximum は内部専用)
+  VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight; // 0-5
+
+  // ムード
+  uint8_t mood = 0;                 // ムードプリセット (0-23、mood_explicit=true 時に使用)
+  bool mood_explicit = false;       // 明示的なムードを使用 vs スタイルから導出
+
+  // フィール＆表現
+  uint8_t drive_feel = 50;          // ドライブ感 (0=レイドバック, 50=ニュートラル, 100=アグレッシブ)
+  bool addictive_mode = false;      // Behavioral Loop モードを有効化
+  uint8_t mora_rhythm_mode = 2;     // モーラリズム: 0=Standard, 1=MoraTimed, 2=Auto
+  bool enable_syncopation = false;  // シンコペーション効果を有効化
+  uint8_t energy_curve = 0;         // エネルギーカーブ: 0=GradualBuild, 1=FrontLoaded,
+                                    //   2=WavePattern, 3=SteadyState
+
+  // メロディオーバーライド (センチネル値 = プリセットのデフォルトを使用)
+  uint8_t melody_max_leap = 0;           // メロディの最大跳躍: 0=プリセット, 1-12=半音
+  uint8_t melody_syncopation_prob = 0xFF; // シンコペーション確率: 0xFF=プリセット, 0-100=%
+  uint8_t melody_phrase_length = 0;      // フレーズ長: 0=プリセット, 1-8=小節
+  uint8_t melody_long_note_ratio = 0xFF; // ロングノート比率: 0xFF=プリセット, 0-100=%
+  int8_t melody_chorus_register_shift = -128; // サビ音域シフト: -128=プリセット, -12〜+12
+  uint8_t melody_hook_repetition = 0;    // フック反復 (0=プリセット, 1=オフ, 2=オン)
+  uint8_t melody_use_leading_tone = 0;   // 導音 (0=プリセット, 1=オフ, 2=オン)
+
+  // モチーフオーバーライド (センチネル値 = プリセットのデフォルトを使用)
+  uint8_t motif_length = 0;         // モチーフ長: 0=自動, 1/2/4=拍
+  uint8_t motif_note_count = 0;     // モチーフ音数: 0=自動, 3-8
+  uint8_t motif_motion = 0xFF;      // モチーフモーション: 0xFF=プリセット, 0-4=MotifMotion
+  uint8_t motif_register_high = 0;  // モチーフ音域: 0=自動, 1=低, 2=高
+  uint8_t motif_rhythm_density = 0xFF; // モチーフリズム密度: 0xFF=プリセット, 0-2=MotifRhythmDensity
+
+  // モチーフコード設定
+  MotifChordParams motif_chord;     // fixed_progression (デフォルト true), max_chord_count (デフォルト 4)
 };
 ```
 
@@ -415,9 +504,13 @@ struct AccompanimentConfig {
   // ドラム
   bool drums_enabled = true;
 
+  // ギター
+  bool guitar_enabled = false;      // ギタートラックを有効化 (JS デフォルト=false)
+
   // アルペジオ
   bool arpeggio_enabled = false;
-  uint8_t arpeggio_pattern = 0;     // 0=Up, 1=Down, 2=UpDown, 3=Random
+  uint8_t arpeggio_pattern = 0;     // 0=Up, 1=Down, 2=UpDown, 3=Random,
+                                    // 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   uint8_t arpeggio_speed = 1;       // 0=Eighth, 1=Sixteenth, 2=Triplet
   uint8_t arpeggio_octave_range = 2;
   uint8_t arpeggio_gate = 80;       // 0-100
@@ -427,19 +520,24 @@ struct AccompanimentConfig {
   bool chord_ext_sus = false;
   bool chord_ext_7th = false;
   bool chord_ext_9th = false;
+  bool chord_ext_tritone_sub = false; // トライトーン代理 (V7 -> bII7)
   uint8_t chord_ext_sus_prob = 20;  // 0-100
-  uint8_t chord_ext_7th_prob = 30;
-  uint8_t chord_ext_9th_prob = 25;
+  uint8_t chord_ext_7th_prob = 30;  // 0-100
+  uint8_t chord_ext_9th_prob = 25;  // 0-100
+  uint8_t chord_ext_tritone_sub_prob = 50; // 0-100
 
   // ヒューマナイズ
   bool humanize = false;
   uint8_t humanize_timing = 50;     // 0-100
-  uint8_t humanize_velocity = 50;
+  uint8_t humanize_velocity = 50;   // 0-100
 
   // SE/コール
   bool se_enabled = true;
   bool call_enabled = false;
   uint8_t call_density = 2;         // 0-3
+  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
+  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
+  bool call_notes_enabled = true;   // コールをノートとして出力
 };
 ```
 
@@ -539,7 +637,8 @@ enum class VocalStylePreset : uint8_t {
   BrightKira,        // ブライト/キラキラ (高く、輝く)
   CoolSynth,         // クールシンセ (電子的、正確)
   CuteAffected,      // キュート/あざとい (遊び心)
-  PowerfulShout      // パワフルシャウト (激しい)
+  PowerfulShout,     // パワフルシャウト (激しい)
+  KPop               // K-Pop (タイトなリズム、ダンス志向)
 };
 ```
 
@@ -627,7 +726,8 @@ enum class TrackRole : uint8_t {
   SE,          // 効果音 (コール、チャント)
   Motif,       // バックグラウンドモチーフトラック
   Arpeggio,    // シンセアルペジオトラック
-  Aux          // 補助ボーカルトラック
+  Aux,         // 補助ボーカルトラック
+  Guitar       // ギタートラック
 };
 ```
 
@@ -637,16 +737,72 @@ enum class TrackRole : uint8_t {
 
 ```cpp
 enum class ArpeggioPattern : uint8_t {
-  Up,        // 上昇
-  Down,      // 下降
-  UpDown,    // 上昇後下降
-  Random     // ランダム順序
+  Up,           // 上昇
+  Down,         // 下降
+  UpDown,       // 上昇後下降
+  Random,       // ランダム順序
+  Pinwheel,     // 高低音を交互に配置
+  PedalRoot,    // ルートペダルと上声部の動き
+  Alberti,      // クラシックなアルベルティ・バスパターン
+  BrokenChord   // 分散和音ボイシング
 };
 
 enum class ArpeggioSpeed : uint8_t {
   Eighth,      // 8分音符
   Sixteenth,   // 16分音符 (デフォルト)
   Triplet      // 三連符
+};
+```
+
+### EnergyCurve
+
+楽曲全体のダイナミクス進行を制御するエネルギーカーブ。
+
+```cpp
+enum class EnergyCurve : uint8_t {
+  GradualBuild = 0,  // クライマックスに向けて徐々に盛り上がる
+  FrontLoaded,       // 冒頭からハイエネルギー
+  WavePattern,       // エネルギーが波状に交互する
+  SteadyState        // 全体を通じて一定のエネルギー
+};
+```
+
+### MoraRhythmMode
+
+日本語歌詞のアラインメント用モーラベースリズムモード。
+
+```cpp
+enum class MoraRhythmMode : uint8_t {
+  Standard = 0,    // 標準リズム（モーラを無視）
+  MoraTimed,       // モーラタイミングリズム（1モーラ1音）
+  Auto             // スタイルに基づいて自動選択（デフォルト）
+};
+```
+
+### MotifMotion
+
+バックグラウンドモチーフパターンの動きのスタイル。
+
+```cpp
+enum class MotifMotion : uint8_t {
+  Stepwise = 0,    // 滑らかな順次進行
+  GentleLeap,      // 穏やかな跳躍（3度、4度）
+  WideLeap,        // 広い跳躍（5度以上）
+  NarrowStep,      // 狭い半音階的進行
+  Disjunct          // 非連続的/角ばった動き
+  // Ostinato(5) は内部使用のみ
+};
+```
+
+### MotifRhythmDensity
+
+バックグラウンドモチーフパターンのリズム密度。
+
+```cpp
+enum class MotifRhythmDensity : uint8_t {
+  Sparse = 0,    // まばらで開放的なリズム
+  Medium,        // 中程度の密度（デフォルト）
+  Driving        // 密で推進力のあるリズム
 };
 ```
 
@@ -778,6 +934,126 @@ MidiSketchSongConfig* midisketch_create_default_config_ptr(uint8_t style_id);
 
 // 設定を検証
 MidiSketchConfigError midisketch_validate_config(const MidiSketchSongConfig* config);
+```
+
+### Blueprint 情報
+
+```c
+// 利用可能な Blueprint の数を取得
+uint8_t midisketch_blueprint_count(void);
+
+// ID で Blueprint 名を取得
+const char* midisketch_blueprint_name(uint8_t id);
+
+// ID で Blueprint パラダイムを取得 (0=Traditional, 1=RhythmSync, 2=MelodyDriven)
+uint8_t midisketch_blueprint_paradigm(uint8_t id);
+
+// ID で Blueprint リフポリシーを取得 (0=Free, 1=LockedContour, 2=LockedPitch, 3=LockedAll, 4=Evolving)
+uint8_t midisketch_blueprint_riff_policy(uint8_t id);
+
+// ID で Blueprint の重み（自動選択用）を取得
+uint8_t midisketch_blueprint_weight(uint8_t id);
+
+// 生成後に解決された Blueprint ID を取得
+uint8_t midisketch_get_resolved_blueprint_id(MidiSketchHandle handle);
+```
+
+### JSON Config API (WASM)
+
+JSON ベースの API は WASM/JS バインディングでの設定交換に使用されます。
+
+```c
+// JSON 設定文字列から生成
+MidiSketchError midisketch_generate_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON 設定を検証
+MidiSketchConfigError midisketch_validate_config_json(
+    const char* json,
+    size_t json_length
+);
+
+// デフォルト設定を JSON 文字列として作成
+const char* midisketch_create_default_config_json(uint8_t style_id);
+
+// JSON 設定からボーカルのみ生成
+MidiSketchError midisketch_generate_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON 設定からボーカル優先で全トラック生成
+MidiSketchError midisketch_generate_with_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON 設定からボーカルを再生成
+MidiSketchError midisketch_regenerate_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON 設定から伴奏を生成
+MidiSketchError midisketch_generate_accompaniment_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON 設定から伴奏を再生成
+MidiSketchError midisketch_regenerate_accompaniment_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// JSON からカスタムボーカルノートを設定
+MidiSketchError midisketch_set_vocal_notes_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+```
+
+### Piano Roll Safety API
+
+```c
+// ティック範囲のピアノロール安全性を取得
+MidiSketchPianoRollData* midisketch_get_piano_roll_safety(
+    MidiSketchHandle handle,
+    uint32_t start_tick,
+    uint32_t end_tick,
+    uint32_t step
+);
+
+// 単一ティックのピアノロール安全性を取得
+MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_at(
+    MidiSketchHandle handle,
+    uint32_t tick
+);
+
+// 前のピッチコンテキスト付きでピアノロール安全性を取得（跳躍検出用）
+MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_with_context(
+    MidiSketchHandle handle,
+    uint32_t tick,
+    uint8_t prev_pitch
+);
+
+// ピアノロールデータを解放
+void midisketch_free_piano_roll_data(MidiSketchPianoRollData* data);
+
+// 理由フラグを人間が読める文字列に変換
+const char* midisketch_reason_to_string(uint16_t reason);
+
+// 設定エラーメッセージ文字列を取得
+const char* midisketch_config_error_string(uint8_t error_code);
 ```
 
 ### エラーコード

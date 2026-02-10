@@ -49,7 +49,7 @@ MIDI Sketch は以下のマルチトラック MIDI ファイルを生成しま�
 ::: info トラックの生成条件
 すべてのトラックがすべてのスタイルで生成されるわけではありません：
 - **Motif** トラック: `BackgroundMotif` コンポジションスタイルのみ
-- **Arpeggio** トラック: `arpeggioEnabled: true` または `SynthDriven` スタイルのみ
+- **Arpeggio** トラック: `arpeggioEnabled: true` の場合のみ（`SynthDriven` スタイルでも手動で有効化が必要）
 - **Vocal/Aux**: `skipVocal: true` でBGMのみ生成可能
 :::
 

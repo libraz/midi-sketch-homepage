@@ -15,7 +15,7 @@ Unlike AI audio generators (Suno, Udio, etc.), MIDI Sketch outputs **editable MI
 | Reproducibility | Often inconsistent | Deterministic (seed-based) |
 
 ::: tip What You Get
-- 8 separate tracks (vocal, aux, chord, bass, drums, motif, arpeggio, SE)
+- 9 separate tracks (vocal, aux, chord, bass, motif, guitar, arpeggio, drums, SE)
 - Each track on its own MIDI channel
 - Import directly into any DAW
 - Use your own instruments and effects
@@ -126,6 +126,83 @@ These mathematically-spaced patterns feel more natural than probability-based ra
 Secondary dominants (V/V, V/vi, etc.) are automatically inserted to create stronger harmonic pull toward target chords. This enriches chord progressions without requiring manual configuration.
 :::
 
+### Guitar Track
+
+::: details Accompaniment Guitar Generation
+A dedicated guitar track generates accompaniment patterns influenced by Blueprint constraints such as guitar skill level and guitar-below-vocal positioning. Guitar appears on its own MIDI channel and can be enabled or disabled independently.
+:::
+
+### Energy Curve
+
+::: details Song Energy Progression
+The Energy Curve system controls how energy progresses through the song, providing high-level control over dynamics beyond per-section settings:
+- **GradualBuild**: Energy increases steadily from start to finish
+- **FrontLoaded**: High energy at the start, tapering toward the end
+- **WavePattern**: Alternating high and low energy across sections
+- **SteadyState**: Consistent energy level throughout
+:::
+
+### Melody & Motif Overrides
+
+::: details Fine-Grained Parameter Control
+**Melody Override** allows fine-grained control over melody generation parameters:
+- Max leap, syncopation probability, phrase length
+- Long note ratio, chorus register shift
+- Hook repetition, leading tone behavior
+
+**Motif Override** allows fine-grained control over motif generation parameters:
+- Motif length, note count, motion (0-4)
+- Register (high/mid), rhythm density
+:::
+
+### Expanded Arpeggio Patterns
+
+::: details 8 Arpeggio Patterns
+Beyond the basic Up, Down, UpDown, and Random patterns, MIDI Sketch now includes:
+- **Pinwheel**: Alternating direction pattern
+- **PedalRoot**: Returns to root between each note
+- **Alberti**: Classical broken chord pattern (low-high-mid-high)
+- **BrokenChord**: Irregular chord tone ordering
+:::
+
+### Performance Controls
+
+::: details DriveFeel, Syncopation & Mora Rhythm
+- **DriveFeel**: Controls performance intensity from laid-back (0) to aggressive (100), affecting timing tightness and velocity emphasis
+- **Syncopation**: `enableSyncopation` toggle adds groove effects by shifting notes off the grid
+- **MoraRhythmMode**: Support for Japanese mora-timed rhythm, aligning note durations to syllable timing patterns
+:::
+
+### Piano Roll Safety API
+
+::: details Note Safety Analysis
+The Piano Roll Safety API analyzes pitch safety at any point in the generated song. For each MIDI pitch (0-127), it reports:
+- **Safety level**: Safe (chord tone), Warning (tension/low register/passing tone), or Dissonant (non-scale/collision)
+- **Reason flags**: Detailed bit flags indicating why a pitch is rated at its level (e.g., ChordTone, Tension, LargeLeap, Minor2nd collision)
+- **Collision detection**: Identifies which tracks would collide with a given pitch
+- **Recommended pitches**: Up to 8 suggested pitches for the current harmonic context
+
+Use after any generation call (`generateVocal`, `generateFromConfig`, etc.) for real-time pitch guidance in piano roll editors.
+:::
+
+### Custom Vocal API
+
+::: details User-Defined Melody Input
+The `setVocalNotes` API allows injecting a custom melody (as an array of note events) instead of using the built-in melody generator. The accompaniment is then generated around the user-provided vocal, with full harmony context coordination including chord recognition, collision avoidance, and Aux track generation.
+:::
+
+### Chord Timeline API
+
+::: details Harmonic Context Retrieval
+The `getChordTimeline` API returns the chord progression timeline for the generated song, including tick positions, chord degrees, and secondary dominant information. This is used for playback synchronization and harmonic analysis.
+:::
+
+### SongConfigBuilder
+
+::: details Fluent Configuration API
+The `SongConfigBuilder` provides a fluent API for constructing song configurations with cascade change detection. When a parameter changes, dependent parameters are automatically recalculated, ensuring consistent configurations without manual coordination.
+:::
+
 ::: info Academic Foundation
 The implementation references:
 - [Kostka & Payne: *Tonal Harmony*](https://www.mheducation.com/highered/product/tonal-harmony-kostka.html) - NCT classification and voice leading
@@ -171,13 +248,14 @@ More candidates for important sections where melody quality matters most.
 
 ## Style Presets
 
-20 mood presets covering:
+17 style presets (stylePresetId 0-16) determine the overall musical character, each mapped to one of 24 internal moods. Moods (0-23) can also be set explicitly via `moodExplicit`, covering:
 
 - J-Pop / K-Pop / City Pop
-- EDM / Electro Pop / Synthwave
-- Ballad / R&B / Chill
+- EDM / Electro Pop / Synthwave / Future Bass
+- Ballad / R&B / R&B Neo Soul / Chill / Lofi
 - Rock / Light Rock
 - Anime / Vocaloid
+- Latin Pop / Trap
 - And more
 
 ::: details What Each Preset Configures
@@ -186,20 +264,23 @@ More candidates for important sections where melody quality matters most.
 - Chord voicing style
 - Melody template preferences
 - Evaluation weights
+- Mood-dependent chord extension probabilities
 :::
+
+14 vocal style presets are available (Auto, Standard, Vocaloid, UltraVocaloid, Idol, Ballad, Rock, CityPop, Anime, BrightKira, CoolSynth, CuteAffected, PowerfulShout, KPop) to fine-tune melody generation characteristics independently from mood.
 
 ## Multiple Composition Styles
 
 Three composition paradigms:
 
-| Style | Primary Element | Use Case |
-|-------|----------------|----------|
-| **MelodyLead** | Vocal melody | Songs with vocals |
-| **BackgroundMotif** | Repeating motif | BGM, lo-fi |
-| **SynthDriven** | Arpeggios | Electronic, EDM |
+| Style | Vocal | Aux | Motif | Arpeggio | Use Case |
+|-------|:-----:|:---:|:-----:|:--------:|----------|
+| **MelodyLead (0)** | Yes | Yes | Blueprint-dependent | Optional | Songs with vocals |
+| **BackgroundMotif (1)** | No | Yes | Yes | Optional | BGM, lo-fi |
+| **SynthDriven (2)** | No | No | Blueprint-dependent | Optional (manual enable) | Electronic, EDM |
 
 ::: warning BGM-Only Modes
-BackgroundMotif and SynthDriven are BGM-only modes - no vocal track is generated.
+BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux; Arpeggio must be manually enabled with `arpeggioEnabled=true`.
 :::
 
 ## Vocal-First Workflow
@@ -208,21 +289,21 @@ For MelodyLead style, iterate on the melody before generating accompaniment:
 
 ```mermaid
 flowchart LR
-    A[Generate Vocal] --> B[Preview]
+    A[generateVocal] --> B[Preview]
     B --> C{Satisfied?}
-    C -->|No| D[Change Seed]
-    D --> A
-    C -->|Yes| E[Generate Accompaniment]
+    C -->|No| D[regenerateVocal]
+    D --> B
+    C -->|Yes| E[generateAccompaniment]
     E --> F[Export MIDI]
 ```
 
 ::: tip Iterate Until Satisfied
-Keep regenerating the vocal with different seeds until you find one you like, then generate the backing tracks.
+Use `generateVocal()` to create the initial melody, then call `regenerateVocal()` with a new seed or VocalConfig to try variations. Once satisfied, call `generateAccompaniment()` to add the backing tracks. Alternatively, use `generateWithVocal()` for vocal-priority one-shot generation.
 :::
 
 ## Lightweight & Portable
 
-- **~309KB WASM** + ~69KB JS
+- **~555KB WASM** (gzip: ~225KB) + ~80KB JS
 - **No external dependencies** (pure C++17)
 - Runs in browser, Node.js, or native CLI
 - No API calls, no internet required

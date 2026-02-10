@@ -161,12 +161,20 @@ flowchart TD
 
 ```cpp
 struct ChordExtensionParams {
-    bool enabled = true;
-    float sus_probability = 0.3f;     // 30% chance
-    float seventh_probability = 0.4f;  // 40% chance
-    float ninth_probability = 0.2f;    // 20% chance
+    bool enable_sus = false;
+    bool enable_7th = false;
+    bool enable_9th = false;
+    bool tritone_sub = false;          // AccompanimentConfig only
+    float sus_probability = 0.2f;     // 20% chance
+    float seventh_probability = 0.15f; // 15% chance
+    float ninth_probability = 0.25f;   // 25% chance
+    float tritone_sub_probability;     // AccompanimentConfig only
 };
 ```
+
+::: info Mood-Dependent Probability Auto-Adjustment
+When `chordExtProbExplicit=false` (default), the mood automatically adjusts chord extension probabilities to match the style. Set `chordExtProbExplicit=true` to manually control all extension probabilities.
+:::
 
 ## Voice Leading
 
@@ -274,10 +282,53 @@ MIDI Sketch automatically inserts secondary dominants based on:
 // Enhanced: IV → V/V → V → I
 ```
 
+### Tritone Substitution
+
+Tritone substitution replaces a V7 chord with a bII7 chord (a dominant 7th built a tritone away). This creates chromatic bass motion and adds harmonic sophistication.
+
+::: details Configuration
+Tritone substitution is available via:
+- **AccompanimentConfig**: `chordExtTritoneSub` (enable) and `chordExtTritoneSubProb` (probability 0.0-1.0)
+- **C++ SongConfig JSON**: `chord_extension.tritone_sub` and `chord_extension.tritone_sub_probability` (via C++ readFrom)
+
+Note: These parameters are not currently exposed in the JS `SongConfig` type (`types.ts`). Use `AccompanimentConfig` or the C++ JSON API for access.
+:::
+
+### Mood-Dependent Chord Extension Probabilities
+
+When `chordExtProbExplicit=false`, the mood automatically adjusts chord extension probabilities to match the style:
+
+| Mood | 7th Prob | 9th Prob | Sus Prob | Notes |
+|------|---------|---------|---------|-------|
+| CityPop | 40% | 25% | - | Jazz-influenced voicings |
+| RnBNeoSoul | 50% | 35% | - | Rich extended harmonies |
+| Ballad/Sentimental | 30% | - | 25% | Expressive sus resolutions |
+| Nostalgic/Chill | 25% | - | - | Gentle extensions |
+| Lofi | 40% | 30% | - | Warm, lo-fi character |
+
+::: tip Explicit vs Automatic
+Set `chordExtProbExplicit=true` to manually control all extension probabilities, or leave it `false` to let the mood system choose appropriate values automatically.
+:::
+
+### ChordEvent in EventData
+
+The `EventData` JSON output now includes a `chords` array with detailed chord information per section, including secondary dominant annotations. This allows external tools to visualize and analyze the harmonic structure.
+
 ## Key Modulation
 
 ::: tip Why Modulate?
 Key modulation (changing the key mid-song) is a powerful technique to add excitement and emotional lift. A modulation up by 1-2 semitones in the final chorus creates a feeling of "taking it to the next level" - a classic technique used in countless hit songs.
+:::
+
+### Modulation Parameters
+
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| `modulationTiming` | 0-4 | When to modulate (0=disabled) |
+| `modulationSemitones` | 1-4 | Amount to modulate (required when timing is not 0) |
+
+::: warning
+When `modulationTiming` is non-zero, `modulationSemitones` must be set to 1-4. The vocal high range is automatically adjusted to prevent the final sections from exceeding the vocal range after transposition.
 :::
 
 ### Modulation Points
@@ -287,14 +338,14 @@ Key modulation (changing the key mid-song) is a powerful technique to add excite
 | StandardPop | B → Chorus | +1 semitone |
 | RepeatChorus | Chorus 1 → 2 | +1 semitone |
 | Ballad | B → Chorus | +2 semitones |
-| Full patterns | Varies | +1 to +2 |
+| Full patterns | Varies | +1 to +4 |
 
 ### Implementation
 
 ```cpp
 struct Modulation {
     Tick tick;           // When to modulate
-    int8_t semitones;    // How much (+1, +2)
+    int8_t semitones;    // How much (1-4 semitones)
 };
 
 // Applied during MIDI output

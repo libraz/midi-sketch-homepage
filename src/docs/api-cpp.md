@@ -28,8 +28,8 @@ config.style_preset_id = 0;       // Style preset ID (0-16)
 config.key = Key::C;              // Key (C=0 through B=11)
 config.bpm = 120;                 // Tempo (0=use style default)
 config.seed = 12345;              // Random seed (0=random)
-config.chord_progression_id = 0;  // Chord progression ID
-config.form = StructurePattern::StandardPop;  // Form/structure
+config.chord_progression_id = 0;  // Chord progression ID (0-21)
+config.form = StructurePattern::StandardPop;  // Form/structure (0-17)
 config.vocal_attitude = VocalAttitude::Clean; // 0=Clean, 1=Expressive, 2=Raw
 config.drums_enabled = true;      // Enable drums track
 
@@ -42,8 +42,8 @@ config.arpeggio.gate = 0.8f;
 config.arpeggio.sync_chord = true;
 
 // Vocal settings
-config.vocal_low = 55;            // Vocal range lower bound (MIDI note)
-config.vocal_high = 74;           // Vocal range upper bound (MIDI note)
+config.vocal_low = 60;            // Vocal range lower bound (MIDI note, default C4)
+config.vocal_high = 79;           // Vocal range upper bound (MIDI note, default G5)
 config.skip_vocal = false;        // Skip vocal generation (for BGM-first workflow)
 
 // Vocal style settings
@@ -71,11 +71,34 @@ config.modulation_timing = ModulationTiming::None;
 config.modulation_semitones = 2;  // +1 to +4
 
 // Call/SE settings (for idol-style music)
-config.se_enabled = false;
-config.call_setting = CallSetting::Auto;
+config.se_enabled = true;
+config.call_setting = CallSetting::Auto;    // 0=Auto, 1=Enabled, 2=Disabled
+config.call_notes_enabled = true;
 config.intro_chant = IntroChant::None;
 config.mix_pattern = MixPattern::None;
 config.call_density = CallDensity::Standard;
+
+// Blueprint
+config.blueprint_id = 0;         // 0=Traditional, 1-9=specific, 255=random
+
+// Guitar
+config.guitar_enabled = true;    // Enable guitar track
+
+// Arrangement
+config.motif_repeat_scope = 0;   // 0=FullSong, 1=Section
+config.arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
+config.target_duration_seconds = 0; // 0 = use formId
+
+// Mood
+config.mood = 0;                  // 0-23 (used when mood_explicit=true)
+config.mood_explicit = false;     // Use explicit mood vs derive from style
+
+// Feel & Expression
+config.drive_feel = 50;          // 0=laid-back, 50=neutral, 100=aggressive
+config.enable_syncopation = false;
+config.energy_curve = 0;         // 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
+config.mora_rhythm_mode = 2;     // 0=Standard, 1=MoraTimed, 2=Auto
+config.addictive_mode = false;   // Enable Behavioral Loop mode
 
 sketch.generateFromConfig(config);
 ```
@@ -86,8 +109,8 @@ Many parameters depend on parent options being enabled. For example, `arpeggio.p
 
 ### `regenerateVocal(config)`
 
-Regenerate only the vocal track (and Aux track). BGM tracks (chord, bass, drums, arpeggio) remain unchanged.
-Use after `generateFromConfig()` with `skip_vocal=true` for BGM-first workflow.
+Regenerate only the vocal track (and Aux track). Keeps the same chord progression and structure.
+Use after `generateVocal()` for vocal-first trial-and-error, or after `generateFromConfig()` with `skip_vocal=true` for BGM-first workflow.
 
 ```cpp
 // With seed only
@@ -96,8 +119,8 @@ sketch.regenerateVocal(12345);
 // With full configuration
 VocalConfig vocal_config;
 vocal_config.seed = 0;                    // Random seed (0=new random)
-vocal_config.vocal_low = 55;              // Vocal range lower bound
-vocal_config.vocal_high = 74;             // Vocal range upper bound
+vocal_config.vocal_low = 60;              // Vocal range lower bound (C4)
+vocal_config.vocal_high = 79;             // Vocal range upper bound (G5)
 vocal_config.vocal_attitude = VocalAttitude::Expressive;
 vocal_config.vocal_style = VocalStylePreset::Auto;
 vocal_config.melody_template = MelodyTemplateId::Auto;
@@ -145,7 +168,7 @@ sketch.generateVocal(config);
 
 ### `generateAccompanimentForVocal(config?)`
 
-Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux -> Bass -> Chord -> Drums (adapting to vocal).
+Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE (adapting to vocal).
 
 ```cpp
 // Simple: use default settings
@@ -182,7 +205,7 @@ sketch.regenerateAccompaniment(acc_config);
 
 ### `generateWithVocal(config)`
 
-Generate all tracks with vocal-first priority. Generation order: Vocal -> Aux -> Bass -> Chord -> Drums. Accompaniment adapts to vocal melody.
+Generate all tracks with vocal-first priority. Generation order: Vocal -> Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE. Accompaniment adapts to vocal melody.
 
 ```cpp
 SongConfig config;
@@ -293,8 +316,8 @@ sketch.generateFromConfig(config);
 // Step 2: Add vocals
 VocalConfig vocal_config;
 vocal_config.seed = 0;
-vocal_config.vocal_low = 55;
-vocal_config.vocal_high = 74;
+vocal_config.vocal_low = 60;
+vocal_config.vocal_high = 79;
 vocal_config.vocal_attitude = VocalAttitude::Expressive;
 
 sketch.regenerateVocal(vocal_config);
@@ -363,21 +386,87 @@ Main configuration structure for MIDI generation.
 ```cpp
 struct SongConfig {
   uint8_t style_preset_id = 0;      // Style preset ID (0-16)
+  uint8_t blueprint_id = 0;         // Production blueprint (0-9, 255=random)
   Key key = Key::C;                 // Musical key
   uint16_t bpm = 0;                 // Tempo (0 = use style default)
   uint32_t seed = 0;                // Random seed (0 = random)
   uint8_t chord_progression_id = 0; // Chord progression ID
-  StructurePattern form;            // Song structure
-  VocalAttitude vocal_attitude;     // Vocal expression style
+  StructurePattern form;            // Song structure (formId 0-17)
+  bool form_explicit = false;       // Use formId exactly vs allow randomization
+  uint16_t target_duration_seconds = 0; // Target duration (0 = use formId)
+  VocalAttitude vocal_attitude;     // Vocal expression style (0-2)
+  VocalStylePreset vocal_style = VocalStylePreset::Auto; // Vocal style preset (0-13)
   bool drums_enabled = true;
+  bool drums_enabled_explicit = false; // True if drums setting was explicitly set by user
+  bool guitar_enabled = true;       // Enable guitar track (C++ default=true, JS default=false)
   bool arpeggio_enabled = false;
   bool skip_vocal = false;          // Skip vocal (for BGM-first)
   uint8_t vocal_low = 60;           // C4
   uint8_t vocal_high = 79;          // G5
-  ArpeggioParams arpeggio;          // Arpeggio settings
+  CompositionStyle composition_style; // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+  uint8_t motif_repeat_scope = 0;   // 0=FullSong, 1=Section
+  uint8_t arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
+
+  // Arpeggio settings
+  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate, sync_chord
+
+  // Chord extensions
   ChordExtensionParams chord_extension;
-  CompositionStyle composition_style;
-  // ... and more
+  bool chord_ext_prob_explicit = false; // Explicit chord extension probabilities
+
+  // Humanization
+  bool humanize = false;
+  float humanize_timing = 0.4f;     // 0.0-1.0
+  float humanize_velocity = 0.3f;   // 0.0-1.0
+
+  // Modulation
+  ModulationTiming modulation_timing = ModulationTiming::None;
+  int8_t modulation_semitones = 2;  // +1 to +4
+
+  // Call/SE settings
+  bool se_enabled = true;
+  uint8_t call_setting = 0;         // 0=Auto, 1=Enabled, 2=Disabled
+  bool call_notes_enabled = true;   // Output calls as notes
+  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
+  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
+  uint8_t call_density = 2;         // 0=None, 1=Minimal, 2=Standard, 3=Intense
+
+  // Vocal style settings
+  MelodyTemplateId melody_template = MelodyTemplateId::Auto; // 0-7
+  MelodicComplexity melodic_complexity = MelodicComplexity::Standard; // 0-2
+  HookIntensity hook_intensity = HookIntensity::Normal; // 0-3 (4=Maximum is internal only)
+  VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight; // 0-5
+
+  // Mood
+  uint8_t mood = 0;                 // Mood preset (0-23, used when mood_explicit=true)
+  bool mood_explicit = false;       // Use explicit mood vs derive from style
+
+  // Feel & Expression
+  uint8_t drive_feel = 50;          // Drive feel (0=laid-back, 50=neutral, 100=aggressive)
+  bool addictive_mode = false;      // Enable Behavioral Loop mode
+  uint8_t mora_rhythm_mode = 2;     // Mora rhythm: 0=Standard, 1=MoraTimed, 2=Auto
+  bool enable_syncopation = false;  // Enable syncopation effects
+  uint8_t energy_curve = 0;         // Energy curve: 0=GradualBuild, 1=FrontLoaded,
+                                    //   2=WavePattern, 3=SteadyState
+
+  // Melody overrides (sentinel values = use preset default)
+  uint8_t melody_max_leap = 0;           // Max melody leap: 0=preset, 1-12=semitones
+  uint8_t melody_syncopation_prob = 0xFF; // Syncopation probability: 0xFF=preset, 0-100=%
+  uint8_t melody_phrase_length = 0;      // Phrase length: 0=preset, 1-8=bars
+  uint8_t melody_long_note_ratio = 0xFF; // Long note ratio: 0xFF=preset, 0-100=%
+  int8_t melody_chorus_register_shift = -128; // Chorus register shift: -128=preset, -12 to +12
+  uint8_t melody_hook_repetition = 0;    // Hook repetition (0=preset, 1=off, 2=on)
+  uint8_t melody_use_leading_tone = 0;   // Leading tone (0=preset, 1=off, 2=on)
+
+  // Motif overrides (sentinel values = use preset default)
+  uint8_t motif_length = 0;         // Motif length: 0=auto, 1/2/4=beats
+  uint8_t motif_note_count = 0;     // Motif note count: 0=auto, 3-8
+  uint8_t motif_motion = 0xFF;      // Motif motion: 0xFF=preset, 0-4=MotifMotion
+  uint8_t motif_register_high = 0;  // Motif register: 0=auto, 1=low, 2=high
+  uint8_t motif_rhythm_density = 0xFF; // Motif rhythm density: 0xFF=preset, 0-2=MotifRhythmDensity
+
+  // Motif chord settings
+  MotifChordParams motif_chord;     // fixed_progression (default true), max_chord_count (default 4)
 };
 ```
 
@@ -415,9 +504,13 @@ struct AccompanimentConfig {
   // Drums
   bool drums_enabled = true;
 
+  // Guitar
+  bool guitar_enabled = false;      // Enable guitar track (JS default=false)
+
   // Arpeggio
   bool arpeggio_enabled = false;
-  uint8_t arpeggio_pattern = 0;     // 0=Up, 1=Down, 2=UpDown, 3=Random
+  uint8_t arpeggio_pattern = 0;     // 0=Up, 1=Down, 2=UpDown, 3=Random,
+                                    // 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   uint8_t arpeggio_speed = 1;       // 0=Eighth, 1=Sixteenth, 2=Triplet
   uint8_t arpeggio_octave_range = 2;
   uint8_t arpeggio_gate = 80;       // 0-100
@@ -427,19 +520,24 @@ struct AccompanimentConfig {
   bool chord_ext_sus = false;
   bool chord_ext_7th = false;
   bool chord_ext_9th = false;
+  bool chord_ext_tritone_sub = false; // Tritone substitution (V7 -> bII7)
   uint8_t chord_ext_sus_prob = 20;  // 0-100
-  uint8_t chord_ext_7th_prob = 30;
-  uint8_t chord_ext_9th_prob = 25;
+  uint8_t chord_ext_7th_prob = 30;  // 0-100
+  uint8_t chord_ext_9th_prob = 25;  // 0-100
+  uint8_t chord_ext_tritone_sub_prob = 50; // 0-100
 
   // Humanization
   bool humanize = false;
   uint8_t humanize_timing = 50;     // 0-100
-  uint8_t humanize_velocity = 50;
+  uint8_t humanize_velocity = 50;   // 0-100
 
   // SE/Call
   bool se_enabled = true;
   bool call_enabled = false;
   uint8_t call_density = 2;         // 0-3
+  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
+  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
+  bool call_notes_enabled = true;   // Output calls as notes
 };
 ```
 
@@ -539,7 +637,8 @@ enum class VocalStylePreset : uint8_t {
   BrightKira,        // Bright/kira-kira (high, sparkling)
   CoolSynth,         // Cool synth (electronic, precise)
   CuteAffected,      // Cute/affected (playful)
-  PowerfulShout      // Powerful shout (intense)
+  PowerfulShout,     // Powerful shout (intense)
+  KPop               // K-Pop (tight rhythm, dance-oriented)
 };
 ```
 
@@ -627,7 +726,8 @@ enum class TrackRole : uint8_t {
   SE,          // Sound effects (calls, chants)
   Motif,       // Background motif track
   Arpeggio,    // Synth arpeggio track
-  Aux          // Auxiliary vocal track
+  Aux,         // Auxiliary vocal track
+  Guitar       // Guitar track
 };
 ```
 
@@ -637,16 +737,72 @@ Arpeggio settings.
 
 ```cpp
 enum class ArpeggioPattern : uint8_t {
-  Up,        // Ascending notes
-  Down,      // Descending notes
-  UpDown,    // Ascending then descending
-  Random     // Random order
+  Up,           // Ascending notes
+  Down,         // Descending notes
+  UpDown,       // Ascending then descending
+  Random,       // Random order
+  Pinwheel,     // Alternating high/low notes
+  PedalRoot,    // Root pedal with upper voice movement
+  Alberti,      // Classical Alberti bass pattern
+  BrokenChord   // Broken chord voicing
 };
 
 enum class ArpeggioSpeed : uint8_t {
   Eighth,      // 8th notes
   Sixteenth,   // 16th notes (default)
   Triplet      // Triplet feel
+};
+```
+
+### EnergyCurve
+
+Energy curve for dynamic progression across the song.
+
+```cpp
+enum class EnergyCurve : uint8_t {
+  GradualBuild = 0,  // Gradual build to climax
+  FrontLoaded,       // High energy from the start
+  WavePattern,       // Alternating energy waves
+  SteadyState        // Consistent energy throughout
+};
+```
+
+### MoraRhythmMode
+
+Mora-based rhythm mode for Japanese lyrics alignment.
+
+```cpp
+enum class MoraRhythmMode : uint8_t {
+  Standard = 0,    // Standard rhythm (ignores mora)
+  MoraTimed,       // Mora-timed rhythm (one note per mora)
+  Auto             // Auto-select based on style (default)
+};
+```
+
+### MotifMotion
+
+Motion style for background motif patterns.
+
+```cpp
+enum class MotifMotion : uint8_t {
+  Stepwise = 0,    // Smooth stepwise motion
+  GentleLeap,      // Gentle leaps (3rds, 4ths)
+  WideLeap,        // Wide leaps (5ths+)
+  NarrowStep,      // Narrow chromatic steps
+  Disjunct          // Disjunct/angular motion
+  // Ostinato(5) is internal only
+};
+```
+
+### MotifRhythmDensity
+
+Rhythm density for background motif patterns.
+
+```cpp
+enum class MotifRhythmDensity : uint8_t {
+  Sparse = 0,    // Sparse, open rhythm
+  Medium,        // Medium density (default)
+  Driving        // Dense, driving rhythm
 };
 ```
 
@@ -778,6 +934,126 @@ MidiSketchSongConfig* midisketch_create_default_config_ptr(uint8_t style_id);
 
 // Validate config
 MidiSketchConfigError midisketch_validate_config(const MidiSketchSongConfig* config);
+```
+
+### Blueprint Information
+
+```c
+// Get number of available blueprints
+uint8_t midisketch_blueprint_count(void);
+
+// Get blueprint name by ID
+const char* midisketch_blueprint_name(uint8_t id);
+
+// Get blueprint paradigm by ID (0=Traditional, 1=RhythmSync, 2=MelodyDriven)
+uint8_t midisketch_blueprint_paradigm(uint8_t id);
+
+// Get blueprint riff policy by ID (0=Free, 1=LockedContour, 2=LockedPitch, 3=LockedAll, 4=Evolving)
+uint8_t midisketch_blueprint_riff_policy(uint8_t id);
+
+// Get blueprint weight (for auto-selection) by ID
+uint8_t midisketch_blueprint_weight(uint8_t id);
+
+// Get resolved blueprint ID after generation
+uint8_t midisketch_get_resolved_blueprint_id(MidiSketchHandle handle);
+```
+
+### JSON Config API (WASM)
+
+The JSON-based API is used by the WASM/JS bindings for configuration exchange.
+
+```c
+// Generate from JSON config string
+MidiSketchError midisketch_generate_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Validate JSON config
+MidiSketchConfigError midisketch_validate_config_json(
+    const char* json,
+    size_t json_length
+);
+
+// Create default config as JSON string
+const char* midisketch_create_default_config_json(uint8_t style_id);
+
+// Generate vocal only from JSON config
+MidiSketchError midisketch_generate_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Generate all tracks with vocal-first priority from JSON config
+MidiSketchError midisketch_generate_with_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Regenerate vocal from JSON config
+MidiSketchError midisketch_regenerate_vocal_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Generate accompaniment from JSON config
+MidiSketchError midisketch_generate_accompaniment_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Regenerate accompaniment from JSON config
+MidiSketchError midisketch_regenerate_accompaniment_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+
+// Set custom vocal notes from JSON
+MidiSketchError midisketch_set_vocal_notes_from_json(
+    MidiSketchHandle handle,
+    const char* json,
+    size_t json_length
+);
+```
+
+### Piano Roll Safety API
+
+```c
+// Get piano roll safety for a range of ticks
+MidiSketchPianoRollData* midisketch_get_piano_roll_safety(
+    MidiSketchHandle handle,
+    uint32_t start_tick,
+    uint32_t end_tick,
+    uint32_t step
+);
+
+// Get piano roll safety at a single tick
+MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_at(
+    MidiSketchHandle handle,
+    uint32_t tick
+);
+
+// Get piano roll safety with previous pitch context (for leap detection)
+MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_with_context(
+    MidiSketchHandle handle,
+    uint32_t tick,
+    uint8_t prev_pitch
+);
+
+// Free piano roll data
+void midisketch_free_piano_roll_data(MidiSketchPianoRollData* data);
+
+// Convert reason flags to human-readable string
+const char* midisketch_reason_to_string(uint16_t reason);
+
+// Get config error message string
+const char* midisketch_config_error_string(uint8_t error_code);
 ```
 
 ### Error Codes

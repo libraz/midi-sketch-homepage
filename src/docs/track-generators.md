@@ -4,17 +4,18 @@ This document details each track generator in [MIDI Sketch](https://github.com/l
 
 ## Track Overview
 
-MIDI Sketch generates 8 tracks across different MIDI channels:
+MIDI Sketch generates 9 tracks across different MIDI channels:
 
 ```mermaid
 flowchart TB
     subgraph Melody ["Melody Layer"]
         Vocal["Vocal (Ch 0)"]
-        Aux["Aux (Ch 5)"]
+        Aux["Aux (Ch 1)"]
     end
 
     subgraph Harmony ["Harmony"]
         Chord["Chord (Ch 2)"]
+        Guitar["Guitar (Ch 6)"]
     end
 
     subgraph Rhythm ["Rhythm Section"]
@@ -37,11 +38,12 @@ flowchart TB
 | Track | Channel | Program | Role |
 |-------|---------|---------|------|
 | Vocal | 0 | Piano (0) | Main melody |
-| Aux | 5 | Pad (89) | Sub-melody support |
+| Aux | 1 | E.Piano (4) | Sub-melody support |
 | Chord | 2 | E.Piano (4) | Harmonic backing |
 | Bass | 3 | E.Bass (33) | Harmonic foundation |
 | Motif | 4 | Synth (81) | BackgroundMotif style |
 | Arpeggio | 5 | Synth (81) | SynthDriven style |
+| Guitar | 6 | Acoustic Guitar (25) | Accompaniment guitar |
 | Drums | 9 | GM Drums | Rhythm |
 | SE | 15 | - | Section markers |
 
@@ -198,6 +200,7 @@ Each vocal style has a unified profile that controls both **generation bias** an
 | **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
 | **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
 | **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
+| **KPop** (13) | 1.0 | 1.2 | 0.25 | 0.20 |
 
 ### UltraVocaloid Mode
 
@@ -328,15 +331,19 @@ The Aux (auxiliary) track provides **sub-melody support** for the main vocal. It
 
 ### Aux Functions
 
-5 auxiliary functions are available:
+9 auxiliary functions are available:
 
 | ID | Function | Description |
 |----|----------|-------------|
-| A | PulseLoop | Repetitive same-pitch or fixed-interval patterns |
-| B | TargetHint | Hints at vocal target with chord tones |
-| C | GrooveAccent | Rhythmic accents with staccato |
-| D | PhraseTail | End-of-phrase descending resolution |
-| E | EmotionalPad | Long sustained chord tones |
+| 0 | PulseLoop | Repetitive same-pitch or fixed-interval patterns |
+| 1 | TargetHint | Hints at vocal target with chord tones |
+| 2 | GrooveAccent | Rhythmic accents with staccato |
+| 3 | PhraseTail | End-of-phrase descending resolution |
+| 4 | EmotionalPad | Long sustained chord tones |
+| 5 | Unison | Vocal unison doubling |
+| 6 | MelodicHook | Melodic hook riff |
+| 7 | MotifCounter | Counter melody (contrary motion) |
+| 8 | SustainPad | Whole-note chord tone pad |
 
 ### Template → Aux Mapping
 
@@ -432,6 +439,37 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ---
 
+## Guitar Track
+
+**Source:** `src/track/guitar.cpp`
+
+The Guitar track generates accompaniment guitar patterns on a dedicated MIDI channel (Ch 6). It provides rhythmic and harmonic support that complements the chord track.
+
+### Parameters
+
+| Parameter | Default (JS) | Default (C++) | Description |
+|-----------|-------------|---------------|-------------|
+| `guitarEnabled` | `false` | `true` | Enable/disable guitar track generation |
+
+### Blueprint Constraints
+
+Guitar generation is influenced by Blueprint constraints:
+
+| Constraint | Description |
+|------------|-------------|
+| `guitar_skill` | Skill level (Beginner/Intermediate/Advanced/Virtuoso) affecting pattern complexity and voicing sophistication |
+| `guitar_below_vocal` | When enabled, keeps guitar voicings below the vocal register (vocal_low - 2 semitones) to avoid masking the melody |
+| `guitar_style_hint` | Per-section style hint (0-7) defined in the Blueprint's SectionSlot. 0 = auto-select based on mood and energy |
+
+### Generation
+
+- Guitar is generated **after** the chord track, allowing it to complement existing harmonic voicing
+- Patterns adapt to section energy and mood
+- Per-section `guitar_style_hint` (0-7) in the Blueprint's SectionSlot can influence the style of guitar accompaniment
+- Guitar appears on MIDI channel 6 with Acoustic Guitar (program 25) by default
+
+---
+
 ## Bass Track
 
 **Source:** `src/track/bass.cpp` (~1170 lines)
@@ -439,6 +477,8 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 Generates the harmonic foundation with root-focused patterns.
 
 ### Pattern Types
+
+The bass system supports 17+ BassPattern types. The active pattern is selected automatically based on mood and section, or influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot (0=auto, 1-17 maps to BassPattern+1). Common pattern categories:
 
 | Pattern | Description | Rhythm |
 |---------|-------------|--------|
@@ -525,6 +565,21 @@ Fills are inserted at:
 - Every 4 or 8 bars
 - Before chorus
 
+### Euclidean Drums
+
+Blueprints can specify `euclidean_drums_percent` to control the probability of using Euclidean rhythm patterns, which distribute hits as evenly as possible across a given number of steps.
+
+### Drum Role
+
+Per-section `drum_role` in the Blueprint's SectionSlot controls drum behavior:
+
+| Role | Description |
+|------|-------------|
+| Full | Standard full drum kit |
+| Ambient | Subdued, atmospheric |
+| Minimal | Sparse, minimal patterns |
+| FXOnly | Sound effects only, no standard kit |
+
 ### Ghost Notes
 
 Velocity-reduced snare articulations for groove:
@@ -597,30 +652,60 @@ For `BackgroundMotif` composition style (BGM-only mode). Creates repeating patte
 
 ```cpp
 struct MotifParams {
-    MotifLength length;           // TwoBars, FourBars
-    RhythmDensity rhythm_density; // Sparse, Medium, Driving
-    MotifMotion motion;           // Stepwise, GentleLeap
+    MotifLength length;           // 0=auto(2 bars), 1, 2, or 4 beats
+    RhythmDensity rhythm_density; // 0=Sparse, 1=Medium, 2=Driving
+    MotifMotion motion;           // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
     RepeatScope repeat_scope;     // FullSong, PerSection
-    MotifRegister register_;      // Mid, High
+    MotifRegister register_;      // 0=auto(mid), 1=low, 2=high
+    uint8_t note_count;           // 0=auto(6), 3-8
 };
 ```
+
+### Override Parameters
+
+When motif overrides are specified in the config, the following parameters take precedence over style defaults:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `motifLength` | int (0=auto, 1/2/4) | Override motif length in beats (0 defaults to 2 bars) |
+| `motifNoteCount` | int (0=auto, 3-8) | Override number of notes in the motif (0 defaults to 6) |
+| `motifMotion` | int (0xFF=preset, 0-4) | Override motion type (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; internal 5=Ostinato for Blueprints only) |
+| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | Override register range |
+| `motifRhythmDensity` | int (0xFF=preset, 0-2) | Override rhythm density (0=Sparse, 1=Medium, 2=Driving) |
 
 ### Pattern Generation
 
 ```mermaid
 flowchart TD
     A[Create pattern] --> B[Determine length]
-    B --> C[Generate 3-5 notes]
+    B --> C[Generate 3-8 notes]
     C --> D{Motion type?}
-    D -->|Stepwise| E[Max interval: 2]
-    D -->|GentleLeap| F[Max interval: 5]
+    D -->|Stepwise 0| E[Scale steps only]
+    D -->|GentleLeap 1| F[Up to 3rd]
+    D -->|WideLeap 2| G2[Up to 5th]
+    D -->|NarrowStep 3| G3[Narrow scale degrees]
+    D -->|Disjunct 4| G4[Irregular leaps]
     E --> G[Add tension notes]
     F --> G
-    G --> H[Set rhythm]
+    G2 --> G
+    G3 --> G
+    G4 --> G
+    G --> H[Set rhythm density]
     H --> I{Repeat scope?}
     I -->|FullSong| J[Same pattern all sections]
     I -->|PerSection| K[New pattern each section]
 ```
+
+**MotifMotion values** (API: 0-4, internal: 0-5):
+
+| Value | Name | Description |
+|-------|------|-------------|
+| 0 | Stepwise | Scale steps only (2nds) |
+| 1 | GentleLeap | Up to 3rds |
+| 2 | WideLeap | Up to 5ths |
+| 3 | NarrowStep | Narrow scale degrees (jazzy) |
+| 4 | Disjunct | Irregular leaps (experimental) |
+| 5 | Ostinato | Same pitch class repeated (**internal Blueprint use only**) |
 
 ### Register Ranges
 
@@ -641,7 +726,7 @@ For `SynthDriven` composition style (BGM-only mode). Creates arpeggiated pattern
 
 ```cpp
 struct ArpeggioParams {
-    ArpeggioPattern pattern;  // Up, Down, UpDown, Random
+    ArpeggioPattern pattern;  // Up, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord
     ArpeggioSpeed speed;      // Eighth, Sixteenth, Triplet
     uint8_t octave_range;     // 1-3 octaves
     float gate;               // Note length ratio (0.0-1.0)
@@ -649,7 +734,7 @@ struct ArpeggioParams {
 };
 ```
 
-### Pattern Types
+### Pattern Types (8 Total)
 
 ```mermaid
 flowchart LR
@@ -665,6 +750,17 @@ flowchart LR
         UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
     end
 ```
+
+| ID | Pattern | Description |
+|----|---------|-------------|
+| 0 | Up | Ascending through chord tones |
+| 1 | Down | Descending through chord tones |
+| 2 | UpDown | Ascending then descending |
+| 3 | Random | Random chord tone selection |
+| 4 | Pinwheel | Alternating direction pattern |
+| 5 | PedalRoot | Returns to root between each note |
+| 6 | Alberti | Classical broken chord (low-high-mid-high) |
+| 7 | BrokenChord | Irregular chord tone ordering |
 
 ### Speed Conversion
 
@@ -729,6 +825,7 @@ uint8_t calculateVelocity(
 | Aux | 0.50-0.80 | Sub-melody support |
 | Chord | 0.75 | Supporting |
 | Bass | 0.85 | Foundation |
+| Guitar | 0.70 | Accompaniment |
 | Drums | 0.90 | Timing driver |
 | Motif | 0.70 | Background |
 | Arpeggio | 0.85 | Mid-level |
