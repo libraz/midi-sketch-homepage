@@ -56,7 +56,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   seek: [tick: number]
-  instrumentChange: [payload: { track: string; instrument: 'piano' | 'guitar' }]
   trackMuteChange: [payload: { track: string; muted: boolean }]
 }>()
 
@@ -94,9 +93,6 @@ const scrollLeft = ref(0)
 const canvasWidth = ref(800)
 const canvasHeight = ref(180)
 const dpr = ref(1)
-
-// Instrument selection
-const chordsInstrument = ref<'piano' | 'guitar'>('piano')
 
 // Track mute state (SE is muted by default)
 const mutedTracks = ref<Record<string, boolean>>({
@@ -720,25 +716,6 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="mixer-divider"></div>
-
-      <div class="instrument-select">
-        <span class="instrument-select__label">Chord</span>
-        <div class="instrument-select__buttons">
-          <button
-            class="instrument-btn"
-            :class="{ 'instrument-btn--active': chordsInstrument === 'piano' }"
-            @click="chordsInstrument = 'piano'; emit('instrumentChange', { track: 'Chord', instrument: 'piano' })"
-            title="Piano"
-          >🎹</button>
-          <button
-            class="instrument-btn"
-            :class="{ 'instrument-btn--active': chordsInstrument === 'guitar' }"
-            @click="chordsInstrument = 'guitar'; emit('instrumentChange', { track: 'Chord', instrument: 'guitar' })"
-            title="Guitar"
-          >🎸</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -1363,64 +1340,6 @@ onUnmounted(() => {
   border-color: rgba(239, 68, 68, 0.2);
 }
 
-.mixer-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-}
-
-.instrument-select {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  flex-shrink: 0;
-}
-
-.instrument-select__label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.35);
-  text-transform: uppercase;
-}
-
-.instrument-select__buttons {
-  display: flex;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.instrument-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 24px;
-  background: transparent;
-  border: none;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  opacity: 0.4;
-}
-
-.instrument-btn + .instrument-btn {
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.instrument-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  opacity: 0.7;
-}
-
-.instrument-btn--active {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
-  opacity: 1;
-}
-
 /* Responsive */
 @media (max-width: 640px) {
   .transport-bar { flex-wrap: wrap; }
@@ -1473,22 +1392,5 @@ onUnmounted(() => {
     min-width: 0.6rem;
   }
 
-  .mixer-divider {
-    display: none;
-  }
-
-  .instrument-select {
-    align-self: flex-end;
-  }
-
-  .instrument-select__label {
-    font-size: 0.5rem;
-  }
-
-  .instrument-btn {
-    width: 24px;
-    height: 20px;
-    font-size: 0.65rem;
-  }
 }
 </style>

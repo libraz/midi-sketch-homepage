@@ -1,39 +1,7 @@
 import { ref, onUnmounted } from 'vue'
 import { Soundfont, DrumMachine } from 'smplr'
 import { type ChordTiming, getRootMidiNote } from '@/utils/chordUtils'
-
-// GM drum note number to Roland CR-8000 sample name mapping
-const GM_TO_DRUM: Record<number, string> = {
-  35: 'kick',         // Acoustic Bass Drum
-  36: 'kick',         // Bass Drum 1
-  37: 'rimshot',      // Side Stick
-  38: 'snare',        // Acoustic Snare
-  39: 'clap',         // Hand Clap
-  40: 'snare',        // Electric Snare
-  41: 'tom-low',      // Low Floor Tom
-  42: 'hihat-closed', // Closed Hi-Hat
-  43: 'tom-low',      // High Floor Tom
-  44: 'hihat-closed', // Pedal Hi-Hat
-  45: 'tom-low',      // Low Tom
-  46: 'hihat-open',   // Open Hi-Hat
-  47: 'tom-low',      // Low-Mid Tom
-  48: 'tom-high',     // Hi-Mid Tom
-  49: 'cymball',      // Crash Cymbal 1
-  50: 'tom-high',     // High Tom
-  51: 'cymball',      // Ride Cymbal 1
-  52: 'cymball',      // Chinese Cymbal
-  53: 'cymball',      // Ride Bell
-  54: 'clave',        // Tambourine -> clave
-  55: 'cymball',      // Splash Cymbal
-  56: 'cowbell',      // Cowbell
-  57: 'cymball',      // Crash Cymbal 2
-  60: 'conga-high',   // Hi Bongo
-  61: 'conga-low',    // Low Bongo
-  62: 'conga-high',   // Mute Hi Conga
-  63: 'conga-high',   // Open Hi Conga
-  64: 'conga-low',    // Low Conga
-  75: 'clave',        // Claves
-}
+import { GM_TO_DRUM, loadInstrumentsForTracks, getRequiredInstruments } from '@/utils/gmInstruments'
 
 interface MidiNote {
   // Support both naming conventions from WASM
@@ -68,28 +36,25 @@ interface EventData {
   ppq: number
   tracks: {
     name: string
+    channel?: number
+    program?: number
     notes: MidiNote[]
   }[]
   sections?: Section[]
 }
 
 let audioContext: AudioContext | null = null
-let piano: any = null
-let guitar: any = null
-let pad: any = null  // For Aux track
-let bass: any = null  // For root note playback
-let drums: any = null
+let bass: Soundfont | null = null  // For root note playback (always acoustic_bass)
+let drums: DrumMachine | null = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
+
+// Dynamically loaded instruments per track
+let trackInstrumentMap = new Map<string, Soundfont>()
 
 // Global loading state for sharing across components
 const globalIsLoading = ref(false)
 const globalIsReady = ref(false)
-
-// Track-specific instrument settings
-const trackInstruments = ref<Record<string, 'piano' | 'guitar'>>({
-  Chord: 'piano'
-})
 
 // Track mute settings (SE track is muted by default)
 const trackMuted = ref<Record<string, boolean>>({
@@ -118,7 +83,7 @@ export function useMidiPlayer() {
 
   async function init() {
     // Already initialized
-    if (isInitialized && piano && guitar && pad && bass && drums) {
+    if (isInitialized && bass && drums) {
       globalIsReady.value = true
       return
     }
@@ -136,18 +101,12 @@ export function useMidiPlayer() {
       try {
         audioContext = new AudioContext()
 
-        // Load piano, guitar, pad, bass, and drums in parallel
-        const [loadedPiano, loadedGuitar, loadedPad, loadedBass, loadedDrums] = await Promise.all([
-          new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
-          new Soundfont(audioContext, { instrument: 'distortion_guitar' }).load,
-          new Soundfont(audioContext, { instrument: 'pad_2_warm' }).load,  // For Aux track
-          new Soundfont(audioContext, { instrument: 'acoustic_bass' }).load,  // For root notes
+        // Load only bass and drums at init (minimal footprint)
+        const [loadedBass, loadedDrums] = await Promise.all([
+          new Soundfont(audioContext, { instrument: 'acoustic_bass' }).load,
           new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
         ])
 
-        piano = loadedPiano
-        guitar = loadedGuitar
-        pad = loadedPad
         bass = loadedBass
         drums = loadedDrums
         isInitialized = true
@@ -182,7 +141,7 @@ export function useMidiPlayer() {
       await init()
     }
 
-    if (!audioContext || !piano) return
+    if (!audioContext || !bass) return
 
     // Resume audio context if suspended
     if (audioContext.state === 'suspended') {
@@ -193,6 +152,38 @@ export function useMidiPlayer() {
     cachedPlayOptions = options
     bpm = eventData.bpm || 120
     ppq = eventData.ppq || 480
+
+    // Dynamically load instruments for tracks if needed
+    const required = getRequiredInstruments(eventData.tracks)
+    const needsLoad = [...required.values()].some(name => {
+      // Check if we have this instrument loaded already
+      for (const [, sf] of trackInstrumentMap) {
+        if ((sf as any)._instrumentName === name) return false
+      }
+      return !trackInstrumentMap.has(
+        [...required.entries()].find(([, v]) => v === name)?.[0] ?? ''
+      )
+    })
+
+    // Always rebuild the track map to match current tracks
+    const missing = new Map<string, string>()
+    for (const [trackName, instrumentName] of required) {
+      if (!trackInstrumentMap.has(trackName)) {
+        missing.set(trackName, instrumentName)
+      }
+    }
+
+    if (missing.size > 0) {
+      // Show loading only if we need to fetch new instruments
+      globalIsLoading.value = true
+      try {
+        const result = await loadInstrumentsForTracks(audioContext, eventData.tracks)
+        trackInstrumentMap = result.trackMap
+        // Keep our existing drums instance (don't replace)
+      } finally {
+        globalIsLoading.value = false
+      }
+    }
 
     // Calculate total duration from sections (most reliable)
     let maxTick = 0
@@ -242,7 +233,7 @@ export function useMidiPlayer() {
       if (trackMuted.value[track.name]) continue
 
       // Check by name or MIDI channel 10 (index 9)
-      const isDrumTrack = track.name === 'Drums' || (track as any).channel === 9
+      const isDrumTrack = track.name === 'Drums' || track.channel === 9
       const notes = track.notes || (track as any).events || []
 
       for (const note of notes) {
@@ -281,21 +272,16 @@ export function useMidiPlayer() {
               })
             }
           } else if (!isDrumTrack) {
-            // Select instrument based on track name
-            let instrument = piano
-            if (track.name === 'Aux' && pad) {
-              instrument = pad
-            } else if (track.name === 'Chord' && trackInstruments.value.Chord === 'guitar' && guitar) {
-              instrument = guitar
+            // Select instrument from dynamic track map
+            const instrument = trackInstrumentMap.get(track.name)
+            if (instrument) {
+              instrument.start({
+                note: noteNum,
+                velocity: note.velocity,
+                time: audioContext.currentTime + adjustedStartSeconds,
+                duration: adjustedDuration
+              })
             }
-
-            // Play melodic sound with selected instrument
-            instrument.start({
-              note: noteNum,
-              velocity: note.velocity,
-              time: audioContext.currentTime + adjustedStartSeconds,
-              duration: adjustedDuration
-            })
           }
         }
       }
@@ -349,14 +335,9 @@ export function useMidiPlayer() {
       stopTimeout = null
     }
 
-    if (piano) {
-      piano.stop()
-    }
-    if (guitar) {
-      guitar.stop()
-    }
-    if (pad) {
-      pad.stop()
+    // Stop all dynamically loaded instruments
+    for (const [, instrument] of trackInstrumentMap) {
+      instrument.stop()
     }
     if (bass) {
       bass.stop()
@@ -400,14 +381,9 @@ export function useMidiPlayer() {
       stopTimeout = null
     }
 
-    if (piano) {
-      piano.stop()
-    }
-    if (guitar) {
-      guitar.stop()
-    }
-    if (pad) {
-      pad.stop()
+    // Stop all dynamically loaded instruments
+    for (const [, instrument] of trackInstrumentMap) {
+      instrument.stop()
     }
     if (bass) {
       bass.stop()
@@ -415,10 +391,6 @@ export function useMidiPlayer() {
     if (drums) {
       drums.stop()
     }
-  }
-
-  function setTrackInstrument(track: string, instrument: 'piano' | 'guitar') {
-    trackInstruments.value[track] = instrument
   }
 
   function setTrackMuted(track: string, muted: boolean) {
@@ -457,7 +429,6 @@ export function useMidiPlayer() {
     stop,
     rewind,
     seek,
-    setTrackInstrument,
     setTrackMuted,
     isTrackMuted
   }

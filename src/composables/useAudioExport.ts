@@ -1,39 +1,6 @@
 import { ref } from 'vue'
-import { Soundfont, DrumMachine } from 'smplr'
 import { Mp3Encoder } from '@breezystack/lamejs'
-
-// GM drum note number to Roland CR-8000 sample name mapping
-const GM_TO_DRUM: Record<number, string> = {
-  35: 'kick',
-  36: 'kick',
-  37: 'rimshot',
-  38: 'snare',
-  39: 'clap',
-  40: 'snare',
-  41: 'tom-low',
-  42: 'hihat-closed',
-  43: 'tom-low',
-  44: 'hihat-closed',
-  45: 'tom-low',
-  46: 'hihat-open',
-  47: 'tom-low',
-  48: 'tom-high',
-  49: 'cymball',
-  50: 'tom-high',
-  51: 'cymball',
-  52: 'cymball',
-  53: 'cymball',
-  54: 'clave',
-  55: 'cymball',
-  56: 'cowbell',
-  57: 'cymball',
-  60: 'conga-high',
-  61: 'conga-low',
-  62: 'conga-high',
-  63: 'conga-high',
-  64: 'conga-low',
-  75: 'clave',
-}
+import { GM_TO_DRUM, loadInstrumentsForTracks } from '@/utils/gmInstruments'
 
 interface MidiNote {
   note?: number
@@ -50,6 +17,8 @@ interface EventData {
   ppq: number
   tracks: {
     name: string
+    channel?: number
+    program?: number
     notes: MidiNote[]
   }[]
   sections?: {
@@ -70,8 +39,6 @@ export interface ExportOptions {
   bitrate?: number
   /** Track mute settings */
   mutedTracks?: Record<string, boolean>
-  /** Chord track instrument */
-  chordInstrument?: 'piano' | 'guitar'
 }
 
 export type ExportStatus =
@@ -95,7 +62,7 @@ export function useAudioExport() {
     filename: string = 'output.mp3',
     options: ExportOptions = {}
   ): Promise<void> {
-    const { bitrate = 192, mutedTracks = { SE: true }, chordInstrument = 'piano' } = options
+    const { bitrate = 192, mutedTracks = { SE: true } } = options
 
     isExporting.value = true
     exportStatus.value = 'loading-instruments'
@@ -127,25 +94,12 @@ export function useAudioExport() {
       // Create offline audio context
       const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * sampleRate), sampleRate)
 
-      // Load instruments with scheduler disabled for offline rendering
-      const [piano, guitar, pad, drums] = await Promise.all([
-        new Soundfont(offlineCtx as unknown as AudioContext, {
-          instrument: 'acoustic_grand_piano',
-          disableScheduler: true,
-        }).load,
-        new Soundfont(offlineCtx as unknown as AudioContext, {
-          instrument: 'distortion_guitar',
-          disableScheduler: true,
-        }).load,
-        new Soundfont(offlineCtx as unknown as AudioContext, {
-          instrument: 'pad_2_warm',
-          disableScheduler: true,
-        }).load,
-        new DrumMachine(offlineCtx as unknown as AudioContext, {
-          instrument: 'Roland CR-8000',
-          disableScheduler: true,
-        }).load,
-      ])
+      // Load instruments dynamically based on track program numbers
+      const { trackMap, drums } = await loadInstrumentsForTracks(
+        offlineCtx as unknown as AudioContext,
+        eventData.tracks,
+        { disableScheduler: true }
+      )
 
       exportStatus.value = 'scheduling'
 
@@ -154,7 +108,7 @@ export function useAudioExport() {
       for (const track of eventData.tracks) {
         if (mutedTracks[track.name]) continue
 
-        const isDrumTrack = track.name === 'Drums'
+        const isDrumTrack = track.name === 'Drums' || track.channel === 9
         const notes = track.notes || []
 
         for (const note of notes) {
@@ -176,19 +130,15 @@ export function useAudioExport() {
               })
             }
           } else {
-            let instrument = piano
-            if (track.name === 'Aux') {
-              instrument = pad
-            } else if (track.name === 'Chord' && chordInstrument === 'guitar') {
-              instrument = guitar
+            const instrument = trackMap.get(track.name)
+            if (instrument) {
+              instrument.start({
+                note: noteNum,
+                velocity: note.velocity,
+                time: startSeconds,
+                duration: durationSeconds,
+              })
             }
-
-            instrument.start({
-              note: noteNum,
-              velocity: note.velocity,
-              time: startSeconds,
-              duration: durationSeconds,
-            })
           }
           noteCount++
         }

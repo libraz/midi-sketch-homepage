@@ -25,16 +25,11 @@ const emit = defineEmits<{
   (e: 'seek', tick: number): void
   (e: 'toggle-play'): void
   (e: 'rewind'): void
-  (e: 'instrument-change', payload: { track: string; instrument: 'piano' | 'guitar' }): void
   (e: 'track-mute-change', payload: { track: string; muted: boolean }): void
 }>()
 
 function handleSeek(tick: number) {
   emit('seek', tick)
-}
-
-function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
-  emit('instrument-change', payload)
 }
 
 function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
@@ -79,7 +74,6 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
       :chord-progression="chordProgression"
       :music-key="musicKey"
       @seek="handleSeek"
-      @instrument-change="handleInstrumentChange"
       @track-mute-change="handleTrackMuteChange"
     />
   </div>

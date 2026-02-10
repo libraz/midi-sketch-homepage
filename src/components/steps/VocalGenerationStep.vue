@@ -47,7 +47,6 @@ const {
   preload,
   stop,
   play,
-  setTrackInstrument,
   setTrackMuted
 } = player
 
@@ -79,15 +78,6 @@ function handleSeek(tick: number) {
   stop()
   if (eventData.value) {
     play(eventData.value, tick, playOptions.value)
-  }
-}
-
-function handleInstrumentChange(payload: { track: string; instrument: 'piano' | 'guitar' }) {
-  setTrackInstrument(payload.track, payload.instrument)
-  if (isPlaying.value && eventData.value) {
-    const currentPos = currentTick.value
-    stop()
-    play(eventData.value, currentPos, playOptions.value)
   }
 }
 
@@ -856,7 +846,6 @@ function downloadMidi() {
           @seek="handleSeek"
           @toggle-play="togglePlay"
           @rewind="handleRewind"
-          @instrument-change="handleInstrumentChange"
           @track-mute-change="handleTrackMuteChange"
         />
 
