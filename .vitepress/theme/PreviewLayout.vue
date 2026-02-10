@@ -208,67 +208,20 @@ onMounted(async () => {
     }
 
     // Generate BGM first
+    // Spread decoded config so new params auto-flow to WASM;
+    // only override fields that need special handling
     instance.generateFromConfig({
-      stylePresetId: config.stylePresetId ?? 3,
-      key: config.key ?? 0,
-      bpm: config.bpm ?? 132,
-      seed: config.seed ?? 0,
-      chordProgressionId: config.chordProgressionId ?? 0,
-      formId: config.formId ?? 5,
+      ...config,
       vocalAttitude: validatedVocalAttitude,
-      drumsEnabled: config.drumsEnabled ?? true,
-      arpeggioEnabled: config.arpeggioEnabled ?? false,
-      arpeggioPattern: config.arpeggioPattern ?? 0,
-      arpeggioSpeed: config.arpeggioSpeed ?? 1,
-      arpeggioOctaveRange: config.arpeggioOctaveRange ?? 2,
-      arpeggioGate: config.arpeggioGate ?? 80,
-      vocalLow: config.vocalLow ?? 57,
-      vocalHigh: config.vocalHigh ?? 79,
       skipVocal: decoded.value.shareType === 'bgm',
-      humanize: config.humanize ?? false,
-      humanizeTiming: config.humanizeTiming ?? 50,
-      humanizeVelocity: config.humanizeVelocity ?? 50,
-      chordExtSus: config.chordExtSus ?? false,
-      chordExt7th: config.chordExt7th ?? false,
-      chordExt9th: config.chordExt9th ?? false,
-      chordExtSusProb: config.chordExtSusProb ?? 20,
-      chordExt7thProb: config.chordExt7thProb ?? 30,
-      chordExt9thProb: config.chordExt9thProb ?? 25,
-      seEnabled: config.seEnabled ?? true,
-      compositionStyle: config.compositionStyle ?? 0,
-      targetDurationSeconds: config.targetDurationSeconds ?? 150,
-      modulationTiming: config.modulationTiming ?? 0,
-      modulationSemitones: config.modulationSemitones ?? 2,
-      callEnabled: config.callEnabled ?? false,
-      callNotesEnabled: config.callNotesEnabled ?? true,
-      introChant: config.introChant ?? 0,
-      mixPattern: config.mixPattern ?? 0,
-      callDensity: config.callDensity ?? 2,
-      melodyTemplate: config.melodyTemplate ?? 0,
-      arrangementGrowth: config.arrangementGrowth ?? 0,
-      blueprintId: config.blueprintId ?? 255,
-      arpeggioSyncChord: config.arpeggioSyncChord ?? true,
-      motifRepeatScope: config.motifRepeatScope ?? 0,
-      motifFixedProgression: config.motifFixedProgression ?? true,
-      motifMaxChordCount: config.motifMaxChordCount ?? 4,
-      melodicComplexity: config.melodicComplexity ?? 1,
-      hookIntensity: config.hookIntensity ?? 2,
-      vocalStyle: config.vocalStyle ?? 0,
-      vocalGroove: config.vocalGroove ?? 0
     })
 
     // If vocal share, regenerate vocal with vocalSeed
     if (decoded.value.shareType === 'vocal') {
       instance.regenerateVocal({
+        ...config,
         seed: config.vocalSeed ?? 0,
-        vocalLow: config.vocalLow ?? 57,
-        vocalHigh: config.vocalHigh ?? 79,
         vocalAttitude: validatedVocalAttitude,
-        vocalStyle: config.vocalStyle ?? 0,
-        melodyTemplate: config.melodyTemplate ?? 0,
-        melodicComplexity: config.melodicComplexity ?? 1,
-        hookIntensity: config.hookIntensity ?? 2,
-        vocalGroove: config.vocalGroove ?? 0
       })
     }
 

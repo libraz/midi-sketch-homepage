@@ -14,7 +14,8 @@ import type { WizardConfig } from '@/stores/useWizardStore'
 // V2: Replaced with melodyTemplate (0-7)
 // V3: Added vocalSeed for vocal-first flow deterministic regeneration, added seEnabled
 // V4: Added blueprintId (0-8, 255=auto)
-const VERSION = 3
+// V5: Added melody/motif overrides, guitar, syncopation, energyCurve, driveFeel, moraRhythmMode
+const VERSION = 5
 
 // Share types
 export type ShareType = 'bgm' | 'vocal'
@@ -26,7 +27,7 @@ type FieldDef = [keyof WizardConfig | 'shareType', number, number?, number?]
 
 // Encoding schema - order matters!
 // Total bits: 4 + 1 + 32 + 6 + 6 + 4 + 8 + 4 + 2 + ... ≈ 180 bits ≈ 35 Base36 chars
-const FIELD_SCHEMA: FieldDef[] = [
+const FIELD_SCHEMA = [
   // Header
   // version is handled separately
   ['shareType', 1],           // 0=bgm, 1=vocal
@@ -96,7 +97,58 @@ const FIELD_SCHEMA: FieldDef[] = [
   ['vocalStyle', 4],          // 0-12
   ['melodyTemplate', 3],      // 0-7
   ['vocalGroove', 3],         // 0-5
-]
+
+  // Guitar
+  ['guitarEnabled', 1],
+
+  // Syncopation
+  ['enableSyncopation', 1],
+
+  // Energy & Drive
+  ['energyCurve', 3],         // 0-4
+  ['driveFeel', 7],           // 0-100
+
+  // Mora rhythm
+  ['moraRhythmMode', 2],      // 0-3
+
+  // Melody overrides
+  ['melodyMaxLeap', 5],       // 0-24 (semitones, 0=auto)
+  ['melodySyncopationProb', 8], // 0-100, 255=auto
+  ['melodyPhraseLength', 4],  // 0-8 (0=auto)
+  ['melodyLongNoteRatio', 8], // 0-100, 255=auto
+  ['melodyChorusRegisterShift', 8, -128], // -128..127 → stored as 0-255 (value - (-128) = value + 128)
+  ['melodyHookRepetition', 3], // 0-4
+  ['melodyUseLeadingTone', 2], // 0-2
+
+  // Motif overrides
+  ['motifLength', 4],         // 0-8 (0=auto)
+  ['motifNoteCount', 4],      // 0-8 (0=auto)
+  ['motifMotion', 8],         // 0-255 (255=auto)
+  ['motifRegisterHigh', 1],   // 0-1
+  ['motifRhythmDensity', 8],  // 0-255 (255=auto)
+] as const satisfies readonly FieldDef[]
+
+// Keys intentionally excluded from URL serialization (UI-only or derived values)
+type ExcludedFromUrl =
+  | 'flowType'           // UI-only: determines wizard flow
+  | 'songImageId'        // UI-only: resolved to stylePresetId
+  | 'activeCategory'     // UI-only: tab selection state
+  | 'timbreId'           // Legacy: no longer used
+  | 'chordExtProbExplicit' // UI flag: tracks explicit user changes
+  | 'drumsEnabledExplicit' // UI flag: tracks explicit user changes
+  | 'formExplicit'       // UI flag: tracks explicit user changes
+
+// Compile-time exhaustiveness check:
+// If you add a new key to WizardConfig, TypeScript will error here
+// unless you add it to FIELD_SCHEMA or ExcludedFromUrl.
+type SchemaKeys = (typeof FIELD_SCHEMA)[number][0]
+type SerializedKeys = Exclude<SchemaKeys, 'shareType'>
+type ExpectedKeys = Exclude<keyof WizardConfig, ExcludedFromUrl>
+type _MissingFromSchema = Exclude<ExpectedKeys, SerializedKeys>
+type _ExtraInSchema = Exclude<SerializedKeys, ExpectedKeys>
+// These will cause a compile error if non-empty:
+const _checkMissing: _MissingFromSchema extends never ? true : _MissingFromSchema = true
+const _checkExtra: _ExtraInSchema extends never ? true : _ExtraInSchema = true
 
 // Calculate total bits (version + fields + CRC16)
 const DATA_BITS = 4 + FIELD_SCHEMA.reduce((sum, [, bits]) => sum + bits, 0) // +4 for version
@@ -355,7 +407,8 @@ export function decodeShareUrl(hash: string): DecodedShare | null {
           'drumsEnabled', 'arpeggioEnabled', 'arpeggioSyncChord',
           'chordExtSus', 'chordExt7th', 'chordExt9th',
           'seEnabled', 'callEnabled', 'callNotesEnabled',
-          'motifFixedProgression', 'humanize'
+          'motifFixedProgression', 'humanize',
+          'guitarEnabled', 'enableSyncopation'
         ].includes(key)
 
         if (isBooleanField) {
