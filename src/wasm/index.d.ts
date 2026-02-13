@@ -119,6 +119,8 @@ export interface SongConfig {
     addictiveMode: boolean;
     /** Mora rhythm mode: 0=Standard, 1=MoraTimed, 2=Auto */
     moraRhythmMode: number;
+    /** Syllabic subdivision rate: 0=style default, 1-100=override % */
+    syllabicSubRate?: number;
     /** Enable syncopation effects (default=false) */
     enableSyncopation: boolean;
     /** Energy curve: 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState */

@@ -915,5 +915,11 @@
     "title": "Beta Features",
     "description": "Experimental features under development",
     "badge": "BETA"
+  },
+  "betaBanner": {
+    "badge": "PREVIEW",
+    "message": "This is a development preview. Generated music may contain unnatural note choices or harmonic issues.",
+    "cta": "Report a musical issue",
+    "dismiss": "Dismiss"
   }
 }

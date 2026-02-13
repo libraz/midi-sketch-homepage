@@ -1,6 +1,7 @@
 #!/bin/bash
 WASM_FILE="src/wasm/midisketch.wasm"
 META_FILE="src/wasm/meta.json"
+MIDI_SKETCH_DIR="../midi-sketch"
 
 if [ -f "$WASM_FILE" ]; then
   if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -16,6 +17,15 @@ if [ -f "$WASM_FILE" ]; then
   GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
   GZIP_KB=$((GZIP_SIZE / 1024))
 
+  # Get build date (ISO 8601)
+  BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  # Get commit hash from midi-sketch repo
+  COMMIT_HASH=""
+  if [ -d "$MIDI_SKETCH_DIR/.git" ]; then
+    COMMIT_HASH=$(git -C "$MIDI_SKETCH_DIR" rev-parse --short HEAD)
+  fi
+
   # Get old MD5 if meta.json exists
   OLD_MD5=""
   if [ -f "$META_FILE" ]; then
@@ -28,7 +38,9 @@ if [ -f "$WASM_FILE" ]; then
   "sizeKB": $SIZE_KB,
   "gzipSize": $GZIP_SIZE,
   "gzipKB": $GZIP_KB,
-  "md5": "$MD5"
+  "md5": "$MD5",
+  "buildDate": "$BUILD_DATE",
+  "commitHash": "$COMMIT_HASH"
 }
 EOF
 
@@ -45,6 +57,8 @@ EOF
     echo "   New: $MD5"
     echo "   Size: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
   fi
+  echo "   Build: $BUILD_DATE"
+  [ -n "$COMMIT_HASH" ] && echo "   Commit: $COMMIT_HASH"
 else
   echo "❌ WASM file not found: $WASM_FILE"
   exit 1

@@ -1,15 +1,29 @@
 <script setup lang="ts">
 import MidiWizard from '@/components/MidiWizard.vue'
 import { useData } from 'vitepress'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import wasmMeta from '@/wasm/meta.json'
 import { useWizardStore } from '@/stores/useWizardStore'
+import { useI18n } from '@/composables/useI18n'
 
 const { lang } = useData()
 const store = useWizardStore()
+const { t } = useI18n()
+
+// Beta banner dismiss state
+const betaDismissed = ref(false)
+function dismissBeta() {
+  betaDismissed.value = true
+}
 
 // WASM version info
 const wasmHash = computed(() => wasmMeta.md5.slice(0, 7))
+const wasmBuildDate = computed(() => {
+  const d = new Date(wasmMeta.buildDate)
+  return lang.value === 'ja'
+    ? `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}版`
+    : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+})
 
 // Initialize WASM lazily to avoid blocking page render
 async function initWasm() {
@@ -72,6 +86,36 @@ const otherLocales = computed(() =>
       <div class="demo-page__noise"></div>
     </div>
 
+    <!-- Beta Banner -->
+    <Transition name="beta-banner">
+      <div v-if="!betaDismissed" class="beta-banner" role="status">
+        <div class="beta-banner__inner">
+          <span class="beta-banner__badge">{{ t('betaBanner.badge') }}</span>
+          <p class="beta-banner__message">{{ t('betaBanner.message') }}</p>
+          <a
+            href="https://github.com/libraz/midi-sketch/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="beta-banner__cta"
+          >
+            {{ t('betaBanner.cta') }}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 9.5l7-7M4.5 2.5h5v5" />
+            </svg>
+          </a>
+          <button
+            class="beta-banner__dismiss"
+            :aria-label="t('betaBanner.dismiss')"
+            @click="dismissBeta"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M4 4l6 6M10 4l-6 6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Main Demo Area -->
     <main class="demo-page__main">
       <MidiWizard />
@@ -104,7 +148,7 @@ const otherLocales = computed(() =>
       </div>
       <div class="demo-page__footer-version">
         <span class="demo-page__version" :title="`WASM Build: ${wasmMeta.md5}`">
-          midi-sketch {{ store.libVersion || '...' }} ({{ wasmHash }})
+          midi-sketch {{ store.libVersion || '...' }} ({{ wasmHash }}) · {{ wasmBuildDate }}
         </span>
       </div>
     </footer>
@@ -210,6 +254,115 @@ const otherLocales = computed(() =>
   mix-blend-mode: overlay;
 }
 
+/* Beta Banner */
+.beta-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(139, 92, 246, 0.06) 100%);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.beta-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.beta-banner__badge {
+  flex-shrink: 0;
+  font-family: 'SF Mono', 'Monaco', 'Fira Code', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #050508;
+  background: #F59E0B;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.beta-banner__message {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+.beta-banner__cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #FBBF24;
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  margin: -0.15rem 0;
+  transition: all 0.2s ease;
+}
+
+.beta-banner__cta:hover {
+  color: #FDE68A;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.beta-banner__dismiss {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  margin-left: 0.25rem;
+}
+
+.beta-banner__dismiss:hover {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Banner transition */
+.beta-banner-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.beta-banner-leave-active {
+  transition: all 0.25s ease-in;
+}
+
+.beta-banner-enter-from,
+.beta-banner-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.beta-banner-enter-to,
+.beta-banner-leave-from {
+  max-height: 60px;
+}
+
 /* Main Content */
 .demo-page__main {
   flex: 1;
@@ -309,6 +462,32 @@ const otherLocales = computed(() =>
 
 /* Responsive */
 @media (max-width: 768px) {
+  .beta-banner__inner {
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    padding: 0.45rem 0.75rem;
+  }
+
+  .beta-banner__message {
+    flex: 1 1 100%;
+    order: 2;
+    font-size: 0.72rem;
+  }
+
+  .beta-banner__badge {
+    order: 1;
+  }
+
+  .beta-banner__cta {
+    order: 3;
+    font-size: 0.72rem;
+  }
+
+  .beta-banner__dismiss {
+    order: 1;
+    margin-left: auto;
+  }
+
   .demo-page__main {
     padding: 0.75rem;
     align-items: flex-start;
