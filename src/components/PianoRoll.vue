@@ -52,6 +52,7 @@ const props = defineProps<{
   isPlaying?: boolean
   chordProgression?: string  // e.g., "I - V - vi - IV"
   musicKey?: number          // 0-11 (0=C)
+  precomputedChordTimings?: ChordTiming[]  // Pre-computed timings (overrides chordProgression)
 }>()
 
 const emit = defineEmits<{
@@ -154,6 +155,11 @@ const parsedChords = computed(() => {
 })
 
 const chordTimings = computed((): ChordTiming[] => {
+  // Use pre-computed timings if provided (from WASM chord timeline)
+  if (props.precomputedChordTimings?.length) {
+    return props.precomputedChordTimings
+  }
+
   if (parsedChords.value.length === 0 || sections.value.length === 0) return []
 
   const sectionsWithTicks = sections.value.map(s => ({

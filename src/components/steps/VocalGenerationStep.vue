@@ -843,6 +843,7 @@ function downloadMidi() {
           :chord-progression="chordProgressionDisplay"
           :music-key="store.config.key"
           :play-root-notes="true"
+          :precomputed-chord-timings="chordTimings"
           @seek="handleSeek"
           @toggle-play="togglePlay"
           @rewind="handleRewind"
