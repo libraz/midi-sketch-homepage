@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MidiWizard from '@/components/MidiWizard.vue'
+import MidiStudio from '@/components/studio/MidiStudio.vue'
 import { useData } from 'vitepress'
 import { computed, onMounted, ref } from 'vue'
 import wasmMeta from '@/wasm/meta.json'
@@ -118,7 +118,7 @@ const otherLocales = computed(() =>
 
     <!-- Main Demo Area -->
     <main class="demo-page__main">
-      <MidiWizard />
+      <MidiStudio />
     </main>
 
     <!-- Minimal Footer -->
@@ -375,7 +375,7 @@ const otherLocales = computed(() =>
   min-height: 0;
 }
 
-.demo-page__main :deep(.noir-wizard) {
+.demo-page__main :deep(.midi-studio) {
   width: 100%;
   max-width: 1000px;
   box-shadow:
@@ -493,7 +493,7 @@ const otherLocales = computed(() =>
     align-items: flex-start;
   }
 
-  .demo-page__main :deep(.noir-wizard) {
+  .demo-page__main :deep(.midi-studio) {
     border-radius: 16px;
   }
 

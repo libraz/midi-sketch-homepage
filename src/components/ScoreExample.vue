@@ -128,7 +128,7 @@ const view = computed(() => {
 })
 
 const staveCount = computed(() => view.value.parts.length)
-const height = computed(() => staveCount.value === 3 ? 335 : staveCount.value === 2 ? 235 : 150)
+const height = computed(() => staveCount.value === 3 ? 335 : staveCount.value === 2 ? 235 : 165)
 
 async function togglePlay() {
   try {
@@ -426,6 +426,17 @@ async function render() {
 
   try {
     const VF = await import('vexflow')
+    // VexFlow 5 draws glyphs as <text> in the Bravura font and measures
+    // their widths through canvas. Importing the module only *starts*
+    // loading its fonts; rendering before they finish measures notehead
+    // widths with the fallback font, which pushes stems off the noteheads.
+    // Wait for the faces the score uses before doing any layout.
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      await Promise.all([
+        document.fonts.load('30pt Bravura'),
+        document.fonts.load('30pt Academico'),
+      ]).catch(() => undefined)
+    }
     const d = def.value
     const parts = view.value.parts
     const bars = d.bars ?? 1
@@ -512,7 +523,10 @@ async function render() {
 
     const formatter = new VF.Formatter()
     voices.forEach((voice) => formatter.joinVoices([voice]))
-    formatter.format(voices, staveWidth - 80)
+    // Distribute notes over the room left of the clef and time signature,
+    // so the last note stays inside the closing barline.
+    const noteStartX = staves[0].getNoteStartX()
+    formatter.format(voices, staves[0].getX() + staveWidth - noteStartX - 20)
 
     const beams = built.map((b) => VF.Beam.generateBeams(b.staveNotes.filter((n) => !n.isRest())))
 

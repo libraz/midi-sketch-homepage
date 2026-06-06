@@ -209,9 +209,18 @@ onMounted(async () => {
 
     // Generate BGM first
     // Spread decoded config so new params auto-flow to WASM;
-    // only override fields that need special handling
+    // only override fields that need special handling.
+    // Percentage fields are stored as 0-100 integers in the share URL but
+    // SongConfig expects 0.0-1.0 floats (same conversion as buildBgmConfig).
     instance.generateFromConfig({
       ...config,
+      arpeggioGate: (config.arpeggioGate ?? 80) / 100,
+      humanizeTiming: (config.humanizeTiming ?? 40) / 100,
+      humanizeVelocity: (config.humanizeVelocity ?? 30) / 100,
+      chordExtSusProb: (config.chordExtSusProb ?? 20) / 100,
+      chordExt7thProb: (config.chordExt7thProb ?? 15) / 100,
+      chordExt9thProb: (config.chordExt9thProb ?? 25) / 100,
+      chordExtTritoneSubProb: (config.chordExtTritoneSubProb ?? 50) / 100,
       vocalAttitude: validatedVocalAttitude,
       skipVocal: decoded.value.shareType === 'bgm',
     })

@@ -5,7 +5,6 @@ import { useWizardStore, type ChordProgression } from '@/stores/useWizardStore'
 import { useChordPlayer, warmupChordPlayer } from '@/composables/useChordPlayer'
 import { chordDegreeColors } from '@/data/chordColors'
 import { songImages } from '@/data/songImages'
-import StepHeader from '@/components/wizard/StepHeader.vue'
 import SectionHeader from '@/components/wizard/SectionHeader.vue'
 
 const { t } = useI18n()
@@ -27,9 +26,9 @@ onMounted(async () => {
   if (typeof window === 'undefined') return
 
   try {
-    const mod = await import('../../wasm/index.js')
+    const mod = await import('../../../wasm/index.js')
     midisketch = mod
-    const wasmPath = new URL('../../wasm/midisketch.wasm', import.meta.url).href
+    const wasmPath = new URL('../../../wasm/midisketch.wasm', import.meta.url).href
     await mod.init({ wasmPath })
     isWasmLoaded.value = true
     store.libVersion.value = mod.getVersion()
@@ -224,10 +223,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 </script>
 
 <template>
-  <div class="chord-step">
-    <!-- Header -->
-    <StepHeader :title="t('chordStep.title')" :subtitle="t('chordStep.subtitle')" />
-
+  <div class="chord-card-panel">
     <!-- Recommended Section -->
     <section class="chord-section">
       <SectionHeader
@@ -368,7 +364,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 </template>
 
 <style scoped>
-.chord-step {
+.chord-card-panel {
   --step-accent: #8B5CF6;
   --accent-rgb: 139, 92, 246;
   overflow: visible;
@@ -388,10 +384,11 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   opacity: 0.8;
 }
 
+/* Single-column layout suited to the ~520px drawer */
 .chord-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 0.5rem;
   margin: 1rem -0.5rem -0.5rem -0.5rem;
 }
@@ -886,10 +883,6 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 @media (max-width: 640px) {
-  .chord-grid {
-    grid-template-columns: 1fr;
-  }
-
   .chord-flow {
     padding: 0.5rem;
     gap: 0.375rem;

@@ -1,6 +1,11 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { songImages } from '@/data/songImages'
-import { useWizardFlow, STEP_DEFINITIONS, type FlowType } from '@/composables/useWizardFlow'
+import {
+  useWizardFlow,
+  VOCAL_AFFECTING_KEYS,
+  BGM_AFFECTING_KEYS,
+  type FlowType
+} from '@/composables/useWizardFlow'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import type { PlacedNote } from '@/components/PianoRollEditor/types'
 
@@ -137,7 +142,7 @@ export interface WizardConfig {
 // ============================================
 // Default Configuration
 // ============================================
-const DEFAULT_CONFIG: WizardConfig = {
+export const DEFAULT_CONFIG: WizardConfig = {
   // Flow
   flowType: 'vocal-first',
 
@@ -258,7 +263,6 @@ const DEFAULT_CONFIG: WizardConfig = {
 // ============================================
 // State
 // ============================================
-const currentStep = ref(1)
 const bgmGenerated = ref(false)
 const vocalGenerated = ref(false)
 const bgmVersion = ref(0)
@@ -272,6 +276,25 @@ const config = reactive<WizardConfig>({ ...DEFAULT_CONFIG })
 
 // Edited vocal notes (null = not edited, use generated)
 const editedVocalNotes = ref<PlacedNote[] | null>(null)
+
+// Baseline snapshot for "modified" indicators in the studio UI.
+// Taken after selectSongImage so that "modified" means
+// "differs from the selected song image's defaults".
+const baselineConfig = ref<WizardConfig>({ ...DEFAULT_CONFIG })
+
+/**
+ * Snapshot the current config as the baseline for modified-state diffing.
+ */
+function snapshotBaseline() {
+  baselineConfig.value = { ...(config as WizardConfig) }
+}
+
+/**
+ * Check whether any of the given config keys differ from the baseline.
+ */
+function isModifiedFromBaseline(keys: (keyof WizardConfig)[]): boolean {
+  return keys.some(key => config[key] !== baselineConfig.value[key])
+}
 
 // ============================================
 // Flow Management
@@ -314,61 +337,6 @@ function invalidateBgm() {
 }
 
 /**
- * Get step IDs that should be reset when navigating back.
- * Returns all steps after the target step (up to and including fromStep).
- * @param targetStep - Destination step (1-based)
- * @param fromStep - Current step (1-based)
- */
-function getStepsToReset(targetStep: number, fromStep: number): string[] {
-  // Only reset when going back
-  if (targetStep >= fromStep) return []
-
-  const stepsToReset: string[] = []
-  // From targetStep+1 to fromStep (excluding targetStep itself)
-  for (let i = targetStep + 1; i <= fromStep; i++) {
-    const stepDef = wizardFlow.getStepByIndex(i)
-    if (stepDef) {
-      stepsToReset.push(stepDef.id)
-    }
-  }
-  return stepsToReset
-}
-
-/**
- * Reset config values for specified steps to defaults
- * @param stepIds - Step IDs to reset
- * @param targetStepId - Target step ID (its keys should NOT be reset)
- */
-function resetStepConfigs(stepIds: string[], targetStepId?: string): void {
-  const keysToReset = new Set<keyof WizardConfig>()
-
-  // Get keys that should be preserved (from target step)
-  const keysToPreserve = new Set<string>()
-  if (targetStepId) {
-    const targetStepDef = STEP_DEFINITIONS[targetStepId]
-    if (targetStepDef?.affectingKeys) {
-      targetStepDef.affectingKeys.forEach(key => keysToPreserve.add(key))
-    }
-  }
-
-  for (const stepId of stepIds) {
-    const stepDef = STEP_DEFINITIONS[stepId]
-    if (stepDef?.affectingKeys) {
-      stepDef.affectingKeys.forEach(key => {
-        // Don't reset keys that are in the target step
-        if (!keysToPreserve.has(key)) {
-          keysToReset.add(key as keyof WizardConfig)
-        }
-      })
-    }
-  }
-
-  for (const key of keysToReset) {
-    ;(config as any)[key] = DEFAULT_CONFIG[key]
-  }
-}
-
-/**
  * Check if a config key affects a specific generation and invalidate if needed.
  */
 function onConfigChange(key: keyof WizardConfig) {
@@ -381,71 +349,25 @@ function onConfigChange(key: keyof WizardConfig) {
   }
 }
 
+// ============================================
+// Auto-invalidation watchers
+// ============================================
+// Any mutation of a generation-affecting key routes through onConfigChange,
+// no matter which component performed it. This keeps invalidation correct
+// for components that mutate config directly (panels, sliders, cards).
+const AFFECTING_KEYS = new Set<keyof WizardConfig>([
+  ...Object.values(VOCAL_AFFECTING_KEYS).flat(),
+  ...Object.values(BGM_AFFECTING_KEYS).flat()
+] as (keyof WizardConfig)[])
+
+for (const key of AFFECTING_KEYS) {
+  watch(() => config[key], () => onConfigChange(key))
+}
+
 export function useWizardStore() {
-  // Total steps is dynamic based on flow type
-  const totalSteps = computed(() => wizardFlow.totalSteps.value)
-
-  const canGoNext = computed(() => currentStep.value < totalSteps.value)
-  const canGoBack = computed(() => currentStep.value > 1)
-
   const currentSongImage = computed(() =>
     songImages.find(s => s.id === config.songImageId)
   )
-
-  /**
-   * Get current step definition
-   */
-  const currentStepDef = computed(() =>
-    wizardFlow.getStepByIndex(currentStep.value)
-  )
-
-  function nextStep() {
-    if (canGoNext.value) {
-      currentStep.value++
-    }
-  }
-
-  function prevStep() {
-    if (canGoBack.value) {
-      goToStep(currentStep.value - 1)
-    }
-  }
-
-  function goToStep(step: number) {
-    if (step < 1 || step > totalSteps.value) return
-
-    const oldStep = currentStep.value
-
-    // Reset everything when going back to the first step
-    if (step === 1 && oldStep > 1) {
-      Object.assign(config, DEFAULT_CONFIG)
-      wizardFlow.setFlowType('vocal-first')
-      invalidateVocal()
-      invalidateBgm()
-      editedVocalNotes.value = null
-      currentStep.value = 1
-      return
-    }
-
-    // Reset skipped step configs when going back
-    if (step < oldStep) {
-      const stepsToReset = getStepsToReset(step, oldStep)
-      const targetStepDef = wizardFlow.getStepByIndex(step)
-      resetStepConfigs(stepsToReset, targetStepDef?.id)
-
-      // Invalidate generation state if generation steps are in the reset list
-      for (const stepId of stepsToReset) {
-        if (stepId === 'vocalGeneration' || stepId === 'vocalSettings') {
-          invalidateVocal()
-        }
-        if (stepId === 'bgmGeneration' || stepId === 'bgmSettings') {
-          invalidateBgm()
-        }
-      }
-    }
-
-    currentStep.value = step
-  }
 
   function selectSongImage(id: string) {
     const image = songImages.find(s => s.id === id)
@@ -465,6 +387,9 @@ export function useWizardStore() {
     // Invalidate generation if already past this step
     if (vocalGenerated.value) invalidateVocal()
     if (bgmGenerated.value) invalidateBgm()
+
+    // The newly selected image's derived values become the baseline
+    snapshotBaseline()
   }
 
   function selectChordProgression(id: number) {
@@ -507,7 +432,6 @@ export function useWizardStore() {
   }
 
   function reset() {
-    currentStep.value = 1
     invalidateVocal()
     invalidateBgm()
     vocalVersion.value = 0
@@ -556,8 +480,6 @@ export function useWizardStore() {
 
   return {
     // State
-    currentStep,
-    totalSteps,
     bgmGenerated,
     vocalGenerated,
     bgmVersion,
@@ -566,17 +488,10 @@ export function useWizardStore() {
     chordProgressions,
     config,
     editedVocalNotes,
+    baselineConfig,
 
     // Computed
-    canGoNext,
-    canGoBack,
     currentSongImage,
-    currentStepDef,
-
-    // Navigation
-    nextStep,
-    prevStep,
-    goToStep,
 
     // Config helpers
     selectSongImage,
@@ -593,6 +508,8 @@ export function useWizardStore() {
     setVocalGenerated,
     setBgmGenerated,
     reset,
+    snapshotBaseline,
+    isModifiedFromBaseline,
 
     // Vocal editing
     setEditedVocalNotes,

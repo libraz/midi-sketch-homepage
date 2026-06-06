@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
-import { useWizardFlow } from '@/composables/useWizardFlow'
-import { blueprintRequiresDrums, blueprintRecommendsArpeggio, blueprintIsRhythmSync, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import {
+  BLUEPRINT_OPTIONS,
+  AUTO_BLUEPRINT_ID,
+  blueprintRequiresDrums,
+  blueprintRecommendsArpeggio,
+  blueprintIsRhythmSync,
+} from '@/data/blueprints'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
-import StepHeader from '@/components/wizard/StepHeader.vue'
 import SettingSection from '@/components/wizard/SettingSection.vue'
 import OptionCard from '@/components/wizard/OptionCard.vue'
 import MotifSettingsPanel from '@/components/wizard/MotifSettingsPanel.vue'
 import RangeSlider from '@/components/wizard/RangeSlider.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useWizardStore()
-const { isBgmOnly } = useWizardFlow()
+
+// BGM-only flow gates a few sections (composition style, energy curve, growth).
+const isBgmOnly = computed(() => store.config.flowType === 'bgm-only')
 
 // Composition style options (BGM-only flow)
 const compositionStyleOptions = [
@@ -22,10 +28,13 @@ const compositionStyleOptions = [
   { key: 'synthDriven', value: 2, icon: '🎛️' }
 ]
 
+// Recommended blueprint based on current songImage
+const recommendedBlueprintId = computed(() => getRecommendedBlueprintId(store.config.songImageId))
+
 // Get effective blueprint ID (resolve Auto to recommended)
 const effectiveBlueprintId = computed(() => {
   if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
-    return getRecommendedBlueprintId(store.config.songImageId)
+    return recommendedBlueprintId.value
   }
   return store.config.blueprintId
 })
@@ -34,6 +43,25 @@ const effectiveBlueprintId = computed(() => {
 const blueprintNeedsDrums = computed(() => blueprintRequiresDrums(effectiveBlueprintId.value))
 const blueprintWantsArpeggio = computed(() => blueprintRecommendsArpeggio(effectiveBlueprintId.value))
 const blueprintIsRhythmSyncActive = computed(() => blueprintIsRhythmSync(effectiveBlueprintId.value))
+
+// Blueprint options with recommended badge and RhythmSync/drums tags (excludes Auto)
+const blueprintOptions = computed(() => {
+  const lang = locale.value as 'en' | 'ja'
+  return BLUEPRINT_OPTIONS
+    .filter(bp => bp.id !== AUTO_BLUEPRINT_ID)
+    .map(bp => ({
+      ...bp,
+      label: bp.label[lang],
+      description: bp.description[lang],
+      isRecommended: bp.id === recommendedBlueprintId.value,
+      isRhythmSync: bp.paradigm === 'rhythm',
+    }))
+})
+
+function selectBlueprint(id: number) {
+  store.config.blueprintId = id
+  store.onConfigChange('blueprintId')
+}
 
 // Arpeggio pattern options with icons
 const arpeggioPatternOptions = [
@@ -45,6 +73,13 @@ const arpeggioPatternOptions = [
   { key: 'pedalRoot', value: 5, icon: '🎹' },
   { key: 'alberti', value: 6, icon: '🎶' },
   { key: 'brokenChord', value: 7, icon: '💫' }
+]
+
+// Arpeggio speed options
+const arpeggioSpeedOptions = [
+  { key: 'eighth', value: 0, icon: '♪' },
+  { key: 'sixteenth', value: 1, icon: '♬' },
+  { key: 'triplet', value: 2, icon: '³' }
 ]
 
 // Energy curve options (BGM-only flow; in vocal-first flow this is set
@@ -62,34 +97,20 @@ const arrangementGrowthOptions = [
   { key: 'registerAdd', value: 1, icon: '🪜' }
 ]
 
-// Arpeggio speed options
-const arpeggioSpeedOptions = [
-  { key: 'eighth', value: 0, icon: '♪' },
-  { key: 'sixteenth', value: 1, icon: '♬' },
-  { key: 'triplet', value: 2, icon: '³' }
-]
+// Chord extension probability sliders, paired with their toggle/recommendation hint
+const chordExtProbControls = [
+  { enabledKey: 'chordExtSus', probKey: 'chordExtSusProb', hint: 'settingsStep.advanced.chordExt.susHint' },
+  { enabledKey: 'chordExt7th', probKey: 'chordExt7thProb', hint: 'settingsStep.advanced.chordExt.seventhHint' },
+  { enabledKey: 'chordExt9th', probKey: 'chordExt9thProb', hint: 'settingsStep.advanced.chordExt.ninthHint' },
+  { enabledKey: 'chordExtTritoneSub', probKey: 'chordExtTritoneSubProb', hint: '' },
+] as const
 
-// Call density options (0=None, 1=Minimal, 2=Standard, 3=Intense)
-const callDensityOptions = [
-  { key: 'none', value: 0 },
-  { key: 'minimal', value: 1 },
-  { key: 'standard', value: 2 },
-  { key: 'intense', value: 3 }
-]
-
-// Intro chant options (0=None, 1=Gachikoi, 2=Shouting)
-const introChantOptions = [
-  { key: 'none', value: 0 },
-  { key: 'gachikoi', value: 1 },
-  { key: 'shouting', value: 2 }
-]
-
-// MIX pattern options (0=None, 1=Standard, 2=Tiger)
-const mixPatternOptions = [
-  { key: 'none', value: 0 },
-  { key: 'standard', value: 1 },
-  { key: 'tiger', value: 2 }
-]
+// Labels for the probability sliders (reuse the toggle labels)
+const chordExtLabel: Record<string, string> = {
+  chordExtSus: 'sus',
+  chordExt7th: '7th',
+  chordExt9th: '9th',
+}
 
 // Descriptions for currently enabled chord extensions
 const enabledExtDescriptions = computed(() => {
@@ -103,8 +124,18 @@ const enabledExtDescriptions = computed(() => {
   return list
 })
 
-// No automatic overrides for compositionStyle changes
-// User controls arpeggio and modulation explicitly
+// Any enabled extension reveals the advanced probability subsection
+const hasEnabledExt = computed(() =>
+  store.config.chordExtSus || store.config.chordExt7th || store.config.chordExt9th || store.config.chordExtTritoneSub
+)
+
+const showProbAdvanced = ref(false)
+
+// Editing a probability slider marks the values as user-controlled
+function onProbInput(key: string) {
+  store.config.chordExtProbExplicit = true
+  store.onConfigChange(key as Parameters<typeof store.onConfigChange>[0])
+}
 
 // Auto-enable drums when blueprint requires it
 watch(blueprintNeedsDrums, (needsDrums) => {
@@ -115,27 +146,64 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 </script>
 
 <template>
-  <div class="bgm-settings-step">
-    <!-- Header -->
-    <StepHeader
-      :title="t('bgmSettingsStep.title')"
-      :subtitle="t('bgmSettingsStep.subtitle')"
-    />
-
+  <div class="arrangement-card">
     <!-- RhythmSync Info Banner -->
     <div v-if="blueprintIsRhythmSyncActive" class="rhythm-sync-banner">
       <span class="rhythm-sync-banner__icon">🥁</span>
       <span class="rhythm-sync-banner__text">{{ t('bgmSettingsStep.rhythmSyncInfo') }}</span>
     </div>
 
-    <div class="bgm-settings">
+    <div class="arrangement-body">
+      <!-- Production Blueprint -->
+      <SettingSection
+        icon="🎛️"
+        :title="t('styleStep.arrangementStyle.title')"
+        :description="t('styleStep.arrangementStyle.description')"
+        featured
+      >
+        <span class="arrangement-hint">{{ t('styleStep.arrangementStyle.affectsHint') }}</span>
+
+        <div class="blueprint-grid">
+          <article
+            v-for="bp in blueprintOptions"
+            :key="bp.id"
+            class="blueprint-card"
+            :class="{ 'blueprint-card--selected': store.config.blueprintId === bp.id }"
+            @click="selectBlueprint(bp.id)"
+            role="button"
+            :aria-pressed="store.config.blueprintId === bp.id"
+          >
+            <div class="blueprint-card__glow"></div>
+
+            <div class="blueprint-card__content">
+              <div class="blueprint-card__head">
+                <div class="blueprint-card__icon-wrap">
+                  <span class="blueprint-card__icon">{{ bp.icon }}</span>
+                </div>
+                <div class="blueprint-card__chips">
+                  <span v-if="bp.isRecommended" class="blueprint-card__badge">{{ t('styleStep.arrangementStyle.recommendedBadge') }}</span>
+                  <span v-if="bp.isRhythmSync" class="blueprint-card__rhythm-tag">{{ t('styleStep.arrangementStyle.rhythmSyncTag') }}</span>
+                  <span v-if="bp.requiresDrums" class="blueprint-card__drums-tag" :title="t('styleStep.arrangementStyle.drumsRequiredTag')">🥁</span>
+                </div>
+              </div>
+
+              <h3 class="blueprint-card__name">{{ bp.label }}</h3>
+              <p class="blueprint-card__desc">{{ bp.description }}</p>
+            </div>
+
+            <div class="blueprint-card__check" v-if="store.config.blueprintId === bp.id">
+              <span>✓</span>
+            </div>
+          </article>
+        </div>
+      </SettingSection>
+
       <!-- Composition Style (BGM-only flow) -->
       <SettingSection
         v-if="isBgmOnly"
         icon="🎹"
         :title="t('settingsStep.advanced.compositionStyle.label')"
         :description="t('settingsStep.advanced.compositionStyle.description')"
-        featured
       >
         <div class="option-cards">
           <OptionCard
@@ -335,11 +403,37 @@ watch(blueprintNeedsDrums, (needsDrums) => {
             @select="store.config.chordExtTritoneSub = !store.config.chordExtTritoneSub"
           />
         </div>
+
         <!-- Explain the enabled extensions -->
         <div v-if="enabledExtDescriptions.length" class="ext-desc-list">
           <p v-for="d in enabledExtDescriptions" :key="d.name" class="ext-desc-list__item">
             <strong>{{ d.name }}</strong> — {{ d.text }}
           </p>
+        </div>
+
+        <!-- Advanced: per-extension probability sliders (collapsed) -->
+        <div v-if="hasEnabledExt" class="prob-advanced">
+          <button class="prob-advanced__toggle" type="button" @click="showProbAdvanced = !showProbAdvanced">
+            <span class="prob-advanced__caret" :class="{ 'prob-advanced__caret--open': showProbAdvanced }">▸</span>
+            <span>{{ t('settingsStep.advanced.chordExt.probability') }}</span>
+          </button>
+
+          <div v-if="showProbAdvanced" class="prob-advanced__body">
+            <span class="sub-setting__hint">{{ t('settingsStep.advanced.chordExt.desc2') }}</span>
+
+            <template v-for="ctrl in chordExtProbControls" :key="ctrl.probKey">
+              <div v-if="store.config[ctrl.enabledKey]" class="sub-setting">
+                <RangeSlider
+                  :model-value="store.config[ctrl.probKey]"
+                  :min="0"
+                  :max="100"
+                  :label="ctrl.enabledKey === 'chordExtTritoneSub' ? t('settingsStep.advanced.chordExt.tritone') : chordExtLabel[ctrl.enabledKey]"
+                  @update:model-value="(v: number) => { store.config[ctrl.probKey] = v; onProbInput(ctrl.probKey) }"
+                />
+                <span v-if="ctrl.hint" class="sub-setting__hint">{{ t(ctrl.hint) }}</span>
+              </div>
+            </template>
+          </div>
         </div>
       </SettingSection>
 
@@ -384,168 +478,12 @@ watch(blueprintNeedsDrums, (needsDrums) => {
           </button>
         </div>
       </SettingSection>
-
-      <!-- Call & SE -->
-      <SettingSection
-        icon="📣"
-        :title="t('settingsStep.advanced.se.label')"
-        :description="t('settingsStep.advanced.se.description')"
-      >
-        <div class="call-se-settings">
-          <!-- SE Track -->
-          <div class="sub-setting">
-            <label class="sub-setting__label">{{ t('settingsStep.advanced.se.seEnabled') }}</label>
-            <div class="option-cards option-cards--row">
-              <OptionCard
-                title="OFF"
-                :is-active="!store.config.seEnabled"
-                compact
-                @select="store.config.seEnabled = false"
-              />
-              <OptionCard
-                title="ON"
-                :is-active="store.config.seEnabled"
-                compact
-                @select="store.config.seEnabled = true"
-              />
-            </div>
-            <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.seEnabledDesc') }}</span>
-          </div>
-
-          <!-- Call Feature -->
-          <div class="sub-setting">
-            <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callEnabled') }}</label>
-            <div class="option-cards option-cards--row">
-              <OptionCard
-                title="OFF"
-                :is-active="!store.config.callEnabled"
-                compact
-                @select="store.config.callEnabled = false"
-              />
-              <OptionCard
-                title="ON"
-                :is-active="store.config.callEnabled"
-                compact
-                @select="store.config.callEnabled = true"
-              />
-            </div>
-            <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.callEnabledDesc') }}</span>
-          </div>
-
-          <template v-if="store.config.callEnabled">
-            <!-- Call Density -->
-            <div class="sub-setting">
-              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
-              <div class="compact-btns">
-                <button
-                  v-for="opt in callDensityOptions"
-                  :key="opt.key"
-                  class="compact-btn"
-                  :class="{ 'compact-btn--active': store.config.callDensity === opt.value }"
-                  @click="store.config.callDensity = opt.value"
-                >
-                  {{ t(`settingsStep.advanced.se.callDensityOptions.${opt.key}`) }}
-                </button>
-              </div>
-            </div>
-            <!-- Intro Chant -->
-            <div class="sub-setting">
-              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.introChant') }}</label>
-              <div class="compact-btns">
-                <button
-                  v-for="opt in introChantOptions"
-                  :key="opt.key"
-                  class="compact-btn"
-                  :class="{ 'compact-btn--active': store.config.introChant === opt.value }"
-                  @click="store.config.introChant = opt.value"
-                >
-                  {{ t(`settingsStep.advanced.se.introChantOptions.${opt.key}`) }}
-                </button>
-              </div>
-              <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.introChantDesc') }}</span>
-            </div>
-            <!-- MIX Pattern -->
-            <div class="sub-setting">
-              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
-              <div class="compact-btns">
-                <button
-                  v-for="opt in mixPatternOptions"
-                  :key="opt.key"
-                  class="compact-btn"
-                  :class="{ 'compact-btn--active': store.config.mixPattern === opt.value }"
-                  @click="store.config.mixPattern = opt.value"
-                >
-                  {{ t(`settingsStep.advanced.se.mixPatternOptions.${opt.key}`) }}
-                </button>
-              </div>
-              <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.mixPatternDesc') }}</span>
-            </div>
-            <!-- Call Notes -->
-            <div class="sub-setting">
-              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callNotesEnabled') }}</label>
-              <div class="option-cards option-cards--row">
-                <OptionCard
-                  title="OFF"
-                  :is-active="!store.config.callNotesEnabled"
-                  compact
-                  @select="store.config.callNotesEnabled = false"
-                />
-                <OptionCard
-                  title="ON"
-                  :is-active="store.config.callNotesEnabled"
-                  compact
-                  @select="store.config.callNotesEnabled = true"
-                />
-              </div>
-            </div>
-          </template>
-        </div>
-      </SettingSection>
-
-      <!-- Humanize -->
-      <SettingSection
-        icon="🎯"
-        :title="t('settingsStep.advanced.humanize.label')"
-        :description="t('settingsStep.advanced.humanize.description')"
-      >
-        <div class="humanize-settings">
-          <div class="option-cards option-cards--row">
-            <OptionCard
-              title="OFF"
-              :is-active="!store.config.humanize"
-              compact
-              @select="store.config.humanize = false"
-            />
-            <OptionCard
-              title="ON"
-              :is-active="store.config.humanize"
-              compact
-              @select="store.config.humanize = true"
-            />
-          </div>
-
-          <template v-if="store.config.humanize">
-            <div class="sub-setting">
-              <RangeSlider
-                v-model="store.config.humanizeTiming"
-                :label="t('settingsStep.advanced.humanize.timing')"
-              />
-            </div>
-            <div class="sub-setting">
-              <RangeSlider
-                v-model="store.config.humanizeVelocity"
-                :label="t('settingsStep.advanced.humanize.velocity')"
-              />
-            </div>
-          </template>
-        </div>
-      </SettingSection>
     </div>
   </div>
 </template>
 
 <style scoped>
-.bgm-settings-step {
+.arrangement-card {
   --step-accent: #60A5FA;
   --accent-rgb: 96, 165, 250;
 }
@@ -573,10 +511,189 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   line-height: 1.5;
 }
 
-.bgm-settings {
+.arrangement-body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.arrangement-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: rgba(96, 165, 250, 0.7);
+  padding: 0.375rem 0.5rem;
+  background: rgba(96, 165, 250, 0.08);
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+/* Blueprint Grid - 2 column card layout for the drawer width */
+.blueprint-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
+}
+
+.blueprint-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 110px;
+  background: rgba(20, 20, 28, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 12px;
+  padding: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.blueprint-card__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 120%,
+    var(--step-accent),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.blueprint-card:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.3);
+}
+
+.blueprint-card:hover .blueprint-card__glow {
+  opacity: 0.15;
+}
+
+.blueprint-card--selected,
+.blueprint-card--selected:hover {
+  border-color: var(--step-accent);
+  background: rgba(96, 165, 250, 0.08);
+  box-shadow:
+    0 0 0 2px var(--step-accent),
+    0 0 32px -8px rgba(96, 165, 250, 0.4);
+}
+
+.blueprint-card--selected .blueprint-card__glow,
+.blueprint-card--selected:hover .blueprint-card__glow {
+  opacity: 0.25;
+}
+
+.blueprint-card__content {
+  position: relative;
+  z-index: 1;
+}
+
+.blueprint-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.blueprint-card__icon-wrap {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.blueprint-card__icon {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.4));
+}
+
+.blueprint-card__chips {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.blueprint-card__badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--step-accent);
+  background: rgba(96, 165, 250, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.blueprint-card__rhythm-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.blueprint-card__drums-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 4px;
+  cursor: help;
+}
+
+.blueprint-card__name {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FAFAFA;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.blueprint-card__desc {
+  font-size: 0.72rem;
+  color: rgba(250, 250, 250, 0.5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.blueprint-card__check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--step-accent);
+  border-radius: 50%;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px -2px rgba(96, 165, 250, 0.5);
+  animation: check-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
 }
 
 /* Option cards container */
@@ -586,7 +703,6 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   gap: 0.5rem;
 }
 
-/* Horizontal option cards */
 .option-cards--row {
   flex-direction: row;
   flex-wrap: wrap;
@@ -596,18 +712,6 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 /* Motif panel */
 .motif-panel {
   margin-top: 1rem;
-}
-
-/* Auto badge */
-.auto-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(96, 165, 250, 0.2);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 4px;
-  color: var(--step-accent);
-  margin-left: 0.5rem;
 }
 
 /* Recommended badge (for blueprint suggestions) */
@@ -624,20 +728,6 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 /* Arpeggio Settings */
 .arpeggio-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Humanize Settings */
-.humanize-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Call & SE Settings */
-.call-se-settings {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -664,6 +754,42 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 .ext-desc-list__item strong {
   color: rgba(147, 197, 253, 0.9);
+}
+
+/* Advanced probability subsection */
+.prob-advanced {
+  margin-top: 0.75rem;
+}
+
+.prob-advanced__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  border: none;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(147, 197, 253, 0.9);
+  cursor: pointer;
+}
+
+.prob-advanced__caret {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.prob-advanced__caret--open {
+  transform: rotate(90deg);
+}
+
+.prob-advanced__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: 0.5rem;
 }
 
 .sub-setting__hint {
@@ -714,6 +840,10 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 @media (max-width: 640px) {
   .compact-btns--grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .blueprint-grid {
+    grid-template-columns: 1fr;
   }
 }
 

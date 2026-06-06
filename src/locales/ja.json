@@ -1,28 +1,7 @@
 {
   "wizard": {
     "logo": "MIDI SKETCH",
-    "subtitle": "ポップミュージック MIDI ジェネレーター",
-    "steps": {
-      "style": "曲イメージ",
-      "chords": "コード進行",
-      "flowSelection": "作成タイプ",
-      "vocalSettings": "ボーカル設定",
-      "vocalGeneration": "ボーカル生成",
-      "bgmSettings": "BGM設定",
-      "bgmGeneration": "BGM生成",
-      "final": "完成",
-      "keyTempo": "キー & テンポ",
-      "bgm": "BGM",
-      "melody": "メロディ",
-      "complete": "完成"
-    },
-    "nav": {
-      "back": "戻る",
-      "next": "次へ",
-      "generateMelody": "メロディを生成",
-      "generateVocal": "ボーカルを生成",
-      "generateBgm": "BGMを生成"
-    }
+    "subtitle": "ポップミュージック MIDI ジェネレーター"
   },
   "styleStep": {
     "title": "どんな曲をつくりたいですか？",
@@ -942,5 +921,58 @@
     "message": "開発中のプレビューデモです。生成される楽曲に不自然な音使いやハーモニーの問題が含まれる場合があります。",
     "cta": "音楽的な問題を報告",
     "dismiss": "閉じる"
+  },
+  "studio": {
+    "entry": {
+      "imageTitle": "曲のイメージを選ぶ",
+      "imageHint": "選んだ瞬間に生成が始まります。細かい設定はすべて自動でチューニングされます。",
+      "generate": "生成する"
+    },
+    "player": {
+      "initializing": "サウンドエンジンを準備中…",
+      "generatingVocal": "ボーカルメロディを作曲中…",
+      "generatingAccomp": "アレンジを構築中…",
+      "regenerateMelody": "別のメロディ",
+      "regenerateBgm": "別のアレンジ",
+      "stale": "設定が変更されています",
+      "apply": "反映"
+    },
+    "backToEntry": "曲のイメージを選び直す",
+    "cards": {
+      "title": "カスタマイズ",
+      "hint": "気になるカードを開いて、その部分だけ調整できます。変更は再生成時に反映されます。",
+      "chord": {
+        "title": "コード進行"
+      },
+      "keyTempo": {
+        "title": "キー＆テンポ"
+      },
+      "vocal": {
+        "title": "ボーカル＆メロディ"
+      },
+      "arrangement": {
+        "title": "アレンジ"
+      },
+      "effects": {
+        "title": "演出＆コール",
+        "call": "コール",
+        "humanize": "ヒューマナイズ",
+        "none": "オフ"
+      },
+      "fineTune": {
+        "title": "微調整",
+        "auto": "すべて自動",
+        "overrides": "{n}項目を調整中"
+      }
+    },
+    "drawer": {
+      "close": "閉じる",
+      "done": "完了",
+      "apply": "反映して再生成",
+      "applying": "再生成中…"
+    },
+    "output": {
+      "title": "出力"
+    }
   }
 }

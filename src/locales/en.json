@@ -1,28 +1,7 @@
 {
   "wizard": {
     "logo": "MIDI SKETCH",
-    "subtitle": "Pop Music MIDI Generator",
-    "steps": {
-      "style": "Style",
-      "chords": "Chords",
-      "flowSelection": "Track Type",
-      "vocalSettings": "Vocal Settings",
-      "vocalGeneration": "Vocal",
-      "bgmSettings": "BGM Settings",
-      "bgmGeneration": "BGM",
-      "final": "Complete",
-      "keyTempo": "Key & Tempo",
-      "bgm": "BGM",
-      "melody": "Melody",
-      "complete": "Complete"
-    },
-    "nav": {
-      "back": "Back",
-      "next": "Next",
-      "generateMelody": "Generate Melody",
-      "generateVocal": "Generate Vocal",
-      "generateBgm": "Generate BGM"
-    }
+    "subtitle": "Pop Music MIDI Generator"
   },
   "styleStep": {
     "title": "What kind of song do you want to create?",
@@ -942,5 +921,58 @@
     "message": "This is a development preview. Generated music may contain unnatural note choices or harmonic issues.",
     "cta": "Report a musical issue",
     "dismiss": "Dismiss"
+  },
+  "studio": {
+    "entry": {
+      "imageTitle": "Pick a song image",
+      "imageHint": "Generation starts the moment you pick one — everything else is tuned automatically.",
+      "generate": "Generate"
+    },
+    "player": {
+      "initializing": "Warming up the sound engine…",
+      "generatingVocal": "Writing the vocal melody…",
+      "generatingAccomp": "Building the arrangement…",
+      "regenerateMelody": "New Melody",
+      "regenerateBgm": "New Arrangement",
+      "stale": "Settings changed",
+      "apply": "Apply"
+    },
+    "backToEntry": "Choose another song image",
+    "cards": {
+      "title": "Customize",
+      "hint": "Open a card to tweak just that part. Changes are applied on regenerate.",
+      "chord": {
+        "title": "Chord Progression"
+      },
+      "keyTempo": {
+        "title": "Key & Tempo"
+      },
+      "vocal": {
+        "title": "Vocal & Melody"
+      },
+      "arrangement": {
+        "title": "Arrangement"
+      },
+      "effects": {
+        "title": "Effects & Calls",
+        "call": "Calls",
+        "humanize": "Humanize",
+        "none": "Off"
+      },
+      "fineTune": {
+        "title": "Fine-tune",
+        "auto": "All auto",
+        "overrides": "{n} overrides"
+      }
+    },
+    "drawer": {
+      "close": "Close",
+      "done": "Done",
+      "apply": "Apply & Regenerate",
+      "applying": "Regenerating…"
+    },
+    "output": {
+      "title": "Output"
+    }
   }
 }

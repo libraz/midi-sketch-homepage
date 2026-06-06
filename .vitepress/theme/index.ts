@@ -4,7 +4,7 @@ import { h } from 'vue'
 import { useData } from 'vitepress'
 import './custom.css'
 import MidiDemo from './MidiDemo.vue'
-import MidiWizard from '@/components/MidiWizard.vue'
+import MidiStudio from '@/components/studio/MidiStudio.vue'
 import ScoreExample from '@/components/ScoreExample.vue'
 import DemoLayout from './DemoLayout.vue'
 import PreviewLayout from './PreviewLayout.vue'
@@ -23,7 +23,7 @@ export default {
   },
   enhanceApp({ app }) {
     app.component('MidiDemo', MidiDemo)
-    app.component('MidiWizard', MidiWizard)
+    app.component('MidiStudio', MidiStudio)
     app.component('ScoreExample', ScoreExample)
   }
 } satisfies Theme
