@@ -24,6 +24,9 @@ let audioContext: AudioContext | null = null
 let instrument: Soundfont | null = null
 let loadPromise: Promise<Soundfont> | null = null
 let stopTimer: ReturnType<typeof setTimeout> | null = null
+// Stop functions returned by smplr start(). Since smplr 0.26 instrument.stop()
+// only kills active voices; queued future notes must be cancelled individually.
+let scheduledNoteStops: ((time?: number) => void)[] = []
 
 const isLoading = ref(false)
 /** Id of the example currently sounding (empty string when silent). */
@@ -150,6 +153,11 @@ export function useScorePlayer() {
       clearTimeout(stopTimer)
       stopTimer = null
     }
+    // Cancel queued (not-yet-dispatched) note events first
+    for (const stopFn of scheduledNoteStops) {
+      stopFn()
+    }
+    scheduledNoteStops = []
     if (instrument) {
       try {
         instrument.stop()
@@ -201,12 +209,12 @@ export function useScorePlayer() {
 
     const now = audioContext.currentTime + 0.05
     for (const note of all) {
-      sf.start({
+      scheduledNoteStops.push(sf.start({
         note: note.midi,
         velocity: VELOCITY,
         time: now + note.startBeat * SECONDS_PER_BEAT,
         duration: note.beats * SECONDS_PER_BEAT * 0.95,
-      })
+      }))
     }
 
     playingId.value = id

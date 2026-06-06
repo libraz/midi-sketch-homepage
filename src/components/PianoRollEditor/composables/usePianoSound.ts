@@ -35,6 +35,16 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
   let pausedTick = 0
   let stopTimeout: ReturnType<typeof setTimeout> | null = null
   let scheduledNotes: { noteId: string; stopTime: number }[] = []
+  // Stop functions returned by smplr start(). Since smplr 0.26 instrument.stop()
+  // only kills active voices; queued future notes must be cancelled individually.
+  let scheduledNoteStops: ((time?: number) => void)[] = []
+
+  function cancelScheduledNotes() {
+    for (const stopFn of scheduledNoteStops) {
+      stopFn()
+    }
+    scheduledNoteStops = []
+  }
 
   // Store playback context for resume after visibility change
   let lastPlaybackContext: {
@@ -149,6 +159,7 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
     const offsetSeconds = ticksToSeconds(fromTick)
     startTime = audioContext.currentTime - offsetSeconds
     scheduledNotes = []
+    scheduledNoteStops = []
 
     // Schedule melody notes
     for (const note of notes) {
@@ -168,12 +179,12 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
 
       if (adjustedDuration > 0) {
         const playTime = audioContext.currentTime + adjustedStartSeconds
-        piano.start({
+        scheduledNoteStops.push(piano.start({
           note: note.pitch,
           velocity: 100,
           time: playTime,
           duration: adjustedDuration
-        })
+        }))
         scheduledNotes.push({
           noteId: note.id,
           stopTime: playTime + adjustedDuration
@@ -225,12 +236,12 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
 
         if (adjustedDuration > 0) {
           const playTime = audioContext.currentTime + adjustedStartSeconds
-          bass.start({
+          scheduledNoteStops.push(bass.start({
             note: bassPitch,
             velocity: 70,
             time: playTime,
             duration: Math.min(adjustedDuration, ticksToSeconds(ticksPerBar * 0.9)) // Slightly shorter for clarity
-          })
+          }))
         }
       }
     }
@@ -282,6 +293,9 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
       stopTimeout = null
     }
 
+    // Cancel queued (not-yet-dispatched) note events first
+    cancelScheduledNotes()
+
     if (piano) {
       piano.stop()
     }
@@ -327,6 +341,9 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
       clearTimeout(stopTimeout)
       stopTimeout = null
     }
+
+    // Cancel queued (not-yet-dispatched) note events first
+    cancelScheduledNotes()
 
     if (piano) {
       piano.stop()

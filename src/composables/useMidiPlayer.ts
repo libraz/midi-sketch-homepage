@@ -101,6 +101,17 @@ let stopTimeout: ReturnType<typeof setTimeout> | null = null
 let cachedEventData: EventData | null = null
 // Cached play options for resume
 let cachedPlayOptions: PlayOptions = {}
+// Stop functions returned by smplr start(). Since smplr 0.26 instrument.stop()
+// only kills active voices — notes queued beyond the scheduler lookahead
+// (~200ms) keep firing. Calling each StopFn cancels queued events too.
+let scheduledNoteStops: ((time?: number) => void)[] = []
+
+function cancelScheduledNotes() {
+  for (const stopFn of scheduledNoteStops) {
+    stopFn()
+  }
+  scheduledNoteStops = []
+}
 
 export function useMidiPlayer() {
 
@@ -214,6 +225,9 @@ export function useMidiPlayer() {
     const scheduleAnchor = audioContext.currentTime + SCHEDULE_AHEAD_SECONDS
     startTime = scheduleAnchor - offsetSeconds
 
+    // Drop StopFns from any previous run before scheduling a new one
+    scheduledNoteStops = []
+
     // Play root notes if enabled
     if (options.playRootNotes && options.chordTimings && bass) {
       const musicKey = options.musicKey ?? 0
@@ -234,12 +248,12 @@ export function useMidiPlayer() {
           : durationSeconds
 
         if (adjustedDuration > 0) {
-          bass.start({
+          scheduledNoteStops.push(bass.start({
             note: rootNote,
             velocity: 62,  // Moderate velocity for root notes
             time: scheduleAnchor + adjustedStartSeconds,
             duration: Math.min(adjustedDuration, ticksToSeconds(ppq * 2))  // Max 2 beats duration
-          })
+          }))
         }
       }
     }
@@ -280,23 +294,23 @@ export function useMidiPlayer() {
             // Convert GM drum note to the current kit's sample name
             const drumSample = gmToDrumSample(noteNum, options.drumKit)
             if (drumSample) {
-              drums.start({
+              scheduledNoteStops.push(drums.start({
                 note: drumSample,
                 velocity: scaleTrackVelocity(track, note.velocity),
                 time: scheduleAnchor + adjustedStartSeconds,
                 duration: adjustedDuration
-              })
+              }))
             }
           } else if (!isDrumTrack) {
             // Select instrument from dynamic track map
             const instrument = trackInstrumentMap.get(track.name)
             if (instrument) {
-              instrument.start({
+              scheduledNoteStops.push(instrument.start({
                 note: noteNum,
                 velocity: scaleTrackVelocity(track, note.velocity),
                 time: scheduleAnchor + adjustedStartSeconds,
                 duration: adjustedDuration
-              })
+              }))
             }
           }
         }
@@ -354,6 +368,9 @@ export function useMidiPlayer() {
       stopTimeout = null
     }
 
+    // Cancel queued (not-yet-dispatched) note events first
+    cancelScheduledNotes()
+
     // Stop all dynamically loaded instruments
     for (const [, instrument] of trackInstrumentMap) {
       instrument.stop()
@@ -402,6 +419,9 @@ export function useMidiPlayer() {
       clearTimeout(stopTimeout)
       stopTimeout = null
     }
+
+    // Cancel queued (not-yet-dispatched) note events first
+    cancelScheduledNotes()
 
     // Stop all dynamically loaded instruments
     for (const [, instrument] of trackInstrumentMap) {

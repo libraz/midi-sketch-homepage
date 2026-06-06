@@ -1,4 +1,4 @@
-import { Soundfont, DrumMachine } from 'smplr'
+import { Soundfont, DrumMachine, Scheduler } from 'smplr'
 
 export const DEMO_SOUNDFONT_KIT = 'FluidR3_GM'
 
@@ -353,20 +353,36 @@ const loadingPromises = new Map<string, Promise<Soundfont>>()
 const drumMachineCache = new Map<DrumKitName, Promise<DrumMachine>>()
 
 /**
+ * Build a scheduler that dispatches every event synchronously.
+ * OfflineAudioContext renders faster than wall-clock timers, so smplr's
+ * default polling scheduler would drop notes beyond its ~200ms lookahead
+ * window. An effectively infinite lookahead makes start() schedule each
+ * note directly on the context (the smplr <=0.16 disableScheduler behavior).
+ */
+function createImmediateScheduler(audioContext: AudioContext): Scheduler {
+  return Scheduler(audioContext, { lookaheadMs: Number.MAX_SAFE_INTEGER })
+}
+
+/**
  * Load a drum machine for the given kit.
- * Real-time instances are cached per kit; offline (disableScheduler) instances are always fresh.
+ * Real-time instances are cached per kit; offline instances are always fresh.
  */
 export function loadDrumMachine(
   audioContext: AudioContext,
   kit: DrumKitName = DEMO_DRUM_MACHINE,
-  disableScheduler = false
+  offline = false
 ): Promise<DrumMachine> {
-  if (disableScheduler) {
-    return new DrumMachine(audioContext, { instrument: kit, disableScheduler: true }).load
+  if (offline) {
+    const dm = new DrumMachine(audioContext, {
+      instrument: kit,
+      scheduler: createImmediateScheduler(audioContext),
+    })
+    return dm.ready.then(() => dm)
   }
   let cached = drumMachineCache.get(kit)
   if (!cached) {
-    cached = new DrumMachine(audioContext, { instrument: kit }).load
+    const dm = new DrumMachine(audioContext, { instrument: kit })
+    cached = dm.ready.then(() => dm)
     drumMachineCache.set(kit, cached)
   }
   return cached
@@ -380,14 +396,14 @@ export interface LoadedInstruments {
 /**
  * Load all instruments needed for the given tracks.
  * Uses a global cache for Soundfont instances (real-time playback).
- * When disableScheduler is true (offline rendering), creates fresh instances without caching.
+ * When offline is true (offline rendering), creates fresh instances without caching.
  */
 export async function loadInstrumentsForTracks(
   audioContext: AudioContext,
   tracks: TrackInfo[],
-  options?: { disableScheduler?: boolean; drumKit?: DrumKitName }
+  options?: { offline?: boolean; drumKit?: DrumKitName }
 ): Promise<LoadedInstruments> {
-  const disableScheduler = options?.disableScheduler ?? false
+  const offline = options?.offline ?? false
   const drumKit = options?.drumKit ?? DEMO_DRUM_MACHINE
   const required = getRequiredInstruments(tracks)
 
@@ -399,16 +415,14 @@ export async function loadInstrumentsForTracks(
   const loadPromises: Promise<void>[] = []
 
   for (const name of uniqueNames) {
-    if (disableScheduler) {
+    if (offline) {
       // Offline rendering: create fresh instance (no cache)
-      loadPromises.push(
-        new Soundfont(audioContext, {
-          instrument: name as any,
-          kit: DEMO_SOUNDFONT_KIT,
-          disableScheduler: true,
-        })
-          .load.then(sf => { loaded.set(name, sf) })
-      )
+      const sf = new Soundfont(audioContext, {
+        instrument: name as any,
+        kit: DEMO_SOUNDFONT_KIT,
+        scheduler: createImmediateScheduler(audioContext),
+      })
+      loadPromises.push(sf.ready.then(() => { loaded.set(name, sf) }))
     } else if (instrumentCache.has(name)) {
       loaded.set(name, instrumentCache.get(name)!)
     } else if (loadingPromises.has(name)) {
@@ -449,7 +463,7 @@ export async function loadInstrumentsForTracks(
   }
 
   // Load drums for the requested kit (cached per kit for real-time playback)
-  const drumsPromise = loadDrumMachine(audioContext, drumKit, disableScheduler)
+  const drumsPromise = loadDrumMachine(audioContext, drumKit, offline)
   loadPromises.push(drumsPromise.then(() => {}))
   const drums = await drumsPromise
 

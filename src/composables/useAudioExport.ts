@@ -100,7 +100,7 @@ export function useAudioExport() {
       const { trackMap, drums } = await loadInstrumentsForTracks(
         offlineCtx as unknown as AudioContext,
         eventData.tracks,
-        { disableScheduler: true, drumKit }
+        { offline: true, drumKit }
       )
 
       exportStatus.value = 'scheduling'

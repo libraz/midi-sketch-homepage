@@ -15,10 +15,9 @@
     "verbatimModuleSyntax": false,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@theme/*": [".vitepress/theme/*"]
+      "@/*": ["./src/*"],
+      "@theme/*": ["./.vitepress/theme/*"]
     }
   },
   "include": [
