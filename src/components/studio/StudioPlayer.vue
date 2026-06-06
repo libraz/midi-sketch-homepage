@@ -6,6 +6,7 @@ import { useMidiPlayer } from '@/composables/useMidiPlayer'
 import { useStudioGeneration } from '@/composables/useStudioGeneration'
 import { blueprintIsRhythmSync, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
+import { chordEventsToTimings, type ChordTiming } from '@/utils/chordUtils'
 import GenerationPreview from '@/components/wizard/GenerationPreview.vue'
 import RegenerateCard from '@/components/wizard/RegenerateCard.vue'
 import GenerationState from '@/components/wizard/GenerationState.vue'
@@ -36,6 +37,14 @@ const currentChord = computed(() =>
 )
 
 const chordProgressionDisplay = computed(() => currentChord.value?.display || '')
+
+// Pre-computed chord timings from the WASM chord timeline (includes secondary
+// dominants); the PianoRoll falls back to parsing the display string when empty.
+const chordTimings = computed((): ChordTiming[] => {
+  if (!eventData.value?.chords?.length) return []
+  const ppq = eventData.value.ppq || eventData.value.division || 480
+  return chordEventsToTimings(eventData.value.chords, ppq)
+})
 
 // Loading text depends on the pipeline stage
 const generatingText = computed(() => {
@@ -151,6 +160,7 @@ function shuffleVocal() {
         :rewind-title="t('finalStep.rewind')"
         :chord-progression="chordProgressionDisplay"
         :music-key="store.config.key"
+        :precomputed-chord-timings="chordTimings"
         @seek="handleSeek"
         @toggle-play="togglePlay"
         @rewind="handleRewind"

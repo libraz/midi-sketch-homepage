@@ -2,8 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
-import { parseChordProgression, generateChordTimings, type ChordTiming, type ChordInfo as ChordUtilsInfo } from '@/utils/chordUtils'
-import type { ChordEvent } from '@/wasm'
+import { parseChordProgression, generateChordTimings, chordEventsToTimings, type ChordTiming } from '@/utils/chordUtils'
 import { eventDataToPlacedNotes } from '@/utils/noteConversion'
 import type { PlacedNote, ChordAtBar, SectionAtBar, PianoRollSafetyInfo, ChordInfo } from '@/components/PianoRollEditor/types'
 import { NoteSafety, NoteReason } from '@/components/PianoRollEditor/types'
@@ -391,37 +390,6 @@ function handleNoteMerge(noteIds: string[]) {
 // Chord Timeline
 // ============================================
 
-// Convert WASM ChordEvent to chordUtils ChordInfo
-const SCALE = [0, 2, 4, 5, 7, 9, 11]
-const DEGREE_NAMES_MAJOR = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII']
-const DEGREE_NAMES_DIATONIC = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii']
-
-function chordEventToChordInfo(event: ChordEvent): ChordUtilsInfo {
-  const normalized = ((event.degree % 7) + 7) % 7
-  const semitone = SCALE[normalized]
-
-  if (event.isSecondaryDominant) {
-    // Secondary dominants are always major quality
-    const displayName = DEGREE_NAMES_MAJOR[normalized] + '7'
-    return {
-      degree: displayName,
-      displayName,
-      semitone,
-      isMinor: false
-    }
-  }
-
-  // Diatonic: ii, iii, vi are minor
-  const isMinor = [1, 2, 5].includes(normalized)
-  const displayName = DEGREE_NAMES_DIATONIC[normalized]
-  return {
-    degree: displayName,
-    displayName,
-    semitone,
-    isMinor
-  }
-}
-
 // Chord progression display string (from store) used for fallback parsing
 const currentChord = computed(() =>
   store.getChordProgressionById(store.config.chordProgressionId)
@@ -433,12 +401,7 @@ const chordTimings = computed((): ChordTiming[] => {
   // Prefer WASM chord timeline (includes secondary dominants)
   if (eventData.value?.chords?.length) {
     const ppq = eventData.value.ppq || eventData.value.division || 480
-    return eventData.value.chords.map((c: ChordEvent) => ({
-      chord: chordEventToChordInfo(c),
-      startTick: c.tick,
-      endTick: c.endTick,
-      bar: Math.floor(c.tick / (ppq * 4))
-    }))
+    return chordEventsToTimings(eventData.value.chords, ppq)
   }
 
   // Fallback: parse static display string

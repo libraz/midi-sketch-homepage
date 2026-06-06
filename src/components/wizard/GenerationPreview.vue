@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PianoRoll from '@/components/PianoRoll.vue'
 import TransportBar from './TransportBar.vue'
+import type { ChordTiming } from '@/utils/chordUtils'
 
 // Props
 defineProps<{
@@ -17,6 +18,7 @@ defineProps<{
   rewindTitle?: string
   chordProgression?: string  // e.g., "I - V - vi - IV"
   musicKey?: number          // 0-11 (0=C)
+  precomputedChordTimings?: ChordTiming[]  // Pre-computed timings (overrides chordProgression)
   playRootNotes?: boolean    // Enable root note playback (default: false)
   disabled?: boolean         // Disable transport controls (e.g. while regenerating)
 }>()
@@ -74,6 +76,7 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
       :is-playing="isPlaying"
       :chord-progression="chordProgression"
       :music-key="musicKey"
+      :precomputed-chord-timings="precomputedChordTimings"
       @seek="handleSeek"
       @track-mute-change="handleTrackMuteChange"
     />
