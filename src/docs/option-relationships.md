@@ -23,18 +23,22 @@ Understanding these relationships helps you avoid unexpected behavior. For examp
 
 ```mermaid
 graph TD
-    callEnabled --> introChant["introChant<br/>(ignored if false)"]
-    callEnabled --> mixPattern["mixPattern<br/>(ignored if false)"]
-    callEnabled --> callDensity["callDensity<br/>(ignored if false)"]
-    callEnabled --> callNotesEnabled["callNotesEnabled<br/>(ignored if false)"]
+    callSetting["callSetting<br/>(0=Auto, 1=Enabled, 2=Disabled)"] --> introChant["introChant<br/>(ignored when call inactive)"]
+    callSetting --> mixPattern["mixPattern<br/>(ignored when call inactive)"]
+    callSetting --> callDensity["callDensity<br/>(ignored when call inactive)"]
+    callSetting --> callNotesEnabled["callNotesEnabled<br/>(ignored when call inactive)"]
 ```
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `callEnabled=true` | `introChant` | Type of intro chant section |
-| `callEnabled=true` | `mixPattern` | Type of MIX section |
-| `callEnabled=true` | `callDensity` | Call density in chorus |
-| `callEnabled=true` | `callNotesEnabled` | Output calls as MIDI notes |
+| call active (`callSetting=1`, or `0` resolved to on) | `introChant` | Type of intro chant section |
+| call active | `mixPattern` | Type of MIX section |
+| call active | `callDensity` | Call density in chorus |
+| call active | `callNotesEnabled` | Output calls as MIDI notes |
+
+::: warning callEnabled is Legacy
+`callSetting` (0=Auto, 1=Enabled, 2=Disabled) replaced the boolean `callEnabled` in `SongConfig`. With `0` (Auto), the style/vocal-style decides whether calls are generated. `callEnabled` is still accepted for backward compatibility (`true`→1, `false`→2) but should not be used in new code. `AccompanimentConfig` still uses a plain `callEnabled` boolean.
+:::
 
 ### 1.2 Arpeggio
 
@@ -52,8 +56,9 @@ graph TD
 | `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord (0-7) |
 | `arpeggioEnabled=true` | `arpeggioSpeed` | Eighth/Sixteenth/Triplet |
 | `arpeggioEnabled=true` | `arpeggioOctaveRange` | 1-3 octaves |
-| `arpeggioEnabled=true` | `arpeggioGate` | Gate length (0-100) |
+| `arpeggioEnabled=true` | `arpeggioGate` | Gate length (0.0-1.0, default 0.8; AccompanimentConfig uses 0-100) |
 | `arpeggioEnabled=true` | `arpeggioSyncChord` | Sync with chord changes |
+| `arpeggioEnabled=true` | `arpeggioBaseVelocity` | Base velocity for arpeggio notes (0-127, default 90) |
 
 ### 1.3 Humanization
 
@@ -65,8 +70,8 @@ graph TD
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `humanize=true` | `humanizeTiming` | Timing variation (0-100) |
-| `humanize=true` | `humanizeVelocity` | Velocity variation (0-100) |
+| `humanize=true` | `humanizeTiming` | Timing variation (0.0-1.0, default 0.4; AccompanimentConfig uses 0-100) |
+| `humanize=true` | `humanizeVelocity` | Velocity variation (0.0-1.0, default 0.3; AccompanimentConfig uses 0-100) |
 
 ### 1.4 Chord Extensions
 
@@ -75,15 +80,19 @@ graph LR
     chordExtSus --> chordExtSusProb
     chordExt7th --> chordExt7thProb
     chordExt9th --> chordExt9thProb
-    chordExtTritoneSub --> chordExtTritoneSubProb["chordExtTritoneSubProb<br/>(AccompanimentConfig only)"]
+    chordExtTritoneSub --> chordExtTritoneSubProb
 ```
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `chordExtSus=true` | `chordExtSusProb` | Sus probability (0-100) |
-| `chordExt7th=true` | `chordExt7thProb` | 7th probability (0-100) |
-| `chordExt9th=true` | `chordExt9thProb` | 9th probability (0-100) |
-| `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | Tritone sub probability (0-100, AccompanimentConfig only) |
+| `chordExtSus=true` | `chordExtSusProb` | Sus probability (0.0-1.0, default 0.2) |
+| `chordExt7th=true` | `chordExt7thProb` | 7th probability (0.0-1.0, default 0.15) |
+| `chordExt9th=true` | `chordExt9thProb` | 9th probability (0.0-1.0, default 0.25) |
+| `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | Tritone sub probability (0.0-1.0, default 0.5) |
+
+::: info AccompanimentConfig Uses 0-100
+The probabilities above are `SongConfig` values (0.0-1.0). The regeneration-oriented `AccompanimentConfig` keeps integer 0-100 ranges for the same fields (sus 20, 7th 30, 9th 25, tritone 50).
+:::
 
 ### 1.5 Modulation
 
@@ -365,7 +374,7 @@ Motif overrides control the melodic motif generation parameters in BackgroundMot
 | `vocalStyle` | 0-13 | `INVALID_VOCAL_STYLE` |
 | `melodyTemplate` | 0-7 | `INVALID_MELODY_TEMPLATE` |
 | `melodicComplexity` | 0-2 | `INVALID_MELODIC_COMPLEXITY` |
-| `hookIntensity` | 0-3 | `INVALID_HOOK_INTENSITY` |
+| `hookIntensity` | 0-4 | `INVALID_HOOK_INTENSITY` |
 | `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
 | `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
 | `modulationSemitones` | 1-4 (when timing!=0) | `INVALID_MODULATION` |
@@ -426,7 +435,7 @@ Check allowed attitudes with: `midisketch_style_preset_allowed_attitudes(styleId
 ### 6.5 Call x Duration x BPM Conflict
 
 ```
-IF callEnabled == true AND targetDurationSeconds > 0
+IF call is active (callSetting=1, or 0 resolved to on) AND targetDurationSeconds > 0
 THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
 
@@ -454,11 +463,11 @@ The following combinations will cause validation errors or unexpected behavior. 
 | Pattern | Cause | Fix |
 |---------|-------|-----|
 | `modulationTiming!=0` + `modulationSemitones=0` | Modulation enabled but amount invalid | Set `modulationSemitones=2` |
-| `callEnabled=true` + `targetDurationSeconds=30` + `bpm=40` | Duration too short | Set `targetDurationSeconds=0` |
+| `callSetting=1` + `targetDurationSeconds=30` + `bpm=40` | Duration too short | Set `targetDurationSeconds=0` |
 | `vocalLow=80` + `vocalHigh=60` | Range inverted | Ensure low <= high |
 | `vocalLow=30` or `vocalHigh=100` | Out of range | Use 36-96 |
 | `bpm=300` | BPM out of range | Use 40-240 |
-| `blueprintId=1,5,6,7` + `drumsEnabled=false` without `drumsEnabledExplicit=true` | drums_required Blueprint forces drums on | Set `drumsEnabledExplicit: true` to explicitly disable |
+| `blueprintId=1,5,7` + `drumsEnabled=false` without `drumsEnabledExplicit=true` | drums_required Blueprint forces drums on | Set `drumsEnabledExplicit: true` to explicitly disable |
 | `enableSyncopation=false` + high `vocalGroove` values | Syncopation effects silently disabled | Set `enableSyncopation: true` for syncopation effects |
 | Blueprint `mood_mask` mismatch | Mood incompatible with selected Blueprint | Check compatibility with `isMoodCompatible(blueprintId, mood)` |
 
@@ -470,11 +479,11 @@ The following combinations will cause validation errors or unexpected behavior. 
 
 | Property | Value |
 |----------|-------|
-| JS default | `false` |
-| C++ default | `true` |
+| Default (`SongConfig`, JS and C++) | `true` |
+| Default (`AccompanimentConfig`) | `true` |
 
-::: tip Guitar Default Difference
-The JS API defaults `guitarEnabled` to `false`, while the C++ engine defaults to `true`. If you want guitar tracks in your JS-generated output, explicitly set `guitarEnabled: true`.
+::: tip Guitar is On by Default
+The guitar track is generated by default. Set `guitarEnabled: false` to disable it. Whether a blueprint keeps the guitar below the vocal register is controlled by the blueprint's `guitar_below_vocal` constraint.
 :::
 
 ---
@@ -485,11 +494,11 @@ The JS API defaults `guitarEnabled` to `false`, while the C++ engine defaults to
 
 | Property | Description |
 |----------|-------------|
-| `chordExtTritoneSub` | Enable/disable tritone substitution |
-| `chordExtTritoneSubProb` | Probability of tritone substitution (0-100) |
+| `chordExtTritoneSub` | Enable/disable tritone substitution (default `false`) |
+| `chordExtTritoneSubProb` | Probability of tritone substitution (`SongConfig`: 0.0-1.0, default 0.5 / `AccompanimentConfig`: 0-100, default 50) |
 
-::: warning Availability
-Tritone substitution is available in **AccompanimentConfig only**. It is not exposed in the JS `SongConfig` type (`types.ts`). To use it, pass it via `generateAccompaniment()` config or through the C++ JSON API directly.
+::: info Availability
+Tritone substitution is available in both the JS `SongConfig` (for full-song generation) and `AccompanimentConfig` (for accompaniment regeneration), as well as the C++ `chord_extension` struct. See [Harmony](/docs/harmony#tritone-substitution) for the musical background.
 :::
 
 ---
@@ -516,13 +525,13 @@ The `drumsEnabledExplicit` flag controls whether the engine respects your `drums
 
 | drumsEnabledExplicit | drumsEnabled | Blueprint drums_required | Result |
 |---------------------|-------------|------------------------|--------|
-| `false` (default) | `false` | `true` (ID 1,5,6,7) | **Drums forced ON** |
+| `false` (default) | `false` | `true` (ID 1,5,7) | **Drums forced ON** |
 | `false` (default) | `true` | any | Drums enabled |
-| `true` | `false` | `true` (ID 1,5,6,7) | **Drums disabled** (explicit override respected) |
+| `true` | `false` | `true` (ID 1,5,7) | **Drums disabled** (explicit override respected) |
 | `true` | `false` | `false` | Drums disabled |
 
 ::: warning Drums Required Blueprints
-Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1, 5, 6, 7) will force drums on regardless of your `drumsEnabled` setting.
+Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1, 5, 7) will force drums on regardless of your `drumsEnabled` setting. Use `getBlueprintDrumsRequired(id)` to query this at runtime.
 :::
 
 ---
@@ -537,7 +546,7 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
   compositionStyle: 0,  // MelodyLead
   drumsEnabled: true,
   arpeggioEnabled: false,
-  callEnabled: false
+  callSetting: 2        // Disabled
 }
 ```
 
@@ -559,7 +568,7 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
 {
   stylePresetId: 3,   // Idol Standard
   vocalStyle: 4,      // Idol
-  callEnabled: true,
+  callSetting: 1,     // Enabled
   introChant: 1,      // Gachikoi
   mixPattern: 2,      // Tiger
   callDensity: 2,     // Standard
@@ -730,7 +739,7 @@ Setting `vocalStyle` automatically configures internal melody generation paramet
 
 ### 12.5 Auto-Call Activation
 
-When `callEnabled=Auto(false)`, certain vocal styles automatically enable calls:
+When `callSetting=0` (Auto), certain vocal styles automatically enable calls:
 
 | vocalStyle | Name | Auto-Call |
 |------------|------|:---------:|
@@ -773,8 +782,8 @@ Other vocal styles do not trigger auto-call activation.
 | `Normal (2)` | x1.5 | +10 | Chorus, B |
 | `Strong (3)` | x2.0 | +15 | **All sections** |
 
-::: warning Maximum (4) is Internal Only
-`hookIntensity=4` (Maximum) is reserved for BehavioralLoop mode and is set internally when `blueprintId=9` or `addictiveMode=true`. Passing `hookIntensity=4` through the WASM/JS API will cause an `INVALID_HOOK_INTENSITY` validation error.
+::: warning Maximum (4) is for Behavioral Loop
+`hookIntensity=4` (Maximum) is intended for BehavioralLoop mode and is set automatically when `blueprintId=9` or `addictiveMode=true`. It passes validation if set explicitly, but it forces maximum repetition with simple patterns, so for normal songs use 0-3.
 :::
 
 ---
@@ -846,7 +855,7 @@ SongConfig
 │   ├── arpeggioGate
 │   └── arpeggioSyncChord
 │
-├── Call System (only when callEnabled=true)
+├── Call System (only when call is active: callSetting=1, or 0 resolved to on)
 │   ├── introChant
 │   ├── mixPattern  ─────────────▶ Conflicts with targetDurationSeconds
 │   ├── callDensity
@@ -868,7 +877,7 @@ SongConfig
 ├── Track Toggles
 │   ├── drumsEnabled
 │   ├── drumsEnabledExplicit ────▶ true=respect drumsEnabled for drums_required blueprints
-│   └── guitarEnabled ───────────▶ JS default=false, C++ default=true
+│   └── guitarEnabled ───────────▶ default=true (set false to disable)
 │
 ├── Master Switches
 │   ├── enableSyncopation ───────▶ false=syncopation weight 0.0
@@ -925,12 +934,12 @@ SongConfig
 | | `guitarEnabled` | Yes | Generate guitar |
 | | `arpeggio.*` | Yes | Arpeggio settings |
 | | `chordExt*` | Yes | Chord extension settings |
-| | `chordExtTritoneSub` | Yes | Tritone substitution (AccompanimentConfig only) |
+| | `chordExtTritoneSub` | Yes | Tritone substitution |
 | **Post-processing** | `humanize` | Yes | Apply humanization |
 | | `humanizeTiming` | Yes | Timing variation |
 | | `humanizeVelocity` | Yes | Velocity variation |
 | **SE/Call** | `seEnabled` | Yes | SE track generation |
-| | `callEnabled` | Yes | Call feature |
+| | `callEnabled` | Yes | Call feature (boolean in AccompanimentConfig) |
 | | `callDensity` | Yes | Call density |
 
 ### 15.3 regenerateVocal(configOrSeed) - Used Parameters
@@ -949,6 +958,7 @@ SongConfig
 | `melodicComplexity` | Yes | Change complexity |
 | `hookIntensity` | Yes | Change hook strength |
 | `vocalGroove` | Yes | Change groove |
+| `keepMotif` | Yes | RhythmSync only: keep the existing Motif as the rhythmic axis (default `false` = regenerate both) |
 
 **Note**: Chord progression and structure are NOT changed (continues from generateVocal settings).
 
@@ -979,7 +989,7 @@ SongConfig
     │
     ├── enableSyncopation ─→ Master syncopation switch (false=weight 0.0)
     │
-    └── callEnabled ──────→ (if false=Auto) determined by vocalStyle → call_enabled
+    └── callSetting ──────→ (if 0=Auto) determined by vocalStyle → call enabled
 ```
 
 **Application order**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity` → `SongConfig Overrides (melody/motif)` → `Master Switch (enableSyncopation)`
@@ -1062,7 +1072,7 @@ CompositionStyle == BackgroundMotif? → Yes: Motif generated
 ```
 
 ::: warning Drums Required
-Blueprints with `requiresDrums=true` (ID: 1, 5, 6, 7) automatically enable drums. Set `drumsEnabledExplicit: true` along with `drumsEnabled: false` to explicitly override this behavior.
+Blueprints with `requiresDrums=true` (ID: 1, 5, 7) automatically enable drums. Set `drumsEnabledExplicit: true` along with `drumsEnabled: false` to explicitly override this behavior.
 :::
 
 ### 17.6 Example: Blueprint Override Behavior

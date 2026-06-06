@@ -39,7 +39,9 @@
       "recommendedBadge": "推奨",
       "unknown": "不明",
       "affectsHint": "影響: 曲構成、セクション展開、リフの扱い",
-      "rhythmSyncTag": "リズム同期"
+      "rhythmSyncTag": "リズム同期",
+      "drumsRequiredTag": "ドラム必須",
+      "recommended": "（自動選択）"
     }
   },
   "chordStep": {
@@ -106,6 +108,10 @@
     "cancelEdit": "キャンセル",
     "resetToGenerated": "生成時に戻す",
     "edited": "編集済み",
+    "keepMotif": {
+      "label": "再生成でモチーフを維持",
+      "description": "現在のリフ（モチーフ）をリズムの軸として残し、ボーカルメロディだけを作り直します"
+    },
     "summary": {
       "vocalStyle": "ボーカルスタイル",
       "melodyTemplate": "メロディタイプ"
@@ -129,6 +135,14 @@
         "frontLoaded": "最初から全開",
         "wavePattern": "波形パターン",
         "steadyState": "一定"
+      }
+    },
+    "arrangementGrowth": {
+      "label": "アレンジの広がり方",
+      "description": "曲が進むにつれてアレンジをどう発展させるか",
+      "options": {
+        "layerAdd": "パートを追加",
+        "registerAdd": "音域を拡大"
       }
     }
   },
@@ -278,7 +292,8 @@
             "gentleLeap": "ゆるい跳躍",
             "wideLeap": "大きな跳躍",
             "narrowStep": "狭い順次",
-            "disjunct": "離散的"
+            "disjunct": "離散的",
+            "ostinato": "オスティナート"
           },
           "motifRegister": "音域",
           "motifRegisterOptions": {
@@ -352,6 +367,8 @@
         "ninth": "9thコード",
         "ninthDesc": "9度を追加。現代ポップやR&Bで人気の豊かでドリーミーな響き。",
         "ninthHint": "推奨: 10-40%",
+        "tritone": "裏コード",
+        "tritoneDesc": "V7をbII7に置き換える（トライトーン代理）。ジャジーな半音ベース進行を加えます。",
         "probability": "確率"
       },
       "modulation": {
@@ -368,7 +385,10 @@
         "semitonesHint": "キーを何半音上げるか（+1〜+4）"
       },
       "se": {
+        "label": "コール＆SE",
         "description": "コールパターンを追加して、ライブ感を演出します。アイドル曲やコンサート風のトラックに最適。",
+        "seEnabled": "SEトラック",
+        "seEnabledDesc": "セクションの切り替わりを彩る効果音トラック（ライザー等）を追加",
         "callEnabled": "コール機能を有効化",
         "callEnabledDesc": "観客のコールパターン（ハイ！フゥ！など）を追加",
         "callNotesEnabled": "コールをMIDIノートで出力",
@@ -580,7 +600,8 @@
           "off": "なし",
           "light": "控えめ",
           "normal": "標準",
-          "strong": "多め"
+          "strong": "多め",
+          "maximum": "ループ（最大）"
         }
       },
       "enableSyncopation": {

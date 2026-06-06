@@ -208,7 +208,7 @@ BackgroundMotif and SynthDriven do not generate vocal tracks. BackgroundMotif ke
 | 3 | Ballad | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
 | 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
-| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
+| 6 | IdolKawaii | MelodyDriven | Locked | - | 5% |
 | 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
 | 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
 | 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
@@ -314,7 +314,7 @@ SynthDriven disables both the Vocal and Aux tracks. Arpeggio must be manually en
 |----|------|---------|----------|----------|
 | 0 | Auto | - | - | VocalStylePreset-based selection |
 | 1 | PlateauTalk | 0.65 | 2 | NewJeans, Billie Eilish (talk-sing) |
-| 2 | RunUpTarget | 0.20 | 4 | YOASOBI, Ado (ascending runs) |
+| 2 | RunUpTarget | 0.20 | 4 | Anime high-energy, dramatic pop (ascending runs) |
 | 3 | DownResolve | 0.30 | 3 | B-section, pre-chorus |
 | 4 | HookRepeat | 0.40 | 3 | TikTok, K-POP hooks |
 | 5 | SparseAnchor | 0.50 | 2 | Ballad, Official髭男dism |
@@ -545,7 +545,7 @@ config.hookIntensity = 3               // Strong hooks
 ```
 
 ::: tip Vocaloid-style Melodies
-For YOASOBI/Ado-style dense melodies with wide intervals, use:
+For dramatic-pop-style dense melodies with wide intervals, use:
 - `vocalStyle: 2` (Vocaloid) or `vocalStyle: 3` (UltraVocaloid)
 - `melodicComplexity: 2` (Complex)
 - `melodyTemplate: 2` (RunUpTarget)
@@ -573,7 +573,7 @@ The Background Motif preset (ID 12) is ideal for ambient and BGM-style tracks wi
 // Use Idol Standard preset
 const config = createDefaultConfig(3)  // Idol Standard
 config.key = 0                         // C major
-config.callEnabled = true              // Enable call track
+config.callSetting = 1                 // Enable call track (0=Auto, 1=Enabled, 2=Disabled)
 config.introChant = 1                  // Gachikoi intro
 config.mixPattern = 1                  // Standard mix
 config.callDensity = 2                 // Standard density
@@ -626,7 +626,8 @@ config.guitarEnabled = true            // Enable guitar track
 
 ```javascript
 const config = createDefaultConfig(0)
-config.stylePresetId = 20             // RnBNeoSoul mood
+config.mood = 20                      // RnBNeoSoul mood
+config.moodExplicit = true            // Use the explicit mood instead of style default
 config.chordExt7th = true             // Enable 7th extensions
 config.chordExt9th = true             // Enable 9th extensions
 ```
@@ -635,7 +636,8 @@ config.chordExt9th = true             // Enable 9th extensions
 
 ```javascript
 const config = createDefaultConfig(12) // Background Motif
-config.stylePresetId = 23             // Lofi mood
+config.mood = 23                      // Lofi mood
+config.moodExplicit = true            // Use the explicit mood instead of style default
 config.compositionStyle = 1           // BackgroundMotif
 ```
 

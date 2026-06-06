@@ -25,6 +25,24 @@ export function midiToFreq(midi: number): number {
 }
 
 /**
+ * Convert a VexFlow staff key (e.g., "c/4", "g#/4") to a MIDI note number.
+ * Returns null for unparseable keys or out-of-range results.
+ */
+export function staffKeyToMidi(key: string, accidental?: string): number | null {
+  const match = /^([a-g])([#b]?)\/(-?\d+)$/.exec(key.trim().toLowerCase())
+  if (!match) return null
+  const stepSemis: Record<string, number> = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }
+  let semis = stepSemis[match[1]]
+  const inlineAccidental = match[2]
+  const applied = accidental ?? inlineAccidental
+  if (applied === '#') semis += 1
+  else if (applied === 'b') semis -= 1
+  const octave = Number(match[3])
+  const midi = (octave + 1) * 12 + semis
+  return midi >= 0 && midi <= 127 ? midi : null
+}
+
+/**
  * Convert a chord degree (e.g., "I", "vi", "IV7") to actual chord name based on key
  */
 export function transposeToKey(degree: string, key: number): string {

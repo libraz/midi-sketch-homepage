@@ -30,7 +30,7 @@ MIDI Sketch doesn't use machine learning or neural networks. It implements class
 ::: details Template-Driven Architecture
 7 melody templates model specific vocal styles:
 - **PlateauTalk**: NewJeans/Billie Eilish style - high plateau with talk-sing
-- **RunUpTarget**: YOASOBI/Ado style - ascending runs to target notes
+- **RunUpTarget**: Anime high-energy/dramatic pop style - ascending runs to target notes
 - **HookRepeat**: TikTok/K-POP style - short repeating hooks
 - **SparseAnchor**: Official髭男dism style - sparse anchor notes
 - And more (DownResolve, CallResponse, JumpAccent)

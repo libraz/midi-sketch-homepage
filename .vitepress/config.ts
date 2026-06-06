@@ -169,6 +169,7 @@ export default withMermaid(defineConfig({
       themeConfig: {
         nav: [
           { text: 'Docs', link: '/docs/getting-started' },
+          { text: 'Course', link: '/docs/course/primer' },
           { text: 'GitHub', link: githubUrl }
         ],
         sidebar: {
@@ -179,6 +180,20 @@ export default withMermaid(defineConfig({
                 { text: 'Features', link: '/docs/features' },
                 { text: 'Getting Started', link: '/docs/getting-started' },
                 { text: 'Installation', link: '/docs/installation' },
+              ]
+            },
+            {
+              text: 'Course',
+              items: [
+                { text: '0 · Music Primer for Engineers', link: '/docs/course/primer' },
+                { text: '1 · Scales & Keys', link: '/docs/course/scales-keys' },
+                { text: '2 · Chords & Triads', link: '/docs/course/chords' },
+                { text: '3 · Chord Progressions', link: '/docs/course/progressions' },
+                { text: '4 · Harmony & Color', link: '/docs/course/harmony-color' },
+                { text: '5 · Melody, Motifs & Hooks', link: '/docs/course/melody-motif' },
+                { text: '6 · Song Structure', link: '/docs/course/song-structure' },
+                { text: '7 · Mapping to MidiSketch', link: '/docs/course/config-mapping' },
+                { text: 'Music Term Reference', link: '/docs/course/glossary' },
               ]
             },
             {
@@ -213,6 +228,7 @@ export default withMermaid(defineConfig({
       themeConfig: {
         nav: [
           { text: 'ドキュメント', link: '/ja/docs/getting-started' },
+          { text: 'コース', link: '/ja/docs/course/primer' },
           { text: 'GitHub', link: githubUrl }
         ],
         sidebar: {
@@ -223,6 +239,20 @@ export default withMermaid(defineConfig({
                 { text: '特徴', link: '/ja/docs/features' },
                 { text: 'はじめに', link: '/ja/docs/getting-started' },
                 { text: 'インストール', link: '/ja/docs/installation' },
+              ]
+            },
+            {
+              text: 'コース',
+              items: [
+                { text: '0・エンジニアのための音楽入門', link: '/ja/docs/course/primer' },
+                { text: '1・スケールとキー', link: '/ja/docs/course/scales-keys' },
+                { text: '2・コードとトライアド', link: '/ja/docs/course/chords' },
+                { text: '3・コード進行', link: '/ja/docs/course/progressions' },
+                { text: '4・ハーモニーと響きの色', link: '/ja/docs/course/harmony-color' },
+                { text: '5・メロディ・モチーフ・フック', link: '/ja/docs/course/melody-motif' },
+                { text: '6・楽曲構成', link: '/ja/docs/course/song-structure' },
+                { text: '7・MidiSketch設定との対応', link: '/ja/docs/course/config-mapping' },
+                { text: '音楽用語リファレンス', link: '/ja/docs/course/glossary' },
               ]
             },
             {

@@ -104,19 +104,19 @@ private:
 struct Song {
   Arrangement arrangement;     // セクション配置
   MidiTrack vocal;            // Channel 0 - Main melody
-  MidiTrack aux;              // Channel 1 - Sub-melody
-  MidiTrack chord;            // Channel 2 - Harmony
-  MidiTrack bass;             // Channel 3 - Foundation
-  MidiTrack motif;            // Channel 4 - BackgroundMotif style
+  MidiTrack chord;            // Channel 1 - Harmony
+  MidiTrack bass;             // Channel 2 - Foundation
+  MidiTrack motif;            // Channel 3 - BackgroundMotif style
+  MidiTrack arpeggio;         // Channel 4 - SynthDriven style
+  MidiTrack aux;              // Channel 5 - Sub-melody
   MidiTrack guitar;           // Channel 6 - Accompaniment guitar
-  MidiTrack arpeggio;         // Channel 5 - SynthDriven style
   MidiTrack drums;            // Channel 9 - Rhythm
   MidiTrack se;               // Channel 15 (markers)
 };
 ```
 
-::: info チャンネル共有
-AuxとArpeggioはMIDIチャンネル5を共有しています。MelodyLeadスタイルではAuxが生成され、SynthDrivenスタイルではArpeggioが生成されます。両者が同時に有効になることはありません。
+::: info 専用チャンネル
+すべてのトラックは専用のMIDIチャンネルを持ちます（`src/midi/track_config.h`）。Aux（Ch 5）とArpeggio（Ch 4）は別チャンネルなので、コンポジションスタイルや設定によっては同じ曲に両方が現れることがあります。
 :::
 
 ## データフロー

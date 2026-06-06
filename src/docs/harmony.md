@@ -6,6 +6,10 @@ This document explains the harmonic system in [MIDI Sketch](https://github.com/l
 This page uses music theory terminology. These concepts are handled automatically by the system, but understanding them allows for more precise parameter selection.
 :::
 
+::: tip New to music theory?
+If chords and progressions are new to you, the [Course](/docs/course/chords) builds them up from scratch with playable notation examples — start there, then come back to this reference.
+:::
+
 ## Chord Progressions
 
 MIDI Sketch includes 22 built-in chord progressions, covering common pop music patterns.
@@ -164,13 +168,15 @@ struct ChordExtensionParams {
     bool enable_sus = false;
     bool enable_7th = false;
     bool enable_9th = false;
-    bool tritone_sub = false;          // AccompanimentConfig only
-    float sus_probability = 0.2f;     // 20% chance
-    float seventh_probability = 0.15f; // 15% chance
-    float ninth_probability = 0.25f;   // 25% chance
-    float tritone_sub_probability;     // AccompanimentConfig only
+    bool tritone_sub = false;              // Tritone substitution (V7 -> bII7)
+    float sus_probability = 0.2f;          // 0.0-1.0 (20% chance)
+    float seventh_probability = 0.15f;     // 0.0-1.0 (15% chance)
+    float ninth_probability = 0.25f;       // 0.0-1.0 (25% chance)
+    float tritone_sub_probability = 0.5f;  // 0.0-1.0 (50% chance when enabled)
 };
 ```
+
+In the JS `SongConfig`, these map to `chordExtSus` / `chordExt7th` / `chordExt9th` / `chordExtTritoneSub` and `chordExtSusProb` / `chordExt7thProb` / `chordExt9thProb` / `chordExtTritoneSubProb` (all probabilities 0.0-1.0).
 
 ::: info Mood-Dependent Probability Auto-Adjustment
 When `chordExtProbExplicit=false` (default), the mood automatically adjusts chord extension probabilities to match the style. Set `chordExtProbExplicit=true` to manually control all extension probabilities.
@@ -288,10 +294,9 @@ Tritone substitution replaces a V7 chord with a bII7 chord (a dominant 7th built
 
 ::: details Configuration
 Tritone substitution is available via:
-- **AccompanimentConfig**: `chordExtTritoneSub` (enable) and `chordExtTritoneSubProb` (probability 0.0-1.0)
-- **C++ SongConfig JSON**: `chord_extension.tritone_sub` and `chord_extension.tritone_sub_probability` (via C++ readFrom)
-
-Note: These parameters are not currently exposed in the JS `SongConfig` type (`types.ts`). Use `AccompanimentConfig` or the C++ JSON API for access.
+- **SongConfig (JS)**: `chordExtTritoneSub` (enable, default `false`) and `chordExtTritoneSubProb` (probability 0.0-1.0, default `0.5`)
+- **AccompanimentConfig (JS)**: `chordExtTritoneSub` (enable) and `chordExtTritoneSubProb` (probability **0-100**, default `50` — this config keeps integer percent ranges)
+- **C++ SongConfig**: `chord_extension.tritone_sub` and `chord_extension.tritone_sub_probability` (0.0-1.0)
 :::
 
 ### Mood-Dependent Chord Extension Probabilities

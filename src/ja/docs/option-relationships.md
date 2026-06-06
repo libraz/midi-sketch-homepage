@@ -23,18 +23,22 @@
 
 ```mermaid
 graph TD
-    callEnabled --> introChant["introChant<br/>(falseなら無視)"]
-    callEnabled --> mixPattern["mixPattern<br/>(falseなら無視)"]
-    callEnabled --> callDensity["callDensity<br/>(falseなら無視)"]
-    callEnabled --> callNotesEnabled["callNotesEnabled<br/>(falseなら無視)"]
+    callSetting["callSetting<br/>(0=Auto, 1=Enabled, 2=Disabled)"] --> introChant["introChant<br/>(コール非アクティブ時は無視)"]
+    callSetting --> mixPattern["mixPattern<br/>(コール非アクティブ時は無視)"]
+    callSetting --> callDensity["callDensity<br/>(コール非アクティブ時は無視)"]
+    callSetting --> callNotesEnabled["callNotesEnabled<br/>(コール非アクティブ時は無視)"]
 ```
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `callEnabled=true` | `introChant` | イントロチャントの種類 |
-| `callEnabled=true` | `mixPattern` | MIXセクションの種類 |
-| `callEnabled=true` | `callDensity` | コーラスでのコール密度 |
-| `callEnabled=true` | `callNotesEnabled` | コールをMIDIノートとして出力 |
+| コールがアクティブ（`callSetting=1`、または `0` がオンに解決） | `introChant` | イントロチャントの種類 |
+| コールがアクティブ | `mixPattern` | MIXセクションの種類 |
+| コールがアクティブ | `callDensity` | コーラスでのコール密度 |
+| コールがアクティブ | `callNotesEnabled` | コールをMIDIノートとして出力 |
+
+::: warning callEnabled はレガシー
+`SongConfig` では boolean の `callEnabled` に代わって `callSetting`（0=Auto, 1=Enabled, 2=Disabled）が正となりました。`0`（Auto）の場合はスタイル/ボーカルスタイルがコール生成を決定します。`callEnabled` は後方互換のために引き続き受理されます（`true`→1、`false`→2）が、新規コードでは使用しないでください。`AccompanimentConfig` は引き続き単純な `callEnabled` boolean を使います。
+:::
 
 ### 1.2 Arpeggio
 
@@ -52,8 +56,9 @@ graph TD
 | `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord (0-7) |
 | `arpeggioEnabled=true` | `arpeggioSpeed` | 8分/16分/3連符 |
 | `arpeggioEnabled=true` | `arpeggioOctaveRange` | 1-3オクターブ |
-| `arpeggioEnabled=true` | `arpeggioGate` | ゲート長(0-100) |
+| `arpeggioEnabled=true` | `arpeggioGate` | ゲート長(0.0-1.0、デフォルト 0.8。AccompanimentConfigは0-100) |
 | `arpeggioEnabled=true` | `arpeggioSyncChord` | コード変更と同期 |
+| `arpeggioEnabled=true` | `arpeggioBaseVelocity` | アルペジオノートの基準ベロシティ(0-127、デフォルト 90) |
 
 ### 1.3 Humanization
 
@@ -65,8 +70,8 @@ graph TD
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `humanize=true` | `humanizeTiming` | タイミング揺れ(0-100) |
-| `humanize=true` | `humanizeVelocity` | ベロシティ揺れ(0-100) |
+| `humanize=true` | `humanizeTiming` | タイミング揺れ(0.0-1.0、デフォルト 0.4。AccompanimentConfigは0-100) |
+| `humanize=true` | `humanizeVelocity` | ベロシティ揺れ(0.0-1.0、デフォルト 0.3。AccompanimentConfigは0-100) |
 
 ### 1.4 Chord Extensions
 
@@ -75,15 +80,19 @@ graph LR
     chordExtSus --> chordExtSusProb
     chordExt7th --> chordExt7thProb
     chordExt9th --> chordExt9thProb
-    chordExtTritoneSub --> chordExtTritoneSubProb["chordExtTritoneSubProb<br/>(AccompanimentConfigのみ)"]
+    chordExtTritoneSub --> chordExtTritoneSubProb
 ```
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `chordExtSus=true` | `chordExtSusProb` | Sus確率(0-100) |
-| `chordExt7th=true` | `chordExt7thProb` | 7th確率(0-100) |
-| `chordExt9th=true` | `chordExt9thProb` | 9th確率(0-100) |
-| `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | トライトーン代理確率(0-100、AccompanimentConfigのみ) |
+| `chordExtSus=true` | `chordExtSusProb` | Sus確率(0.0-1.0、デフォルト 0.2) |
+| `chordExt7th=true` | `chordExt7thProb` | 7th確率(0.0-1.0、デフォルト 0.15) |
+| `chordExt9th=true` | `chordExt9thProb` | 9th確率(0.0-1.0、デフォルト 0.25) |
+| `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | トライトーン代理確率(0.0-1.0、デフォルト 0.5) |
+
+::: info AccompanimentConfig は 0-100
+上記の確率は `SongConfig` の値（0.0-1.0）です。再生成用の `AccompanimentConfig` では同じフィールドが整数 0-100 のレンジを維持しています（sus 20、7th 30、9th 25、tritone 50）。
+:::
 
 ### 1.5 Modulation
 
@@ -365,7 +374,7 @@ flowchart TD
 | `vocalStyle` | 0-13 | `INVALID_VOCAL_STYLE` |
 | `melodyTemplate` | 0-7 | `INVALID_MELODY_TEMPLATE` |
 | `melodicComplexity` | 0-2 | `INVALID_MELODIC_COMPLEXITY` |
-| `hookIntensity` | 0-3 | `INVALID_HOOK_INTENSITY` |
+| `hookIntensity` | 0-4 | `INVALID_HOOK_INTENSITY` |
 | `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
 | `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
 | `modulationSemitones` | 1-4 (timing≠0時) | `INVALID_MODULATION` |
@@ -423,10 +432,10 @@ vocalAttitude = 2 (Raw) → INVALID_ATTITUDE エラー
 | 1-4 | 1-4 | OK |
 | 1-4 | 5以上 | `INVALID_MODULATION` |
 
-### 6.5 callEnabled x targetDurationSeconds x bpm の干渉
+### 6.5 コール x targetDurationSeconds x bpm の干渉
 
 ```
-IF callEnabled == true AND targetDurationSeconds > 0
+IF コールがアクティブ (callSetting=1、または0がオンに解決) AND targetDurationSeconds > 0
 THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
 
@@ -454,11 +463,11 @@ min_seconds = min_bars * 240 / bpm
 | パターン | 原因 | 対処法 |
 |----------|------|--------|
 | `modulationTiming≠0` + `modulationSemitones=0` | 転調有効だが量が無効 | `modulationSemitones=2`に設定 |
-| `callEnabled=true` + `targetDurationSeconds=30` + `bpm=40` | 時間不足 | `targetDurationSeconds=0`に設定 |
+| `callSetting=1` + `targetDurationSeconds=30` + `bpm=40` | 時間不足 | `targetDurationSeconds=0`に設定 |
 | `vocalLow=80` + `vocalHigh=60` | 範囲反転 | low ≤ highにする |
 | `vocalLow=30` または `vocalHigh=100` | 範囲外 | 36-96の範囲内にする |
 | `bpm=300` | BPM範囲外 | 40-240の範囲内にする |
-| `blueprintId=1,5,6,7` + `drumsEnabled=false`（`drumsEnabledExplicit=true`なし） | drums_required Blueprintがドラムを強制有効化 | `drumsEnabledExplicit: true`を設定して明示的に無効化 |
+| `blueprintId=1,5,7` + `drumsEnabled=false`（`drumsEnabledExplicit=true`なし） | drums_required Blueprintがドラムを強制有効化 | `drumsEnabledExplicit: true`を設定して明示的に無効化 |
 | `enableSyncopation=false` + 高い`vocalGroove`値 | シンコペーション効果がサイレントに無効化 | `enableSyncopation: true`を設定 |
 | Blueprint `mood_mask`の不一致 | MoodがBlueprintと非互換 | `isMoodCompatible(blueprintId, mood)`で互換性を確認 |
 
@@ -470,11 +479,11 @@ min_seconds = min_bars * 240 / bpm
 
 | プロパティ | 値 |
 |----------|------|
-| JSデフォルト | `false` |
-| C++デフォルト | `true` |
+| デフォルト（`SongConfig`、JS/C++共通） | `true` |
+| デフォルト（`AccompanimentConfig`） | `true` |
 
-::: tip ギターのデフォルト値の違い
-JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジンではデフォルトが`true`です。JS生成の出力にギタートラックが必要な場合は、明示的に`guitarEnabled: true`を設定してください。
+::: tip ギターはデフォルトで有効
+ギタートラックはデフォルトで生成されます。無効にするには `guitarEnabled: false` を設定してください。Blueprintがギターをボーカル音域より下に保つかどうかは、Blueprintの `guitar_below_vocal` 制約で制御されます。
 :::
 
 ---
@@ -485,11 +494,11 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
 
 | プロパティ | 説明 |
 |----------|------|
-| `chordExtTritoneSub` | トライトーン代理の有効/無効 |
-| `chordExtTritoneSubProb` | トライトーン代理の確率（0-100） |
+| `chordExtTritoneSub` | トライトーン代理の有効/無効（デフォルト `false`） |
+| `chordExtTritoneSubProb` | トライトーン代理の確率（`SongConfig`: 0.0-1.0、デフォルト 0.5 / `AccompanimentConfig`: 0-100、デフォルト 50） |
 
-::: warning 利用可能範囲
-トライトーン代理は**AccompanimentConfigのみ**で利用可能です。JS `SongConfig`型（`types.ts`）には公開されていません。使用するには、`generateAccompaniment()`のconfig経由か、C++ JSON APIで直接指定してください。
+::: info 利用可能範囲
+トライトーン代理は JS `SongConfig`（全曲生成）と `AccompanimentConfig`（伴奏再生成）の両方、および C++ の `chord_extension` 構造体で利用できます。音楽的な背景は[ハーモニー](/ja/docs/harmony#トライトーン代理)を参照してください。
 :::
 
 ---
@@ -516,13 +525,13 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
 
 | drumsEnabledExplicit | drumsEnabled | Blueprint drums_required | 結果 |
 |---------------------|-------------|------------------------|------|
-| `false`（デフォルト） | `false` | `true`（ID 1,5,6,7） | **ドラム強制有効** |
+| `false`（デフォルト） | `false` | `true`（ID 1,5,7） | **ドラム強制有効** |
 | `false`（デフォルト） | `true` | 任意 | ドラム有効 |
-| `true` | `false` | `true`（ID 1,5,6,7） | **ドラム無効**（明示的オーバーライドが尊重） |
+| `true` | `false` | `true`（ID 1,5,7） | **ドラム無効**（明示的オーバーライドが尊重） |
 | `true` | `false` | `false` | ドラム無効 |
 
 ::: warning ドラム必須Blueprint
-`drumsEnabledExplicit=true`なしでは、`drums_required=true`のBlueprint（ID 1, 5, 6, 7）は`drumsEnabled`設定に関係なくドラムを強制有効化します。
+`drumsEnabledExplicit=true`なしでは、`drums_required=true`のBlueprint（ID 1, 5, 7）は`drumsEnabled`設定に関係なくドラムを強制有効化します。実行時の確認には `getBlueprintDrumsRequired(id)` を使用してください。
 :::
 
 ---
@@ -537,7 +546,7 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
   compositionStyle: 0,  // MelodyLead
   drumsEnabled: true,
   arpeggioEnabled: false,
-  callEnabled: false
+  callSetting: 2        // Disabled
 }
 ```
 
@@ -559,7 +568,7 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
 {
   stylePresetId: 3,   // Idol Standard
   vocalStyle: 4,      // Idol
-  callEnabled: true,
+  callSetting: 1,     // Enabled
   introChant: 1,      // ガチ恋
   mixPattern: 2,      // 虎火
   callDensity: 2,     // Standard
@@ -730,7 +739,7 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
 
 ### 12.5 自動Call有効化
 
-`callEnabled=Auto(false)`の場合、特定のボーカルスタイルで自動的にコールが有効化されます：
+`callSetting=0`（Auto）の場合、特定のボーカルスタイルで自動的にコールが有効化されます：
 
 | vocalStyle | 名前 | 自動Call |
 |------------|------|:--------:|
@@ -773,8 +782,8 @@ JS APIでは`guitarEnabled`のデフォルトが`false`ですが、C++エンジ�
 | `Normal (2)` | ×1.5 | +10 | Chorus, B |
 | `Strong (3)` | ×2.0 | +15 | **全セクション** |
 
-::: warning Maximum (4) は内部専用
-`hookIntensity=4`（Maximum）はBehavioralLoopモード専用で、`blueprintId=9`または`addictiveMode=true`の場合に内部的に設定されます。WASM/JS APIで`hookIntensity=4`を渡すと`INVALID_HOOK_INTENSITY`バリデーションエラーが発生します。
+::: warning Maximum (4) は Behavioral Loop 用
+`hookIntensity=4`（Maximum）はBehavioralLoopモード向けで、`blueprintId=9`または`addictiveMode=true`の場合に自動設定されます。明示的に指定してもバリデーションは通りますが、シンプルなパターンの最大反復が強制されるため、通常の楽曲では0-3を使用してください。
 :::
 
 ---
@@ -846,7 +855,7 @@ SongConfig
 │   ├── arpeggioGate
 │   └── arpeggioSyncChord
 │
-├── Call System (callEnabled=trueの場合のみ)
+├── Call System (コールがアクティブな場合のみ: callSetting=1、または0がオンに解決)
 │   ├── introChant
 │   ├── mixPattern  ─────────────▶ targetDurationSecondsと干渉
 │   ├── callDensity
@@ -868,7 +877,7 @@ SongConfig
 ├── トラック切り替え
 │   ├── drumsEnabled
 │   ├── drumsEnabledExplicit ────▶ true=drums_required BlueprintでもdrumsEnabled設定を尊重
-│   └── guitarEnabled ───────────▶ JSデフォルト=false、C++デフォルト=true
+│   └── guitarEnabled ───────────▶ デフォルト=true（無効化はfalseを指定）
 │
 ├── マスタースイッチ
 │   ├── enableSyncopation ───────▶ false=シンコペーション重み0.0
@@ -925,12 +934,12 @@ SongConfig
 | | `guitarEnabled` | はい | ギター生成 |
 | | `arpeggio.*` | はい | アルペジオ設定 |
 | | `chordExt*` | はい | コード拡張設定 |
-| | `chordExtTritoneSub` | はい | トライトーン代理（AccompanimentConfigのみ） |
+| | `chordExtTritoneSub` | はい | トライトーン代理 |
 | **後処理** | `humanize` | はい | ヒューマナイズ適用 |
 | | `humanizeTiming` | はい | タイミング変動 |
 | | `humanizeVelocity` | はい | ベロシティ変動 |
 | **SE/Call** | `seEnabled` | はい | SEトラック生成 |
-| | `callEnabled` | はい | コール機能 |
+| | `callEnabled` | はい | コール機能（AccompanimentConfigではboolean） |
 | | `callDensity` | はい | コール密度 |
 
 ### 15.3 regenerateVocal(configOrSeed) で使用されるパラメータ
@@ -949,6 +958,7 @@ SongConfig
 | `melodicComplexity` | はい | 複雑さを変更 |
 | `hookIntensity` | はい | フック強度を変更 |
 | `vocalGroove` | はい | グルーブを変更 |
+| `keepMotif` | はい | RhythmSync限定: 既存のMotifをリズムの軸として保持（デフォルト `false` = 両方再生成） |
 
 **注意**: コード進行と構造は変更されません（generateVocal時の設定を継続）。
 
@@ -979,7 +989,7 @@ SongConfig
     │
     ├── enableSyncopation ─→ マスターシンコペーションスイッチ（false=重み0.0）
     │
-    └── callEnabled ──────→ (false=Auto時) vocalStyleで判定 → call_enabled
+    └── callSetting ──────→ (0=Auto時) vocalStyleで判定 → コール有効化
 ```
 
 **適用順序**: `StylePreset` → `VocalStylePreset` → `MelodicComplexity` → `SongConfig Overrides (melody/motif)` → `Master Switch (enableSyncopation)`
@@ -1062,7 +1072,7 @@ CompositionStyle == BackgroundMotif? → Yes: モチーフ生成
 ```
 
 ::: warning ドラム必須
-`requiresDrums=true` の Blueprint（ID: 1, 5, 6, 7）は自動的にドラムを有効化します。この動作を明示的にオーバーライドするには、`drumsEnabledExplicit: true`と`drumsEnabled: false`を同時に設定してください。
+`requiresDrums=true` の Blueprint（ID: 1, 5, 7）は自動的にドラムを有効化します。この動作を明示的にオーバーライドするには、`drumsEnabledExplicit: true`と`drumsEnabled: false`を同時に設定してください。
 :::
 
 ### 17.6 例：Blueprint のオーバーライド動作

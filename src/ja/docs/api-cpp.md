@@ -398,7 +398,7 @@ struct SongConfig {
   VocalStylePreset vocal_style = VocalStylePreset::Auto; // ボーカルスタイルプリセット (0-13)
   bool drums_enabled = true;
   bool drums_enabled_explicit = false; // ドラム設定がユーザーにより明示的に指定された場合 true
-  bool guitar_enabled = true;       // ギタートラックを有効化 (C++ デフォルト=true, JS デフォルト=false)
+  bool guitar_enabled = true;       // ギタートラックを有効化 (デフォルト: true、C++/JS 共通)
   bool arpeggio_enabled = false;
   bool skip_vocal = false;          // ボーカルをスキップ (BGM 優先)
   uint8_t vocal_low = 60;           // C4
@@ -408,10 +408,12 @@ struct SongConfig {
   uint8_t arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
 
   // アルペジオ設定
-  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate, sync_chord
+  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate (0.0-1.0, デフォルト 0.8),
+                                    //   sync_chord, base_velocity (0-127, デフォルト 90)
 
   // コード拡張
-  ChordExtensionParams chord_extension;
+  ChordExtensionParams chord_extension; // enable_sus/enable_7th/enable_9th/tritone_sub (bool),
+                                        //   確率は 0.0-1.0: sus 0.2, 7th 0.15, 9th 0.25, tritone 0.5
   bool chord_ext_prob_explicit = false; // コード拡張確率を明示的に指定
 
   // ヒューマナイズ
@@ -434,7 +436,7 @@ struct SongConfig {
   // ボーカルスタイル設定
   MelodyTemplateId melody_template = MelodyTemplateId::Auto; // 0-7
   MelodicComplexity melodic_complexity = MelodicComplexity::Standard; // 0-2
-  HookIntensity hook_intensity = HookIntensity::Normal; // 0-3 (4=Maximum は内部専用)
+  HookIntensity hook_intensity = HookIntensity::Normal; // 0-4 (4=Maximum、通常は Behavioral Loop が強制設定)
   VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight; // 0-5
 
   // ムード
@@ -490,6 +492,8 @@ struct VocalConfig {
   HookIntensity hook_intensity = HookIntensity::Normal;
   VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight;
   CompositionStyle composition_style = CompositionStyle::MelodyLead;
+  bool keep_motif = false;          // RhythmSync: 既存のMotifをリズムの軸として保持
+                                    //   (デフォルト: ボーカルとモチーフの両方を再生成)
 };
 ```
 
@@ -505,7 +509,7 @@ struct AccompanimentConfig {
   bool drums_enabled = true;
 
   // ギター
-  bool guitar_enabled = false;      // ギタートラックを有効化 (JS デフォルト=false)
+  bool guitar_enabled = true;       // ギタートラックを有効化 (デフォルト: true)
 
   // アルペジオ
   bool arpeggio_enabled = false;
@@ -650,7 +654,7 @@ enum class VocalStylePreset : uint8_t {
 enum class MelodyTemplateId : uint8_t {
   Auto = 0,          // VocalStylePreset に基づいて自動選択
   PlateauTalk,       // 同音連打多め (NewJeans, Billie Eilish)
-  RunUpTarget,       // 目標音への上昇 (YOASOBI, Ado)
+  RunUpTarget,       // 目標音への上昇 (アニメ系ハイエナジー、ドラマチックポップ)
   DownResolve,       // 下降解決 (Bメロ向け)
   HookRepeat,        // 短い繰り返しフック (TikTok, K-POP)
   SparseAnchor,      // まばらなアンカーノート (バラード)
@@ -680,7 +684,8 @@ enum class HookIntensity : uint8_t {
   Off = 0,     // フック繰り返しなし
   Light,       // 軽いフック
   Normal,      // 通常のフック繰り返し (デフォルト)
-  Strong       // 強い、キャッチーなフック
+  Strong,      // 強い、キャッチーなフック
+  Maximum      // 最大反復 (Behavioral Loop / addictive_mode が使用)
 };
 ```
 
@@ -953,6 +958,9 @@ uint8_t midisketch_blueprint_riff_policy(uint8_t id);
 
 // ID で Blueprint の重み（自動選択用）を取得
 uint8_t midisketch_blueprint_weight(uint8_t id);
+
+// Blueprint がドラムトラックを必須とするか (1, 5, 7 -> 非ゼロ)
+int midisketch_blueprint_drums_required(uint8_t id);
 
 // 生成後に解決された Blueprint ID を取得
 uint8_t midisketch_get_resolved_blueprint_id(MidiSketchHandle handle);

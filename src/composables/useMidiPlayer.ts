@@ -1,7 +1,14 @@
 import { ref, onUnmounted } from 'vue'
 import { Soundfont, DrumMachine } from 'smplr'
 import { type ChordTiming, getRootMidiNote } from '@/utils/chordUtils'
-import { GM_TO_DRUM, loadInstrumentsForTracks, getRequiredInstruments } from '@/utils/gmInstruments'
+import {
+  DEMO_DRUM_MACHINE,
+  DEMO_SOUNDFONT_KIT,
+  GM_TO_DRUM,
+  loadInstrumentsForTracks,
+  getRequiredInstruments,
+  scaleTrackVelocity,
+} from '@/utils/gmInstruments'
 
 interface MidiNote {
   // Support both naming conventions from WASM
@@ -44,7 +51,7 @@ interface EventData {
 }
 
 let audioContext: AudioContext | null = null
-let bass: Soundfont | null = null  // For root note playback (always acoustic_bass)
+let bass: Soundfont | null = null  // For optional root note playback
 let drums: DrumMachine | null = null
 let initPromise: Promise<void> | null = null
 let isInitialized = false
@@ -103,8 +110,11 @@ export function useMidiPlayer() {
 
         // Load only bass and drums at init (minimal footprint)
         const [loadedBass, loadedDrums] = await Promise.all([
-          new Soundfont(audioContext, { instrument: 'acoustic_bass' }).load,
-          new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
+          new Soundfont(audioContext, {
+            instrument: 'electric_bass_finger',
+            kit: DEMO_SOUNDFONT_KIT,
+          }).load,
+          new DrumMachine(audioContext, { instrument: DEMO_DRUM_MACHINE }).load
         ])
 
         bass = loadedBass
@@ -155,34 +165,17 @@ export function useMidiPlayer() {
 
     // Dynamically load instruments for tracks if needed
     const required = getRequiredInstruments(eventData.tracks)
-    const needsLoad = [...required.values()].some(name => {
-      // Check if we have this instrument loaded already
-      for (const [, sf] of trackInstrumentMap) {
-        if ((sf as any)._instrumentName === name) return false
-      }
-      return !trackInstrumentMap.has(
-        [...required.entries()].find(([, v]) => v === name)?.[0] ?? ''
-      )
-    })
+    const needsLoad = [...required.keys()].some(trackName => !trackInstrumentMap.has(trackName))
 
-    // Always rebuild the track map to match current tracks
-    const missing = new Map<string, string>()
-    for (const [trackName, instrumentName] of required) {
-      if (!trackInstrumentMap.has(trackName)) {
-        missing.set(trackName, instrumentName)
-      }
-    }
-
-    if (missing.size > 0) {
-      // Show loading only if we need to fetch new instruments
-      globalIsLoading.value = true
-      try {
-        const result = await loadInstrumentsForTracks(audioContext, eventData.tracks)
-        trackInstrumentMap = result.trackMap
-        // Keep our existing drums instance (don't replace)
-      } finally {
-        globalIsLoading.value = false
-      }
+    // Rebuild the track map for each playback so role-based preview instruments
+    // stay in sync even when the generated MIDI program changes.
+    globalIsLoading.value = needsLoad
+    try {
+      const result = await loadInstrumentsForTracks(audioContext, eventData.tracks)
+      trackInstrumentMap = result.trackMap
+      // Keep our existing drums instance (don't replace)
+    } finally {
+      globalIsLoading.value = false
     }
 
     // Calculate total duration from sections (most reliable)
@@ -220,7 +213,7 @@ export function useMidiPlayer() {
         if (adjustedDuration > 0) {
           bass.start({
             note: rootNote,
-            velocity: 70,  // Moderate velocity for root notes
+            velocity: 62,  // Moderate velocity for root notes
             time: audioContext.currentTime + adjustedStartSeconds,
             duration: Math.min(adjustedDuration, ticksToSeconds(ppq * 2))  // Max 2 beats duration
           })
@@ -261,12 +254,12 @@ export function useMidiPlayer() {
 
         if (adjustedDuration > 0) {
           if (isDrumTrack && drums) {
-            // Convert GM drum note to Roland CR-8000 sample name
+            // Convert GM drum note to the configured demo drum-machine group
             const drumSample = GM_TO_DRUM[noteNum]
             if (drumSample) {
               drums.start({
                 note: drumSample,
-                velocity: note.velocity,
+                velocity: scaleTrackVelocity(track, note.velocity),
                 time: audioContext.currentTime + adjustedStartSeconds,
                 duration: adjustedDuration
               })
@@ -277,7 +270,7 @@ export function useMidiPlayer() {
             if (instrument) {
               instrument.start({
                 note: noteNum,
-                velocity: note.velocity,
+                velocity: scaleTrackVelocity(track, note.velocity),
                 time: audioContext.currentTime + adjustedStartSeconds,
                 duration: adjustedDuration
               })
@@ -343,7 +336,7 @@ export function useMidiPlayer() {
       bass.stop()
     }
     if (drums) {
-      drums.stop()
+      (drums as any).stop()
     }
   }
 
@@ -389,7 +382,7 @@ export function useMidiPlayer() {
       bass.stop()
     }
     if (drums) {
-      drums.stop()
+      (drums as any).stop()
     }
   }
 

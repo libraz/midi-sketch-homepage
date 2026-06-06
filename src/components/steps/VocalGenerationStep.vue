@@ -7,7 +7,7 @@ import { useMidiRegeneration } from '@/composables/useMidiRegeneration'
 import { useSeedHistory } from '@/composables/useSeedHistory'
 import { useMidiGeneration } from '@/composables/useMidiGeneration'
 import { songImages } from '@/data/songImages'
-import { getBlueprintById, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
+import { getBlueprintById, blueprintIsRhythmSync, AUTO_BLUEPRINT_ID } from '@/data/blueprints'
 import { getRecommendedBlueprintId } from '@/data/songImageBlueprint'
 import { KEY_NAMES, transposeProgressionToKey } from '@/utils/midiUtils'
 import { devLog } from '@/utils/devLog'
@@ -560,10 +560,29 @@ const chordTimings = computed((): ChordTiming[] => {
 const vocalStyleName = computed(() => {
   const styles = [
     'auto', 'standard', 'vocaloid', 'ultraVocaloid', 'idol', 'ballad',
-    'rock', 'cityPop', 'anime', 'brightKira', 'coolSynth', 'cuteAffected', 'powerfulShout'
+    'rock', 'cityPop', 'anime', 'brightKira', 'coolSynth', 'cuteAffected', 'powerfulShout', 'kpop'
   ]
   return styles[store.config.vocalStyle] || 'auto'
 })
+
+// ============================================
+// Keep Motif (RhythmSync only)
+// ============================================
+
+// Effective blueprint ID (resolve Auto to recommended)
+const effectiveBlueprintId = computed(() => {
+  if (store.config.blueprintId === AUTO_BLUEPRINT_ID) {
+    return getRecommendedBlueprintId(store.config.songImageId)
+  }
+  return store.config.blueprintId
+})
+
+// Whether the current blueprint uses the RhythmSync paradigm
+const isRhythmSync = computed(() => blueprintIsRhythmSync(effectiveBlueprintId.value))
+
+// When enabled, regeneration keeps the existing motif as the rhythmic anchor
+// and only rewrites the vocal melody (regenerateVocal with keepMotif)
+const keepMotifOnRegenerate = ref(false)
 
 // Melody template name for display
 const melodyTemplateName = computed(() => {
@@ -655,12 +674,20 @@ async function generate(overrideSeed?: number) {
     // Validate config first (fixes vocalAttitude if not allowed for style)
     midiGen.validateConfigForStyle(store.config)
 
-    // Build config for vocal generation (after validation)
-    const vocalConfig = midiGen.buildVocalConfig(store.config, seed)
-    devLog('Vocal generateVocal', vocalConfig)
+    if (isGenerated.value && keepMotifOnRegenerate.value && isRhythmSync.value) {
+      // RhythmSync regeneration with motif kept as the rhythmic anchor:
+      // only the vocal melody is rewritten
+      const vocalParams = midiGen.buildVocalParams(store.config, seed, true)
+      devLog('Vocal regenerateVocal (keepMotif)', vocalParams)
+      instance.regenerateVocal(vocalParams)
+    } else {
+      // Build config for vocal generation (after validation)
+      const vocalConfig = midiGen.buildVocalConfig(store.config, seed)
+      devLog('Vocal generateVocal', vocalConfig)
 
-    // Use the new generateVocal API
-    instance.generateVocal(vocalConfig)
+      // Use the new generateVocal API
+      instance.generateVocal(vocalConfig)
+    }
     eventData.value = midiGen.safeGetEvents(instance)
 
     isGenerated.value = true
@@ -856,6 +883,16 @@ function downloadMidi() {
         </div>
 
         <div class="result-actions">
+          <!-- Keep Motif option (RhythmSync blueprints only) -->
+          <label v-if="isRhythmSync" class="keep-motif-toggle">
+            <input type="checkbox" v-model="keepMotifOnRegenerate" />
+            <span class="keep-motif-toggle__box" aria-hidden="true"></span>
+            <span class="keep-motif-toggle__text">
+              <span class="keep-motif-toggle__label">{{ t('vocalGenerationStep.keepMotif.label') }}</span>
+              <span class="keep-motif-toggle__desc">{{ t('vocalGenerationStep.keepMotif.description') }}</span>
+            </span>
+          </label>
+
           <!-- Regenerate Button with integrated history -->
           <RegenerateCard
             :can-undo="canUndoVocal"
@@ -923,6 +960,68 @@ function downloadMidi() {
   flex-direction: column;
   gap: 0.625rem;
   margin-top: 1.25rem;
+}
+
+/* Keep Motif toggle (RhythmSync only) */
+.keep-motif-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.keep-motif-toggle input {
+  display: none;
+}
+
+.keep-motif-toggle__box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 1.5px solid rgba(167, 139, 250, 0.6);
+  border-radius: 5px;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.keep-motif-toggle input:checked + .keep-motif-toggle__box {
+  background: #8B5CF6;
+  border-color: #8B5CF6;
+}
+
+.keep-motif-toggle input:checked + .keep-motif-toggle__box::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+
+.keep-motif-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.keep-motif-toggle__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.85);
+}
+
+.keep-motif-toggle__desc {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.5);
 }
 
 .next-hint {

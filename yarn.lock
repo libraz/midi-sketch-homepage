@@ -2700,6 +2700,7 @@ __metadata:
     smplr: "npm:^0.16.3"
     tone: "npm:15.1.22"
     typescript: "npm:^5.9.3"
+    vexflow: "npm:^5.0.0"
     vitepress: "npm:^1.6.4"
     vitepress-plugin-mermaid: "npm:^2.0.17"
     vue: "npm:^3.5.26"
@@ -3487,6 +3488,13 @@ __metadata:
   bin:
     uuid: dist/esm/bin/uuid
   checksum: 10c0/34aa51b9874ae398c2b799c88a127701408cd581ee89ec3baa53509dd8728cbb25826f2a038f9465f8b7be446f0fbf11558862965b18d21c993684297628d4d3
+  languageName: node
+  linkType: hard
+
+"vexflow@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "vexflow@npm:5.0.0"
+  checksum: 10c0/8737a4414bf90f960d4ef91d24ec43c9fabbac6cc95df67c593af9c51da8311bc907c562c7c4836ed0b1c8060b19838649b4540886b60a9de8b36d1d15aad8c1
   languageName: node
   linkType: hard
 

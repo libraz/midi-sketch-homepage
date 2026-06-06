@@ -15,7 +15,8 @@ import type { WizardConfig } from '@/stores/useWizardStore'
 // V3: Added vocalSeed for vocal-first flow deterministic regeneration, added seEnabled
 // V4: Added blueprintId (0-8, 255=auto)
 // V5: Added melody/motif overrides, guitar, syncopation, energyCurve, driveFeel, moraRhythmMode
-const VERSION = 5
+// V6: Added tritone substitution; widened arpeggioPattern (0-7) and hookIntensity (0-4)
+const VERSION = 6
 
 // Share types
 export type ShareType = 'bgm' | 'vocal'
@@ -48,7 +49,7 @@ const FIELD_SCHEMA = [
   // Drums & Arpeggio
   ['drumsEnabled', 1],
   ['arpeggioEnabled', 1],
-  ['arpeggioPattern', 2],     // 0-3
+  ['arpeggioPattern', 3],     // 0-7
   ['arpeggioSpeed', 2],       // 0-2
   ['arpeggioOctaveRange', 2], // 1-3 → 0-2
   ['arpeggioGate', 7],        // 0-100
@@ -58,9 +59,11 @@ const FIELD_SCHEMA = [
   ['chordExtSus', 1],
   ['chordExt7th', 1],
   ['chordExt9th', 1],
+  ['chordExtTritoneSub', 1],
   ['chordExtSusProb', 7],     // 0-100
   ['chordExt7thProb', 7],     // 0-100
   ['chordExt9thProb', 7],     // 0-100
+  ['chordExtTritoneSubProb', 7], // 0-100
 
   // Modulation
   ['modulationTiming', 3],    // 0-4
@@ -88,7 +91,7 @@ const FIELD_SCHEMA = [
 
   // Melodic
   ['melodicComplexity', 2],   // 0-2
-  ['hookIntensity', 2],       // 0-3
+  ['hookIntensity', 3],       // 0-4
 
   // Vocal
   ['vocalLow', 7, 36],        // 36-96 → 0-60 (MIDI note)
@@ -124,7 +127,7 @@ const FIELD_SCHEMA = [
   ['motifLength', 4],         // 0-8 (0=auto)
   ['motifNoteCount', 4],      // 0-8 (0=auto)
   ['motifMotion', 8],         // 0-255 (255=auto)
-  ['motifRegisterHigh', 1],   // 0-1
+  ['motifRegisterHigh', 2],   // 0=auto, 1=low, 2=high
   ['motifRhythmDensity', 8],  // 0-255 (255=auto)
 ] as const satisfies readonly FieldDef[]
 
@@ -405,7 +408,7 @@ export function decodeShareUrl(hash: string): DecodedShare | null {
         // Determine if this is a boolean field
         const isBooleanField = [
           'drumsEnabled', 'arpeggioEnabled', 'arpeggioSyncChord',
-          'chordExtSus', 'chordExt7th', 'chordExt9th',
+          'chordExtSus', 'chordExt7th', 'chordExt9th', 'chordExtTritoneSub',
           'seEnabled', 'callEnabled', 'callNotesEnabled',
           'motifFixedProgression', 'humanize',
           'guitarEnabled', 'enableSyncopation'

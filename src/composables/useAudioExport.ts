@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { Mp3Encoder } from '@breezystack/lamejs'
-import { GM_TO_DRUM, loadInstrumentsForTracks } from '@/utils/gmInstruments'
+import { GM_TO_DRUM, loadInstrumentsForTracks, scaleTrackVelocity } from '@/utils/gmInstruments'
 
 interface MidiNote {
   note?: number
@@ -124,7 +124,7 @@ export function useAudioExport() {
             if (drumSample) {
               drums.start({
                 note: drumSample,
-                velocity: note.velocity,
+                velocity: scaleTrackVelocity(track, note.velocity),
                 time: startSeconds,
                 duration: durationSeconds,
               })
@@ -134,7 +134,7 @@ export function useAudioExport() {
             if (instrument) {
               instrument.start({
                 note: noteNum,
-                velocity: note.velocity,
+                velocity: scaleTrackVelocity(track, note.velocity),
                 time: startSeconds,
                 duration: durationSeconds,
               })

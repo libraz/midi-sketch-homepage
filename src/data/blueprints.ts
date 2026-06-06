@@ -1,11 +1,12 @@
 /**
  * Production Blueprint definitions
- * Maps to WASM-side Blueprint IDs (0-8, 255=auto)
+ * Maps to WASM-side Blueprint IDs (0-9, 255=auto)
  *
  * Blueprint override rules (from WASM):
- * - section_flow: Overrides formId (all except Traditional)
+ * - section_flow: Overrides formId (all except Traditional/BehavioralLoop)
  * - riff_policy: Locked/Evolving ignores motifRepeatScope
  * - TrackMask::Motif: Controls motif generation per section
+ * - BehavioralLoop (9): forces HookIntensity=Maximum and locked-pitch riffs
  */
 
 export type RiffPolicy = 'free' | 'locked' | 'evolving'
@@ -176,6 +177,21 @@ export const BLUEPRINT_OPTIONS: BlueprintOption[] = [
     paradigm: 'melody',
     riffPolicy: 'locked',
     overridesForm: true,
+    hasMotif: true,
+    requiresDrums: false,
+    recommendsArpeggio: false,
+  },
+  {
+    id: 9,
+    label: { en: 'Addictive Loop', ja: '中毒ループ' },
+    description: {
+      en: 'Fixed riff, maximum hook repetition',
+      ja: 'リフ固定・フック反復最大の中毒系',
+    },
+    icon: '🔁',
+    paradigm: 'traditional',
+    riffPolicy: 'locked', // LockedPitch on WASM side
+    overridesForm: false,
     hasMotif: true,
     requiresDrums: false,
     recommendsArpeggio: false,

@@ -29,7 +29,7 @@ export interface SongConfig {
     drumsEnabled: boolean;
     /** True if drumsEnabled was explicitly set by user */
     drumsEnabledExplicit: boolean;
-    /** Blueprint ID: 0=Traditional, 1=Orangestar, 2=YOASOBI, 3=Ballad, 255=random */
+    /** Blueprint ID: 0=Traditional, 1=RhythmLock, 2=StoryPop, 3=Ballad, 255=random */
     blueprintId: number;
     /** Enable arpeggio */
     arpeggioEnabled: boolean;
@@ -41,7 +41,7 @@ export interface SongConfig {
     arpeggioSpeed: number;
     /** Arpeggio octave range (1-3) */
     arpeggioOctaveRange: number;
-    /** Arpeggio gate length (0-100) */
+    /** Arpeggio gate length (0.0-1.0) */
     arpeggioGate: number;
     /** Vocal range lower bound (MIDI note) */
     vocalLow: number;
@@ -51,9 +51,9 @@ export interface SongConfig {
     skipVocal: boolean;
     /** Enable humanization */
     humanize: boolean;
-    /** Timing variation (0-100) */
+    /** Timing variation (0.0-1.0) */
     humanizeTiming: number;
-    /** Velocity variation (0-100) */
+    /** Velocity variation (0.0-1.0) */
     humanizeVelocity: number;
     /** Enable sus2/sus4 chords */
     chordExtSus: boolean;
@@ -61,12 +61,16 @@ export interface SongConfig {
     chordExt7th: boolean;
     /** Enable 9th chords */
     chordExt9th: boolean;
-    /** Sus chord probability (0-100) */
+    /** Enable tritone substitution (V7 -> bII7) */
+    chordExtTritoneSub: boolean;
+    /** Sus chord probability (0.0-1.0) */
     chordExtSusProb: number;
-    /** 7th chord probability (0-100) */
+    /** 7th chord probability (0.0-1.0) */
     chordExt7thProb: number;
-    /** 9th chord probability (0-100) */
+    /** 9th chord probability (0.0-1.0) */
     chordExt9thProb: number;
+    /** Tritone substitution probability (0.0-1.0) */
+    chordExtTritoneSubProb: number;
     /** Composition style: 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven */
     compositionStyle: number;
     /** Target duration in seconds (0 = use formId) */
@@ -77,8 +81,14 @@ export interface SongConfig {
     modulationSemitones: number;
     /** Enable SE track */
     seEnabled: boolean;
-    /** Enable call feature (maps to call_setting: false=Auto(0), true=Enabled(1)) */
-    callEnabled: boolean;
+    /** Call setting: 0=Auto, 1=Enabled, 2=Disabled. Source of truth for call state. */
+    callSetting?: number;
+    /**
+     * Enable call feature (legacy boolean view of callSetting).
+     * Deprecated for config state; use callSetting for the Auto/Enabled/Disabled distinction.
+     * Derived as: Enabled(1) -> true, Disabled(2) -> false, Auto(0) -> undefined.
+     */
+    callEnabled?: boolean;
     /** Output calls as notes */
     callNotesEnabled: boolean;
     /** Intro chant: 0=None, 1=Gachikoi, 2=Shouting */
@@ -95,6 +105,8 @@ export interface SongConfig {
     arrangementGrowth: number;
     /** Sync arpeggio with chord changes (default=true) */
     arpeggioSyncChord: boolean;
+    /** Base velocity for arpeggio notes (0-127, default=90) */
+    arpeggioBaseVelocity: number;
     /** Motif repeat scope: 0=FullSong, 1=Section */
     motifRepeatScope: number;
     /** Same progression for all sections (default=true) */
@@ -189,6 +201,8 @@ export interface VocalConfig {
     vocalGroove?: number;
     /** Composition style: 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven */
     compositionStyle?: number;
+    /** RhythmSync: keep existing Motif as coordinate axis (default: regenerate both) */
+    keepMotif?: boolean;
 }
 /**
  * Configuration for accompaniment generation/regeneration.
@@ -417,6 +431,15 @@ export declare const ConfigError: {
     readonly InvalidMotifRepeatScope: 21;
     readonly InvalidArrangementGrowth: 22;
     readonly InvalidModulationTiming: 23;
+    readonly InvalidBlueprint: 24;
+    readonly InvalidCallSetting: 25;
+    readonly InvalidEnergyCurve: 26;
+    readonly InvalidDriveFeel: 27;
+    readonly InvalidMoraRhythmMode: 28;
+    readonly InvalidProbability: 29;
+    readonly InvalidArpeggioRange: 30;
+    readonly InvalidMelodyOverride: 31;
+    readonly InvalidMotifOverride: 32;
 };
 export type ConfigErrorCode = (typeof ConfigError)[keyof typeof ConfigError];
 /**
@@ -491,6 +514,7 @@ export declare const HookIntensity: {
     readonly Light: 1;
     readonly Normal: 2;
     readonly Strong: 3;
+    readonly Maximum: 4;
 };
 export declare const VocalGrooveFeel: {
     readonly Straight: 0;
@@ -514,6 +538,7 @@ export declare const VocalStylePreset: {
     readonly CoolSynth: 10;
     readonly CuteAffected: 11;
     readonly PowerfulShout: 12;
+    readonly KPop: 13;
 };
 //# sourceMappingURL=constants.d.ts.map
 // From blueprint.ts
@@ -526,9 +551,9 @@ export declare const VocalStylePreset: {
 export declare const GenerationParadigm: {
     /** Existing behavior */
     readonly Traditional: 0;
-    /** Orangestar style (rhythm-synced) */
+    /** Rhythm-synced lead style */
     readonly RhythmSync: 1;
-    /** YOASOBI style (melody-driven) */
+    /** Melody-driven story pop style */
     readonly MelodyDriven: 2;
 };
 export type GenerationParadigmType = (typeof GenerationParadigm)[keyof typeof GenerationParadigm];
@@ -554,7 +579,7 @@ export type RiffPolicyType = (typeof RiffPolicy)[keyof typeof RiffPolicy];
  * Blueprint information
  */
 export interface BlueprintInfo {
-    /** Blueprint ID (0-3) */
+    /** Blueprint ID (0-9) */
     id: number;
     /** Blueprint name */
     name: string;
@@ -571,24 +596,33 @@ export interface BlueprintInfo {
 export declare function getBlueprintCount(): number;
 /**
  * Get blueprint name by ID
- * @param id Blueprint ID (0-3)
+ * @param id Blueprint ID (0-9)
  */
 export declare function getBlueprintName(id: number): string;
 /**
  * Get blueprint paradigm by ID
- * @param id Blueprint ID (0-3)
+ * @param id Blueprint ID (0-9)
  */
 export declare function getBlueprintParadigm(id: number): GenerationParadigmType;
 /**
  * Get blueprint riff policy by ID
- * @param id Blueprint ID (0-3)
+ * @param id Blueprint ID (0-9)
  */
 export declare function getBlueprintRiffPolicy(id: number): RiffPolicyType;
 /**
  * Get blueprint weight by ID
- * @param id Blueprint ID (0-3)
+ * @param id Blueprint ID (0-9)
  */
 export declare function getBlueprintWeight(id: number): number;
+/**
+ * Whether the blueprint requires drums (drums_required constraint).
+ *
+ * Source of truth is the C++ blueprint table (production_blueprint.cpp),
+ * exposed via midisketch_blueprint_drums_required.
+ *
+ * @param id Blueprint ID (0-9)
+ */
+export declare function getBlueprintDrumsRequired(id: number): boolean;
 /**
  * Get all blueprints as an array
  */
@@ -638,6 +672,7 @@ export interface Api {
     create: () => number;
     destroy: (handle: number) => void;
     getMidi: (handle: number) => number;
+    getVocalPreviewMidi: (handle: number) => number;
     freeMidi: (ptr: number) => void;
     getEvents: (handle: number) => number;
     freeEvents: (ptr: number) => void;
@@ -659,6 +694,7 @@ export interface Api {
     getProgressionsByStylePtr: (styleId: number) => number;
     getFormsByStylePtr: (styleId: number) => number;
     configErrorString: (error: number) => string;
+    getLastConfigError: (handle: number) => number;
     generateAccompaniment: (handle: number) => number;
     regenerateAccompaniment: (handle: number, seed: number) => number;
     getPianoRollSafety: (handle: number, startTick: number, endTick: number, step: number) => number;
@@ -680,6 +716,7 @@ export interface Api {
     blueprintParadigm: (id: number) => number;
     blueprintRiffPolicy: (id: number) => number;
     blueprintWeight: (id: number) => number;
+    blueprintDrumsRequired: (id: number) => number;
     getResolvedBlueprintId: (handle: number) => number;
 }
 /**
@@ -782,7 +819,7 @@ export declare class SongConfigBuilder {
     private lastChangeResult;
     /**
      * Create a new builder with default config for the given style
-     * @param styleId Style preset ID (0-12)
+     * @param styleId Style preset ID (0-16)
      */
     constructor(styleId?: number);
     /**
@@ -841,7 +878,7 @@ export declare class SongConfigBuilder {
      * Set vocal style preset with cascade detection
      *
      * Idol-style vocalStyles (4=Idol, 9=BrightKira, 11=CuteAffected) will
-     * auto-enable call system if callEnabled is not explicitly set.
+     * auto-enable call system if callSetting/callEnabled is not explicitly set.
      *
      * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
      */
@@ -876,9 +913,11 @@ export declare class SongConfigBuilder {
         sus?: boolean;
         seventh?: boolean;
         ninth?: boolean;
+        tritone?: boolean;
         susProb?: number;
         seventhProb?: number;
         ninthProb?: number;
+        tritoneProb?: number;
     }): this;
     /**
      * Set arpeggio settings
@@ -907,6 +946,7 @@ export declare class SongConfigBuilder {
      */
     setCall(opts: {
         enabled?: boolean;
+        setting?: number;
         notesEnabled?: boolean;
         density?: number;
         introChant?: number;
@@ -977,11 +1017,11 @@ export declare class SongConfigBuilder {
      * Set blueprint with cascade detection
      *
      * Setting a blueprint may automatically change:
-     * - drumsEnabled (if blueprint requires drums: ID 1,5,6,7)
+     * - drumsEnabled (if the blueprint has drums_required=true, per the C++
+     *   blueprint table via getBlueprintDrumsRequired)
      * - hookIntensity (BehavioralLoop forces Maximum)
-     * - BPM clamping for RhythmSync paradigm
+     * - BPM warning or auto-adjustment for RhythmSync paradigm
      *
-     * Blueprint drums_required: IDs 1 (RhythmLock), 5 (IdolHyper), 6 (IdolKawaii), 7 (IdolCoolPop)
      * BehavioralLoop (ID 9): Forces HookIntensity=Maximum, RiffPolicy=LockedPitch
      *
      * @param id Blueprint ID (0-9, 255=random)
@@ -1011,7 +1051,7 @@ export declare class SongConfigBuilder {
      *
      * Changing style preset resets mood, chord, form, bpm to style defaults.
      *
-     * @param id Style preset ID (0-12)
+     * @param id Style preset ID (0-16)
      */
     setStylePreset(id: number): this;
     /**
@@ -1212,7 +1252,7 @@ export declare class MidiSketch {
      * Returns the actual blueprint ID used for generation.
      * If blueprintId was set to 255 (random), this returns the selected ID.
      *
-     * @returns Resolved blueprint ID (0-3), or 255 if not generated
+     * @returns Resolved blueprint ID (0-9), or 255 if not generated
      */
     getResolvedBlueprintId(): number;
     /**

@@ -123,7 +123,7 @@ flowchart TD
 |--------------|------|
 | Auto | スタイルとセクションに基づいて自動選択 |
 | PlateauTalk | NewJeans/Billie風：高音域プラトー、トークシング |
-| RunUpTarget | YOASOBI/Ado風：ターゲットノートへ駆け上がる |
+| RunUpTarget | アニメ系ハイエナジー/ドラマチックポップ風：ターゲットノートへ駆け上がる |
 | DownResolve | Bメロ：下降解決 |
 | HookRepeat | TikTok/K-POP風：短い繰り返しフック |
 | SparseAnchor | 髭男風：まばらなアンカーノート |
@@ -299,7 +299,7 @@ ArpeggioParams params {
 
 セクションマーカーとサウンドエフェクトキューを生成：
 - セクション境界マーカー（テキストイベント）
-- コールタイミングヒント（callEnabled時）
+- コールタイミングヒント（`callSetting` でコールがアクティブな時）
 - イントロチャントマーカー
 
 ## フェーズ3: 仕上げ

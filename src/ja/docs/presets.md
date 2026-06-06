@@ -208,7 +208,7 @@ BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。
 | 3 | Ballad (静かに始まる) | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard (アイドル王道) | MelodyDriven | Evolving | - | 10% |
 | 5 | IdolHyper (サビから攻める) | RhythmSync | Locked | **必須** | 6% |
-| 6 | IdolKawaii (かわいく弾む) | MelodyDriven | Locked | **必須** | 5% |
+| 6 | IdolKawaii (かわいく弾む) | MelodyDriven | Locked | - | 5% |
 | 7 | IdolCoolPop (踊れるビート) | RhythmSync | Locked | **必須** | 5% |
 | 8 | IdolEmo (静→爆発) | MelodyDriven | Locked | - | 4% |
 | 9 | BehavioralLoop (中毒ループ) | Traditional | LockedPitch | - | 0%* |
@@ -314,7 +314,7 @@ SynthDrivenコンポジションスタイル用の8つのアルペジオパタ�
 |----|------|---------|----------|----------|
 | 0 | Auto | - | - | VocalStylePreset基準で選択 |
 | 1 | PlateauTalk | 0.65 | 2 | NewJeans、Billie Eilish（トークシング） |
-| 2 | RunUpTarget | 0.20 | 4 | YOASOBI、Ado（上昇ラン） |
+| 2 | RunUpTarget | 0.20 | 4 | アニメ系ハイエナジー、ドラマチックポップ（上昇ラン） |
 | 3 | DownResolve | 0.30 | 3 | Bセクション、プリコーラス |
 | 4 | HookRepeat | 0.40 | 3 | TikTok、K-POPフック |
 | 5 | SparseAnchor | 0.50 | 2 | バラード、Official髭男dism |
@@ -545,7 +545,7 @@ config.hookIntensity = 3               // 強いフック
 ```
 
 ::: tip ボカロ風メロディ
-YOASOBI/Ado風の高密度メロディ（広い音程跳躍）を作るには：
+ドラマチックポップ風の高密度メロディ（広い音程跳躍）を作るには：
 - `vocalStyle: 2` (Vocaloid) または `vocalStyle: 3` (UltraVocaloid)
 - `melodicComplexity: 2` (Complex)
 - `melodyTemplate: 2` (RunUpTarget)
@@ -573,7 +573,7 @@ Background Motifプリセット (ID 12) は、控えめなボーカルと繰り�
 // Idol Standardプリセットを使用
 const config = createDefaultConfig(3)  // Idol Standard
 config.key = 0                         // Cメジャー
-config.callEnabled = true              // コールトラック有効化
+config.callSetting = 1                 // コールトラック有効化 (0=Auto, 1=Enabled, 2=Disabled)
 config.introChant = 1                  // ガチ恋イントロ
 config.mixPattern = 1                  // スタンダードミックス
 config.callDensity = 2                 // 標準密度
@@ -626,7 +626,8 @@ config.guitarEnabled = true            // ギタートラック有効化
 
 ```javascript
 const config = createDefaultConfig(0)
-config.stylePresetId = 20             // RnBNeoSoulムード
+config.mood = 20                      // RnBNeoSoulムード
+config.moodExplicit = true            // スタイル既定ではなく明示ムードを使用
 config.chordExt7th = true             // 7thエクステンション有効化
 config.chordExt9th = true             // 9thエクステンション有効化
 ```
@@ -635,7 +636,8 @@ config.chordExt9th = true             // 9thエクステンション有効化
 
 ```javascript
 const config = createDefaultConfig(12) // Background Motif
-config.stylePresetId = 23             // Lofiムード
+config.mood = 23                      // Lofiムード
+config.moodExplicit = true            // スタイル既定ではなく明示ムードを使用
 config.compositionStyle = 1           // BackgroundMotif
 ```
 

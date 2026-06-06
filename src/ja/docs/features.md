@@ -30,7 +30,7 @@ MIDI Sketch は機械学習やニューラルネットワークを使用しま�
 ::: details テンプレート駆動アーキテクチャ
 7つのメロディテンプレートが特定のボーカルスタイルをモデル化：
 - **PlateauTalk**: NewJeans/Billie Eilish スタイル - 高音域プラトーとトークシング
-- **RunUpTarget**: YOASOBI/Ado スタイル - ターゲット音への上昇ラン
+- **RunUpTarget**: アニメ系ハイエナジー/ドラマチックポップスタイル - ターゲット音への上昇ラン
 - **HookRepeat**: TikTok/K-POP スタイル - 短い反復フック
 - **SparseAnchor**: Official髭男dism スタイル - スパースなアンカー音
 - その他 (DownResolve, CallResponse, JumpAccent)

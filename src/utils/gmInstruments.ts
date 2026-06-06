@@ -1,6 +1,9 @@
 import { Soundfont, DrumMachine } from 'smplr'
 
-// GM drum note number to Roland CR-8000 sample name mapping
+export const DEMO_SOUNDFONT_KIT = 'FluidR3_GM'
+export const DEMO_DRUM_MACHINE = 'TR-808'
+
+// GM drum note number to demo drum-machine sample group mapping
 export const GM_TO_DRUM: Record<number, string> = {
   35: 'kick',         // Acoustic Bass Drum
   36: 'kick',         // Bass Drum 1
@@ -185,15 +188,104 @@ const GM_INSTRUMENTS: string[] = [
 // Legacy track name to instrument fallback (for EventData without program field)
 const LEGACY_TRACK_INSTRUMENT: Record<string, string> = {
   Aux: 'pad_2_warm',
-  Bass: 'acoustic_bass',
+  Bass: 'electric_bass_finger',
 }
 const LEGACY_DEFAULT_INSTRUMENT = 'acoustic_grand_piano'
+
+export interface TrackPlaybackProfile {
+  instrument: string
+  velocityScale: number
+  maxVelocity: number
+  minVelocity: number
+}
+
+const TRACK_PLAYBACK_PROFILES: Record<string, TrackPlaybackProfile> = {
+  Vocal: {
+    instrument: 'acoustic_grand_piano',
+    velocityScale: 0.92,
+    maxVelocity: 108,
+    minVelocity: 36,
+  },
+  Bass: {
+    instrument: 'electric_bass_finger',
+    velocityScale: 0.78,
+    maxVelocity: 96,
+    minVelocity: 34,
+  },
+  Chord: {
+    instrument: 'electric_piano_1',
+    velocityScale: 0.58,
+    maxVelocity: 82,
+    minVelocity: 24,
+  },
+  Aux: {
+    instrument: 'pad_2_warm',
+    velocityScale: 0.42,
+    maxVelocity: 70,
+    minVelocity: 18,
+  },
+  Motif: {
+    instrument: 'electric_piano_1',
+    velocityScale: 0.46,
+    maxVelocity: 74,
+    minVelocity: 18,
+  },
+  Arpeggio: {
+    instrument: 'electric_piano_2',
+    velocityScale: 0.50,
+    maxVelocity: 76,
+    minVelocity: 20,
+  },
+  Guitar: {
+    instrument: 'electric_guitar_clean',
+    velocityScale: 0.56,
+    maxVelocity: 82,
+    minVelocity: 22,
+  },
+  Drums: {
+    instrument: 'acoustic_grand_piano',
+    velocityScale: 0.78,
+    maxVelocity: 104,
+    minVelocity: 24,
+  },
+  SE: {
+    instrument: 'pad_2_warm',
+    velocityScale: 0.30,
+    maxVelocity: 54,
+    minVelocity: 12,
+  },
+}
+
+function clampVelocity(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, Math.round(value)))
+}
 
 export function gmProgramToInstrumentName(program: number): string {
   if (program >= 0 && program < GM_INSTRUMENTS.length) {
     return GM_INSTRUMENTS[program]
   }
   return LEGACY_DEFAULT_INSTRUMENT
+}
+
+export function getTrackPlaybackProfile(track: TrackInfo): TrackPlaybackProfile {
+  const roleProfile = TRACK_PLAYBACK_PROFILES[track.name]
+  if (roleProfile) return roleProfile
+
+  const instrument = track.program !== undefined && track.program !== null
+    ? gmProgramToInstrumentName(track.program)
+    : (LEGACY_TRACK_INSTRUMENT[track.name] ?? LEGACY_DEFAULT_INSTRUMENT)
+
+  return {
+    instrument,
+    velocityScale: 0.70,
+    maxVelocity: 96,
+    minVelocity: 22,
+  }
+}
+
+export function scaleTrackVelocity(track: TrackInfo, velocity: number): number {
+  const profile = getTrackPlaybackProfile(track)
+  return clampVelocity(velocity * profile.velocityScale, profile.minVelocity, profile.maxVelocity)
 }
 
 interface TrackInfo {
@@ -213,12 +305,7 @@ export function getRequiredInstruments(tracks: TrackInfo[]): Map<string, string>
     // Skip drum tracks
     if (track.channel === 9 || track.name === 'Drums') continue
 
-    if (track.program !== undefined && track.program !== null) {
-      result.set(track.name, gmProgramToInstrumentName(track.program))
-    } else {
-      // Legacy fallback based on track name
-      result.set(track.name, LEGACY_TRACK_INSTRUMENT[track.name] ?? LEGACY_DEFAULT_INSTRUMENT)
-    }
+    result.set(track.name, getTrackPlaybackProfile(track).instrument)
   }
   return result
 }
@@ -256,7 +343,11 @@ export async function loadInstrumentsForTracks(
     if (disableScheduler) {
       // Offline rendering: create fresh instance (no cache)
       loadPromises.push(
-        new Soundfont(audioContext, { instrument: name as any, disableScheduler: true })
+        new Soundfont(audioContext, {
+          instrument: name as any,
+          kit: DEMO_SOUNDFONT_KIT,
+          disableScheduler: true,
+        })
           .load.then(sf => { loaded.set(name, sf) })
       )
     } else if (instrumentCache.has(name)) {
@@ -266,7 +357,10 @@ export async function loadInstrumentsForTracks(
         loadingPromises.get(name)!.then(sf => { loaded.set(name, sf) })
       )
     } else {
-      const promise = new Soundfont(audioContext, { instrument: name as any })
+      const promise = new Soundfont(audioContext, {
+        instrument: name as any,
+        kit: DEMO_SOUNDFONT_KIT,
+      })
         .load.then(sf => {
           instrumentCache.set(name, sf)
           loadingPromises.delete(name)
@@ -280,7 +374,10 @@ export async function loadInstrumentsForTracks(
             loaded.set(name, fallback)
             return fallback
           }
-          return new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' })
+          return new Soundfont(audioContext, {
+            instrument: 'acoustic_grand_piano',
+            kit: DEMO_SOUNDFONT_KIT,
+          })
             .load.then(sf => {
               instrumentCache.set(LEGACY_DEFAULT_INSTRUMENT, sf)
               loaded.set(name, sf)
@@ -296,7 +393,7 @@ export async function loadInstrumentsForTracks(
   let drums: DrumMachine
   if (disableScheduler) {
     const drumsPromise = new DrumMachine(audioContext, {
-      instrument: 'Roland CR-8000',
+      instrument: DEMO_DRUM_MACHINE,
       disableScheduler: true,
     }).load
     loadPromises.push(drumsPromise.then(() => {}))
@@ -304,7 +401,7 @@ export async function loadInstrumentsForTracks(
   } else {
     // For real-time, drums are managed by the caller (useMidiPlayer keeps its own instance)
     // We still need to return one, so load or reuse
-    drums = await new DrumMachine(audioContext, { instrument: 'Roland CR-8000' }).load
+    drums = await new DrumMachine(audioContext, { instrument: DEMO_DRUM_MACHINE }).load
   }
 
   await Promise.all(loadPromises)

@@ -195,6 +195,7 @@ function getStyleIcon(category: string): string {
               <div class="blueprint-card__chips">
                 <span v-if="bp.isRecommended" class="blueprint-card__badge">{{ t('styleStep.arrangementStyle.recommendedBadge') }}</span>
                 <span v-if="bp.isRhythmSync" class="blueprint-card__rhythm-tag">{{ t('styleStep.arrangementStyle.rhythmSyncTag') }}</span>
+                <span v-if="bp.requiresDrums" class="blueprint-card__drums-tag" :title="t('styleStep.arrangementStyle.drumsRequiredTag')">🥁</span>
               </div>
             </div>
 
@@ -551,6 +552,15 @@ function getStyleIcon(category: string): string {
   border-radius: 4px;
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+.blueprint-card__drums-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 4px;
+  cursor: help;
 }
 
 .blueprint-card__name {

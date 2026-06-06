@@ -36,9 +36,11 @@ export interface BgmConfig {
   chordExtSus: boolean
   chordExt7th: boolean
   chordExt9th: boolean
+  chordExtTritoneSub: boolean
   chordExtSusProb: number
   chordExt7thProb: number
   chordExt9thProb: number
+  chordExtTritoneSubProb: number
   chordExtProbExplicit: boolean
   compositionStyle: number
   targetDurationSeconds: number
@@ -91,6 +93,8 @@ export interface VocalParams {
   hookIntensity: number
   vocalGroove: number
   compositionStyle: number
+  /** RhythmSync only: keep the existing motif as the rhythmic anchor */
+  keepMotif?: boolean
 }
 
 /**
@@ -106,6 +110,8 @@ export interface VocalConfig {
   formId: number
   formExplicit: boolean
   targetDurationSeconds: number
+  modulationTiming: number
+  modulationSemitones: number
   vocalLow: number
   vocalHigh: number
   vocalAttitude: number
@@ -146,9 +152,11 @@ export interface AccompanimentConfig {
   chordExtSus?: boolean
   chordExt7th?: boolean
   chordExt9th?: boolean
+  chordExtTritoneSub?: boolean
   chordExtSusProb?: number
   chordExt7thProb?: number
   chordExt9thProb?: number
+  chordExtTritoneSubProb?: number
   humanize?: boolean
   humanizeTiming?: number
   humanizeVelocity?: number
@@ -304,7 +312,12 @@ export function useMidiGeneration() {
   }
 
   /**
-   * Build BGM config from WizardConfig
+   * Build BGM config from WizardConfig.
+   *
+   * Note: WizardConfig stores percentages as 0-100 integers (UI friendly,
+   * matching the AccompanimentConfig scale), but SongConfig expects
+   * 0.0-1.0 floats for arpeggio gate, chord extension probabilities,
+   * and humanize amounts. Convert here.
    */
   function buildBgmConfig(config: WizardConfig, overrideSeed?: number): BgmConfig {
     const seed = overrideSeed || config.seed || Math.floor(Math.random() * 0xFFFFFFFF)
@@ -325,20 +338,22 @@ export function useMidiGeneration() {
       arpeggioPattern: config.arpeggioPattern,
       arpeggioSpeed: config.arpeggioSpeed,
       arpeggioOctaveRange: config.arpeggioOctaveRange,
-      arpeggioGate: config.arpeggioGate,
+      arpeggioGate: config.arpeggioGate / 100,
       arpeggioSyncChord: config.arpeggioSyncChord,
       vocalLow: config.vocalLow,
       vocalHigh: config.vocalHigh,
       skipVocal: true, // BGM only, vocal generated separately
       humanize: config.humanize,
-      humanizeTiming: config.humanizeTiming,
-      humanizeVelocity: config.humanizeVelocity,
+      humanizeTiming: config.humanizeTiming / 100,
+      humanizeVelocity: config.humanizeVelocity / 100,
       chordExtSus: config.chordExtSus,
       chordExt7th: config.chordExt7th,
       chordExt9th: config.chordExt9th,
-      chordExtSusProb: config.chordExtSusProb,
-      chordExt7thProb: config.chordExt7thProb,
-      chordExt9thProb: config.chordExt9thProb,
+      chordExtTritoneSub: config.chordExtTritoneSub,
+      chordExtSusProb: config.chordExtSusProb / 100,
+      chordExt7thProb: config.chordExt7thProb / 100,
+      chordExt9thProb: config.chordExt9thProb / 100,
+      chordExtTritoneSubProb: config.chordExtTritoneSubProb / 100,
       chordExtProbExplicit: config.chordExtProbExplicit,
       compositionStyle: config.compositionStyle,
       targetDurationSeconds: config.targetDurationSeconds,
@@ -382,7 +397,7 @@ export function useMidiGeneration() {
   /**
    * Build vocal params from WizardConfig (for regenerateVocal)
    */
-  function buildVocalParams(config: WizardConfig, seed: number): VocalParams {
+  function buildVocalParams(config: WizardConfig, seed: number, keepMotif?: boolean): VocalParams {
     return {
       seed,
       vocalLow: config.vocalLow,
@@ -393,7 +408,8 @@ export function useMidiGeneration() {
       melodicComplexity: config.melodicComplexity,
       hookIntensity: config.hookIntensity,
       vocalGroove: config.vocalGroove,
-      compositionStyle: config.compositionStyle
+      compositionStyle: config.compositionStyle,
+      ...(keepMotif !== undefined ? { keepMotif } : {})
     }
   }
 
@@ -412,6 +428,8 @@ export function useMidiGeneration() {
       formId: config.formId,
       formExplicit: config.formExplicit,
       targetDurationSeconds: config.targetDurationSeconds,
+      modulationTiming: config.modulationTiming,
+      modulationSemitones: config.modulationSemitones,
       vocalLow: config.vocalLow,
       vocalHigh: config.vocalHigh,
       vocalAttitude: config.vocalAttitude,
@@ -455,9 +473,11 @@ export function useMidiGeneration() {
       chordExtSus: config.chordExtSus,
       chordExt7th: config.chordExt7th,
       chordExt9th: config.chordExt9th,
+      chordExtTritoneSub: config.chordExtTritoneSub,
       chordExtSusProb: config.chordExtSusProb,
       chordExt7thProb: config.chordExt7thProb,
       chordExt9thProb: config.chordExt9thProb,
+      chordExtTritoneSubProb: config.chordExtTritoneSubProb,
       humanize: config.humanize,
       humanizeTiming: config.humanizeTiming,
       humanizeVelocity: config.humanizeVelocity,

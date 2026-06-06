@@ -10,22 +10,22 @@ MIDI Sketchは9つのトラックを異なるMIDIチャンネルに生成しま�
 flowchart TB
     subgraph Melody ["メロディレイヤー"]
         Vocal["ボーカル (Ch 0)"]
-        Aux["Aux (Ch 1)"]
+        Aux["Aux (Ch 5)"]
     end
 
     subgraph Harmony ["ハーモニー"]
-        Chord["コード (Ch 2)"]
+        Chord["コード (Ch 1)"]
         Guitar["ギター (Ch 6)"]
     end
 
     subgraph Rhythm ["リズムセクション"]
-        Bass["ベース (Ch 3)"]
+        Bass["ベース (Ch 2)"]
         Drums["ドラム (Ch 9)"]
     end
 
     subgraph Synth ["シンセレイヤー"]
-        Motif["モチーフ (Ch 4)"]
-        Arpeggio["アルペジオ (Ch 5)"]
+        Motif["モチーフ (Ch 3)"]
+        Arpeggio["アルペジオ (Ch 4)"]
     end
 
     subgraph Markers ["マーカー"]
@@ -35,17 +35,21 @@ flowchart TB
 
 ### チャンネル割り当て
 
-| トラック | チャンネル | プログラム | 役割 |
-|----------|---------|---------|------|
+| トラック | チャンネル | デフォルトプログラム | 役割 |
+|----------|---------|-------------------|------|
 | Vocal | 0 | Piano (0) | 主旋律 |
-| Aux | 1 | E.Piano (4) | 副旋律サポート |
-| Chord | 2 | E.Piano (4) | 和声バッキング |
-| Bass | 3 | E.Bass (33) | ベース |
-| Motif | 4 | Synth (81) | BackgroundMotifスタイル |
-| Arpeggio | 5 | Synth (81) | SynthDrivenスタイル |
-| Guitar | 6 | Acoustic Guitar (25) | 伴奏ギター |
+| Chord | 1 | E.Piano (4) | 和声バッキング |
+| Bass | 2 | E.Bass (33) | ベース |
+| Motif | 3 | Synth Lead (81) | BackgroundMotifスタイル |
+| Arpeggio | 4 | Synth Lead (81) | SynthDrivenスタイル |
+| Aux | 5 | Warm Pad (89) | 副旋律サポート |
+| Guitar | 6 | E.Guitar clean (27) | 伴奏ギター |
 | Drums | 9 | GMドラム | リズム |
 | SE | 15 | - | セクションマーカー |
+
+::: info プログラムはムード依存
+上記のプログラムは組み込みのフォールバック値です（`src/midi/track_config.h`）。実際の GM プログラムはムードごとに選択される（`getMoodPrograms`）ため、聴こえる楽器はムードプリセットによって変わります。
+:::
 
 ## ボーカルトラック
 
@@ -84,7 +88,7 @@ flowchart TD
 |----|------|---------|----------|----------|
 | 0 | Auto | - | - | VocalStyle基準で選択 |
 | 1 | PlateauTalk | 0.65 | 2 | NewJeans、Billie Eilishスタイル |
-| 2 | RunUpTarget | 0.20 | 4 | YOASOBI、Adoスタイル |
+| 2 | RunUpTarget | 0.20 | 4 | アニメ系ハイエナジー、ドラマチックポップ |
 | 3 | DownResolve | 0.30 | 3 | Bセクション、プリコーラス |
 | 4 | HookRepeat | 0.40 | 3 | TikTok、K-POPフック |
 | 5 | SparseAnchor | 0.50 | 2 | Official髭男dism、バラード |
@@ -106,9 +110,13 @@ flowchart TD
     C --> G[ボイスリーディング適用]
     F --> G
     G --> H[HarmonyContext.getSafePitch]
-    H --> I[音域クランプ]
+    H --> I[オクターブフォールドで音域内へ]
     I --> J[トラックに追加]
 ```
+
+::: info オクターブフォールド（音域セーフティ）
+音域外に出たノートはオクターブ単位（±12半音）で音域内に折り返され、ピッチクラスが保持されます — コードトーンはコードトーンのままです。音域境界への半音クランプは最終手段としてのみ使われます。クランプは安全な音を不協和音に変えてしまうことがあるためです（例: G をオクターブ下げても G のままですが、F# 上限へクランプするとトライトーンが生じます）。
+:::
 
 ### ピッチ選択（4択のみ）
 
@@ -447,9 +455,9 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ### パラメータ
 
-| パラメータ | デフォルト（JS） | デフォルト（C++） | 説明 |
-|-----------|----------------|------------------|------|
-| `guitarEnabled` | `false` | `true` | ギタートラック生成の有効/無効 |
+| パラメータ | デフォルト | 説明 |
+|-----------|----------|------|
+| `guitarEnabled` | `true` | ギタートラック生成の有効/無効（JS・C++ ともデフォルト有効） |
 
 ### Blueprintの制約
 
@@ -466,7 +474,7 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 - ギターはコードトラックの**後**に生成され、既存の和声ボイシングを補完
 - パターンはセクションエネルギーとムードに適応
 - セクションごとの`guitar_style_hint`（0-7）でギター伴奏スタイルに影響を与えることが可能
-- デフォルトではMIDIチャンネル6にAcoustic Guitar（プログラム25）で出力
+- MIDIチャンネル6に出力。フォールバックのプログラムはElectric Guitar clean（27）で、ムードによって別のギタープログラムが割り当てられることがあります
 
 ---
 

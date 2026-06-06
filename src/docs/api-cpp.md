@@ -398,7 +398,7 @@ struct SongConfig {
   VocalStylePreset vocal_style = VocalStylePreset::Auto; // Vocal style preset (0-13)
   bool drums_enabled = true;
   bool drums_enabled_explicit = false; // True if drums setting was explicitly set by user
-  bool guitar_enabled = true;       // Enable guitar track (C++ default=true, JS default=false)
+  bool guitar_enabled = true;       // Enable guitar track (default: true, both C++ and JS)
   bool arpeggio_enabled = false;
   bool skip_vocal = false;          // Skip vocal (for BGM-first)
   uint8_t vocal_low = 60;           // C4
@@ -408,10 +408,12 @@ struct SongConfig {
   uint8_t arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
 
   // Arpeggio settings
-  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate, sync_chord
+  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate (0.0-1.0, default 0.8),
+                                    //   sync_chord, base_velocity (0-127, default 90)
 
   // Chord extensions
-  ChordExtensionParams chord_extension;
+  ChordExtensionParams chord_extension; // enable_sus/enable_7th/enable_9th/tritone_sub (bool),
+                                        //   probabilities 0.0-1.0: sus 0.2, 7th 0.15, 9th 0.25, tritone 0.5
   bool chord_ext_prob_explicit = false; // Explicit chord extension probabilities
 
   // Humanization
@@ -434,7 +436,7 @@ struct SongConfig {
   // Vocal style settings
   MelodyTemplateId melody_template = MelodyTemplateId::Auto; // 0-7
   MelodicComplexity melodic_complexity = MelodicComplexity::Standard; // 0-2
-  HookIntensity hook_intensity = HookIntensity::Normal; // 0-3 (4=Maximum is internal only)
+  HookIntensity hook_intensity = HookIntensity::Normal; // 0-4 (4=Maximum, normally forced by Behavioral Loop)
   VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight; // 0-5
 
   // Mood
@@ -490,6 +492,8 @@ struct VocalConfig {
   HookIntensity hook_intensity = HookIntensity::Normal;
   VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight;
   CompositionStyle composition_style = CompositionStyle::MelodyLead;
+  bool keep_motif = false;          // RhythmSync: keep existing Motif as the rhythmic axis
+                                    //   (default: regenerate both vocal and motif)
 };
 ```
 
@@ -505,7 +509,7 @@ struct AccompanimentConfig {
   bool drums_enabled = true;
 
   // Guitar
-  bool guitar_enabled = false;      // Enable guitar track (JS default=false)
+  bool guitar_enabled = true;       // Enable guitar track (default: true)
 
   // Arpeggio
   bool arpeggio_enabled = false;
@@ -650,7 +654,7 @@ Melody template patterns.
 enum class MelodyTemplateId : uint8_t {
   Auto = 0,          // Auto-select based on VocalStylePreset
   PlateauTalk,       // High same-pitch ratio (NewJeans, Billie Eilish)
-  RunUpTarget,       // Ascending toward target (YOASOBI, Ado)
+  RunUpTarget,       // Ascending toward target (anime high-energy, dramatic pop)
   DownResolve,       // Descending resolution (B-section)
   HookRepeat,        // Short repeated hooks (TikTok, K-POP)
   SparseAnchor,      // Sparse anchor notes (Ballad)
@@ -680,7 +684,8 @@ enum class HookIntensity : uint8_t {
   Off = 0,     // No hook repetition
   Light,       // Light hook presence
   Normal,      // Normal hook repetition (default)
-  Strong       // Strong, catchy hook emphasis
+  Strong,      // Strong, catchy hook emphasis
+  Maximum      // Maximum repetition (used by Behavioral Loop / addictive_mode)
 };
 ```
 
@@ -953,6 +958,9 @@ uint8_t midisketch_blueprint_riff_policy(uint8_t id);
 
 // Get blueprint weight (for auto-selection) by ID
 uint8_t midisketch_blueprint_weight(uint8_t id);
+
+// Whether the blueprint requires the drums track (1, 5, 7 -> non-zero)
+int midisketch_blueprint_drums_required(uint8_t id);
 
 // Get resolved blueprint ID after generation
 uint8_t midisketch_get_resolved_blueprint_id(MidiSketchHandle handle);

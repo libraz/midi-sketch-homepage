@@ -983,3 +983,172 @@ html[lang="ja"] .VPNavBarTitle .title::after {
     display: block;
   }
 }
+
+/* --- Course score examples (ScoreExample.vue) --- */
+.score-example {
+  margin: 1.5rem 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  overflow: hidden;
+}
+
+.score-example__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0;
+  color: var(--vp-c-text-1);
+}
+
+.score-example__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0 0.45rem;
+  border-radius: 4px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-example__play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-left: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 50%;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-brand-1);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.score-example__play svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: currentColor;
+}
+
+.score-example__play:hover {
+  border-color: var(--vp-c-brand-1);
+}
+
+.score-example__play[data-playing="true"] {
+  background: var(--vp-c-brand-soft);
+  border-color: var(--vp-c-brand-1);
+}
+
+.score-example__play:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.score-example__score {
+  padding: 0.25rem 0.75rem;
+  background: #fff;
+}
+
+/* Scores carry a viewBox, so they scale down to the container width
+   instead of clipping; height: auto preserves the aspect ratio. */
+.score-example__score svg,
+.score-example__renderer svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.score-example__renderer[aria-hidden="true"] {
+  display: none;
+}
+
+.score-example__svg-label {
+  font-family: var(--vp-font-family-base);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.score-example__svg-issue-label {
+  fill: #b91c1c;
+  font-family: var(--vp-font-family-base);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.score-example__svg-issue-line,
+.score-example__svg-bracket,
+.score-example__svg-issue-box,
+.score-example__svg-issue-ring {
+  fill: none;
+  stroke: #b91c1c;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.score-example__svg-issue-line {
+  opacity: 0.75;
+  stroke-dasharray: 5 4;
+}
+
+.score-example__svg-issue-ring {
+  stroke-dasharray: 3 3;
+}
+
+.score-example__svg-issue-box {
+  opacity: 0.9;
+  stroke-dasharray: 6 4;
+}
+
+.score-example__svg-clef,
+.score-example__svg-time {
+  fill: #111827;
+  font-family: var(--vp-font-family-base);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.score-example__playhead {
+  fill: rgba(139, 92, 246, 0.22);
+  stroke: #8b5cf6;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.score-example figcaption {
+  margin: 0;
+  padding: 0.75rem 1rem 0.95rem;
+  border-top: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.score-example__diagnosis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
+  align-items: center;
+  padding: 0 1rem 0.95rem;
+  color: var(--vp-c-text-1);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.score-example__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0 0.45rem;
+  border: 1px solid var(--vp-c-brand-soft);
+  border-radius: 4px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}

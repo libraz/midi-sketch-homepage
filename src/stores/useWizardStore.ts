@@ -55,13 +55,15 @@ export interface WizardConfig {
   arpeggioGate: number
   arpeggioSyncChord: boolean
 
-  // Chord extensions
+  // Chord extensions (probabilities are 0-100 integers; converted per API in builders)
   chordExtSus: boolean
   chordExt7th: boolean
   chordExt9th: boolean
+  chordExtTritoneSub: boolean
   chordExtSusProb: number
   chordExt7thProb: number
   chordExt9thProb: number
+  chordExtTritoneSubProb: number
 
   // Composition style (for BGM-only flow)
   compositionStyle: number
@@ -178,9 +180,11 @@ const DEFAULT_CONFIG: WizardConfig = {
   chordExtSus: false,
   chordExt7th: false,
   chordExt9th: false,
+  chordExtTritoneSub: false,
   chordExtSusProb: 20,
   chordExt7thProb: 15,
   chordExt9thProb: 25,
+  chordExtTritoneSubProb: 50,
 
   // Composition style
   compositionStyle: 0,

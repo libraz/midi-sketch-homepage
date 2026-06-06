@@ -10,22 +10,22 @@ MIDI Sketch generates 9 tracks across different MIDI channels:
 flowchart TB
     subgraph Melody ["Melody Layer"]
         Vocal["Vocal (Ch 0)"]
-        Aux["Aux (Ch 1)"]
+        Aux["Aux (Ch 5)"]
     end
 
     subgraph Harmony ["Harmony"]
-        Chord["Chord (Ch 2)"]
+        Chord["Chord (Ch 1)"]
         Guitar["Guitar (Ch 6)"]
     end
 
     subgraph Rhythm ["Rhythm Section"]
-        Bass["Bass (Ch 3)"]
+        Bass["Bass (Ch 2)"]
         Drums["Drums (Ch 9)"]
     end
 
     subgraph Synth ["Synth Layer"]
-        Motif["Motif (Ch 4)"]
-        Arpeggio["Arpeggio (Ch 5)"]
+        Motif["Motif (Ch 3)"]
+        Arpeggio["Arpeggio (Ch 4)"]
     end
 
     subgraph Markers ["Markers"]
@@ -35,17 +35,21 @@ flowchart TB
 
 ### Channel Assignment
 
-| Track | Channel | Program | Role |
-|-------|---------|---------|------|
+| Track | Channel | Default Program | Role |
+|-------|---------|-----------------|------|
 | Vocal | 0 | Piano (0) | Main melody |
-| Aux | 1 | E.Piano (4) | Sub-melody support |
-| Chord | 2 | E.Piano (4) | Harmonic backing |
-| Bass | 3 | E.Bass (33) | Harmonic foundation |
-| Motif | 4 | Synth (81) | BackgroundMotif style |
-| Arpeggio | 5 | Synth (81) | SynthDriven style |
-| Guitar | 6 | Acoustic Guitar (25) | Accompaniment guitar |
+| Chord | 1 | E.Piano (4) | Harmonic backing |
+| Bass | 2 | E.Bass (33) | Harmonic foundation |
+| Motif | 3 | Synth Lead (81) | BackgroundMotif style |
+| Arpeggio | 4 | Synth Lead (81) | SynthDriven style |
+| Aux | 5 | Warm Pad (89) | Sub-melody support |
+| Guitar | 6 | E.Guitar clean (27) | Accompaniment guitar |
 | Drums | 9 | GM Drums | Rhythm |
 | SE | 15 | - | Section markers |
+
+::: info Mood-Dependent Programs
+The programs above are the built-in fallbacks (`src/midi/track_config.h`). The actual GM program for each track is selected per mood (`getMoodPrograms`), so the instruments you hear vary with the mood preset.
+:::
 
 ## Vocal Track
 
@@ -84,7 +88,7 @@ flowchart TD
 |----|------|---------|----------|----------|
 | 0 | Auto | - | - | VocalStyle-based selection |
 | 1 | PlateauTalk | 0.65 | 2 | NewJeans, Billie Eilish style |
-| 2 | RunUpTarget | 0.20 | 4 | YOASOBI, Ado style |
+| 2 | RunUpTarget | 0.20 | 4 | Anime high-energy, dramatic pop |
 | 3 | DownResolve | 0.30 | 3 | B-section, pre-chorus |
 | 4 | HookRepeat | 0.40 | 3 | TikTok, K-POP hooks |
 | 5 | SparseAnchor | 0.50 | 2 | Official髭男dism, ballad |
@@ -106,9 +110,13 @@ flowchart TD
     C --> G[Apply voice leading]
     F --> G
     G --> H[HarmonyContext.getSafePitch]
-    H --> I[Range clamp]
+    H --> I[Octave fold into range]
     I --> J[Add to track]
 ```
+
+::: info Octave Fold (Range Safety)
+Notes that land outside the allowed range are folded by octaves (±12 semitones) back into range, preserving the pitch class — a chord tone stays a chord tone. A chromatic clamp to the range boundary is used only as a last resort, because clamping can turn a safe note into a dissonance (e.g. G folded down an octave stays G, while clamping G to a ceiling of F# would create a tritone).
+:::
 
 ### Pitch Selection (4 Choices Only)
 
@@ -447,9 +455,9 @@ The Guitar track generates accompaniment guitar patterns on a dedicated MIDI cha
 
 ### Parameters
 
-| Parameter | Default (JS) | Default (C++) | Description |
-|-----------|-------------|---------------|-------------|
-| `guitarEnabled` | `false` | `true` | Enable/disable guitar track generation |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `guitarEnabled` | `true` | Enable/disable guitar track generation (default enabled in both JS and C++) |
 
 ### Blueprint Constraints
 
@@ -466,7 +474,7 @@ Guitar generation is influenced by Blueprint constraints:
 - Guitar is generated **after** the chord track, allowing it to complement existing harmonic voicing
 - Patterns adapt to section energy and mood
 - Per-section `guitar_style_hint` (0-7) in the Blueprint's SectionSlot can influence the style of guitar accompaniment
-- Guitar appears on MIDI channel 6 with Acoustic Guitar (program 25) by default
+- Guitar appears on MIDI channel 6 with Electric Guitar clean (program 27) as the fallback program; moods can assign a different guitar program
 
 ---
 

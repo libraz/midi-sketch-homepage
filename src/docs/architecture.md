@@ -104,19 +104,19 @@ Holds all generated data (9 tracks):
 struct Song {
   Arrangement arrangement;     // Section layout
   MidiTrack vocal;            // Channel 0 - Main melody
-  MidiTrack aux;              // Channel 1 - Sub-melody
-  MidiTrack chord;            // Channel 2 - Harmony
-  MidiTrack bass;             // Channel 3 - Foundation
-  MidiTrack motif;            // Channel 4 - BackgroundMotif style
+  MidiTrack chord;            // Channel 1 - Harmony
+  MidiTrack bass;             // Channel 2 - Foundation
+  MidiTrack motif;            // Channel 3 - BackgroundMotif style
+  MidiTrack arpeggio;         // Channel 4 - SynthDriven style
+  MidiTrack aux;              // Channel 5 - Sub-melody
   MidiTrack guitar;           // Channel 6 - Accompaniment guitar
-  MidiTrack arpeggio;         // Channel 5 - SynthDriven style
   MidiTrack drums;            // Channel 9 - Rhythm
   MidiTrack se;               // Channel 15 (markers)
 };
 ```
 
-::: info Channel Sharing
-Aux and Arpeggio share MIDI channel 5. In MelodyLead style, Aux is generated; in SynthDriven style, Arpeggio is generated instead. They are never active simultaneously.
+::: info Dedicated Channels
+Every track has its own MIDI channel (`src/midi/track_config.h`). Aux (Ch 5) and Arpeggio (Ch 4) are separate channels, so both can appear in the same song depending on the composition style and settings.
 :::
 
 ## Data Flow

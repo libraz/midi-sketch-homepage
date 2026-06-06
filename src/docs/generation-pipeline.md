@@ -123,7 +123,7 @@ flowchart TD
 |----------|-----------------|
 | Auto | Auto-select based on style and section |
 | PlateauTalk | NewJeans/Billie style: high plateau, talk-sing |
-| RunUpTarget | YOASOBI/Ado style: run up to target note |
+| RunUpTarget | Anime high-energy/dramatic pop style: run up to target note |
 | DownResolve | B-melody: descending resolution |
 | HookRepeat | TikTok/K-POP: short repeating hook |
 | SparseAnchor | 髭男 style: sparse anchor notes |
@@ -297,7 +297,7 @@ ArpeggioParams params {
 
 Generates section markers and sound effect cues:
 - Section boundary markers (text events)
-- Call timing hints (when callEnabled)
+- Call timing hints (when the call system is active via `callSetting`)
 - Intro chant markers
 
 ## Phase 3: Polish

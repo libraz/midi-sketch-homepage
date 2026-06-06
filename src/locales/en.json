@@ -39,7 +39,9 @@
       "recommendedBadge": "Rec",
       "unknown": "Unknown",
       "affectsHint": "Affects: section flow, instrument layering, riff handling",
-      "rhythmSyncTag": "RhythmSync"
+      "rhythmSyncTag": "RhythmSync",
+      "drumsRequiredTag": "Drums required",
+      "recommended": " (auto)"
     }
   },
   "chordStep": {
@@ -106,6 +108,10 @@
     "cancelEdit": "Cancel",
     "resetToGenerated": "Reset to Generated",
     "edited": "Edited",
+    "keepMotif": {
+      "label": "Keep motif on regenerate",
+      "description": "Keep the current riff (motif) as the rhythmic anchor and rewrite only the vocal melody"
+    },
     "summary": {
       "vocalStyle": "Vocal Style",
       "melodyTemplate": "Melody Type"
@@ -129,6 +135,14 @@
         "frontLoaded": "Front Loaded",
         "wavePattern": "Wave Pattern",
         "steadyState": "Steady State"
+      }
+    },
+    "arrangementGrowth": {
+      "label": "Arrangement Growth",
+      "description": "How the arrangement builds up as the song progresses",
+      "options": {
+        "layerAdd": "Add Layers",
+        "registerAdd": "Expand Range"
       }
     }
   },
@@ -278,7 +292,8 @@
             "gentleLeap": "Gentle Leap",
             "wideLeap": "Wide Leap",
             "narrowStep": "Narrow Step",
-            "disjunct": "Disjunct"
+            "disjunct": "Disjunct",
+            "ostinato": "Ostinato"
           },
           "motifRegister": "Register",
           "motifRegisterOptions": {
@@ -352,6 +367,8 @@
         "ninth": "9th Chords",
         "ninthDesc": "Add the 9th degree. Rich, dreamy sound popular in modern pop and R&B.",
         "ninthHint": "Recommended: 10-40%",
+        "tritone": "Tritone Sub",
+        "tritoneDesc": "Replace V7 with bII7 (tritone substitution). Adds jazzy chromatic bass motion.",
         "probability": "Probability"
       },
       "modulation": {
@@ -368,7 +385,10 @@
         "semitonesHint": "How many semitones to raise the key (+1 to +4)"
       },
       "se": {
+        "label": "Call & SE",
         "description": "Add call patterns for live performance feel. Perfect for idol and concert-style tracks.",
+        "seEnabled": "SE Track",
+        "seEnabledDesc": "Add a sound effect track (risers, impacts) that accents section changes",
         "callEnabled": "Enable Call Feature",
         "callEnabledDesc": "Add audience call patterns (Hai!, Fu!, etc.)",
         "callNotesEnabled": "Output Calls as MIDI Notes",
@@ -580,7 +600,8 @@
           "off": "Off",
           "light": "Subtle",
           "normal": "Normal",
-          "strong": "Heavy"
+          "strong": "Heavy",
+          "maximum": "Loop (Max)"
         }
       },
       "enableSyncopation": {

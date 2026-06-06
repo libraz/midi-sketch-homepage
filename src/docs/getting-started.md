@@ -2,6 +2,10 @@
 
 MIDI Sketch is a lightweight library for auto-generating pop music MIDI sketches. It runs entirely in the browser using WebAssembly.
 
+::: tip New to music theory?
+If terms like chord progression, key, or motif are unfamiliar, start with the [Course](/docs/course/primer) — it teaches the music basics behind every MidiSketch setting, with playable notation examples.
+:::
+
 ## Quick Start
 
 ```javascript
@@ -38,18 +42,20 @@ MIDI Sketch generates multi-track MIDI files with:
 | Track | Channel | Description |
 |-------|---------|-------------|
 | **Vocal** | 0 | Main melody line (piano roll-safe) |
+| **Chord** | 1 | Harmonic backing with voice leading |
+| **Bass** | 2 | Bass line with approach notes |
+| **Motif** | 3 | Background patterns (BackgroundMotif style) |
+| **Arpeggio** | 4 | Synth arpeggios (SynthDriven style) |
 | **Aux** | 5 | Sub-melody support (pulse loops, groove accents) |
-| **Chord** | 2 | Harmonic backing with voice leading |
-| **Bass** | 3 | Bass line with approach notes |
+| **Guitar** | 6 | Accompaniment guitar (enabled by default) |
 | **Drums** | 9 | Rhythm patterns with fills (GM drums) |
-| **Motif** | 4 | Background patterns (BackgroundMotif style) |
-| **Arpeggio** | 5 | Synth arpeggios (SynthDriven style) |
 | **SE** | 15 | Section markers |
 
 ::: info Track Availability
 Not all tracks are generated for every style:
 - **Motif** track: Only in `BackgroundMotif` composition style
 - **Arpeggio** track: Only when `arpeggioEnabled: true` (must be explicitly enabled, even in `SynthDriven` style)
+- **Guitar** track: Enabled by default (`guitarEnabled: true`); set `guitarEnabled: false` to disable
 - **Vocal/Aux**: Can be skipped with `skipVocal: true` for BGM-only generation
 :::
 

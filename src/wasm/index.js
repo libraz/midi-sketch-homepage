@@ -31,6 +31,7 @@ async function init(options) {
     create: m.cwrap("midisketch_create", "number", []),
     destroy: m.cwrap("midisketch_destroy", null, ["number"]),
     getMidi: m.cwrap("midisketch_get_midi", "number", ["number"]),
+    getVocalPreviewMidi: m.cwrap("midisketch_get_vocal_preview_midi", "number", ["number"]),
     freeMidi: m.cwrap("midisketch_free_midi", null, ["number"]),
     getEvents: m.cwrap("midisketch_get_events", "number", ["number"]),
     freeEvents: m.cwrap("midisketch_free_events", null, ["number"]),
@@ -62,6 +63,7 @@ async function init(options) {
     ]),
     getFormsByStylePtr: m.cwrap("midisketch_get_forms_by_style_ptr", "number", ["number"]),
     configErrorString: m.cwrap("midisketch_config_error_string", "string", ["number"]),
+    getLastConfigError: m.cwrap("midisketch_get_last_config_error", "number", ["number"]),
     // Vocal-first generation APIs (no-config versions)
     generateAccompaniment: m.cwrap("midisketch_generate_accompaniment", "number", ["number"]),
     regenerateAccompaniment: m.cwrap("midisketch_regenerate_accompaniment", "number", [
@@ -135,6 +137,9 @@ async function init(options) {
     blueprintParadigm: m.cwrap("midisketch_blueprint_paradigm", "number", ["number"]),
     blueprintRiffPolicy: m.cwrap("midisketch_blueprint_riff_policy", "number", ["number"]),
     blueprintWeight: m.cwrap("midisketch_blueprint_weight", "number", ["number"]),
+    blueprintDrumsRequired: m.cwrap("midisketch_blueprint_drums_required", "number", [
+      "number"
+    ]),
     getResolvedBlueprintId: m.cwrap("midisketch_get_resolved_blueprint_id", "number", [
       "number"
     ])
@@ -145,9 +150,9 @@ async function init(options) {
 var GenerationParadigm = {
   /** Existing behavior */
   Traditional: 0,
-  /** Orangestar style (rhythm-synced) */
+  /** Rhythm-synced lead style */
   RhythmSync: 1,
-  /** YOASOBI style (melody-driven) */
+  /** Melody-driven story pop style */
   MelodyDriven: 2
 };
 var RiffPolicy = {
@@ -178,6 +183,9 @@ function getBlueprintRiffPolicy(id) {
 }
 function getBlueprintWeight(id) {
   return getApi().blueprintWeight(id);
+}
+function getBlueprintDrumsRequired(id) {
+  return getApi().blueprintDrumsRequired(id) !== 0;
 }
 function getBlueprints() {
   const a = getApi();
@@ -214,7 +222,7 @@ var CONFIG_FIELDS = [
   { js: "drumsEnabled", cpp: "drums_enabled", default: true, type: "boolean" },
   { js: "drumsEnabledExplicit", cpp: "drums_enabled_explicit", default: false, type: "boolean" },
   { js: "arpeggioEnabled", cpp: "arpeggio_enabled", default: false, type: "boolean" },
-  { js: "guitarEnabled", cpp: "guitar_enabled", default: false, type: "boolean" },
+  { js: "guitarEnabled", cpp: "guitar_enabled", default: true, type: "boolean" },
   { js: "skipVocal", cpp: "skip_vocal", default: false, type: "boolean" },
   { js: "vocalLow", cpp: "vocal_low", default: 60, type: "number" },
   { js: "vocalHigh", cpp: "vocal_high", default: 79, type: "number" },
@@ -227,7 +235,7 @@ var CONFIG_FIELDS = [
   { js: "modulationTiming", cpp: "modulation_timing", default: 0, type: "number" },
   { js: "modulationSemitones", cpp: "modulation_semitones", default: 2, type: "number" },
   { js: "seEnabled", cpp: "se_enabled", default: true, type: "boolean" },
-  { js: "callEnabled", cpp: "call_setting", default: 0, type: "number" },
+  { js: "callSetting", cpp: "call_setting", default: 0, type: "number" },
   { js: "callNotesEnabled", cpp: "call_notes_enabled", default: true, type: "boolean" },
   { js: "introChant", cpp: "intro_chant", default: 0, type: "number" },
   { js: "mixPattern", cpp: "mix_pattern", default: 0, type: "number" },
@@ -278,12 +286,24 @@ var ARPEGGIO_FIELDS = [
     cpp: "sync_chord",
     default: true,
     type: "boolean"
+  },
+  {
+    js: "arpeggioBaseVelocity",
+    cpp: "base_velocity",
+    default: 90,
+    type: "number"
   }
 ];
 var CHORD_EXT_FIELDS = [
   { js: "chordExtSus", cpp: "enable_sus", default: false, type: "boolean" },
   { js: "chordExt7th", cpp: "enable_7th", default: false, type: "boolean" },
   { js: "chordExt9th", cpp: "enable_9th", default: false, type: "boolean" },
+  {
+    js: "chordExtTritoneSub",
+    cpp: "tritone_sub",
+    default: false,
+    type: "boolean"
+  },
   {
     js: "chordExtSusProb",
     cpp: "sus_probability",
@@ -300,6 +320,12 @@ var CHORD_EXT_FIELDS = [
     js: "chordExt9thProb",
     cpp: "ninth_probability",
     default: 0.25,
+    type: "number"
+  },
+  {
+    js: "chordExtTritoneSubProb",
+    cpp: "tritone_sub_probability",
+    default: 0.5,
     type: "number"
   }
 ];
@@ -332,7 +358,8 @@ var VOCAL_FIELDS = [
   { js: "melodicComplexity", cpp: "melodic_complexity", default: 1, type: "number" },
   { js: "hookIntensity", cpp: "hook_intensity", default: 2, type: "number" },
   { js: "vocalGroove", cpp: "vocal_groove", default: 0, type: "number" },
-  { js: "compositionStyle", cpp: "composition_style", default: 0, type: "number" }
+  { js: "compositionStyle", cpp: "composition_style", default: 0, type: "number" },
+  { js: "keepMotif", cpp: "keep_motif", default: false, type: "boolean" }
 ];
 var ACCOMPANIMENT_FIELDS = [
   { js: "seed", cpp: "seed", default: 0, type: "number" },
@@ -384,12 +411,11 @@ function serializeConfig(config) {
   for (const { js, cpp } of CONFIG_FIELDS) {
     const val = c[js];
     if (val !== void 0) {
-      if (js === "callEnabled") {
-        obj[cpp] = val ? 1 : 0;
-      } else {
-        obj[cpp] = val;
-      }
+      obj[cpp] = val;
     }
+  }
+  if (c.callSetting === void 0 && c.callEnabled !== void 0) {
+    obj.call_setting = c.callEnabled ? 1 : 2;
   }
   for (const { cpp: nestedKey, fields } of NESTED_STRUCTS) {
     const nested = {};
@@ -409,11 +435,15 @@ function deserializeConfig(json) {
   const obj = JSON.parse(json);
   const config = {};
   for (const { js, cpp, default: def } of CONFIG_FIELDS) {
-    if (js === "callEnabled") {
-      config[js] = (obj[cpp] ?? def) !== 0;
-    } else {
-      config[js] = obj[cpp] ?? def;
-    }
+    config[js] = obj[cpp] ?? def;
+  }
+  const callSetting = config.callSetting;
+  if (callSetting === 1) {
+    config.callEnabled = true;
+  } else if (callSetting === 2) {
+    config.callEnabled = false;
+  } else {
+    config.callEnabled = void 0;
   }
   for (const { cpp: nestedKey, fields } of NESTED_STRUCTS) {
     const nested = obj[nestedKey];
@@ -467,7 +497,16 @@ var ConfigError = {
   InvalidMixPattern: 20,
   InvalidMotifRepeatScope: 21,
   InvalidArrangementGrowth: 22,
-  InvalidModulationTiming: 23
+  InvalidModulationTiming: 23,
+  InvalidBlueprint: 24,
+  InvalidCallSetting: 25,
+  InvalidEnergyCurve: 26,
+  InvalidDriveFeel: 27,
+  InvalidMoraRhythmMode: 28,
+  InvalidProbability: 29,
+  InvalidArpeggioRange: 30,
+  InvalidMelodyOverride: 31,
+  InvalidMotifOverride: 32
 };
 var MidiSketchConfigError = class extends Error {
   constructor(code, nativeMessage) {
@@ -537,7 +576,9 @@ var HookIntensity = {
   Off: 0,
   Light: 1,
   Normal: 2,
-  Strong: 3
+  Strong: 3,
+  Maximum: 4
+  // Behavioral Loop: maximum repetition, simple patterns only
 };
 var VocalGrooveFeel = {
   Straight: 0,
@@ -561,7 +602,10 @@ var VocalStylePreset = {
   BrightKira: 9,
   CoolSynth: 10,
   CuteAffected: 11,
-  PowerfulShout: 12
+  PowerfulShout: 12,
+  // Extended styles (13+)
+  KPop: 13
+  // K-POP style (syncopation, hooks, rap-like passages)
 };
 
 // js/src/builder.ts
@@ -590,7 +634,7 @@ var ChangeTracker = class {
 var SongConfigBuilder = class {
   /**
    * Create a new builder with default config for the given style
-   * @param styleId Style preset ID (0-12)
+   * @param styleId Style preset ID (0-16)
    */
   constructor(styleId = 0) {
     this.explicitFields = /* @__PURE__ */ new Set();
@@ -703,7 +747,7 @@ var SongConfigBuilder = class {
    * Set vocal style preset with cascade detection
    *
    * Idol-style vocalStyles (4=Idol, 9=BrightKira, 11=CuteAffected) will
-   * auto-enable call system if callEnabled is not explicitly set.
+   * auto-enable call system if callSetting/callEnabled is not explicitly set.
    *
    * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
    */
@@ -714,10 +758,11 @@ var SongConfigBuilder = class {
     this.explicitFields.add("vocalStyle");
     tracker.addChange("vocal", "vocalStyle", oldStyle, style, "User set vocal style");
     const idolStyles = [4, 9, 11];
-    if (idolStyles.includes(style) && !this.explicitFields.has("callEnabled")) {
+    if (idolStyles.includes(style) && !this.explicitFields.has("callSetting") && !this.explicitFields.has("callEnabled")) {
       if (!this.config.callEnabled) {
         const oldCall = this.config.callEnabled;
         this.config.callEnabled = true;
+        this.config.callSetting = 1;
         tracker.addChange(
           "call",
           "callEnabled",
@@ -812,6 +857,9 @@ var SongConfigBuilder = class {
     if (opts.ninth !== void 0) {
       this.setField("chordExt9th", opts.ninth, "chord");
     }
+    if (opts.tritone !== void 0) {
+      this.setField("chordExtTritoneSub", opts.tritone, "chord");
+    }
     if (opts.susProb !== void 0) {
       this.setField("chordExtSusProb", opts.susProb, "chord");
     }
@@ -821,7 +869,10 @@ var SongConfigBuilder = class {
     if (opts.ninthProb !== void 0) {
       this.setField("chordExt9thProb", opts.ninthProb, "chord");
     }
-    if (opts.susProb !== void 0 || opts.seventhProb !== void 0 || opts.ninthProb !== void 0) {
+    if (opts.tritoneProb !== void 0) {
+      this.setField("chordExtTritoneSubProb", opts.tritoneProb, "chord");
+    }
+    if (opts.susProb !== void 0 || opts.seventhProb !== void 0 || opts.ninthProb !== void 0 || opts.tritoneProb !== void 0) {
       this.config.chordExtProbExplicit = true;
     }
     return this;
@@ -873,8 +924,15 @@ var SongConfigBuilder = class {
    * @param opts Call options
    */
   setCall(opts) {
+    if (opts.setting !== void 0) {
+      this.setField("callSetting", opts.setting, "call");
+      this.config.callEnabled = opts.setting === 1;
+      this.explicitFields.add("callEnabled");
+    }
     if (opts.enabled !== void 0) {
       this.setField("callEnabled", opts.enabled, "call");
+      this.config.callSetting = opts.enabled ? 1 : 2;
+      this.explicitFields.add("callSetting");
     }
     if (opts.notesEnabled !== void 0) {
       this.setField("callNotesEnabled", opts.notesEnabled, "call");
@@ -997,11 +1055,11 @@ var SongConfigBuilder = class {
    * Set blueprint with cascade detection
    *
    * Setting a blueprint may automatically change:
-   * - drumsEnabled (if blueprint requires drums: ID 1,5,6,7)
+   * - drumsEnabled (if the blueprint has drums_required=true, per the C++
+   *   blueprint table via getBlueprintDrumsRequired)
    * - hookIntensity (BehavioralLoop forces Maximum)
-   * - BPM clamping for RhythmSync paradigm
+   * - BPM warning or auto-adjustment for RhythmSync paradigm
    *
-   * Blueprint drums_required: IDs 1 (RhythmLock), 5 (IdolHyper), 6 (IdolKawaii), 7 (IdolCoolPop)
    * BehavioralLoop (ID 9): Forces HookIntensity=Maximum, RiffPolicy=LockedPitch
    *
    * @param id Blueprint ID (0-9, 255=random)
@@ -1015,8 +1073,7 @@ var SongConfigBuilder = class {
     if (id !== 255) {
       const paradigm = getBlueprintParadigm(id);
       const riffPolicy = getBlueprintRiffPolicy(id);
-      const drumsRequiredBlueprints = [1, 5, 6, 7];
-      const isDrumsRequired = drumsRequiredBlueprints.includes(id);
+      const isDrumsRequired = getBlueprintDrumsRequired(id);
       if (isDrumsRequired) {
         if (!this.config.drumsEnabled) {
           const oldDrums = this.config.drumsEnabled;
@@ -1064,15 +1121,14 @@ var SongConfigBuilder = class {
         }
       }
       if (id === 9) {
-        const HOOK_INTENSITY_MAXIMUM = 4;
-        if (this.config.hookIntensity !== HOOK_INTENSITY_MAXIMUM && !this.explicitFields.has("hookIntensity")) {
+        if (this.config.hookIntensity !== HookIntensity.Maximum && !this.explicitFields.has("hookIntensity")) {
           const oldHook = this.config.hookIntensity;
-          this.config.hookIntensity = HOOK_INTENSITY_MAXIMUM;
+          this.config.hookIntensity = HookIntensity.Maximum;
           tracker.addChange(
             "hook",
             "hookIntensity",
             oldHook,
-            HOOK_INTENSITY_MAXIMUM,
+            HookIntensity.Maximum,
             "BehavioralLoop blueprint forces HookIntensity=Maximum"
           );
         }
@@ -1165,7 +1221,7 @@ var SongConfigBuilder = class {
    *
    * Changing style preset resets mood, chord, form, bpm to style defaults.
    *
-   * @param id Style preset ID (0-12)
+   * @param id Style preset ID (0-16)
    */
   setStylePreset(id) {
     const tracker = new ChangeTracker();
@@ -1608,7 +1664,7 @@ var MidiSketch = class {
    * Returns the actual blueprint ID used for generation.
    * If blueprintId was set to 255 (random), this returns the selected ID.
    *
-   * @returns Resolved blueprint ID (0-3), or 255 if not generated
+   * @returns Resolved blueprint ID (0-9), or 255 if not generated
    */
   getResolvedBlueprintId() {
     const a = getApi();
@@ -1790,6 +1846,7 @@ export {
   deserializeConfig,
   downloadMidi,
   getBlueprintCount,
+  getBlueprintDrumsRequired,
   getBlueprintName,
   getBlueprintParadigm,
   getBlueprintRiffPolicy,

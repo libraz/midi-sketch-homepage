@@ -121,6 +121,15 @@ const weight = midisketch.getBlueprintWeight(0)
 // 42
 ```
 
+### `getBlueprintDrumsRequired(id)`
+
+Returns whether a blueprint requires the drums track. Blueprints 1 (RhythmLock), 5 (IdolHyper), and 7 (IdolCoolPop) require drums; for these, `drumsEnabled` is forced on unless `drumsEnabledExplicit: true` is set.
+
+```javascript
+const required = midisketch.getBlueprintDrumsRequired(1)
+// true
+```
+
 ### `getFormsByStyle(styleId)`
 
 Returns form/structure IDs compatible with the given style.
@@ -137,6 +146,26 @@ Creates a default SongConfig for the given style preset.
 ```javascript
 const config = midisketch.createDefaultConfig(0)
 // { stylePresetId: 0, key: 0, bpm: 120, ... }
+```
+
+### `validateConfig(config)`
+
+Validates a `SongConfig` without generating. Returns a `ConfigError` code (`0` = OK).
+
+```javascript
+const code = midisketch.validateConfig(config)
+if (code !== midisketch.ConfigError.OK) {
+  console.error(midisketch.getConfigErrorMessage(code))
+}
+```
+
+### `getConfigErrorMessage(code)`
+
+Returns a human-readable message for a `ConfigError` code.
+
+```javascript
+const message = midisketch.getConfigErrorMessage(6)
+// e.g. "Invalid BPM"
 ```
 
 ### `downloadMidi(midiData, filename)`
@@ -178,6 +207,7 @@ sketch.generateFromConfig({
   arpeggioOctaveRange: 2,     // 1-3 octaves
   arpeggioGate: 0.8,          // Gate length (0.0-1.0)
   arpeggioSyncChord: true,    // Sync arpeggio with chord changes
+  arpeggioBaseVelocity: 90,   // Base velocity for arpeggio notes (0-127)
 
   // Vocal settings
   vocalLow: 60,               // Vocal range lower bound (MIDI note, default C4)
@@ -188,7 +218,7 @@ sketch.generateFromConfig({
   vocalStyle: 0,              // Vocal style preset (0=Auto, 1-13=specific presets)
   melodyTemplate: 0,          // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,       // Melody complexity (0=Simple, 1=Standard, 2=Complex)
-  hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
+  hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum - normally set by Behavioral Loop)
   vocalGroove: 0,             // Groove feel (0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th)
 
   // Humanization
@@ -200,9 +230,11 @@ sketch.generateFromConfig({
   chordExtSus: false,         // Enable sus2/sus4 chords
   chordExt7th: false,         // Enable 7th chords
   chordExt9th: false,         // Enable 9th chords
+  chordExtTritoneSub: false,  // Enable tritone substitution (V7 -> bII7)
   chordExtSusProb: 0.2,       // Sus chord probability (0.0-1.0)
   chordExt7thProb: 0.15,      // 7th chord probability (0.0-1.0)
   chordExt9thProb: 0.25,      // 9th chord probability (0.0-1.0)
+  chordExtTritoneSubProb: 0.5, // Tritone substitution probability (0.0-1.0)
 
   // Composition style
   compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
@@ -216,7 +248,7 @@ sketch.generateFromConfig({
 
   // Call/SE settings (for idol-style music)
   seEnabled: true,            // Enable SE track
-  callEnabled: false,         // Enable call feature (false=Auto, true=Enabled; Disabled is C API only)
+  callSetting: 0,             // Call feature: 0=Auto (style decides), 1=Enabled, 2=Disabled
   callNotesEnabled: true,     // Output calls as notes
   introChant: 0,              // 0=None, 1=Gachikoi, 2=Shouting
   mixPattern: 0,              // 0=None, 1=Standard, 2=Tiger
@@ -234,7 +266,7 @@ sketch.generateFromConfig({
   blueprintId: 0,             // Production blueprint (0=Traditional, 1-9=specific, 255=random)
 
   // Guitar settings
-  guitarEnabled: false,       // Enable guitar track
+  guitarEnabled: true,        // Enable guitar track (default: true)
 
   // Drums explicit
   drumsEnabledExplicit: false, // True if drumsEnabled was explicitly set (allows overriding blueprint drums_required)
@@ -286,6 +318,10 @@ sketch.generateFromConfig({
 Many parameters depend on parent options being enabled. For example, `arpeggioPattern` has no effect if `arpeggioEnabled=false`. See [Option Relationships](/docs/option-relationships) for the full dependency tree.
 :::
 
+::: warning callEnabled is Legacy
+`callSetting` (0=Auto, 1=Enabled, 2=Disabled) is the source of truth for the call feature. The boolean `callEnabled` is kept only for backward compatibility: when serializing, `callEnabled: true` maps to `callSetting: 1` and `false` to `callSetting: 2`; when reading a config back, `callEnabled` is derived from `callSetting` (and left `undefined` for Auto). Use `callSetting` in new code.
+:::
+
 ### `regenerateVocal(configOrSeed)`
 
 Regenerate only the vocal track (and Aux track). Keeps the same chord progression and structure.
@@ -307,6 +343,7 @@ sketch.regenerateVocal({
   hookIntensity: 2,            // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
   vocalGroove: 0,              // Groove feel (0=Straight, 1=OffBeat, 2=Swing, etc.)
   compositionStyle: 0,         // Composition style (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
+  keepMotif: false,            // RhythmSync only: keep the existing Motif as the rhythmic axis (false=regenerate both)
 })
 
 // Or with seed only
@@ -361,7 +398,7 @@ sketch.generateAccompaniment()
 sketch.generateAccompaniment({
   seed: 12345,                // Random seed (0 = auto)
   drumsEnabled: true,
-  guitarEnabled: false,       // Enable guitar track
+  guitarEnabled: false,       // Disable guitar track (default: true)
   arpeggioEnabled: false,
   arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
@@ -699,9 +736,9 @@ All setter methods return `this` for chaining:
 | `setChordExtensions(opts)` | object | Set chord extensions ({sus, seventh, ninth, susProb, seventhProb, ninthProb}) |
 | `setArpeggio(enabled, opts?)` | boolean, object | Set arpeggio ({pattern, speed, octaveRange, gate, syncChord}) |
 | `setMotif(opts)` | object | Set motif ({repeatScope, fixedProgression, maxChordCount}) |
-| `setCall(opts)` | object | Set call/SE ({enabled, notesEnabled, density, introChant, mixPattern, seEnabled}) |
+| `setCall(opts)` | object | Set call/SE ({setting (0=Auto/1=Enabled/2=Disabled), enabled (legacy boolean), notesEnabled, density, introChant, mixPattern, seEnabled}) |
 | `setMelodicComplexity(complexity)` | number | Set melodic complexity (0-2) |
-| `setHookIntensity(intensity)` | number | Set hook intensity (0-3) |
+| `setHookIntensity(intensity)` | number | Set hook intensity (0-3; 4=Maximum is normally set automatically by Behavioral Loop) |
 | `setVocalGroove(groove)` | number | Set vocal groove feel (0-5) |
 | `setMelodyTemplate(template)` | number | Set melody template (0-7) |
 | `setArrangementGrowth(growth)` | number | Set arrangement growth (0-1) |
@@ -748,7 +785,7 @@ builder.resetKeepExplicit(styleId?)
 
 Certain parameter changes trigger cascading updates to related parameters:
 
-- **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 6, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum)
+- **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum)
 - **Composition style change**: May auto-adjust `skipVocal`, `arpeggioEnabled` (SynthDriven enables arpeggio)
 - **Vocal style change**: Idol-style presets (4=Idol, 9=BrightKira, 11=CuteAffected) auto-enable call if not explicitly set
 - **BPM change**: Warns if BPM is outside 160-175 range for RhythmSync blueprints
@@ -877,7 +914,7 @@ VocalStylePreset.KPop          // 13 - K-Pop style
 ```javascript
 MelodyTemplate.Auto         // 0 - Auto-select based on VocalStylePreset
 MelodyTemplate.PlateauTalk  // 1 - High same-pitch ratio (NewJeans, Billie Eilish)
-MelodyTemplate.RunUpTarget  // 2 - Ascending toward target (YOASOBI, Ado)
+MelodyTemplate.RunUpTarget  // 2 - Ascending toward target (anime high-energy, dramatic pop)
 MelodyTemplate.DownResolve  // 3 - Descending resolution (B-section)
 MelodyTemplate.HookRepeat   // 4 - Short repeated hooks (TikTok, K-POP)
 MelodyTemplate.SparseAnchor // 5 - Sparse anchor notes (Ballad)
@@ -896,10 +933,11 @@ MelodicComplexity.Complex  // 2 - Complex with larger intervals and more variati
 ### `HookIntensity`
 
 ```javascript
-HookIntensity.Off    // 0 - No hook repetition
-HookIntensity.Light  // 1 - Light hook presence
-HookIntensity.Normal // 2 - Normal hook repetition (default)
-HookIntensity.Strong // 3 - Strong, catchy hook emphasis
+HookIntensity.Off     // 0 - No hook repetition
+HookIntensity.Light   // 1 - Light hook presence
+HookIntensity.Normal  // 2 - Normal hook repetition (default)
+HookIntensity.Strong  // 3 - Strong, catchy hook emphasis
+HookIntensity.Maximum // 4 - Maximum repetition (used by Behavioral Loop / addictiveMode)
 ```
 
 ### `VocalGrooveFeel`
@@ -972,6 +1010,46 @@ RiffPolicy.Evolving      // 4 - 30% chance of change every 2 sections
 RiffPolicy.Locked        // Alias for LockedContour (1)
 ```
 
+### `ConfigError`
+
+Validation error codes returned by `validateConfig()` (and carried by `MidiSketchConfigError`):
+
+```javascript
+ConfigError.OK                      // 0
+ConfigError.InvalidStyle            // 1
+ConfigError.InvalidChord            // 2
+ConfigError.InvalidForm             // 3
+ConfigError.InvalidAttitude         // 4
+ConfigError.InvalidVocalRange       // 5
+ConfigError.InvalidBpm              // 6
+ConfigError.DurationTooShort        // 7
+ConfigError.InvalidModulation       // 8
+ConfigError.InvalidKey              // 9
+ConfigError.InvalidCompositionStyle // 10
+ConfigError.InvalidArpeggioPattern  // 11
+ConfigError.InvalidArpeggioSpeed    // 12
+ConfigError.InvalidVocalStyle       // 13
+ConfigError.InvalidMelodyTemplate   // 14
+ConfigError.InvalidMelodicComplexity // 15
+ConfigError.InvalidHookIntensity    // 16
+ConfigError.InvalidVocalGroove      // 17
+ConfigError.InvalidCallDensity      // 18
+ConfigError.InvalidIntroChant       // 19
+ConfigError.InvalidMixPattern       // 20
+ConfigError.InvalidMotifRepeatScope // 21
+ConfigError.InvalidArrangementGrowth // 22
+ConfigError.InvalidModulationTiming // 23
+ConfigError.InvalidBlueprint        // 24
+ConfigError.InvalidCallSetting      // 25
+ConfigError.InvalidEnergyCurve      // 26
+ConfigError.InvalidDriveFeel        // 27
+ConfigError.InvalidMoraRhythmMode   // 28
+ConfigError.InvalidProbability      // 29
+ConfigError.InvalidArpeggioRange    // 30
+ConfigError.InvalidMelodyOverride   // 31
+ConfigError.InvalidMotifOverride    // 32
+```
+
 ### `NoteSafety`
 
 ```javascript
@@ -1023,6 +1101,7 @@ interface VocalConfig {
   hookIntensity?: number     // 0=Off, 1=Light, 2=Normal, 3=Strong
   vocalGroove?: number       // 0=Straight, 1=OffBeat, etc.
   compositionStyle?: number  // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+  keepMotif?: boolean        // RhythmSync only: keep existing Motif as the rhythmic axis (default: false)
 }
 ```
 
@@ -1059,13 +1138,17 @@ interface AccompanimentConfig {
   humanizeVelocity?: number   // 0-100
   // SE/Call
   seEnabled?: boolean
-  callEnabled?: boolean
+  callEnabled?: boolean       // Plain boolean here (callSetting exists only on SongConfig)
   callDensity?: number        // 0=None, 1=Minimal, 2=Standard, 3=Intense
   introChant?: number         // 0=None, 1=Gachikoi, 2=Shouting
   mixPattern?: number         // 0=None, 1=Standard, 2=Tiger
   callNotesEnabled?: boolean
 }
 ```
+
+::: warning AccompanimentConfig Uses 0-100 Ranges
+Unlike `SongConfig` (which uses normalized `0.0-1.0` values), `AccompanimentConfig` keeps integer `0-100` ranges for `arpeggioGate` (default 80), `chordExtSusProb` (20), `chordExt7thProb` (30), `chordExt9thProb` (25), `chordExtTritoneSubProb` (50), `humanizeTiming` (50), and `humanizeVelocity` (50). Also note `guitarEnabled` defaults to `true` when omitted.
+:::
 
 ### `NoteInput`
 

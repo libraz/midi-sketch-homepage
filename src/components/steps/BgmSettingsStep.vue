@@ -47,7 +47,8 @@ const arpeggioPatternOptions = [
   { key: 'brokenChord', value: 7, icon: '💫' }
 ]
 
-// Energy curve options
+// Energy curve options (BGM-only flow; in vocal-first flow this is set
+// in vocal settings because the song structure is fixed at vocal generation)
 const energyCurveOptions = [
   { key: 'gradualBuild', value: 0, icon: '📈' },
   { key: 'frontLoaded', value: 1, icon: '⚡' },
@@ -55,13 +56,10 @@ const energyCurveOptions = [
   { key: 'steadyState', value: 3, icon: '▬' }
 ]
 
-// Modulation timing options
-const modulationTimingOptions = [
-  { key: 'none', value: 0 },
-  { key: 'lastChorus', value: 1 },
-  { key: 'afterBridge', value: 2 },
-  { key: 'eachChorus', value: 3 },
-  { key: 'random', value: 4 }
+// Arrangement growth options (BGM-only flow)
+const arrangementGrowthOptions = [
+  { key: 'layerAdd', value: 0, icon: '🧱' },
+  { key: 'registerAdd', value: 1, icon: '🪜' }
 ]
 
 // Arpeggio speed options
@@ -70,6 +68,40 @@ const arpeggioSpeedOptions = [
   { key: 'sixteenth', value: 1, icon: '♬' },
   { key: 'triplet', value: 2, icon: '³' }
 ]
+
+// Call density options (0=None, 1=Minimal, 2=Standard, 3=Intense)
+const callDensityOptions = [
+  { key: 'none', value: 0 },
+  { key: 'minimal', value: 1 },
+  { key: 'standard', value: 2 },
+  { key: 'intense', value: 3 }
+]
+
+// Intro chant options (0=None, 1=Gachikoi, 2=Shouting)
+const introChantOptions = [
+  { key: 'none', value: 0 },
+  { key: 'gachikoi', value: 1 },
+  { key: 'shouting', value: 2 }
+]
+
+// MIX pattern options (0=None, 1=Standard, 2=Tiger)
+const mixPatternOptions = [
+  { key: 'none', value: 0 },
+  { key: 'standard', value: 1 },
+  { key: 'tiger', value: 2 }
+]
+
+// Descriptions for currently enabled chord extensions
+const enabledExtDescriptions = computed(() => {
+  const list: Array<{ name: string; text: string }> = []
+  if (store.config.chordExtSus) list.push({ name: 'sus', text: t('settingsStep.advanced.chordExt.susDesc') })
+  if (store.config.chordExt7th) list.push({ name: '7th', text: t('settingsStep.advanced.chordExt.seventhDesc') })
+  if (store.config.chordExt9th) list.push({ name: '9th', text: t('settingsStep.advanced.chordExt.ninthDesc') })
+  if (store.config.chordExtTritoneSub) {
+    list.push({ name: t('settingsStep.advanced.chordExt.tritone'), text: t('settingsStep.advanced.chordExt.tritoneDesc') })
+  }
+  return list
+})
 
 // No automatic overrides for compositionStyle changes
 // User controls arpeggio and modulation explicitly
@@ -223,6 +255,50 @@ watch(blueprintNeedsDrums, (needsDrums) => {
                 </button>
               </div>
             </div>
+            <!-- Octave Range -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.arpeggio.octaveRange') }}</label>
+              <div class="compact-btns">
+                <button
+                  v-for="n in 3"
+                  :key="n"
+                  class="compact-btn"
+                  :class="{ 'compact-btn--active': store.config.arpeggioOctaveRange === n }"
+                  @click="store.config.arpeggioOctaveRange = n"
+                >
+                  {{ n }} oct
+                </button>
+              </div>
+            </div>
+            <!-- Gate -->
+            <div class="sub-setting">
+              <RangeSlider
+                v-model="store.config.arpeggioGate"
+                :min="10"
+                :max="100"
+                :label="t('settingsStep.advanced.arpeggio.gate')"
+              />
+              <span class="sub-setting__hint">{{ t('settingsStep.advanced.arpeggio.gateHint') }}</span>
+            </div>
+            <!-- Chord Sync -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.arpeggio.syncChord') }}</label>
+              <div class="option-cards option-cards--row">
+                <OptionCard
+                  title="OFF"
+                  :is-active="!store.config.arpeggioSyncChord"
+                  compact
+                  @select="store.config.arpeggioSyncChord = false"
+                />
+                <OptionCard
+                  title="ON"
+                  :is-active="store.config.arpeggioSyncChord"
+                  compact
+                  @select="store.config.arpeggioSyncChord = true"
+                />
+              </div>
+              <span class="sub-setting__hint">{{ t('settingsStep.advanced.arpeggio.syncChordDesc') }}</span>
+            </div>
           </template>
         </div>
       </SettingSection>
@@ -231,7 +307,7 @@ watch(blueprintNeedsDrums, (needsDrums) => {
       <SettingSection
         icon="🎵"
         :title="t('settingsStep.advanced.chordExt.label')"
-        :description="t('settingsStep.advanced.chordExt.description')"
+        :description="t('settingsStep.advanced.chordExt.desc1')"
       >
         <div class="option-cards option-cards--row">
           <OptionCard
@@ -252,11 +328,24 @@ watch(blueprintNeedsDrums, (needsDrums) => {
             compact
             @select="store.config.chordExt9th = !store.config.chordExt9th"
           />
+          <OptionCard
+            :title="t('settingsStep.advanced.chordExt.tritone')"
+            :is-active="store.config.chordExtTritoneSub"
+            compact
+            @select="store.config.chordExtTritoneSub = !store.config.chordExtTritoneSub"
+          />
+        </div>
+        <!-- Explain the enabled extensions -->
+        <div v-if="enabledExtDescriptions.length" class="ext-desc-list">
+          <p v-for="d in enabledExtDescriptions" :key="d.name" class="ext-desc-list__item">
+            <strong>{{ d.name }}</strong> — {{ d.text }}
+          </p>
         </div>
       </SettingSection>
 
-      <!-- Energy Curve -->
+      <!-- Energy Curve (BGM-only: in vocal-first the structure is fixed at vocal generation) -->
       <SettingSection
+        v-if="isBgmOnly"
         icon="📊"
         :title="t('bgmSettingsStep.energyCurve.label')"
         :description="t('bgmSettingsStep.energyCurve.description')"
@@ -275,42 +364,142 @@ watch(blueprintNeedsDrums, (needsDrums) => {
         </div>
       </SettingSection>
 
-      <!-- Modulation (Key Change) -->
+      <!-- Arrangement Growth (BGM-only) -->
       <SettingSection
-        icon="🔀"
-        :title="t('settingsStep.tabs.modulation')"
-        :description="t('settingsStep.advanced.modulation.description')"
+        v-if="isBgmOnly"
+        icon="🏗️"
+        :title="t('bgmSettingsStep.arrangementGrowth.label')"
+        :description="t('bgmSettingsStep.arrangementGrowth.description')"
       >
-        <div class="sub-setting">
-          <label class="sub-setting__label">{{ t('settingsStep.advanced.modulation.timing') }}</label>
-          <div class="compact-btns compact-btns--grid">
-            <button
-              v-for="opt in modulationTimingOptions"
-              :key="opt.key"
-              class="compact-btn"
-              :class="{ 'compact-btn--active': store.config.modulationTiming === opt.value }"
-              @click="store.config.modulationTiming = opt.value"
-            >
-              {{ t(`settingsStep.advanced.modulation.timingOptions.${opt.key}`) }}
-            </button>
-          </div>
+        <div class="compact-btns">
+          <button
+            v-for="opt in arrangementGrowthOptions"
+            :key="opt.key"
+            class="compact-btn"
+            :class="{ 'compact-btn--active': store.config.arrangementGrowth === opt.value }"
+            @click="store.config.arrangementGrowth = opt.value"
+          >
+            <span class="compact-btn__icon">{{ opt.icon }}</span>
+            <span>{{ t(`bgmSettingsStep.arrangementGrowth.options.${opt.key}`) }}</span>
+          </button>
         </div>
-        <template v-if="store.config.modulationTiming > 0">
+      </SettingSection>
+
+      <!-- Call & SE -->
+      <SettingSection
+        icon="📣"
+        :title="t('settingsStep.advanced.se.label')"
+        :description="t('settingsStep.advanced.se.description')"
+      >
+        <div class="call-se-settings">
+          <!-- SE Track -->
           <div class="sub-setting">
-            <label class="sub-setting__label">{{ t('settingsStep.advanced.modulation.semitones') }}</label>
-            <div class="compact-btns">
-              <button
-                v-for="n in 4"
-                :key="n"
-                class="compact-btn"
-                :class="{ 'compact-btn--active': store.config.modulationSemitones === n }"
-                @click="store.config.modulationSemitones = n"
-              >
-                +{{ n }}
-              </button>
+            <label class="sub-setting__label">{{ t('settingsStep.advanced.se.seEnabled') }}</label>
+            <div class="option-cards option-cards--row">
+              <OptionCard
+                title="OFF"
+                :is-active="!store.config.seEnabled"
+                compact
+                @select="store.config.seEnabled = false"
+              />
+              <OptionCard
+                title="ON"
+                :is-active="store.config.seEnabled"
+                compact
+                @select="store.config.seEnabled = true"
+              />
             </div>
+            <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.seEnabledDesc') }}</span>
           </div>
-        </template>
+
+          <!-- Call Feature -->
+          <div class="sub-setting">
+            <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callEnabled') }}</label>
+            <div class="option-cards option-cards--row">
+              <OptionCard
+                title="OFF"
+                :is-active="!store.config.callEnabled"
+                compact
+                @select="store.config.callEnabled = false"
+              />
+              <OptionCard
+                title="ON"
+                :is-active="store.config.callEnabled"
+                compact
+                @select="store.config.callEnabled = true"
+              />
+            </div>
+            <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.callEnabledDesc') }}</span>
+          </div>
+
+          <template v-if="store.config.callEnabled">
+            <!-- Call Density -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callDensity') }}</label>
+              <div class="compact-btns">
+                <button
+                  v-for="opt in callDensityOptions"
+                  :key="opt.key"
+                  class="compact-btn"
+                  :class="{ 'compact-btn--active': store.config.callDensity === opt.value }"
+                  @click="store.config.callDensity = opt.value"
+                >
+                  {{ t(`settingsStep.advanced.se.callDensityOptions.${opt.key}`) }}
+                </button>
+              </div>
+            </div>
+            <!-- Intro Chant -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.introChant') }}</label>
+              <div class="compact-btns">
+                <button
+                  v-for="opt in introChantOptions"
+                  :key="opt.key"
+                  class="compact-btn"
+                  :class="{ 'compact-btn--active': store.config.introChant === opt.value }"
+                  @click="store.config.introChant = opt.value"
+                >
+                  {{ t(`settingsStep.advanced.se.introChantOptions.${opt.key}`) }}
+                </button>
+              </div>
+              <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.introChantDesc') }}</span>
+            </div>
+            <!-- MIX Pattern -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.mixPattern') }}</label>
+              <div class="compact-btns">
+                <button
+                  v-for="opt in mixPatternOptions"
+                  :key="opt.key"
+                  class="compact-btn"
+                  :class="{ 'compact-btn--active': store.config.mixPattern === opt.value }"
+                  @click="store.config.mixPattern = opt.value"
+                >
+                  {{ t(`settingsStep.advanced.se.mixPatternOptions.${opt.key}`) }}
+                </button>
+              </div>
+              <span class="sub-setting__hint">{{ t('settingsStep.advanced.se.mixPatternDesc') }}</span>
+            </div>
+            <!-- Call Notes -->
+            <div class="sub-setting">
+              <label class="sub-setting__label">{{ t('settingsStep.advanced.se.callNotesEnabled') }}</label>
+              <div class="option-cards option-cards--row">
+                <OptionCard
+                  title="OFF"
+                  :is-active="!store.config.callNotesEnabled"
+                  compact
+                  @select="store.config.callNotesEnabled = false"
+                />
+                <OptionCard
+                  title="ON"
+                  :is-active="store.config.callNotesEnabled"
+                  compact
+                  @select="store.config.callNotesEnabled = true"
+                />
+              </div>
+            </div>
+          </template>
+        </div>
       </SettingSection>
 
       <!-- Humanize -->
@@ -445,6 +634,41 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* Call & SE Settings */
+.call-se-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Chord extension descriptions */
+.ext-desc-list {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.15);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.ext-desc-list__item {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.65);
+  line-height: 1.5;
+}
+
+.ext-desc-list__item strong {
+  color: rgba(147, 197, 253, 0.9);
+}
+
+.sub-setting__hint {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 250, 0.45);
 }
 
 /* Sub-setting (Pattern, Speed) */

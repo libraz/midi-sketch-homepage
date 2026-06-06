@@ -74,7 +74,7 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     affectingKeys: [
       'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
       'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity',
-      'enableSyncopation', 'driveFeel', 'moraRhythmMode',
+      'enableSyncopation', 'driveFeel', 'moraRhythmMode', 'energyCurve',
       'melodyMaxLeap', 'melodySyncopationProb', 'melodyPhraseLength',
       'melodyLongNoteRatio', 'melodyChorusRegisterShift',
       'melodyHookRepetition', 'melodyUseLeadingTone'
@@ -97,9 +97,8 @@ export const STEP_DEFINITIONS: Record<string, StepDefinition> = {
     affectingKeys: [
       'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled',
       'arpeggioPattern', 'arpeggioSpeed', 'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
-      'chordExtSus', 'chordExt7th', 'chordExt9th',
-      'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
-      'modulationTiming', 'modulationSemitones',
+      'chordExtSus', 'chordExt7th', 'chordExt9th', 'chordExtTritoneSub',
+      'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb', 'chordExtTritoneSubProb',
       'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
       'arrangementGrowth', 'motifRepeatScope', 'motifFixedProgression', 'motifMaxChordCount',
       'motifLength', 'motifNoteCount', 'motifMotion', 'motifRegisterHigh', 'motifRhythmDensity',
@@ -151,13 +150,13 @@ export const FLOW_STEPS: Record<FlowType, string[]> = {
  */
 export const BGM_AFFECTING_KEYS: Record<FlowType, string[]> = {
   'vocal-first': [
-    // For vocal-first, BGM is generated after vocal
+    // For vocal-first, BGM is generated after vocal.
+    // Only keys present in AccompanimentConfig belong here.
     'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
     'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
-    'chordExtSus', 'chordExt7th', 'chordExt9th',
-    'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
+    'chordExtSus', 'chordExt7th', 'chordExt9th', 'chordExtTritoneSub',
+    'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb', 'chordExtTritoneSubProb',
     'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
-    'energyCurve',
     'humanize', 'humanizeTiming', 'humanizeVelocity'
   ],
   'bgm-only': [
@@ -166,8 +165,8 @@ export const BGM_AFFECTING_KEYS: Record<FlowType, string[]> = {
     'blueprintId',
     'drumsEnabled', 'guitarEnabled', 'arpeggioEnabled', 'arpeggioPattern', 'arpeggioSpeed',
     'arpeggioOctaveRange', 'arpeggioGate', 'arpeggioSyncChord',
-    'chordExtSus', 'chordExt7th', 'chordExt9th',
-    'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb',
+    'chordExtSus', 'chordExt7th', 'chordExt9th', 'chordExtTritoneSub',
+    'chordExtSusProb', 'chordExt7thProb', 'chordExt9thProb', 'chordExtTritoneSubProb',
     'compositionStyle', 'targetDurationSeconds',
     'modulationTiming', 'modulationSemitones',
     'seEnabled', 'callEnabled', 'callNotesEnabled', 'introChant', 'mixPattern', 'callDensity',
@@ -189,6 +188,7 @@ export const VOCAL_AFFECTING_KEYS: Record<FlowType, string[]> = {
   'vocal-first': [
     'songImageId', 'stylePresetId', 'chordProgressionId', 'key', 'bpm', 'formId',
     'targetDurationSeconds', 'blueprintId',
+    'modulationTiming', 'modulationSemitones', 'energyCurve',
     'vocalLow', 'vocalHigh', 'vocalAttitude', 'vocalStyle',
     'melodyTemplate', 'vocalGroove', 'melodicComplexity', 'hookIntensity',
     'enableSyncopation', 'driveFeel', 'moraRhythmMode',

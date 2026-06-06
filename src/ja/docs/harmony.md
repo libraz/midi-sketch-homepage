@@ -6,6 +6,10 @@
 このページでは音楽理論の専門用語を使用しています。これらの概念はシステムが自動的に処理しますが、理解することでより適切なパラメータ選択が可能になります。
 :::
 
+::: tip 音楽理論が初めての方へ
+コードやコード進行に馴染みがなければ、まず[コース](/ja/docs/course/chords)をご覧ください。再生できる譜例つきで基礎から積み上げて解説しています。読んだ後にこのリファレンスへ戻ってくると理解が深まります。
+:::
+
 ## コード進行
 
 MIDI Sketchには一般的なポップミュージックパターンをカバーする22の内蔵コード進行があります。
@@ -165,13 +169,15 @@ struct ChordExtensionParams {
     bool enable_sus = false;
     bool enable_7th = false;
     bool enable_9th = false;
-    bool tritone_sub = false;          // AccompanimentConfig only
-    float sus_probability = 0.2f;     // 20% chance
-    float seventh_probability = 0.15f; // 15% chance
-    float ninth_probability = 0.25f;   // 25% chance
-    float tritone_sub_probability;     // AccompanimentConfig only
+    bool tritone_sub = false;              // トライトーン代理 (V7 -> bII7)
+    float sus_probability = 0.2f;          // 0.0-1.0 (20%)
+    float seventh_probability = 0.15f;     // 0.0-1.0 (15%)
+    float ninth_probability = 0.25f;       // 0.0-1.0 (25%)
+    float tritone_sub_probability = 0.5f;  // 0.0-1.0 (有効時 50%)
 };
 ```
+
+JS の `SongConfig` では `chordExtSus` / `chordExt7th` / `chordExt9th` / `chordExtTritoneSub` と `chordExtSusProb` / `chordExt7thProb` / `chordExt9thProb` / `chordExtTritoneSubProb`（確率はすべて 0.0-1.0）に対応します。
 
 ::: info ムード依存の確率自動調整
 `chordExtProbExplicit=false`（デフォルト）の場合、ムードがスタイルに合わせてコードエクステンション確率を自動調整します。`chordExtProbExplicit=true`に設定すると全てのエクステンション確率を手動制御できます。
@@ -289,10 +295,9 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 
 ::: details 設定
 トライトーン代理は以下から利用可能：
-- **AccompanimentConfig**: `chordExtTritoneSub`（有効化）と`chordExtTritoneSubProb`（確率 0.0-1.0）
-- **C++ SongConfig JSON**: `chord_extension.tritone_sub`と`chord_extension.tritone_sub_probability`（C++ readFrom経由）
-
-注：これらのパラメータは現在JS `SongConfig`型（`types.ts`）では公開されていません。アクセスには`AccompanimentConfig`またはC++ JSON APIを使用してください。
+- **SongConfig (JS)**: `chordExtTritoneSub`（有効化、デフォルト `false`）と`chordExtTritoneSubProb`（確率 0.0-1.0、デフォルト `0.5`）
+- **AccompanimentConfig (JS)**: `chordExtTritoneSub`（有効化）と`chordExtTritoneSubProb`（確率 **0-100**、デフォルト `50` — この設定は整数パーセントのレンジを維持）
+- **C++ SongConfig**: `chord_extension.tritone_sub`と`chord_extension.tritone_sub_probability`（0.0-1.0）
 :::
 
 ### ムード依存のコードエクステンション確率

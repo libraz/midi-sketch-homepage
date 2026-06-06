@@ -40,8 +40,22 @@ const motifMotionOptions = [
   { key: 'gentleLeap', value: 1 },
   { key: 'wideLeap', value: 2 },
   { key: 'narrowStep', value: 3 },
-  { key: 'disjunct', value: 4 }
+  { key: 'disjunct', value: 4 },
+  { key: 'ostinato', value: 5 }
 ]
+
+// Sentinel-mapped slider models: the WASM API rejects 1 for maxChordCount
+// (valid: 0=no limit, 2-8) and 1-2 for noteCount (valid: 0=auto, 3-8),
+// so map the sentinel to the leftmost slider position.
+const maxChordCountModel = computed({
+  get: () => store.config.motifMaxChordCount === 0 ? 1 : store.config.motifMaxChordCount,
+  set: (v: number) => { store.config.motifMaxChordCount = v <= 1 ? 0 : v }
+})
+
+const noteCountModel = computed({
+  get: () => store.config.motifNoteCount === 0 ? 2 : store.config.motifNoteCount,
+  set: (v: number) => { store.config.motifNoteCount = v <= 2 ? 0 : v }
+})
 
 // Motif register options
 const motifRegisterOptions = [
@@ -94,8 +108,8 @@ const motifRhythmDensityOptions = [
         <div class="slider-row">
           <input
             type="range"
-            v-model.number="store.config.motifMaxChordCount"
-            min="0"
+            v-model.number="maxChordCountModel"
+            min="1"
             max="8"
             class="motif-slider"
           />
@@ -144,8 +158,8 @@ const motifRhythmDensityOptions = [
           <div class="slider-row">
             <input
               type="range"
-              v-model.number="store.config.motifNoteCount"
-              min="0"
+              v-model.number="noteCountModel"
+              min="2"
               max="8"
               class="motif-slider"
             />

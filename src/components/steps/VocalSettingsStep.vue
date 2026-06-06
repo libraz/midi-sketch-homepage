@@ -122,12 +122,22 @@ const melodicComplexityOptions = [
   { key: 'complex', value: 2 }
 ]
 
-// Hook intensity options
+// Hook intensity options (4=Maximum: loop-style maximum repetition)
 const hookIntensityOptions = [
   { key: 'off', value: 0 },
   { key: 'light', value: 1 },
   { key: 'normal', value: 2 },
-  { key: 'strong', value: 3 }
+  { key: 'strong', value: 3 },
+  { key: 'maximum', value: 4 }
+]
+
+// Energy curve options (vocal-first: the song structure, including the
+// energy arc, is fixed when the vocal is generated)
+const energyCurveOptions = [
+  { key: 'gradualBuild', value: 0, icon: '📈' },
+  { key: 'frontLoaded', value: 1, icon: '⚡' },
+  { key: 'wavePattern', value: 2, icon: '🌊' },
+  { key: 'steadyState', value: 3, icon: '▬' }
 ]
 
 // Mora rhythm mode options
@@ -143,6 +153,31 @@ const triStateOptions = [
   { key: 'off', value: 1 },
   { key: 'on', value: 2 }
 ]
+
+// ---------------------------------------------
+// Sentinel-mapped slider models.
+// The WASM API only accepts 0-100 or the sentinel (255 / -128) for these
+// overrides; raw sliders over the full byte range would produce invalid
+// configs (e.g. 150). Map the sentinel to one end of the slider instead.
+// ---------------------------------------------
+
+/** 0-100 = override %, rightmost position (101) = preset (255) */
+const syncopationProbModel = computed({
+  get: () => store.config.melodySyncopationProb === 255 ? 101 : store.config.melodySyncopationProb,
+  set: (v: number) => { store.config.melodySyncopationProb = v >= 101 ? 255 : v }
+})
+
+/** 0-100 = override %, rightmost position (101) = preset (255) */
+const longNoteRatioModel = computed({
+  get: () => store.config.melodyLongNoteRatio === 255 ? 101 : store.config.melodyLongNoteRatio,
+  set: (v: number) => { store.config.melodyLongNoteRatio = v >= 101 ? 255 : v }
+})
+
+/** -12..+12 = override semitones, leftmost position (-13) = preset (-128) */
+const chorusRegisterShiftModel = computed({
+  get: () => store.config.melodyChorusRegisterShift === -128 ? -13 : store.config.melodyChorusRegisterShift,
+  set: (v: number) => { store.config.melodyChorusRegisterShift = v <= -13 ? -128 : v }
+})
 
 // Summary for advanced settings
 const advancedSummary = computed(() => {
@@ -399,6 +434,26 @@ const advancedSummary = computed(() => {
                 </div>
               </SettingSection>
 
+              <!-- Energy Curve (song structure is fixed at vocal generation) -->
+              <SettingSection
+                icon="📊"
+                :title="t('bgmSettingsStep.energyCurve.label')"
+                :description="t('bgmSettingsStep.energyCurve.description')"
+              >
+                <div class="compact-btns compact-btns--grid">
+                  <button
+                    v-for="opt in energyCurveOptions"
+                    :key="opt.key"
+                    class="compact-btn"
+                    :class="{ 'compact-btn--active': store.config.energyCurve === opt.value }"
+                    @click="store.config.energyCurve = opt.value"
+                  >
+                    <span class="compact-btn__icon">{{ opt.icon }}</span>
+                    <span>{{ t(`bgmSettingsStep.energyCurve.options.${opt.key}`) }}</span>
+                  </button>
+                </div>
+              </SettingSection>
+
               <!-- Melody Detail Overrides -->
               <SettingSection
                 icon="🎶"
@@ -429,15 +484,15 @@ const advancedSummary = computed(() => {
                     <div class="detail-param">
                       <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.syncopationProb') }}</label>
                       <div class="detail-param__slider-row">
-                        <input type="range" v-model.number="store.config.melodySyncopationProb" min="0" max="255" class="detail-param__slider" :disabled="!store.config.enableSyncopation" />
-                        <span class="detail-param__value">{{ store.config.melodySyncopationProb === 255 ? t('melodyStep.advanced.melodyDetail.preset') : Math.min(store.config.melodySyncopationProb, 100) + '%' }}</span>
+                        <input type="range" v-model.number="syncopationProbModel" min="0" max="101" class="detail-param__slider" :disabled="!store.config.enableSyncopation" />
+                        <span class="detail-param__value">{{ store.config.melodySyncopationProb === 255 ? t('melodyStep.advanced.melodyDetail.preset') : store.config.melodySyncopationProb + '%' }}</span>
                       </div>
                     </div>
                     <div class="detail-param">
                       <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.longNoteRatio') }}</label>
                       <div class="detail-param__slider-row">
-                        <input type="range" v-model.number="store.config.melodyLongNoteRatio" min="0" max="255" class="detail-param__slider" />
-                        <span class="detail-param__value">{{ store.config.melodyLongNoteRatio === 255 ? t('melodyStep.advanced.melodyDetail.preset') : Math.min(store.config.melodyLongNoteRatio, 100) + '%' }}</span>
+                        <input type="range" v-model.number="longNoteRatioModel" min="0" max="101" class="detail-param__slider" />
+                        <span class="detail-param__value">{{ store.config.melodyLongNoteRatio === 255 ? t('melodyStep.advanced.melodyDetail.preset') : store.config.melodyLongNoteRatio + '%' }}</span>
                       </div>
                     </div>
                   </div>
@@ -446,7 +501,7 @@ const advancedSummary = computed(() => {
                   <div class="detail-param">
                     <label class="detail-param__label">{{ t('melodyStep.advanced.melodyDetail.chorusRegisterShift') }}</label>
                     <div class="detail-param__slider-row">
-                      <input type="range" v-model.number="store.config.melodyChorusRegisterShift" min="-128" max="12" class="detail-param__slider" />
+                      <input type="range" v-model.number="chorusRegisterShiftModel" min="-13" max="12" class="detail-param__slider" />
                       <span class="detail-param__value">{{ store.config.melodyChorusRegisterShift === -128 ? t('melodyStep.advanced.melodyDetail.preset') : (store.config.melodyChorusRegisterShift > 0 ? '+' : '') + store.config.melodyChorusRegisterShift }}</span>
                     </div>
                   </div>
