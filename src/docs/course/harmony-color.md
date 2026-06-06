@@ -42,6 +42,18 @@ A **ninth** is the second scale degree raised an octave (the "9th"). An **add9**
 
 The added ninth is purely a coloring; the chord's function and root are unchanged. `chordExt9th` governs it at probability `chordExt9thProb` (default 0.25), the highest default of the four extension types.
 
+## Secondary dominants: aiming the pull elsewhere
+
+The seventh-chord section noted that the dominant 7th "wants to move". That pull is usually aimed at the tonic — but nothing stops you from aiming it at any other chord in the key.
+
+::: info Secondary dominant
+A **secondary dominant** is a dominant 7th chord that resolves to a diatonic chord *other than* the tonic. It is written `V/x` ("five of x"): `V/V` resolves to the dominant, `V/vi` to the relative minor, and so on. In C major the most common are D7→G (`V/V`), E7→Am (`V/vi`), A7→Dm (`V/ii`), and C7→F (`V/IV`). Inserting one creates a stronger, more directed pull toward its target chord.
+:::
+
+<ScoreExample example="secondaryDominant" locale="en" />
+
+D7 contains an F♯ — a note from outside C major. That borrowed accidental momentarily treats G as a "temporary tonic", which is why `F → D7 → G` feels more persuasive than plain `F → G`. MidiSketch inserts secondary dominants automatically: longer chords are preferred candidates, B-sections favor them, and jazz or city-pop styles use more of them — there is no flag to set.
+
 ## The tritone: the engine of tension
 
 To understand the next trick, we need the single most unstable interval in tonal music — the one already lurking inside every dominant 7th chord.
@@ -82,6 +94,7 @@ Each extension type has its own independent probability (sus 0.2, 7th 0.15, 9th 
 | Seventh (maj7/dom7/m7) | `chordExt7th` | `chordExt7thProb` | 0.15 |
 | Ninth (add9) | `chordExt9th` | `chordExt9thProb` | 0.25 |
 | Tritone substitution | `chordExtTritoneSub` | `chordExtTritoneSubProb` | 0.5 (when enabled) |
+| Secondary dominant (`V/x`) | — (automatic) | — | inserted by section type & style; no flag |
 | Lock probabilities | `chordExtProbExplicit` | — | `false` (moods auto-adjust unless set `true`) |
 
 Engine reference: [Harmony](/docs/harmony)

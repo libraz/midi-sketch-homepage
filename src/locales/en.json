@@ -415,7 +415,7 @@
       "generating": "Generating..."
     },
     "result": {
-      "success": "BGM Generated!",
+      "success": "BGM generated",
       "preview": "Preview",
       "play": "Play",
       "pause": "Pause",
@@ -624,7 +624,7 @@
     }
   },
   "finalStep": {
-    "title": "Complete!",
+    "title": "Complete",
     "subtitle": "Preview your finished track with melody",
     "generating": "Generating melody...",
     "complete": "Track Complete",
@@ -751,68 +751,73 @@
   "songImages": {
     "idol-classic": {
       "name": "Classic Idol Pop",
-      "tagline": "Bright, catchy, and full of energy",
-      "description": "The quintessential idol sound - upbeat, memorable hooks with a touch of sweetness"
+      "tagline": "Upbeat, catchy idol pop",
+      "description": "The standard idol sound — upbeat, with familiar hooks"
     },
     "idol-energy": {
       "name": "High Energy Idol",
-      "tagline": "Maximum power, maximum fun",
-      "description": "Fast, powerful, and designed to get the crowd jumping"
+      "tagline": "Fast tempo, driving beat",
+      "description": "Fast and powerful, built around a strong beat"
     },
     "idol-emotional": {
       "name": "Emotional Idol",
-      "tagline": "Heartfelt ballad with idol charm",
-      "description": "Slower idol songs that tell a story and touch the heart"
+      "tagline": "Slower, ballad-leaning idol style",
+      "description": "Slower idol songs with a narrative, vocal-forward feel"
     },
     "jpop-standard": {
       "name": "J-POP Standard",
-      "tagline": "The sound of Japanese pop music",
+      "tagline": "Standard J-POP style",
       "description": "Classic J-POP sound with familiar chord progressions"
     },
     "citypop": {
       "name": "City Pop",
-      "tagline": "Groovy, urban, nostalgic vibes",
-      "description": "Smooth, sophisticated sound inspired by 80s Japanese city pop"
+      "tagline": "Urban, nostalgic groove",
+      "description": "Smooth sound modeled on 80s Japanese city pop"
     },
     "anime-song": {
       "name": "Anime Song",
-      "tagline": "Epic, dramatic, and memorable",
-      "description": "Powerful songs that could open your favorite anime"
+      "tagline": "Dramatic builds and strong melodies",
+      "description": "Anime-theme style with large dynamic shifts"
     },
     "vocaloid-anime": {
       "name": "Vocaloid / Anime OP",
       "tagline": "Fast tempos, dramatic builds",
-      "description": "Modern Vocaloid and anime opening style with fast tempos and dramatic song structures"
+      "description": "Modern Vocaloid / anime-opening style with fast tempos and shifting sections"
+    },
+    "vocaloid-drive": {
+      "name": "Vocaloid Drive",
+      "tagline": "Locked riffs, relentless drive",
+      "description": "Rhythm-locked vocaloid style: a fixed riff hammers chord pulses and sixteenths under a hook-heavy melody"
     },
     "rock-pop": {
       "name": "Rock Pop",
-      "tagline": "Guitar-driven energy",
-      "description": "Band sound with driving guitars and powerful drums"
+      "tagline": "Guitar-driven band sound",
+      "description": "Band arrangement with driving guitars and drums"
     },
     "dance-pop": {
       "name": "Dance Pop",
-      "tagline": "Get up and dance!",
-      "description": "Groovy beats and catchy hooks that make you move"
+      "tagline": "Rhythm-forward dance beat",
+      "description": "Groove-focused pop with a steady dance beat"
     },
     "edm-synth": {
       "name": "EDM / Synth Pop",
-      "tagline": "Electronic beats, big drops",
-      "description": "Modern electronic sound with powerful synths"
+      "tagline": "Synth-led electronic sound",
+      "description": "Modern electronic pop centered on synthesizers"
     },
     "ballad-emotional": {
       "name": "Emotional Ballad",
-      "tagline": "Pour your heart out",
-      "description": "Slow, emotional songs that tell a story"
+      "tagline": "Slow-tempo ballad",
+      "description": "Slow songs with a story-telling, vocal-forward feel"
     },
     "love-song": {
       "name": "Love Song",
-      "tagline": "Bittersweet and beautiful",
+      "tagline": "Mid-tempo and bittersweet",
       "description": "Mid-tempo songs about love and longing"
     },
     "synthwave": {
       "name": "Synthwave",
-      "tagline": "Retro synth, neon vibes",
-      "description": "80s inspired synth sounds with a modern twist"
+      "tagline": "80s-style retro synths",
+      "description": "80s-inspired synth sounds in a modern arrangement"
     },
     "electronica": {
       "name": "Electronica",
@@ -821,13 +826,13 @@
     },
     "chill-relax": {
       "name": "Chill / Relax",
-      "tagline": "Laid-back and soothing",
-      "description": "Relaxing background music for unwinding"
+      "tagline": "Slow and laid-back",
+      "description": "Calm, background-leaning music at a relaxed tempo"
     },
     "instrumental": {
       "name": "Instrumental",
-      "tagline": "Music without words",
-      "description": "Background music perfect for videos and streams"
+      "tagline": "No vocal track",
+      "description": "Background music suited to videos and streams"
     }
   },
   "chordProgressions": {
@@ -871,7 +876,7 @@
   "share": {
     "shareOnX": "Share on X",
     "copyUrl": "Copy URL",
-    "copied": "Copied! Listen to the track and proceed to melody generation",
+    "copied": "Copied. Listen to the track and proceed to melody generation",
     "xShare": "Share this track on X",
     "tweetBgm": "I created a BGM track with MIDI Sketch!",
     "tweetVocal": "I created a vocal melody with MIDI Sketch!",
@@ -923,9 +928,10 @@
     "dismiss": "Dismiss"
   },
   "studio": {
+    "themeToggle": "Toggle light/dark theme",
     "entry": {
       "imageTitle": "Pick a song image",
-      "imageHint": "Generation starts the moment you pick one — everything else is tuned automatically.",
+      "imageHint": "Generation starts when you pick one. The details are set automatically and can be adjusted later.",
       "generate": "Generate"
     },
     "player": {

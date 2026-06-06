@@ -117,7 +117,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'chord',
     icon: '♫',
-    accent: '#8B5CF6',
+    accent: 'var(--studio-purple)',
     title: t('studio.cards.chord.title'),
     summary: chordSummary.value,
     show: true
@@ -125,7 +125,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'keyTempo',
     icon: '♯',
-    accent: '#06B6D4',
+    accent: 'var(--studio-cyan)',
     title: t('studio.cards.keyTempo.title'),
     summary: keyTempoSummary.value,
     show: true
@@ -133,7 +133,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'vocal',
     icon: '🎤',
-    accent: '#EC4899',
+    accent: 'var(--studio-pink)',
     title: t('studio.cards.vocal.title'),
     summary: vocalSummary.value,
     show: isVocalFirst.value
@@ -141,7 +141,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'arrangement',
     icon: '◈',
-    accent: '#60A5FA',
+    accent: 'var(--studio-blue)',
     title: t('studio.cards.arrangement.title'),
     summary: arrangementSummary.value,
     show: true
@@ -149,7 +149,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'effects',
     icon: '✦',
-    accent: '#F59E0B',
+    accent: 'var(--studio-orange)',
     title: t('studio.cards.effects.title'),
     summary: effectsSummary.value,
     show: true
@@ -157,7 +157,7 @@ const cards = computed<CardDef[]>(() => [
   {
     id: 'fineTune',
     icon: '⚙',
-    accent: '#A78BFA',
+    accent: 'var(--studio-purple-soft)',
     title: t('studio.cards.fineTune.title'),
     summary: fineTuneSummary.value,
     show: isVocalFirst.value
@@ -229,6 +229,7 @@ function applyAndStayOpen() {
       :open="openCardId !== null"
       :title="openCard?.title ?? ''"
       :icon="openCard?.icon"
+      :accent="openCard?.accent"
       :stale="studio.isStale.value"
       :generating="studio.isGenerating.value"
       @close="closeDrawer"
@@ -253,27 +254,27 @@ function applyAndStayOpen() {
 .studio-card-grid__rule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3));
+  background: linear-gradient(90deg, transparent, rgba(var(--studio-purple-rgb), 0.3));
 }
 
 .studio-card-grid__rule:last-of-type {
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.3), transparent);
+  background: linear-gradient(90deg, rgba(var(--studio-purple-rgb), 0.3), transparent);
 }
 
 .studio-card-grid__title {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(167, 139, 250, 0.85);
+  color: rgba(var(--studio-purple-soft-rgb), 0.85);
   margin: 0;
   flex-shrink: 0;
 }
 
 .studio-card-grid__hint {
   font-size: 0.72rem;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   text-align: center;
   margin: 0 0 1rem;
 }

@@ -43,24 +43,24 @@ const displayValue = computed(() => {
 
 <style scoped>
 .range-slider {
-  --slider-accent: var(--step-accent, #8B5CF6);
+  --slider-accent: var(--step-accent, var(--studio-purple));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .range-slider__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .range-slider__value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--slider-accent);
 }

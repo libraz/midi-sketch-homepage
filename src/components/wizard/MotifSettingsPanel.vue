@@ -223,8 +223,8 @@ const motifRhythmDensityOptions = [
 
 <style scoped>
 .motif-settings {
-  --accent-color: var(--step-accent, #60A5FA);
-  --accent-rgb: 96, 165, 250;
+  --accent-color: var(--step-accent, var(--studio-blue));
+  --accent-rgb: var(--studio-blue-rgb);
   padding: 1rem;
   background: rgba(var(--accent-rgb), 0.05);
   border: 1px solid rgba(var(--accent-rgb), 0.15);
@@ -251,10 +251,10 @@ const motifRhythmDensityOptions = [
 }
 
 .motif-settings__title {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .motif-settings__grid {
@@ -288,14 +288,14 @@ const motifRhythmDensityOptions = [
 .motif-param__label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 /* Toggle Group */
 .toggle-group {
   display: flex;
   gap: 0.25rem;
-  background: rgba(20, 20, 28, 0.6);
+  background: rgba(var(--studio-panel-rgb), 0.6);
   border-radius: 8px;
   padding: 0.25rem;
 }
@@ -306,21 +306,21 @@ const motifRhythmDensityOptions = [
   background: transparent;
   border: none;
   border-radius: 6px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .toggle-btn:hover {
-  color: rgba(250, 250, 250, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 .toggle-btn--active {
   background: rgba(var(--accent-rgb), 0.2);
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 /* Slider Row */
@@ -351,7 +351,7 @@ const motifRhythmDensityOptions = [
 }
 
 .motif-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--accent-color);
@@ -386,7 +386,7 @@ const motifRhythmDensityOptions = [
   flex-shrink: 0;
   width: 40px;
   height: 22px;
-  background: rgba(60, 60, 80, 0.6);
+  background: rgba(var(--studio-ink-rgb), 0.2);
   border-radius: 11px;
   position: relative;
   transition: background 0.2s ease;
@@ -399,7 +399,7 @@ const motifRhythmDensityOptions = [
   left: 3px;
   width: 16px;
   height: 16px;
-  background: rgba(250, 250, 250, 0.8);
+  background: rgba(var(--studio-ink-rgb), 0.8);
   border-radius: 50%;
   transition: transform 0.2s ease;
 }
@@ -419,15 +419,15 @@ const motifRhythmDensityOptions = [
 }
 
 .switch-label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .switch-desc {
   font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
 }
 
 /* Motif Detail */

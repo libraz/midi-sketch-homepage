@@ -197,8 +197,8 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 
 <style scoped>
 .bpm-control {
-  --accent-color: var(--step-accent, #8B5CF6);
-  --accent-rgb: var(--accent-rgb-value, 139, 92, 246);
+  --accent-color: var(--step-accent, var(--studio-purple));
+  --accent-rgb: var(--accent-rgb-value, var(--studio-purple-rgb));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -220,6 +220,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   padding: 0.625rem 1rem;
   padding-bottom: 1.75rem; /* Space for warning */
   margin-bottom: -1rem; /* Pull up slider */
+  /* LCD screen face: stays dark in both themes, like a real device display. */
   background:
     linear-gradient(180deg,
       rgba(8, 8, 12, 0.95) 0%,
@@ -337,7 +338,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 /* 7-Segment LED Display Style */
 .bpm-display__value {
   --beat-duration: 0.5s;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 2.25rem;
   font-weight: 700;
   color: #C4B5FD;
@@ -376,7 +377,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 }
 
 .bpm-display__unit {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 500;
   color: rgba(var(--accent-rgb), 0.5);
@@ -461,8 +462,8 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   align-items: center;
   gap: 0.375rem;
   padding: 0.2rem 0.5rem;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(var(--studio-orange-rgb), 0.15);
+  border: 1px solid rgba(var(--studio-orange-rgb), 0.3);
   border-radius: 4px;
   white-space: nowrap;
   z-index: 10;
@@ -472,8 +473,8 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #FBBF24;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  background: var(--studio-amber);
+  box-shadow: 0 0 6px rgba(var(--studio-amber-rgb), 0.6);
   animation: warningBlink 1s ease-in-out infinite;
 }
 
@@ -483,16 +484,16 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 }
 
 .bpm-range-warning__text {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 500;
-  color: #FCD34D;
+  color: var(--studio-amber);
 }
 
 .bpm-range-warning__hint {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: rgba(252, 211, 77, 0.7);
+  color: rgba(var(--studio-amber-rgb), 0.7);
 }
 
 /* Warning transition */
@@ -530,8 +531,8 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   height: 10px;
   border-radius: 5px;
   overflow: visible;
-  background: rgba(30, 30, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--studio-panel-raised-rgb), 0.8);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.05);
 }
 
 .bpm-zone {
@@ -544,16 +545,16 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 .bpm-zone--extended-left {
   left: 0;
   background: linear-gradient(90deg,
-    rgba(100, 100, 120, 0.2) 0%,
-    rgba(100, 100, 120, 0.15) 100%
+    rgba(var(--studio-ink-rgb), 0.2) 0%,
+    rgba(var(--studio-ink-rgb), 0.15) 100%
   );
   border-radius: 5px 0 0 5px;
 }
 
 .bpm-zone--extended-right {
   background: linear-gradient(90deg,
-    rgba(100, 100, 120, 0.15) 0%,
-    rgba(100, 100, 120, 0.2) 100%
+    rgba(var(--studio-ink-rgb), 0.15) 0%,
+    rgba(var(--studio-ink-rgb), 0.2) 100%
   );
   border-radius: 0 5px 5px 0;
 }
@@ -562,7 +563,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   background: linear-gradient(90deg,
     rgba(var(--accent-rgb), 0.3) 0%,
     rgba(var(--accent-rgb), 0.45) 50%,
-    rgba(236, 72, 153, 0.3) 100%
+    rgba(var(--studio-pink-rgb), 0.3) 100%
   );
   border-top: 1px solid rgba(var(--accent-rgb), 0.5);
   border-bottom: 1px solid rgba(var(--accent-rgb), 0.5);
@@ -596,10 +597,10 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 }
 
 .bpm-edge-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
 }
 
 /* Boundary markers */
@@ -632,7 +633,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   bottom: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 600;
   color: var(--accent-color);
@@ -649,10 +650,11 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   margin-left: -9px;
   margin-top: -4px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%);
+  background: linear-gradient(135deg, var(--studio-purple-soft) 0%, var(--studio-purple) 50%, var(--studio-purple) 100%);
   box-shadow:
     0 0 12px rgba(var(--accent-rgb), 0.6),
-    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 2px 8px var(--studio-shadow-mid),
+    /* knob bezel sheen */
     inset 0 1px 2px rgba(255, 255, 255, 0.3);
   transition: transform 0.1s ease, box-shadow 0.2s ease;
   z-index: 3;
@@ -693,15 +695,16 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 }
 
 .bpm-thumb-indicator--outside {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #B45309 100%);
+  background: linear-gradient(135deg, var(--studio-amber) 0%, var(--studio-orange) 50%, var(--studio-orange) 100%);
   box-shadow:
-    0 0 16px rgba(245, 158, 11, 0.6),
-    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 16px rgba(var(--studio-orange-rgb), 0.6),
+    0 2px 8px var(--studio-shadow-mid),
+    /* knob bezel sheen */
     inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
 .bpm-thumb-indicator--outside .bpm-thumb-indicator__pulse {
-  border-color: rgba(245, 158, 11, 0.5);
+  border-color: rgba(var(--studio-orange-rgb), 0.5);
 }
 
 /* Slider input */
@@ -738,7 +741,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   flex-direction: column;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  background: rgba(30, 30, 42, 0.6);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
   border: 1px solid rgba(var(--accent-rgb), 0.15);
   border-radius: 8px;
   cursor: pointer;
@@ -765,14 +768,14 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
 }
 
 .tempo-preset__bpm {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 .tempo-preset--active .tempo-preset__bpm {
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .tempo-preset--compact .tempo-preset__bpm {
@@ -785,7 +788,7 @@ const showRightBoundaryLabel = computed(() => props.recommendedMax < 172)
   top: 4px;
   right: 4px;
   font-size: 0.6rem;
-  color: #FBBF24;
+  color: var(--studio-amber);
 }
 
 .tempo-preset--compact .tempo-preset__star {

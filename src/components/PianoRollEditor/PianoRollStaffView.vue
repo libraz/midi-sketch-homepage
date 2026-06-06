@@ -1,7 +1,34 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useData } from 'vitepress'
 import type { PlacedNote, ChordAtBar } from './types'
 import { PPQ } from './types'
+
+const { isDark } = useData()
+
+/**
+ * Theme-aware colors for the notation canvas. The canvas cannot read CSS custom
+ * properties, so the demo theme tokens are mirrored here. Dark values reproduce
+ * the legacy hardcoded colors so dark rendering stays pixel-identical; light
+ * values render conventional dark-on-light notation tuned for a light panel.
+ */
+const staffColors = computed(() => {
+  const dark = isDark.value
+  // Neutral ink (staff lines, clefs, notes); dark = white, light = dark ink.
+  const inkChannels = dark ? '255, 255, 255' : '24, 20, 35'
+  return {
+    /** Canvas background fill. */
+    background: dark ? 'rgba(12, 12, 18, 0.98)' : 'rgba(252, 252, 255, 0.98)',
+    /** Solid ink (beams, fallback note heads/stems). */
+    inkSolid: dark ? '#FFFFFF' : '#181423',
+    /** Translucent ink at the given alpha. */
+    ink: (alpha: number) => `rgba(${inkChannels}, ${alpha})`,
+    /** Purple accent for bar lines. */
+    barLine: dark ? 'rgba(139, 92, 246, 0.4)' : 'rgba(124, 58, 237, 0.45)',
+    /** Highlight color for the currently playing note and the playhead. */
+    playing: dark ? '#F87171' : '#DC2626',
+  }
+})
 
 const props = defineProps<{
   placedNotes?: PlacedNote[]
@@ -213,12 +240,14 @@ function draw() {
   ctx.scale(dpr, dpr)
   ctx.clearRect(0, 0, width, height)
 
+  const colors = staffColors.value
+
   // Background
-  ctx.fillStyle = 'rgba(12, 12, 18, 0.98)'
+  ctx.fillStyle = colors.background
   ctx.fillRect(0, 0, width, height)
 
   // Draw treble staff lines
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'
+  ctx.strokeStyle = colors.ink(0.4)
   ctx.lineWidth = 1
   for (let i = 0; i < 5; i++) {
     const y = TREBLE_TOP + i * LINE_SPACING
@@ -238,7 +267,7 @@ function draw() {
   }
 
   // Draw grand staff brace (simplified)
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+  ctx.strokeStyle = colors.ink(0.5)
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.moveTo(6, TREBLE_TOP)
@@ -248,11 +277,11 @@ function draw() {
   // Draw treble clef
   const g4LineY = TREBLE_TOP + 3 * LINE_SPACING
   if (fontLoaded.value) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.fillStyle = colors.ink(0.7)
     ctx.font = '32px Bravura'
     ctx.fillText(SMUFL.gClef, 13, g4LineY)
   } else {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.fillStyle = colors.ink(0.6)
     ctx.font = '32px serif'
     ctx.fillText('\u{1D11E}', 11, g4LineY + 8)
   }
@@ -261,18 +290,18 @@ function draw() {
   // SMuFL F clef baseline is at F3 line (2nd line from top = 4th from bottom)
   const f3LineY = BASS_TOP + 1 * LINE_SPACING
   if (fontLoaded.value) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.fillStyle = colors.ink(0.7)
     ctx.font = '32px Bravura'
     ctx.fillText(SMUFL.fClef, 13, f3LineY)
   } else {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.fillStyle = colors.ink(0.6)
     ctx.font = '32px serif'
     ctx.fillText('\u{1D122}', 13, f3LineY + 15)
   }
 
   // Draw time signature (4/4) at beginning
   if (fontLoaded.value) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.fillStyle = colors.ink(0.7)
     ctx.font = '24px Bravura'
     // Treble staff time signature
     ctx.fillText(SMUFL.timeSig4, 42, TREBLE_TOP + 1.5 * LINE_SPACING - 5)
@@ -281,7 +310,7 @@ function draw() {
     ctx.fillText(SMUFL.timeSig4, 42, BASS_TOP + 1.5 * LINE_SPACING - 5)
     ctx.fillText(SMUFL.timeSig4, 42, BASS_TOP + 3.5 * LINE_SPACING - 5)
   } else {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.fillStyle = colors.ink(0.6)
     ctx.font = 'bold 14px sans-serif'
     // Treble staff
     ctx.fillText('4', 44, TREBLE_TOP + 1.5 * LINE_SPACING + 2)
@@ -292,7 +321,7 @@ function draw() {
   }
 
   // Draw bar lines (spanning both staves)
-  ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)'
+  ctx.strokeStyle = colors.barLine
   ctx.lineWidth = 1
   for (let bar = 0; bar <= props.totalBars; bar++) {
     const x = tickToX(bar * 4 * PPQ)
@@ -302,7 +331,7 @@ function draw() {
     ctx.stroke()
 
     if (bar > 0 && bar <= props.totalBars) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+      ctx.fillStyle = colors.ink(0.3)
       ctx.font = '9px JetBrains Mono, monospace'
       ctx.fillText(String(bar), x - tickToX(2 * PPQ) + 2, TREBLE_TOP - 4)
     }
@@ -344,10 +373,10 @@ function draw() {
                             props.playheadTick >= note.startTick &&
                             props.playheadTick < noteEndTick
 
-      const noteColor = isNotePlaying ? '#F87171' : '#FFFFFF'  // Red when playing, white otherwise
+      const noteColor = isNotePlaying ? colors.playing : colors.inkSolid  // Highlighted when playing
 
       // Draw ledger lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'
+      ctx.strokeStyle = colors.ink(0.4)
       ctx.lineWidth = 1
 
       if (y >= bottomLineY + LINE_SPACING / 2) {
@@ -374,7 +403,7 @@ function draw() {
       const isSharp = noteName.includes('#')
 
       if (isSharp) {
-        ctx.fillStyle = isNotePlaying ? '#F87171' : 'rgba(255, 255, 255, 0.9)'
+        ctx.fillStyle = isNotePlaying ? colors.playing : colors.ink(0.9)
         if (fontLoaded.value) {
           ctx.font = '16px Bravura'
           ctx.fillText(SMUFL.accidentalSharp, x - 12, y + 5)
@@ -399,7 +428,7 @@ function draw() {
       } else {
         // Fallback
         if (noteType === 'whole' || noteType === 'half') {
-          ctx.strokeStyle = '#FFFFFF'
+          ctx.strokeStyle = colors.inkSolid
           ctx.lineWidth = 2
           ctx.beginPath()
           ctx.ellipse(x + NOTE_HEAD_WIDTH / 2, y, NOTE_HEAD_WIDTH / 2, NOTE_HEAD_HEIGHT / 2, -0.3, 0, Math.PI * 2)
@@ -474,7 +503,7 @@ function draw() {
           const midX = (x + NOTE_HEAD_WIDTH + nextX) / 2
           const tieControlY = stemUp ? tieY + 8 : tieY - 8
 
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+          ctx.strokeStyle = colors.ink(0.7)
           ctx.lineWidth = 1.5
           ctx.beginPath()
           ctx.moveTo(x + NOTE_HEAD_WIDTH, tieY)
@@ -486,7 +515,7 @@ function draw() {
       // Draw duration extension line for long notes
       const noteEndX = tickToX(note.startTick + note.duration)
       if (note.duration > QUARTER_NOTE && noteEndX > x + NOTE_HEAD_WIDTH + 20) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+        ctx.strokeStyle = colors.ink(0.3)
         ctx.lineWidth = 1
         ctx.setLineDash([2, 2])
         ctx.beginPath()
@@ -528,7 +557,7 @@ function draw() {
       const beamIntercept = firstStem.y - beamSlope * firstStem.x
 
       // Redraw stems to connect to beam
-      ctx.strokeStyle = '#FFFFFF'
+      ctx.strokeStyle = colors.inkSolid
       ctx.lineWidth = 1.2
       for (let i = 0; i < stemEnds.length; i++) {
         const stem = stemEnds[i]
@@ -545,7 +574,7 @@ function draw() {
       }
 
       // Draw primary beam (8th note level)
-      ctx.fillStyle = '#FFFFFF'
+      ctx.fillStyle = colors.inkSolid
       ctx.beginPath()
       if (stemUp) {
         ctx.moveTo(firstStem.x, stemEnds[0].y)
@@ -648,12 +677,12 @@ function draw() {
                         props.playheadTick >= startTick &&
                         props.playheadTick < endTick
 
-      const bassColor = isPlaying ? '#F87171' : 'rgba(255, 255, 255, 0.9)'
+      const bassColor = isPlaying ? colors.playing : colors.ink(0.9)
 
       // Only draw note head if not tied from previous
       if (!isTiedFromPrev) {
         // Draw ledger lines for bass notes if needed
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'
+        ctx.strokeStyle = colors.ink(0.4)
         ctx.lineWidth = 1
 
         if (y >= bassBottomLineY + LINE_SPACING / 2) {
@@ -725,7 +754,7 @@ function draw() {
   if (props.playheadTick !== null && props.playheadTick !== undefined) {
     const playheadX = tickToX(props.playheadTick)
 
-    ctx.strokeStyle = '#F87171'
+    ctx.strokeStyle = colors.playing
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(playheadX, TREBLE_TOP - 5)
@@ -733,7 +762,7 @@ function draw() {
     ctx.stroke()
 
     // Triangle marker
-    ctx.fillStyle = '#F87171'
+    ctx.fillStyle = colors.playing
     ctx.beginPath()
     ctx.moveTo(playheadX - 5, TREBLE_TOP - 5)
     ctx.lineTo(playheadX + 5, TREBLE_TOP - 5)
@@ -798,6 +827,7 @@ watch(() => props.zoomLevel, () => {
   })
 })
 watch(() => props.totalBars, draw)
+watch(isDark, draw)
 
 // Mouse event handlers for note hover detection
 const hoveredPitch = ref<number | null>(null)
@@ -882,8 +912,8 @@ defineExpose({
   width: 100%;
   overflow-x: scroll;
   overflow-y: hidden;
-  background: rgba(12, 12, 18, 0.98);
-  border-top: 1px solid rgba(139, 92, 246, 0.15);
+  background: rgba(var(--studio-panel-deep-rgb), 0.98);
+  border-top: 1px solid rgba(var(--studio-purple-rgb), 0.15);
   /* Hide scrollbar but allow programmatic scroll */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */

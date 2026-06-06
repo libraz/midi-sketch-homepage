@@ -67,15 +67,23 @@ const keepMotifOnRegenerate = ref(false)
 // Playback handlers
 // ============================================
 
+// Playback options derived from the current song image (drum kit etc.)
+const playOptions = computed(() => ({
+  drumKit: store.currentSongImage.value?.drumKit,
+}))
+
 async function togglePlay() {
-  if (!eventData.value) return
-  await playerTogglePlay(eventData.value)
+  // While regenerating, the visible events are about to be replaced —
+  // starting playback on them would desync from the regen restore logic.
+  if (!eventData.value || studio.isGenerating.value) return
+  await playerTogglePlay(eventData.value, playOptions.value)
 }
 
 function handleSeek(tick: number) {
+  if (studio.isGenerating.value) return
   stop()
   if (eventData.value) {
-    play(eventData.value, tick)
+    play(eventData.value, tick, playOptions.value)
   }
 }
 
@@ -84,7 +92,7 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
   if (isPlaying.value && eventData.value) {
     const currentPos = currentTick.value
     stop()
-    play(eventData.value, currentPos)
+    play(eventData.value, currentPos, playOptions.value)
   }
 }
 
@@ -103,17 +111,20 @@ function shuffleVocal() {
 
 <template>
   <div class="studio-player">
-    <!-- Loading / Generating / Error State -->
+    <!-- Loading / Generating / Error State.
+         The generating spinner only shows for the initial generation; while a
+         preview exists, regeneration happens in place so the player (scroll
+         position, mixer state, playback) survives the update. -->
     <GenerationState
       :is-loading="studio.status.value === 'init'"
-      :is-generating="studio.status.value === 'generating-vocal' || studio.status.value === 'generating-accomp'"
+      :is-generating="studio.isGenerating.value && !eventData"
       :error="studio.error.value"
       :loading-text="t('studio.player.initializing')"
       :generating-text="generatingText"
     />
 
-    <!-- Preview Player -->
-    <template v-if="studio.isReady.value && eventData">
+    <!-- Preview Player (kept mounted during regeneration) -->
+    <template v-if="eventData">
       <!-- Stale indicator: settings changed since last generation -->
       <button
         v-if="studio.isStale.value"
@@ -132,6 +143,7 @@ function shuffleVocal() {
         :is-paused="isPaused"
         :is-soundfont-loading="isSoundfontLoading"
         :is-soundfont-ready="isSoundfontReady"
+        :disabled="studio.isGenerating.value"
         :just-regenerated="studio.justRegenerated.value"
         :title="isVocalFirst ? t('finalStep.preview') : t('bgmGenerationStep.preview')"
         :regenerated-text="t('finalStep.regenerated')"
@@ -153,12 +165,19 @@ function shuffleVocal() {
 
       <div class="studio-player__actions">
         <!-- Keep Motif option (RhythmSync blueprints only) -->
-        <label v-if="isVocalFirst && isRhythmSync" class="keep-motif-toggle">
+        <label
+          v-if="isVocalFirst && isRhythmSync"
+          class="keep-motif-toggle"
+          :class="{ 'keep-motif-toggle--on': keepMotifOnRegenerate }"
+        >
           <input type="checkbox" v-model="keepMotifOnRegenerate" />
-          <span class="keep-motif-toggle__box" aria-hidden="true"></span>
+          <span class="keep-motif-toggle__switch" aria-hidden="true"></span>
           <span class="keep-motif-toggle__text">
             <span class="keep-motif-toggle__label">{{ t('vocalGenerationStep.keepMotif.label') }}</span>
             <span class="keep-motif-toggle__desc">{{ t('vocalGenerationStep.keepMotif.description') }}</span>
+          </span>
+          <span class="keep-motif-toggle__state" aria-hidden="true">
+            {{ keepMotifOnRegenerate ? 'ON' : 'OFF' }}
           </span>
         </label>
 
@@ -197,7 +216,7 @@ function shuffleVocal() {
 
 <style scoped>
 .studio-player {
-  --accent-rgb: 139, 92, 246;
+  --accent-rgb: var(--studio-purple-rgb);
   text-align: center;
 }
 
@@ -207,27 +226,27 @@ function shuffleVocal() {
   gap: 0.5rem;
   margin-bottom: 0.75rem;
   padding: 0.45rem 0.9rem;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(var(--studio-orange-rgb), 0.12);
+  border: 1px solid rgba(var(--studio-orange-rgb), 0.35);
   border-radius: 100px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 600;
-  color: #FBBF24;
+  color: var(--studio-amber);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .studio-player__stale-pill:hover {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(var(--studio-orange-rgb), 0.2);
+  border-color: rgba(var(--studio-orange-rgb), 0.5);
 }
 
 .studio-player__stale-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #F59E0B;
+  background: var(--studio-orange);
   animation: stale-pulse 1.5s ease-in-out infinite;
 }
 
@@ -238,8 +257,12 @@ function shuffleVocal() {
 
 .studio-player__stale-action {
   padding-left: 0.5rem;
-  border-left: 1px solid rgba(245, 158, 11, 0.3);
-  color: #FDE68A;
+  border-left: 1px solid rgba(var(--studio-orange-rgb), 0.3);
+  color: var(--studio-amber);
+}
+
+.dark .studio-player__stale-action {
+  color: #fde68a;
 }
 
 .studio-player__edited {
@@ -248,11 +271,11 @@ function shuffleVocal() {
   gap: 0.4rem;
   margin-top: 0.75rem;
   padding: 0.4rem 0.8rem;
-  background: rgba(236, 72, 153, 0.1);
-  border: 1px solid rgba(236, 72, 153, 0.2);
+  background: rgba(var(--studio-pink-rgb), 0.1);
+  border: 1px solid rgba(var(--studio-pink-rgb), 0.2);
   border-radius: 100px;
   font-size: 0.8rem;
-  color: #F472B6;
+  color: var(--studio-pink-soft);
 }
 
 .studio-player__actions {
@@ -262,65 +285,122 @@ function shuffleVocal() {
   margin-top: 1.25rem;
 }
 
-/* Keep Motif toggle (RhythmSync only) */
+/* Keep Motif toggle (RhythmSync only).
+   Styled as a hardware switch tied to the pink melody-regenerate action
+   it modifies: pink track + glowing ON readout when engaged. */
 .keep-motif-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  padding: 0.625rem 0.875rem;
-  background: rgba(139, 92, 246, 0.06);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.keep-motif-toggle input {
-  display: none;
-}
-
-.keep-motif-toggle__box {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  border: 1.5px solid rgba(167, 139, 250, 0.6);
-  border-radius: 5px;
   position: relative;
-  transition: all 0.15s ease;
-}
-
-.keep-motif-toggle input:checked + .keep-motif-toggle__box {
-  background: #8B5CF6;
-  border-color: #8B5CF6;
-}
-
-.keep-motif-toggle input:checked + .keep-motif-toggle__box::after {
-  content: '✓';
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: white;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(var(--studio-panel-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s ease;
+}
+
+.keep-motif-toggle:hover {
+  border-color: rgba(var(--studio-pink-rgb), 0.35);
+}
+
+.keep-motif-toggle--on {
+  background: rgba(var(--studio-pink-rgb), 0.06);
+  border-color: rgba(var(--studio-pink-rgb), 0.4);
+}
+
+/* Visually hidden but still focusable for keyboard users */
+.keep-motif-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Switch track */
+.keep-motif-toggle__switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  border-radius: 100px;
+  background: rgba(var(--studio-ink-rgb), 0.12);
+  box-shadow: inset 0 1px 3px var(--studio-shadow-mid);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Switch thumb */
+.keep-motif-toggle__switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.keep-motif-toggle input:checked ~ .keep-motif-toggle__switch {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 12px -2px rgba(var(--studio-pink-rgb), 0.5);
+}
+
+.keep-motif-toggle input:checked ~ .keep-motif-toggle__switch::after {
+  transform: translateX(14px);
+}
+
+.keep-motif-toggle input:focus-visible ~ .keep-motif-toggle__switch {
+  outline: 2px solid var(--studio-pink);
+  outline-offset: 2px;
 }
 
 .keep-motif-toggle__text {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .keep-motif-toggle__label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.85);
+  color: rgba(var(--studio-ink-rgb), 0.85);
 }
 
 .keep-motif-toggle__desc {
   font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.5);
+  line-height: 1.4;
+  color: rgba(var(--studio-ink-rgb), 0.5);
+}
+
+/* Hardware-style state readout */
+.keep-motif-toggle__state {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  color: rgba(var(--studio-ink-rgb), 0.35);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
+  transition: all 0.25s ease;
+}
+
+.keep-motif-toggle--on .keep-motif-toggle__state {
+  color: var(--studio-pink);
+  background: rgba(var(--studio-pink-rgb), 0.1);
+  border-color: rgba(var(--studio-pink-rgb), 0.3);
+  text-shadow: 0 0 8px rgba(var(--studio-pink-rgb), 0.4);
 }
 </style>

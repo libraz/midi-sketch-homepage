@@ -154,10 +154,10 @@ const phraseLengthModel = computed({
 
 <style scoped>
 .fine-tune-card {
-  --step-accent: #EC4899;
-  --accent-rgb: 236, 72, 153;
-  --section-accent: #EC4899;
-  --section-accent-rgb: 236, 72, 153;
+  --step-accent: var(--studio-pink);
+  --accent-rgb: var(--studio-pink-rgb);
+  --section-accent: var(--studio-pink);
+  --section-accent-rgb: var(--studio-pink-rgb);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -195,7 +195,7 @@ const phraseLengthModel = computed({
 .detail-param__label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 .detail-param__slider-row {
@@ -230,7 +230,7 @@ const phraseLengthModel = computed({
 }
 
 .detail-param__value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--step-accent);
@@ -242,7 +242,7 @@ const phraseLengthModel = computed({
 .detail-toggle-group {
   display: flex;
   gap: 0.25rem;
-  background: rgba(20, 20, 28, 0.6);
+  background: rgba(var(--studio-panel-rgb), 0.6);
   border-radius: 8px;
   padding: 0.25rem;
 }
@@ -253,20 +253,20 @@ const phraseLengthModel = computed({
   background: transparent;
   border: none;
   border-radius: 6px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .detail-toggle-btn:hover {
-  color: rgba(250, 250, 250, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 .detail-toggle-btn--active {
   background: rgba(var(--accent-rgb), 0.2);
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 </style>

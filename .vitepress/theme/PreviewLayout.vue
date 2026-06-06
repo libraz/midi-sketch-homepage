@@ -422,7 +422,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 .preview-page {
   --preview-bg: #050508;
@@ -436,7 +435,7 @@ onUnmounted(() => {
   background: var(--preview-bg);
   display: flex;
   flex-direction: column;
-  font-family: 'Instrument Sans', -apple-system, sans-serif;
+  font-family: var(--font-body);
 }
 
 /* Backdrop */
@@ -649,7 +648,7 @@ onUnmounted(() => {
 }
 
 .summary-chip__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.55rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.45);
@@ -658,7 +657,7 @@ onUnmounted(() => {
 }
 
 .summary-chip__value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 500;
   color: rgba(168, 85, 247, 0.9);
@@ -696,7 +695,7 @@ onUnmounted(() => {
 }
 
 .summary-item__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.6rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.5);
@@ -705,7 +704,7 @@ onUnmounted(() => {
 }
 
 .summary-item__value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--preview-text);
@@ -728,7 +727,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   border: none;
   border-radius: 12px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

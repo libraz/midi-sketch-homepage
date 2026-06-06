@@ -66,69 +66,70 @@ const emit = defineEmits<{
   transform: translateY(-2px);
 }
 
-/* Color variants */
+/* Color variants. Saturated brand gradients stay literal so the call-to-action
+   reads the same in both themes; only the colored glow uses the accent token. */
 .regen-card--orange {
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   box-shadow:
-    0 4px 16px -4px rgba(245, 158, 11, 0.4),
+    0 4px 16px -4px rgba(var(--studio-orange-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .regen-card--orange:hover {
   box-shadow:
-    0 8px 24px -4px rgba(245, 158, 11, 0.5),
+    0 8px 24px -4px rgba(var(--studio-orange-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .regen-card--pink {
   background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
   box-shadow:
-    0 4px 16px -4px rgba(236, 72, 153, 0.4),
+    0 4px 16px -4px rgba(var(--studio-pink-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .regen-card--pink:hover {
   box-shadow:
-    0 8px 24px -4px rgba(236, 72, 153, 0.5),
+    0 8px 24px -4px rgba(var(--studio-pink-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .regen-card--purple {
   background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
   box-shadow:
-    0 4px 16px -4px rgba(139, 92, 246, 0.4),
+    0 4px 16px -4px rgba(var(--studio-purple-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .regen-card--purple:hover {
   box-shadow:
-    0 8px 24px -4px rgba(139, 92, 246, 0.5),
+    0 8px 24px -4px rgba(var(--studio-purple-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .regen-card--green {
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   box-shadow:
-    0 4px 16px -4px rgba(16, 185, 129, 0.4),
+    0 4px 16px -4px rgba(var(--studio-green-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .regen-card--green:hover {
   box-shadow:
-    0 8px 24px -4px rgba(16, 185, 129, 0.5),
+    0 8px 24px -4px rgba(var(--studio-green-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .regen-card--blue {
   background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
   box-shadow:
-    0 4px 16px -4px rgba(96, 165, 250, 0.4),
+    0 4px 16px -4px rgba(var(--studio-blue-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .regen-card--blue:hover {
   box-shadow:
-    0 8px 24px -4px rgba(96, 165, 250, 0.5),
+    0 8px 24px -4px rgba(var(--studio-blue-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -148,7 +149,7 @@ const emit = defineEmits<{
 
 .history-inline:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.25);
-  color: white;
+  color: var(--studio-on-accent);
 }
 
 .history-inline:active:not(:disabled) {
@@ -180,10 +181,10 @@ const emit = defineEmits<{
   border: none;
   border-left: 1px solid rgba(255, 255, 255, 0.15);
   border-right: 1px solid rgba(255, 255, 255, 0.15);
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--studio-on-accent);
   cursor: pointer;
   transition: all 0.2s ease;
 }

@@ -133,7 +133,7 @@ function scrollToSection(sectionIndex: number) {
   background: rgba(10, 10, 15, 0.95);
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 16px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
 }
 
 .editor-wrapper {

@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 import { fileURLToPath, URL } from 'node:url'
 
-const siteUrl = 'https://midi-sketch.libraz.net'
+const siteUrl = 'https://midisketch.libraz.net'
 const githubUrl = 'https://github.com/libraz/midi-sketch'
 
 // JSON-LD: SoftwareApplication schema
@@ -134,7 +134,9 @@ export default withMermaid(defineConfig({
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap', rel: 'stylesheet' }],
+    // Site-wide web fonts (single source of truth — do not @import fonts in components)
+    // Display: Space Grotesk / Body: Plus Jakarta Sans + Zen Kaku Gothic New (ja) / Mono: JetBrains Mono
+    ['link', { href: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap', rel: 'stylesheet' }],
 
     // JSON-LD structured data
     ['script', { type: 'application/ld+json' }, JSON.stringify(softwareApplicationJsonLd)],
@@ -288,8 +290,8 @@ export default withMermaid(defineConfig({
       { icon: 'github', link: githubUrl }
     ],
     footer: {
-      message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2024-present libraz'
+      message:
+        'a personal project by <a href="https://libraz.net" target="_blank" rel="noopener">libraz</a>'
     }
   },
 

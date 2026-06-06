@@ -61,11 +61,11 @@ const emit = defineEmits<{
   position: fixed;
   z-index: 1000;
   min-width: 120px;
-  background: rgba(22, 22, 32, 0.98);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(var(--studio-panel-rgb), 0.98);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.3);
   border-radius: 6px;
   padding: 0.3rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px var(--studio-shadow-strong);
   backdrop-filter: blur(12px);
 }
 
@@ -77,7 +77,7 @@ const emit = defineEmits<{
 .context-menu__label {
   font-size: 0.55rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 0.2rem 0.4rem;
@@ -90,7 +90,7 @@ const emit = defineEmits<{
   background: transparent;
   border: none;
   border-radius: 3px;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   font-size: 0.7rem;
   text-align: left;
   cursor: pointer;
@@ -98,36 +98,36 @@ const emit = defineEmits<{
 }
 
 .context-menu__item:hover {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(var(--studio-purple-rgb), 0.2);
 }
 
 .context-menu__item--danger {
-  color: #F87171;
+  color: var(--studio-red);
 }
 
 .context-menu__item--danger:hover {
-  background: rgba(248, 113, 113, 0.15);
+  background: rgba(var(--studio-red-rgb), 0.15);
 }
 
 .context-menu__item--split {
-  color: #FBBF24;
+  color: var(--studio-amber);
 }
 
 .context-menu__item--split:hover {
-  background: rgba(251, 191, 36, 0.15);
+  background: rgba(var(--studio-amber-rgb), 0.15);
 }
 
 .context-menu__item--merge {
-  color: #4ADE80;
+  color: var(--studio-green);
 }
 
 .context-menu__item--merge:hover {
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(var(--studio-green-rgb), 0.15);
 }
 
 .context-menu__divider {
   height: 1px;
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(var(--studio-purple-rgb), 0.15);
   margin: 0.25rem 0;
 }
 </style>

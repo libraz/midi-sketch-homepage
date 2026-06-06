@@ -1,3 +1,5 @@
+import type { DrumKitName } from '@/utils/gmInstruments'
+
 export interface SongImage {
   id: string
   name: {
@@ -19,6 +21,8 @@ export interface SongImage {
   recommendedChords: number[]
   tempoRange: { min: number; max: number; default: number }
   defaultTimbre: string
+  /** Drum machine kit used for demo playback / audio export */
+  drumKit: DrumKitName
 }
 
 export const songImages: SongImage[] = [
@@ -43,7 +47,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [2],
     recommendedChords: [0, 1, 2],
     tempoRange: { min: 125, max: 145, default: 138 },
-    defaultTimbre: 'idol_light'
+    defaultTimbre: 'idol_light',
+    drumKit: 'LM-2'
   },
   {
     id: 'idol-energy',
@@ -65,7 +70,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [2, 5],
     recommendedChords: [0, 2, 4],
     tempoRange: { min: 140, max: 160, default: 148 },
-    defaultTimbre: 'pop_bright'
+    defaultTimbre: 'pop_bright',
+    drumKit: 'TR-808'
   },
   {
     id: 'idol-emotional',
@@ -87,7 +93,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [2, 4],
     recommendedChords: [1, 3, 5],
     tempoRange: { min: 90, max: 115, default: 100 },
-    defaultTimbre: 'idol_light'
+    defaultTimbre: 'idol_light',
+    drumKit: 'LM-2'
   },
 
   // ===== POP (MinimalGroovePop=0, CityPopStyle=8, YoasobiStyle=5, AnthemStyle=12, RockStandard=3) =====
@@ -111,7 +118,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [0],
     recommendedChords: [0, 1, 5],
     tempoRange: { min: 110, max: 130, default: 120 },
-    defaultTimbre: 'pop_clean'
+    defaultTimbre: 'pop_clean',
+    drumKit: 'LM-2'
   },
   {
     id: 'citypop',
@@ -133,7 +141,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [8],
     recommendedChords: [3, 7, 10],
     tempoRange: { min: 95, max: 115, default: 110 },
-    defaultTimbre: 'pop_clean'
+    defaultTimbre: 'pop_clean',
+    drumKit: 'LM-2'
   },
   {
     id: 'anime-song',
@@ -155,7 +164,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [5, 12],
     recommendedChords: [2, 4, 5],
     tempoRange: { min: 130, max: 155, default: 148 },
-    defaultTimbre: 'pop_bright'
+    defaultTimbre: 'pop_bright',
+    drumKit: 'LM-2'
   },
   {
     id: 'vocaloid-anime',
@@ -177,7 +187,31 @@ export const songImages: SongImage[] = [
     stylePresetIds: [14],
     recommendedChords: [2, 0, 6],
     tempoRange: { min: 150, max: 180, default: 170 },
-    defaultTimbre: 'pop_bright'
+    defaultTimbre: 'pop_bright',
+    drumKit: 'Casio-RZ1'
+  },
+  {
+    id: 'vocaloid-drive',
+    name: {
+      en: 'Vocaloid Drive',
+      ja: 'ボカロ・ドライブ'
+    },
+    tagline: {
+      en: 'Locked riffs, relentless drive',
+      ja: '刻み続けるリフ、疾走感MAX'
+    },
+    description: {
+      en: 'Rhythm-locked vocaloid style: a fixed riff hammers chord pulses and sixteenths under a hook-heavy melody',
+      ja: 'リフ固定でコードパルスと16分を刻み続ける、フック全開のリズム駆動ボカロスタイル'
+    },
+    icon: 'mdi-rocket-launch',
+    color: '#7C4DFF',
+    category: 'pop',
+    stylePresetIds: [14],
+    recommendedChords: [5, 3, 10],
+    tempoRange: { min: 132, max: 175, default: 158 },
+    defaultTimbre: 'pop_bright',
+    drumKit: 'TR-808'
   },
   {
     id: 'rock-pop',
@@ -199,7 +233,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [3],
     recommendedChords: [0, 4, 8],
     tempoRange: { min: 120, max: 145, default: 125 },
-    defaultTimbre: 'rock_dist'
+    defaultTimbre: 'rock_dist',
+    drumKit: 'LM-2'
   },
 
   // ===== DANCE (DancePopStandard=1, FutureBassStyle=7, SynthwaveStyle=6, ElectroMotif=11) =====
@@ -223,7 +258,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [1],
     recommendedChords: [0, 1, 4],
     tempoRange: { min: 118, max: 135, default: 128 },
-    defaultTimbre: 'dance_modern'
+    defaultTimbre: 'dance_modern',
+    drumKit: 'Roland CR-8000'
   },
   {
     id: 'edm-synth',
@@ -245,7 +281,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [7],
     recommendedChords: [0, 4, 9],
     tempoRange: { min: 125, max: 150, default: 145 },
-    defaultTimbre: 'dance_modern'
+    defaultTimbre: 'dance_modern',
+    drumKit: 'TR-808'
   },
   {
     id: 'synthwave',
@@ -267,7 +304,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [6],
     recommendedChords: [0, 1, 9],
     tempoRange: { min: 100, max: 125, default: 118 },
-    defaultTimbre: 'synth_retro'
+    defaultTimbre: 'synth_retro',
+    drumKit: 'LM-2'
   },
   {
     id: 'electronica',
@@ -289,7 +327,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [11],
     recommendedChords: [0, 1, 4],
     tempoRange: { min: 120, max: 140, default: 135 },
-    defaultTimbre: 'dance_modern'
+    defaultTimbre: 'dance_modern',
+    drumKit: 'MFB-512'
   },
 
   // ===== BALLAD (BalladStandard=4, CityPopStyle=8, ChillMotif=10, MotifDriven=9) =====
@@ -313,7 +352,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [4],
     recommendedChords: [1, 3, 5],
     tempoRange: { min: 65, max: 85, default: 72 },
-    defaultTimbre: 'ballad_warm'
+    defaultTimbre: 'ballad_warm',
+    drumKit: 'LM-2'
   },
   {
     id: 'love-song',
@@ -335,7 +375,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [4, 8],
     recommendedChords: [1, 3, 5],
     tempoRange: { min: 85, max: 105, default: 95 },
-    defaultTimbre: 'pop_clean'
+    defaultTimbre: 'pop_clean',
+    drumKit: 'LM-2'
   },
   {
     id: 'chill-relax',
@@ -357,7 +398,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [10],
     recommendedChords: [5, 7, 10],
     tempoRange: { min: 80, max: 100, default: 90 },
-    defaultTimbre: 'chill_pad'
+    defaultTimbre: 'chill_pad',
+    drumKit: 'MFB-512'
   },
   {
     id: 'instrumental',
@@ -379,7 +421,8 @@ export const songImages: SongImage[] = [
     stylePresetIds: [9, 10],
     recommendedChords: [0, 5, 7],
     tempoRange: { min: 90, max: 120, default: 105 },
-    defaultTimbre: 'ambient_soft'
+    defaultTimbre: 'ambient_soft',
+    drumKit: 'MFB-512'
   }
 ]
 
@@ -401,7 +444,7 @@ export const songImageCategories: SongImageCategory[] = [
     id: 'pop',
     name: { en: 'Pop', ja: 'ポップス' },
     icon: 'mdi-music',
-    images: ['jpop-standard', 'citypop', 'anime-song', 'vocaloid-anime', 'rock-pop']
+    images: ['jpop-standard', 'citypop', 'anime-song', 'vocaloid-anime', 'vocaloid-drive', 'rock-pop']
   },
   {
     id: 'dance',

@@ -365,8 +365,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
 <style scoped>
 .chord-card-panel {
-  --step-accent: #8B5CF6;
-  --accent-rgb: 139, 92, 246;
+  --step-accent: var(--studio-purple);
+  --accent-rgb: var(--studio-purple-rgb);
   overflow: visible;
 }
 
@@ -395,8 +395,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
 .chord-card {
   position: relative;
-  background: rgba(20, 20, 28, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-panel-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.1);
   border-radius: 16px;
   padding: 1.25rem;
   cursor: pointer;
@@ -411,7 +411,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   inset: 0;
   background: radial-gradient(
     ellipse 100% 80% at 50% 120%,
-    rgba(139, 92, 246, 0.15),
+    rgba(var(--studio-purple-rgb), 0.15),
     transparent 60%
   );
   opacity: 0;
@@ -427,7 +427,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   left: 50%;
   width: 0;
   height: 0;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--studio-purple-rgb), 0.4) 0%, transparent 70%);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -435,7 +435,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-card:hover {
-  border-color: rgba(139, 92, 246, 0.25);
+  border-color: rgba(var(--studio-purple-rgb), 0.25);
   transform: translateY(-2px);
 }
 
@@ -469,7 +469,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 .chord-card--selected {
   border-color: var(--step-accent);
   border-width: 2px;
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(var(--studio-purple-rgb), 0.12);
   animation: selected-glow 2s ease-in-out infinite;
 }
 
@@ -477,7 +477,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   opacity: 1;
   background: radial-gradient(
     ellipse 120% 100% at 50% 100%,
-    rgba(139, 92, 246, 0.25),
+    rgba(var(--studio-purple-rgb), 0.25),
     transparent 60%
   );
 }
@@ -485,20 +485,20 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 @keyframes selected-glow {
   0%, 100% {
     box-shadow:
-      0 0 0 3px rgba(139, 92, 246, 0.15),
-      0 0 24px -4px rgba(139, 92, 246, 0.3),
-      inset 0 0 20px -10px rgba(139, 92, 246, 0.2);
+      0 0 0 3px rgba(var(--studio-purple-rgb), 0.15),
+      0 0 24px -4px rgba(var(--studio-purple-rgb), 0.3),
+      inset 0 0 20px -10px rgba(var(--studio-purple-rgb), 0.2);
   }
   50% {
     box-shadow:
-      0 0 0 4px rgba(139, 92, 246, 0.2),
-      0 0 36px -4px rgba(139, 92, 246, 0.4),
-      inset 0 0 30px -10px rgba(139, 92, 246, 0.3);
+      0 0 0 4px rgba(var(--studio-purple-rgb), 0.2),
+      0 0 36px -4px rgba(var(--studio-purple-rgb), 0.4),
+      inset 0 0 30px -10px rgba(var(--studio-purple-rgb), 0.3);
   }
 }
 
 .chord-card--recommended {
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(var(--studio-orange-rgb), 0.3);
 }
 
 .chord-card--playing {
@@ -514,16 +514,16 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 @keyframes playing-pulse {
   0%, 100% {
     box-shadow:
-      0 0 0 2px rgba(139, 92, 246, 0.3),
-      0 0 30px -4px rgba(139, 92, 246, 0.5),
-      0 0 60px -8px rgba(139, 92, 246, 0.3);
+      0 0 0 2px rgba(var(--studio-purple-rgb), 0.3),
+      0 0 30px -4px rgba(var(--studio-purple-rgb), 0.5),
+      0 0 60px -8px rgba(var(--studio-purple-rgb), 0.3);
     transform: translateY(-2px);
   }
   50% {
     box-shadow:
-      0 0 0 4px rgba(139, 92, 246, 0.4),
-      0 0 50px -4px rgba(139, 92, 246, 0.6),
-      0 0 80px -8px rgba(139, 92, 246, 0.4);
+      0 0 0 4px rgba(var(--studio-purple-rgb), 0.4),
+      0 0 50px -4px rgba(var(--studio-purple-rgb), 0.6),
+      0 0 80px -8px rgba(var(--studio-purple-rgb), 0.4);
     transform: translateY(-4px);
   }
 }
@@ -532,14 +532,14 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   0%, 100% {
     background: radial-gradient(
       ellipse 100% 80% at 50% 120%,
-      rgba(139, 92, 246, 0.3),
+      rgba(var(--studio-purple-rgb), 0.3),
       transparent 60%
     );
   }
   50% {
     background: radial-gradient(
       ellipse 120% 100% at 50% 100%,
-      rgba(139, 92, 246, 0.5),
+      rgba(var(--studio-purple-rgb), 0.5),
       transparent 70%
     );
   }
@@ -547,13 +547,13 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
 @keyframes playing-border {
   0% {
-    border-color: rgba(139, 92, 246, 0.6);
+    border-color: rgba(var(--studio-purple-rgb), 0.6);
   }
   50% {
-    border-color: rgba(236, 72, 153, 0.6);
+    border-color: rgba(var(--studio-pink-rgb), 0.6);
   }
   100% {
-    border-color: rgba(139, 92, 246, 0.6);
+    border-color: rgba(var(--studio-purple-rgb), 0.6);
   }
 }
 
@@ -561,9 +561,9 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  color: #F59E0B;
+  color: var(--studio-orange);
   font-size: 0.9rem;
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.5));
+  filter: drop-shadow(0 0 8px rgba(var(--studio-orange-rgb), 0.5));
 }
 
 .chord-card__header {
@@ -574,10 +574,10 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-card__name {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0;
 }
 
@@ -587,8 +587,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: rgba(var(--studio-purple-rgb), 0.15);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.25);
   border-radius: 50%;
   color: var(--step-accent);
   font-size: 0.75rem;
@@ -611,9 +611,9 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-card__play:hover {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(var(--studio-purple-rgb), 0.3);
   transform: scale(1.1);
-  box-shadow: 0 0 20px -4px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 20px -4px rgba(var(--studio-purple-rgb), 0.5);
 }
 
 .chord-card__play:hover::before {
@@ -627,8 +627,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-card__play--active {
-  background: linear-gradient(135deg, var(--step-accent), #EC4899);
-  color: white;
+  background: linear-gradient(135deg, var(--step-accent), var(--studio-pink));
+  color: var(--studio-on-accent);
   border-color: transparent;
   animation: play-active-pulse 0.6s ease-in-out infinite;
 }
@@ -640,14 +640,14 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 @keyframes play-active-pulse {
   0%, 100% {
     box-shadow:
-      0 0 0 0 rgba(139, 92, 246, 0.4),
-      0 0 20px -2px rgba(139, 92, 246, 0.6);
+      0 0 0 0 rgba(var(--studio-purple-rgb), 0.4),
+      0 0 20px -2px rgba(var(--studio-purple-rgb), 0.6);
     transform: scale(1);
   }
   50% {
     box-shadow:
-      0 0 0 4px rgba(139, 92, 246, 0.2),
-      0 0 30px -2px rgba(236, 72, 153, 0.6);
+      0 0 0 4px rgba(var(--studio-purple-rgb), 0.2),
+      0 0 30px -2px rgba(var(--studio-pink-rgb), 0.6);
     transform: scale(1.05);
   }
 }
@@ -670,13 +670,18 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   overflow-x: auto;
   overflow-y: visible;
   padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.2);
+  /* Recessed well behind the colorful chord chips */
+  background: rgba(var(--studio-ink-rgb), 0.06);
   border-radius: 12px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   /* Hide scrollbar but keep scrollable */
   scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+  scrollbar-color: rgba(var(--studio-purple-rgb), 0.3) transparent;
+}
+
+.dark .chord-flow {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Webkit scrollbar styling */
@@ -689,12 +694,12 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-flow::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(var(--studio-purple-rgb), 0.3);
   border-radius: 2px;
 }
 
 .chord-flow::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.5);
+  background: rgba(var(--studio-purple-rgb), 0.5);
 }
 
 .chord-badge {
@@ -743,7 +748,8 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.25);
+  /* Sits over the chord-flow well, not the badge fill, so it follows the theme */
+  color: rgba(var(--studio-ink-rgb), 0.25);
   z-index: 1;
 }
 
@@ -821,7 +827,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-badge__note {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1.1rem;
   font-weight: 700;
   color: white;
@@ -834,7 +840,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 }
 
 .chord-badge__degree {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
@@ -850,7 +856,7 @@ async function handleBadgeClick(chordId: number, index: number, degree: string) 
 
 .chord-card__description {
   font-size: 0.8rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   margin: 0;
   line-height: 1.4;
 }

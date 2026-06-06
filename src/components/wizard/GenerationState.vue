@@ -30,14 +30,14 @@ defineProps<{
   align-items: center;
   gap: 1rem;
   padding: 2rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(var(--accent-rgb, 139, 92, 246), 0.2);
-  border-top-color: rgb(var(--accent-rgb, 139, 92, 246));
+  border: 3px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.2);
+  border-top-color: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -52,10 +52,10 @@ defineProps<{
   align-items: center;
   gap: 0.75rem;
   padding: 2rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(var(--studio-red-rgb), 0.1);
+  border: 1px solid rgba(var(--studio-red-rgb), 0.2);
   border-radius: 12px;
-  color: #FCA5A5;
+  color: var(--studio-red);
 }
 
 .error-state__icon {

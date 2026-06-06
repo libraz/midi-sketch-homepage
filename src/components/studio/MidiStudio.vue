@@ -131,23 +131,13 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Sans:wght@400;500;600;700&display=swap');
 
 .midi-studio {
-  --noir-bg-deep: #07070A;
-  --noir-bg-panel: rgba(14, 14, 20, 0.85);
-  --noir-purple: #8B5CF6;
-  --noir-purple-glow: rgba(139, 92, 246, 0.4);
-  --noir-pink: #EC4899;
-  --noir-text-primary: #FAFAFA;
-  --noir-text-muted: rgba(250, 250, 250, 0.35);
-  --noir-border: rgba(139, 92, 246, 0.12);
-
   position: relative;
-  background: var(--noir-bg-deep);
+  background: var(--studio-bg-deep);
   border-radius: 24px;
   overflow: hidden;
-  font-family: 'Instrument Sans', -apple-system, sans-serif;
+  font-family: var(--font-body);
   isolation: isolate;
 }
 
@@ -162,14 +152,14 @@ onUnmounted(() => {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.5;
+  opacity: var(--studio-orb-opacity);
   animation: orb-drift 20s ease-in-out infinite;
 }
 
 .midi-studio__gradient-orb--purple {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, var(--noir-purple) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--studio-purple) 0%, transparent 70%);
   top: -200px;
   left: -100px;
 }
@@ -177,7 +167,7 @@ onUnmounted(() => {
 .midi-studio__gradient-orb--pink {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, var(--noir-pink) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--studio-pink) 0%, transparent 70%);
   bottom: -100px;
   right: -50px;
   animation-delay: -10s;
@@ -193,7 +183,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.03;
+  opacity: var(--studio-noise-opacity);
   mix-blend-mode: overlay;
 }
 
@@ -212,15 +202,43 @@ onUnmounted(() => {
 
 .midi-studio__logo-icon {
   font-size: 1.5rem;
-  color: var(--noir-purple);
-  text-shadow: 0 0 20px var(--noir-purple-glow);
+  color: var(--studio-purple);
+  text-shadow: 0 0 20px rgba(var(--studio-purple-rgb), 0.4);
+  animation: logo-breathe 5s ease-in-out infinite;
+}
+
+@keyframes logo-breathe {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(var(--studio-purple-rgb), 0.4);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 28px rgba(var(--studio-purple-rgb), 0.7);
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .midi-studio__logo-icon {
+    animation: none;
+  }
 }
 
 .midi-studio__logo-text {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.75rem;
+  font-weight: 650;
   letter-spacing: 0.2em;
-  color: var(--noir-text-primary);
+  /* Gradient ink: text-primary fading into the purple accent at the tail */
+  background: linear-gradient(
+    100deg,
+    var(--studio-text-primary) 55%,
+    var(--studio-purple-soft) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--studio-text-primary); /* fallback */
 }
 
 .midi-studio__subtitle {
@@ -229,7 +247,7 @@ onUnmounted(() => {
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--noir-text-muted);
+  color: rgba(var(--studio-ink-rgb), 0.35);
 }
 
 .midi-studio__content {
@@ -239,16 +257,36 @@ onUnmounted(() => {
 }
 
 .midi-studio__panel {
-  background: var(--noir-bg-panel);
-  border: 1px solid var(--noir-border);
+  position: relative;
+  background: rgba(var(--studio-panel-deep-rgb), 0.85);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.12);
   border-radius: 20px;
   padding: 2rem;
   min-height: 400px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 24px 48px -12px rgba(0, 0, 0, 0.5);
+    0 0 0 1px rgba(var(--studio-ink-rgb), 0.03) inset,
+    0 24px 48px -12px var(--studio-shadow-strong);
+  overflow: hidden;
+}
+
+/* Powered-on rail: a thin accent gradient along the panel's top edge */
+.midi-studio__panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--studio-purple-rgb), 0.55) 35%,
+    rgba(var(--studio-pink-rgb), 0.45) 65%,
+    transparent
+  );
+  pointer-events: none;
 }
 
 .studio-fade-enter-active,

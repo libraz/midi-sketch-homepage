@@ -18,6 +18,7 @@ defineProps<{
   chordProgression?: string  // e.g., "I - V - vi - IV"
   musicKey?: number          // 0-11 (0=C)
   playRootNotes?: boolean    // Enable root note playback (default: false)
+  disabled?: boolean         // Disable transport controls (e.g. while regenerating)
 }>()
 
 // Emits
@@ -59,7 +60,7 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
           <TransportBar
             :is-playing="isPlaying"
             :is-paused="isPaused"
-            :disabled="!isSoundfontReady"
+            :disabled="!isSoundfontReady || disabled"
             :show-rewind="true"
             @toggle-play="emit('toggle-play')"
             @rewind="emit('rewind')"
@@ -94,18 +95,18 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
 @keyframes regenPulse {
   0% {
     box-shadow:
-      0 0 0 0 rgba(var(--accent-rgb, 139, 92, 246), 0.4),
-      0 0 30px 0 rgba(var(--accent-rgb, 139, 92, 246), 0.3);
+      0 0 0 0 rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.4),
+      0 0 30px 0 rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 8px rgba(var(--accent-rgb, 139, 92, 246), 0),
-      0 0 50px 10px rgba(var(--accent-rgb, 139, 92, 246), 0.2);
+      0 0 0 8px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0),
+      0 0 50px 10px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.2);
   }
   100% {
     box-shadow:
-      0 0 0 0 rgba(var(--accent-rgb, 139, 92, 246), 0),
-      0 0 0 0 rgba(var(--accent-rgb, 139, 92, 246), 0);
+      0 0 0 0 rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0),
+      0 0 0 0 rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0);
   }
 }
 
@@ -120,14 +121,16 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, rgba(var(--accent-rgb, 139, 92, 246), 0.95), rgba(var(--accent-dark-rgb, 124, 58, 237), 0.95));
+  /* Darker gradient stop falls back to the brand purple-700 so the badge keeps
+     its saturated two-stop look when no --accent-dark-rgb is supplied. */
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.95), rgba(var(--accent-dark-rgb, 124, 58, 237), 0.95));
   border-radius: 100px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--studio-on-accent);
   box-shadow:
-    0 8px 32px -4px rgba(var(--accent-rgb, 139, 92, 246), 0.5),
+    0 8px 32px -4px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.15) inset;
   backdrop-filter: blur(8px);
 }
@@ -175,10 +178,10 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
 }
 
 .preview-title {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -195,16 +198,16 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(var(--accent-rgb, 139, 92, 246), 0.1);
-  border: 1px solid rgba(var(--accent-rgb, 139, 92, 246), 0.2);
+  background: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.1);
+  border: 1px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.2);
   border-radius: 8px;
 }
 
 .soundfont-loading__spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(var(--accent-rgb, 139, 92, 246), 0.3);
-  border-top-color: rgb(var(--accent-rgb, 139, 92, 246));
+  border: 2px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.3);
+  border-top-color: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -214,10 +217,10 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
 }
 
 .soundfont-loading__text {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 @media (max-width: 640px) {

@@ -199,7 +199,7 @@ export const DEFAULT_CONFIG: WizardConfig = {
   modulationSemitones: 2,
 
   // SE/Call
-  seEnabled: true,
+  seEnabled: false,
   callEnabled: false,
   callNotesEnabled: true,
   introChant: 0,

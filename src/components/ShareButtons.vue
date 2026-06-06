@@ -115,11 +115,11 @@ function selectUrl() {
 
 .share-terminal {
   position: relative;
-  background: linear-gradient(180deg, rgba(10, 10, 16, 0.95) 0%, rgba(6, 6, 10, 0.98) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.15);
+  background: linear-gradient(180deg, rgba(var(--studio-panel-deep-rgb), 0.95) 0%, rgba(var(--studio-panel-deep-rgb), 0.98) 100%);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.15);
   border-radius: 10px;
   overflow: hidden;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
 }
 
 .share-terminal::before {
@@ -127,7 +127,7 @@ function selectUrl() {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+    radial-gradient(ellipse at 50% 0%, rgba(var(--studio-purple-rgb), 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -137,8 +137,8 @@ function selectUrl() {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-ink-rgb), 0.06);
+  border-bottom: 1px solid rgba(var(--studio-purple-rgb), 0.1);
 }
 
 .terminal-dots {
@@ -161,7 +161,7 @@ function selectUrl() {
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   text-transform: uppercase;
 }
 
@@ -173,7 +173,7 @@ function selectUrl() {
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: rgba(250, 250, 250, 0.35);
+  color: rgba(var(--studio-ink-rgb), 0.35);
   transition: color 0.3s ease;
 }
 
@@ -181,17 +181,17 @@ function selectUrl() {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(250, 250, 250, 0.25);
+  background: rgba(var(--studio-ink-rgb), 0.25);
   transition: all 0.3s ease;
 }
 
 .terminal-status--active {
-  color: #34D399;
+  color: var(--studio-green);
 }
 
 .terminal-status--active .status-dot {
-  background: #34D399;
-  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+  background: var(--studio-green);
+  box-shadow: 0 0 8px rgba(var(--studio-green-rgb), 0.6);
 }
 
 /* Terminal Body */
@@ -206,10 +206,10 @@ function selectUrl() {
 }
 
 .prompt-symbol {
-  color: #8B5CF6;
+  color: var(--studio-purple);
   font-size: 1rem;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+  text-shadow: 0 0 10px rgba(var(--studio-purple-rgb), 0.5);
   animation: prompt-pulse 2s ease-in-out infinite;
 }
 
@@ -223,9 +223,9 @@ function selectUrl() {
   background: transparent;
   border: none;
   outline: none;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: rgba(250, 250, 250, 0.85);
+  color: rgba(var(--studio-ink-rgb), 0.85);
   letter-spacing: -0.01em;
   padding: 0.5rem 0;
   cursor: text;
@@ -234,12 +234,12 @@ function selectUrl() {
 }
 
 .terminal-input::selection {
-  background: rgba(139, 92, 246, 0.4);
-  color: #FAFAFA;
+  background: rgba(var(--studio-purple-rgb), 0.4);
+  color: var(--studio-on-accent);
 }
 
 .terminal-input:focus {
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 /* Hint */
@@ -250,10 +250,10 @@ function selectUrl() {
   gap: 0.4rem;
   margin-top: 0.625rem;
   padding-top: 0.625rem;
-  border-top: 1px solid rgba(139, 92, 246, 0.08);
+  border-top: 1px solid rgba(var(--studio-purple-rgb), 0.08);
   font-size: 0.65rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   letter-spacing: 0.02em;
 }
 
@@ -286,21 +286,21 @@ function selectUrl() {
   gap: 0.625rem;
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.1);
   border-radius: 12px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .backup-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: rgba(250, 250, 250, 0.8);
+  background: rgba(var(--studio-ink-rgb), 0.08);
+  border-color: rgba(var(--studio-ink-rgb), 0.15);
+  color: rgba(var(--studio-ink-rgb), 0.8);
   transform: translateY(-2px);
 }
 
@@ -325,9 +325,9 @@ function selectUrl() {
 
 /* Copied State */
 .backup-btn--copied {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.2);
-  color: #34D399;
+  background: rgba(var(--studio-green-rgb), 0.1);
+  border-color: rgba(var(--studio-green-rgb), 0.2);
+  color: var(--studio-green);
 }
 
 .backup-btn--copied .backup-btn__icon {

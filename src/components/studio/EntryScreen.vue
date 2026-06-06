@@ -143,6 +143,7 @@ function selectStyle(id: string) {
           @keydown.enter="selectStyle(image.id)"
         >
           <div class="entry-card__glow"></div>
+          <span class="entry-card__watermark" aria-hidden="true">{{ getStyleIcon(image.category) }}</span>
           <div class="entry-card__content">
             <div class="entry-card__icon-wrap">
               <span class="entry-card__icon">{{ getStyleIcon(image.category) }}</span>
@@ -151,7 +152,10 @@ function selectStyle(id: string) {
             <p class="entry-card__tagline">{{ t(`songImages.${image.id}.tagline`) }}</p>
           </div>
           <span class="entry-card__bpm">BPM {{ image.tempoRange.min }}-{{ image.tempoRange.max }}</span>
-          <span class="entry-card__go">▶ {{ t('studio.entry.generate') }}</span>
+          <span class="entry-card__go">
+            <span class="entry-card__eq" aria-hidden="true"><i></i><i></i><i></i></span>
+            {{ t('studio.entry.generate') }}
+          </span>
         </article>
       </div>
     </div>
@@ -160,8 +164,8 @@ function selectStyle(id: string) {
 
 <style scoped>
 .entry-screen {
-  --step-accent: #8B5CF6;
-  --accent-rgb: 139, 92, 246;
+  --step-accent: var(--studio-purple);
+  --accent-rgb: var(--studio-purple-rgb);
 }
 
 /* Staggered page-load reveal */
@@ -175,6 +179,18 @@ function selectStyle(id: string) {
 .entry-screen__heading { animation-delay: 0.08s; }
 .entry-screen__hint { animation-delay: 0.14s; }
 .entry-grid { animation-delay: 0.2s; }
+
+/* Cards ripple in after the grid container */
+.entry-grid .entry-card {
+  animation: entry-reveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.entry-grid .entry-card:nth-child(1) { animation-delay: 0.26s; }
+.entry-grid .entry-card:nth-child(2) { animation-delay: 0.32s; }
+.entry-grid .entry-card:nth-child(3) { animation-delay: 0.38s; }
+.entry-grid .entry-card:nth-child(4) { animation-delay: 0.44s; }
+.entry-grid .entry-card:nth-child(5) { animation-delay: 0.5s; }
+.entry-grid .entry-card:nth-child(n + 6) { animation-delay: 0.56s; }
 
 @keyframes entry-reveal {
   from {
@@ -191,7 +207,9 @@ function selectStyle(id: string) {
   .entry-screen__flow,
   .entry-screen__heading,
   .entry-screen__hint,
-  .entry-grid {
+  .entry-grid,
+  .entry-grid .entry-card,
+  .entry-card__eq i {
     animation: none;
   }
 }
@@ -210,8 +228,8 @@ function selectStyle(id: string) {
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background: rgba(20, 20, 28, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-panel-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.1);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -220,22 +238,30 @@ function selectStyle(id: string) {
 }
 
 .entry-flow-option--vocal {
-  --card-accent: #EC4899;
+  --card-accent: var(--studio-pink);
 }
 
 .entry-flow-option--bgm {
-  --card-accent: #60A5FA;
+  --card-accent: var(--studio-blue);
 }
 
 .entry-flow-option:hover {
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: rgba(var(--studio-purple-rgb), 0.3);
 }
 
 .entry-flow-option--selected,
 .entry-flow-option--selected:hover {
   border-color: var(--card-accent);
-  background: rgba(139, 92, 246, 0.08);
-  box-shadow: 0 0 0 1px var(--card-accent);
+  /* Tint follows the option's own accent (pink for vocal, blue for BGM) */
+  background: color-mix(in srgb, var(--card-accent) 8%, transparent);
+  box-shadow:
+    0 0 0 1px var(--card-accent),
+    0 0 24px -8px color-mix(in srgb, var(--card-accent) 50%, transparent);
+}
+
+.entry-flow-option:focus-visible {
+  outline: 2px solid var(--card-accent, var(--studio-purple));
+  outline-offset: 2px;
 }
 
 .entry-flow-option__icon {
@@ -253,12 +279,12 @@ function selectStyle(id: string) {
 .entry-flow-option__title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .entry-flow-option__desc {
   font-size: 0.72rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   line-height: 1.35;
 }
 
@@ -273,7 +299,7 @@ function selectStyle(id: string) {
   justify-content: center;
   background: var(--card-accent);
   border-radius: 50%;
-  color: white;
+  color: var(--studio-on-accent);
   font-size: 0.65rem;
   font-weight: 700;
 }
@@ -289,28 +315,29 @@ function selectStyle(id: string) {
 .entry-screen__rule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.35));
+  background: linear-gradient(90deg, transparent, rgba(var(--studio-purple-rgb), 0.35));
 }
 
 .entry-screen__rule:last-of-type {
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.35), transparent);
+  background: linear-gradient(90deg, rgba(var(--studio-purple-rgb), 0.35), transparent);
 }
 
 .entry-screen__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.65rem;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0.12em;
-  color: #FAFAFA;
+  text-transform: uppercase;
+  color: var(--studio-text-primary);
   margin: 0;
   text-align: center;
   flex-shrink: 0;
-  text-shadow: 0 0 30px rgba(139, 92, 246, 0.35);
+  text-shadow: 0 0 30px rgba(var(--studio-purple-rgb), 0.35);
 }
 
 .entry-screen__hint {
   font-size: 0.82rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   text-align: center;
   margin: 0 0 1.25rem;
 }
@@ -326,8 +353,8 @@ function selectStyle(id: string) {
   display: flex;
   flex-direction: column;
   min-height: 180px;
-  background: rgba(20, 20, 28, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-panel-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.1);
   border-radius: 16px;
   padding: 1.5rem;
   cursor: pointer;
@@ -340,7 +367,7 @@ function selectStyle(id: string) {
   inset: 0;
   background: radial-gradient(
     ellipse 80% 60% at 50% 120%,
-    var(--card-accent, #8B5CF6),
+    var(--card-accent, var(--studio-purple)),
     transparent 60%
   );
   opacity: 0;
@@ -350,15 +377,36 @@ function selectStyle(id: string) {
 
 .entry-card:hover,
 .entry-card:focus-visible {
-  border-color: var(--card-accent, rgba(139, 92, 246, 0.25));
+  border-color: var(--card-accent, rgba(var(--studio-purple-rgb), 0.25));
   transform: translateY(-4px);
-  box-shadow: 0 16px 48px -16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 48px -16px var(--studio-shadow-strong);
   outline: none;
 }
 
 .entry-card:hover .entry-card__glow,
 .entry-card:focus-visible .entry-card__glow {
   opacity: 0.2;
+}
+
+/* Oversized ghost glyph bleeding off the top-right corner */
+.entry-card__watermark {
+  position: absolute;
+  top: -1.25rem;
+  right: -0.75rem;
+  font-size: 6.5rem;
+  line-height: 1;
+  color: var(--card-accent, var(--studio-purple));
+  opacity: 0.06;
+  transform: rotate(12deg);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.entry-card:hover .entry-card__watermark,
+.entry-card:focus-visible .entry-card__watermark {
+  opacity: 0.12;
+  transform: rotate(8deg) scale(1.08);
 }
 
 .entry-card__content {
@@ -372,29 +420,29 @@ function selectStyle(id: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
+  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.15), rgba(var(--studio-pink-rgb), 0.1));
   border-radius: 12px;
   margin-bottom: 1rem;
 }
 
 .entry-card__icon {
   font-size: 1.5rem;
-  color: var(--card-accent, #8B5CF6);
-  filter: drop-shadow(0 0 8px var(--card-accent, rgba(139, 92, 246, 0.4)));
+  color: var(--card-accent, var(--studio-purple));
+  filter: drop-shadow(0 0 8px var(--card-accent, rgba(var(--studio-purple-rgb), 0.4)));
 }
 
 .entry-card__name {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1.1rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0 0 0.375rem;
   letter-spacing: -0.01em;
 }
 
 .entry-card__tagline {
   font-size: 0.85rem;
-  color: rgba(250, 250, 250, 0.55);
+  color: rgba(var(--studio-ink-rgb), 0.55);
   margin: 0;
   line-height: 1.4;
   padding-bottom: 1.75rem;
@@ -404,24 +452,32 @@ function selectStyle(id: string) {
   position: absolute;
   bottom: 0.75rem;
   right: 0.75rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
   padding: 0.25rem 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--studio-ink-rgb), 0.06);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
   border-radius: 4px;
   z-index: 1;
+}
+
+/* Dark keeps the original darkening overlay behind the badge */
+.dark .entry-card__bpm {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .entry-card__go {
   position: absolute;
   bottom: 0.75rem;
   left: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--card-accent, #8B5CF6);
+  color: var(--card-accent, var(--studio-purple));
   opacity: 0;
   transform: translateX(-4px);
   transition: all 0.25s ease;
@@ -432,6 +488,34 @@ function selectStyle(id: string) {
 .entry-card:focus-visible .entry-card__go {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* Tiny equalizer: three bars bouncing while the card is hovered */
+.entry-card__eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 0.7rem;
+}
+
+.entry-card__eq i {
+  width: 2.5px;
+  height: 30%;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.entry-card:hover .entry-card__eq i,
+.entry-card:focus-visible .entry-card__eq i {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.entry-card__eq i:nth-child(2) { animation-delay: 0.15s; }
+.entry-card__eq i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes eq-bounce {
+  0%, 100% { height: 30%; }
+  50% { height: 100%; }
 }
 
 @media (max-width: 640px) {

@@ -1,9 +1,48 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useData } from 'vitepress'
 import { useI18n } from '@/composables/useI18n'
 import { parseChordProgression, generateChordTimings, getChordName, type ChordInfo, type ChordTiming } from '@/utils/chordUtils'
 
 const { t } = useI18n()
+const { isDark } = useData()
+
+/**
+ * Theme-aware colors for the canvas piano roll. The canvas cannot read CSS
+ * custom properties, so the demo theme tokens are mirrored here as flat values.
+ * The dark branch reproduces the legacy hardcoded colors verbatim so dark
+ * rendering stays pixel-identical; the light branch is the light-theme
+ * equivalent tuned for contrast on a light background.
+ */
+const canvasColors = computed(() => {
+  const dark = isDark.value
+  // Neutral ink: white on dark, dark ink on light.
+  const inkChannels = dark ? '255, 255, 255' : '24, 20, 35'
+  // Purple accent for bar/beat lines.
+  const purpleChannels = dark ? '139, 92, 246' : '124, 58, 237'
+  return {
+    /** Full-canvas background fill. */
+    background: dark ? 'rgba(12, 12, 18, 0.95)' : 'rgba(252, 252, 255, 0.95)',
+    /** Base shading for black-key rows. */
+    blackKeyRow: dark ? 'rgba(0, 0, 0, 0.15)' : 'rgba(24, 20, 35, 0.05)',
+    /** Base shading for white-key rows. */
+    whiteKeyRow: dark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(24, 20, 35, 0.01)',
+    /** Horizontal per-semitone grid lines. */
+    horizontalGridLine: `rgba(${inkChannels}, 0.03)`,
+    /** Emphasized vertical line at each bar group (every 4 bars). */
+    barGroupLine: `rgba(${purpleChannels}, 0.25)`,
+    /** Faint vertical bar lines. */
+    barLine: `rgba(${purpleChannels}, 0.1)`,
+    /** Bar-number labels. */
+    barNumber: `rgba(${inkChannels}, ${dark ? 0.3 : 0.5})`,
+    /** Stroke outlining notes on the top (Vocal/Aux) tracks. */
+    noteHighlight: `rgba(${inkChannels}, ${dark ? 0.2 : 0.35})`,
+    /** Pink playhead line and glow. */
+    playhead: dark ? '#EC4899' : '#DB2777',
+    /** Pink channels for the playhead gradient glow. */
+    playheadGlowChannels: dark ? '236, 72, 153' : '219, 39, 119',
+  }
+})
 
 interface Note {
   track?: number
@@ -70,7 +109,15 @@ const TRACK_COLOR_MAP: Record<string, string> = {
   'SE': '#F472B6',
 }
 
-const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }> = {
+interface SectionColorSet {
+  bg: string
+  glow: string
+  text: string
+}
+
+// Section bg tints and glow accents read on both themes; only the label text
+// flips, since the dark-tuned pastels are unreadable on a light background.
+const SECTION_COLORS_DARK: Record<string, SectionColorSet> = {
   Intro: { bg: 'rgba(59, 130, 246, 0.15)', glow: '#3B82F6', text: '#93C5FD' },
   A: { bg: 'rgba(139, 92, 246, 0.15)', glow: '#8B5CF6', text: '#C4B5FD' },
   B: { bg: 'rgba(236, 72, 153, 0.15)', glow: '#EC4899', text: '#F9A8D4' },
@@ -79,6 +126,18 @@ const SECTION_COLORS: Record<string, { bg: string; glow: string; text: string }>
   Outro: { bg: 'rgba(99, 102, 241, 0.15)', glow: '#6366F1', text: '#A5B4FC' },
   Break: { bg: 'rgba(168, 85, 247, 0.15)', glow: '#A855F7', text: '#D8B4FE' },
 }
+
+const SECTION_COLORS_LIGHT: Record<string, SectionColorSet> = {
+  Intro: { bg: 'rgba(59, 130, 246, 0.15)', glow: '#3B82F6', text: '#1D4ED8' },
+  A: { bg: 'rgba(139, 92, 246, 0.15)', glow: '#8B5CF6', text: '#6D28D9' },
+  B: { bg: 'rgba(236, 72, 153, 0.15)', glow: '#EC4899', text: '#BE185D' },
+  Chorus: { bg: 'rgba(245, 158, 11, 0.15)', glow: '#F59E0B', text: '#B45309' },
+  Bridge: { bg: 'rgba(16, 185, 129, 0.15)', glow: '#10B981', text: '#047857' },
+  Outro: { bg: 'rgba(99, 102, 241, 0.15)', glow: '#6366F1', text: '#4338CA' },
+  Break: { bg: 'rgba(168, 85, 247, 0.15)', glow: '#A855F7', text: '#7E22CE' },
+}
+
+const sectionColors = computed(() => (isDark.value ? SECTION_COLORS_DARK : SECTION_COLORS_LIGHT))
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
@@ -251,13 +310,37 @@ const visibleTracks = computed(() => {
   return props.events.tracks.filter(t => t.name !== 'Drums' && t.notes?.length > 0)
 })
 
+/**
+ * Piano key rows for the left gutter, top (max pitch) to bottom (min pitch).
+ * Key rows shrink to fit the fixed-height container, so when they get shorter
+ * than the label text, per-semitone labels overlap into an unreadable smear.
+ * Below that threshold only octave labels (C3, C4, ...) are shown, as in DAWs.
+ */
+const pianoKeyRows = computed(() => {
+  const { min, max } = noteRange.value
+  const rowHeight = canvasHeight.value / (max - min + 1)
+  const showAllLabels = rowHeight >= 10
+  const rows = []
+  for (let pitch = max; pitch >= min; pitch--) {
+    const name = NOTE_NAMES[pitch % 12]
+    const octave = Math.floor(pitch / 12) - 1
+    rows.push({
+      pitch,
+      isBlack: name.includes('#') || name.includes('b'),
+      isOctaveStart: pitch % 12 === 0,
+      label: showAllLabels ? `${name}${octave}` : (pitch % 12 === 0 ? `C${octave}` : null),
+    })
+  }
+  return rows
+})
+
 
 function getTrackColor(trackName: string): string {
   return TRACK_COLOR_MAP[trackName] || '#8B5CF6'
 }
 
-function getSectionColor(type: string) {
-  return SECTION_COLORS[type] || SECTION_COLORS['A']
+function getSectionColor(type: string): SectionColorSet {
+  return sectionColors.value[type] || sectionColors.value['A']
 }
 
 function getSectionDisplayName(section: Section): string {
@@ -289,6 +372,7 @@ function draw() {
 
   const width = canvasWidth.value
   const height = canvasHeight.value
+  const colors = canvasColors.value
 
   // Clear
   ctx.clearRect(0, 0, width * dpr.value, height * dpr.value)
@@ -296,7 +380,7 @@ function draw() {
   ctx.scale(dpr.value, dpr.value)
 
   // Background
-  ctx.fillStyle = 'rgba(12, 12, 18, 0.95)'
+  ctx.fillStyle = colors.background
   ctx.fillRect(0, 0, width, height)
 
   // Draw horizontal grid lines (pitch lanes)
@@ -306,10 +390,10 @@ function draw() {
     const noteName = NOTE_NAMES[note % 12]
     const isBlack = noteName.includes('#') || noteName.includes('b')
 
-    ctx.fillStyle = isBlack ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.02)'
+    ctx.fillStyle = isBlack ? colors.blackKeyRow : colors.whiteKeyRow
     ctx.fillRect(0, y, width, noteH)
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'
+    ctx.strokeStyle = colors.horizontalGridLine
     ctx.beginPath()
     ctx.moveTo(0, y + noteH)
     ctx.lineTo(width, y + noteH)
@@ -325,14 +409,14 @@ function draw() {
     const x = tickToX(bar * barTicks) - scrollLeft.value
     if (x < 0 || x > width) continue
 
-    ctx.strokeStyle = bar % 4 === 0 ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.1)'
+    ctx.strokeStyle = bar % 4 === 0 ? colors.barGroupLine : colors.barLine
     ctx.beginPath()
     ctx.moveTo(x, 0)
     ctx.lineTo(x, height)
     ctx.stroke()
 
     // Bar numbers
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+    ctx.fillStyle = colors.barNumber
     ctx.font = '10px JetBrains Mono, monospace'
     ctx.fillText(String(bar + 1), x + 4, 12)
   }
@@ -375,7 +459,7 @@ function draw() {
 
       // Highlight for top tracks
       if (track.name === 'Vocal' || track.name === 'Aux') {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+        ctx.strokeStyle = colors.noteHighlight
         ctx.lineWidth = 0.5
         ctx.stroke()
       }
@@ -391,15 +475,15 @@ function draw() {
       // Glow
       const gradient = ctx.createLinearGradient(playheadX - 10, 0, playheadX + 10, 0)
       gradient.addColorStop(0, 'transparent')
-      gradient.addColorStop(0.5, 'rgba(236, 72, 153, 0.3)')
+      gradient.addColorStop(0.5, `rgba(${colors.playheadGlowChannels}, 0.3)`)
       gradient.addColorStop(1, 'transparent')
       ctx.fillStyle = gradient
       ctx.fillRect(playheadX - 10, 0, 20, height)
 
       // Line
-      ctx.strokeStyle = '#EC4899'
+      ctx.strokeStyle = colors.playhead
       ctx.lineWidth = 2
-      ctx.shadowColor = '#EC4899'
+      ctx.shadowColor = colors.playhead
       ctx.shadowBlur = 8
       ctx.beginPath()
       ctx.moveTo(playheadX, 0)
@@ -522,10 +606,18 @@ watch(() => props.currentTick, () => {
   if (!props.isPlaying) draw()
 })
 
+// Redraw canvas when the appearance (light/dark) toggles
+watch(canvasColors, () => {
+  if (!props.isPlaying) draw()
+})
+
 // Lifecycle
 onMounted(() => {
   setupCanvas()
   window.addEventListener('resize', setupCanvas)
+  // If mounted mid-playback (e.g. remounted while audio is running), the
+  // isPlaying watcher never fires — start the animation loop explicitly.
+  if (props.isPlaying) startAnimation()
 })
 
 onUnmounted(() => {
@@ -677,13 +769,16 @@ onUnmounted(() => {
       <!-- Piano Keys -->
       <div class="piano-keys">
         <div
-          v-for="note in (noteRange.max - noteRange.min + 1)"
-          :key="noteRange.max - note + 1"
+          v-for="row in pianoKeyRows"
+          :key="row.pitch"
           class="piano-key"
-          :class="{ 'piano-key--black': NOTE_NAMES[(noteRange.max - note + 1) % 12].includes('#') || NOTE_NAMES[(noteRange.max - note + 1) % 12].includes('b') }"
-          :style="{ height: `${100 / (noteRange.max - noteRange.min + 1)}%` }"
+          :class="{
+            'piano-key--black': row.isBlack,
+            'piano-key--octave': row.isOctaveStart,
+          }"
+          :style="{ height: `${100 / pianoKeyRows.length}%` }"
         >
-          <span class="piano-key__label">{{ NOTE_NAMES[(noteRange.max - note + 1) % 12] }}{{ Math.floor((noteRange.max - note + 1) / 12) - 1 }}</span>
+          <span v-if="row.label" class="piano-key__label">{{ row.label }}</span>
         </div>
       </div>
 
@@ -721,16 +816,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 .piano-roll {
-  --accent: #8B5CF6;
-  --accent-glow: rgba(139, 92, 246, 0.4);
-  --surface: rgba(12, 12, 18, 0.95);
-  --surface-elevated: rgba(22, 22, 32, 0.9);
-  --border: rgba(139, 92, 246, 0.12);
-  --text-primary: #FAFAFA;
-  --text-secondary: rgba(250, 250, 250, 0.5);
+  --accent: var(--studio-purple);
+  --accent-glow: rgba(var(--studio-purple-rgb), 0.4);
+  --surface: rgba(var(--studio-panel-deep-rgb), 0.95);
+  --surface-elevated: rgba(var(--studio-panel-rgb), 0.9);
+  --border: rgba(var(--studio-purple-rgb), 0.12);
+  --text-primary: var(--studio-text-primary);
+  --text-secondary: rgba(var(--studio-ink-rgb), 0.5);
 
   display: flex;
   flex-direction: column;
@@ -738,7 +832,7 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
 }
 
 /* Transport Bar */
@@ -746,7 +840,7 @@ onUnmounted(() => {
   display: flex;
   align-items: stretch;
   gap: 1px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--studio-shadow-strong);
   border-bottom: 1px solid var(--border);
 }
 
@@ -754,7 +848,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   padding: 0.625rem 0.875rem;
-  background: linear-gradient(180deg, rgba(28, 28, 38, 0.95) 0%, rgba(22, 22, 30, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(var(--studio-panel-raised-rgb), 0.95) 0%, rgba(var(--studio-panel-rgb), 0.98) 100%);
   position: relative;
 }
 
@@ -765,7 +859,7 @@ onUnmounted(() => {
   top: 20%;
   bottom: 20%;
   width: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--studio-ink-rgb), 0.06);
 }
 
 .transport-module:last-child::after { display: none; }
@@ -775,39 +869,39 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.625rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--studio-shadow-mid);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.04);
   border-radius: 6px;
 }
 
 .cell-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.55rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-right: 0.25rem;
 }
 
 .cell-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
 }
 
 .cell-value--primary {
   font-size: 1.125rem;
-  color: #7DD3FC;
-  text-shadow: 0 0 12px rgba(125, 211, 252, 0.5);
+  color: var(--studio-blue);
+  text-shadow: 0 0 12px rgba(var(--studio-blue-rgb), 0.5);
 }
 
 .cell-value--secondary {
   font-size: 0.875rem;
-  color: rgba(125, 211, 252, 0.6);
+  color: rgba(var(--studio-blue-rgb), 0.6);
 }
 
 .cell-dot {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--accent);
@@ -820,23 +914,23 @@ onUnmounted(() => {
 }
 
 .time-current {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: 600;
-  color: #4ADE80;
-  text-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+  color: var(--studio-green);
+  text-shadow: 0 0 10px rgba(var(--studio-green-rgb), 0.4);
 }
 
 .time-divider {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--studio-ink-rgb), 0.25);
 }
 
 .time-total {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
 }
 
 .transport-module--section {
@@ -850,8 +944,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.875rem;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.15) 0%, rgba(var(--studio-purple-rgb), 0.08) 100%);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.2);
   border-radius: 6px;
   position: relative;
   overflow: hidden;
@@ -869,12 +963,12 @@ onUnmounted(() => {
 }
 
 .section-indicator--idle {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--studio-ink-rgb), 0.03);
+  border-color: rgba(var(--studio-ink-rgb), 0.06);
 }
 
 .section-indicator--idle::before {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--studio-ink-rgb), 0.2);
   box-shadow: none;
 }
 
@@ -912,23 +1006,23 @@ onUnmounted(() => {
 }
 
 .info-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.5rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   text-transform: uppercase;
 }
 
 .info-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 .info-value--tempo {
-  color: #FBBF24;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+  color: var(--studio-amber);
+  text-shadow: 0 0 8px rgba(var(--studio-amber-rgb), 0.3);
 }
 
 /* Structure Overview */
@@ -937,7 +1031,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.625rem 1rem;
-  background: linear-gradient(180deg, rgba(18, 18, 26, 0.95) 0%, rgba(15, 15, 22, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(var(--studio-panel-rgb), 0.95) 0%, rgba(var(--studio-panel-deep-rgb), 0.9) 100%);
   border-bottom: 1px solid var(--border);
 }
 
@@ -949,7 +1043,7 @@ onUnmounted(() => {
 }
 
 .structure-label__text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -957,20 +1051,20 @@ onUnmounted(() => {
 }
 
 .structure-label__bars {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
 }
 
 .structure-bar {
   flex: 1;
   display: flex;
   height: 32px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--studio-shadow-mid);
   border-radius: 6px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.05);
 }
 
 .structure-section {
@@ -980,7 +1074,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 0 4px;
   background: var(--section-bg);
-  border-right: 1px solid rgba(0, 0, 0, 0.3);
+  border-right: 1px solid var(--studio-shadow-mid);
   cursor: pointer;
   transition: filter 0.2s;
 }
@@ -989,6 +1083,10 @@ onUnmounted(() => {
 .structure-section:last-child { border-right: none; }
 
 .structure-section--active {
+  background: linear-gradient(135deg, var(--section-bg), rgba(var(--studio-ink-rgb), 0.08));
+}
+
+.dark .structure-section--active {
   background: linear-gradient(135deg, var(--section-bg), rgba(255, 255, 255, 0.08));
 }
 
@@ -1002,9 +1100,9 @@ onUnmounted(() => {
 }
 
 .structure-section__bars {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
 }
 
 .structure-progress {
@@ -1020,15 +1118,15 @@ onUnmounted(() => {
 .structure-progress__line {
   position: absolute;
   inset: 0;
-  background: #EC4899;
+  background: var(--studio-pink);
   border-radius: 1px;
-  box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
+  box-shadow: 0 0 8px rgba(var(--studio-pink-rgb), 0.6);
 }
 
 /* Chord Timeline */
 .chord-timeline {
   height: 32px;
-  background: linear-gradient(180deg, rgba(20, 20, 28, 0.95) 0%, rgba(15, 15, 22, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(var(--studio-panel-rgb), 0.95) 0%, rgba(var(--studio-panel-deep-rgb), 0.9) 100%);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   overflow-y: hidden;
@@ -1052,8 +1150,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.2) 0%, rgba(var(--studio-purple-rgb), 0.1) 100%);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.25);
   border-radius: 4px;
   cursor: default;
   transition: all 0.15s ease;
@@ -1061,29 +1159,40 @@ onUnmounted(() => {
 }
 
 .chord-block--active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.2) 100%);
-  border-color: rgba(139, 92, 246, 0.5);
-  box-shadow: 0 0 12px -2px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.35) 0%, rgba(var(--studio-purple-rgb), 0.2) 100%);
+  border-color: rgba(var(--studio-purple-rgb), 0.5);
+  box-shadow: 0 0 12px -2px rgba(var(--studio-purple-rgb), 0.4);
 }
 
 .chord-block__name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
+  color: var(--studio-purple-soft);
+  text-shadow: 0 0 8px rgba(var(--studio-purple-soft-rgb), 0.3);
+}
+
+/* Keep the legacy light-purple chord label in dark mode. */
+.dark .chord-block__name {
   color: #C4B5FD;
   text-shadow: 0 0 8px rgba(196, 181, 253, 0.3);
 }
 
 .chord-block--active .chord-block__name {
+  color: var(--studio-purple);
+  text-shadow: 0 0 10px rgba(var(--studio-purple-rgb), 0.5);
+}
+
+.dark .chord-block--active .chord-block__name {
   color: #E9D5FF;
   text-shadow: 0 0 10px rgba(233, 213, 255, 0.5);
 }
 
 .chord-block__degree {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--studio-ink-rgb), 0.35);
 }
 
 .chord-playhead {
@@ -1091,17 +1200,17 @@ onUnmounted(() => {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #EC4899;
+  background: var(--studio-pink);
   z-index: 20;
   pointer-events: none;
-  box-shadow: 0 0 6px rgba(236, 72, 153, 0.6);
+  box-shadow: 0 0 6px rgba(var(--studio-pink-rgb), 0.6);
   transform: translateX(-50%);
 }
 
 /* Section Timeline */
 .section-timeline {
   height: 44px;
-  background: rgba(15, 15, 22, 0.8);
+  background: rgba(var(--studio-panel-deep-rgb), 0.8);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   overflow-y: hidden;
@@ -1126,7 +1235,7 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0 12px;
   background: var(--section-bg);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1148,7 +1257,7 @@ onUnmounted(() => {
 }
 
 .section-block--active {
-  background: linear-gradient(135deg, var(--section-bg), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(135deg, var(--section-bg), rgba(var(--studio-ink-rgb), 0.05));
   border-color: var(--section-glow);
   box-shadow: 0 0 20px -4px var(--section-glow);
 }
@@ -1161,9 +1270,9 @@ onUnmounted(() => {
 }
 
 .section-block__bars {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--studio-ink-rgb), 0.35);
 }
 
 .section-playhead {
@@ -1171,7 +1280,7 @@ onUnmounted(() => {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #EC4899;
+  background: var(--studio-pink);
   z-index: 20;
   pointer-events: none;
   transform: translateX(-50%);
@@ -1184,9 +1293,9 @@ onUnmounted(() => {
   left: -4px;
   width: 10px;
   height: 10px;
-  background: #EC4899;
+  background: var(--studio-pink);
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
+  box-shadow: 0 0 8px rgba(var(--studio-pink-rgb), 0.8);
 }
 
 /* Roll Container */
@@ -1200,7 +1309,7 @@ onUnmounted(() => {
   width: 48px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(90deg, rgba(25, 25, 35, 0.98) 0%, rgba(20, 20, 28, 0.95) 100%);
+  background: linear-gradient(90deg, rgba(var(--studio-panel-raised-rgb), 0.98) 0%, rgba(var(--studio-panel-rgb), 0.95) 100%);
   border-right: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -1223,11 +1332,20 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Octave boundary: emphasize the line below each C row */
+.piano-key--octave {
+  border-bottom-color: rgba(0, 0, 0, 0.35);
+}
+
 .piano-key__label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.55rem;
   font-weight: 500;
+  line-height: 1;
   color: rgba(0, 0, 0, 0.45);
+  /* Rows can be shorter than the label text; let sparse octave
+     labels render at full size instead of being clipped. */
+  white-space: nowrap;
 }
 
 .canvas-container {
@@ -1242,11 +1360,11 @@ onUnmounted(() => {
 }
 
 .canvas-container::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--studio-shadow-soft);
 }
 
 .canvas-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--studio-ink-rgb), 0.2);
   border-radius: 3px;
 }
 
@@ -1269,7 +1387,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: linear-gradient(180deg, rgba(18, 18, 24, 0.95) 0%, rgba(22, 22, 30, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(var(--studio-panel-rgb), 0.95) 0%, rgba(var(--studio-panel-raised-rgb), 0.98) 100%);
   border-top: 1px solid var(--border);
 }
 
@@ -1285,8 +1403,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.375rem;
   padding: 0.3rem 0.5rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--studio-shadow-mid);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.06);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1294,8 +1412,8 @@ onUnmounted(() => {
 }
 
 .mixer-track:hover {
-  background: rgba(0, 0, 0, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--studio-shadow-strong);
+  border-color: rgba(var(--studio-ink-rgb), 0.1);
 }
 
 .mixer-track__indicator {
@@ -1308,36 +1426,36 @@ onUnmounted(() => {
 }
 
 .mixer-track--muted .mixer-track__indicator {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--studio-ink-rgb), 0.15);
   box-shadow: none;
 }
 
 .mixer-track__name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   transition: color 0.15s ease;
 }
 
 .mixer-track--muted .mixer-track__name {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
 }
 
 .mixer-track__status {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.55rem;
   font-weight: 700;
-  color: #EF4444;
+  color: var(--studio-red);
   min-width: 0.7rem;
   text-align: center;
 }
 
 .mixer-track--muted {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(var(--studio-red-rgb), 0.08);
+  border-color: rgba(var(--studio-red-rgb), 0.2);
 }
 
 /* Responsive */

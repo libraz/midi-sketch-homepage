@@ -99,6 +99,12 @@ export function useMidiRegeneration(player: PlayerMethods) {
     if (state.wasPlaying || state.wasPaused) {
       player.stop()
     }
+    // stop() rewinds currentTick to 0; when playback will be resumed, keep
+    // the playhead display (piano roll scroll, time readout) at the saved
+    // position so the view doesn't jump to the start during regeneration.
+    if (state.wasPlaying) {
+      player.currentTick.value = state.savedTick
+    }
 
     isGenerating.value = true
     error.value = null

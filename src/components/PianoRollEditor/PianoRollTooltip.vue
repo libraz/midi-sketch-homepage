@@ -49,15 +49,15 @@ defineProps<{
   flex-direction: column;
   gap: 4px;
   padding: 6px 10px;
-  background: rgba(12, 12, 18, 0.95);
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(var(--studio-panel-deep-rgb), 0.95);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.4);
   border-radius: 6px;
   font-size: 11px;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   white-space: nowrap;
   pointer-events: none;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 12px var(--studio-shadow-strong);
 }
 
 .note-tooltip__header {
@@ -69,11 +69,11 @@ defineProps<{
 .note-tooltip__name {
   font-weight: 700;
   font-size: 13px;
-  color: #A78BFA;
+  color: var(--studio-purple-soft);
 }
 
 .note-tooltip__midi {
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   font-size: 10px;
 }
 
@@ -85,18 +85,18 @@ defineProps<{
 }
 
 .note-tooltip__safety--safe {
-  color: #4ADE80;
-  background: rgba(74, 222, 128, 0.15);
+  color: var(--studio-green);
+  background: rgba(var(--studio-green-rgb), 0.15);
 }
 
 .note-tooltip__safety--warning {
-  color: #FBBF24;
-  background: rgba(251, 191, 36, 0.15);
+  color: var(--studio-amber);
+  background: rgba(var(--studio-amber-rgb), 0.15);
 }
 
 .note-tooltip__safety--danger {
-  color: #F87171;
-  background: rgba(248, 113, 113, 0.15);
+  color: var(--studio-red);
+  background: rgba(var(--studio-red-rgb), 0.15);
 }
 
 .note-tooltip__details {
@@ -104,14 +104,14 @@ defineProps<{
   flex-wrap: wrap;
   gap: 4px;
   padding-top: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--studio-ink-rgb), 0.1);
 }
 
 .note-tooltip__detail {
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   font-size: 10px;
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--studio-ink-rgb), 0.08);
   border-radius: 3px;
 }
 </style>

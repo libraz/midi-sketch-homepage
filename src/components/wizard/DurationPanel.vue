@@ -71,11 +71,11 @@ const formattedDuration = computed(() => {
 }
 
 .duration-display {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
-  color: var(--section-accent, #8B5CF6);
+  color: var(--section-accent, var(--studio-purple));
   text-shadow: 0 0 16px rgba(var(--section-accent-rgb, 139, 92, 246), 0.4);
 }
 
@@ -88,26 +88,26 @@ const formattedDuration = computed(() => {
 
 .duration-btn {
   padding: 0.4rem 0.75rem;
-  background: rgba(30, 30, 42, 0.6);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
   border: 1px solid rgba(var(--section-accent-rgb, 139, 92, 246), 0.12);
   border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .duration-btn:hover {
   border-color: rgba(var(--section-accent-rgb, 139, 92, 246), 0.3);
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .duration-btn--active {
   background: rgba(var(--section-accent-rgb, 139, 92, 246), 0.2);
-  border-color: var(--section-accent, #8B5CF6);
-  color: #FAFAFA;
+  border-color: var(--section-accent, var(--studio-purple));
+  color: var(--studio-text-primary);
 }
 
 .slider-row {
@@ -117,9 +117,9 @@ const formattedDuration = computed(() => {
 }
 
 .slider-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   min-width: 2rem;
 }
 
@@ -141,7 +141,7 @@ const formattedDuration = computed(() => {
   -webkit-appearance: none;
   width: 14px;
   height: 14px;
-  background: var(--section-accent, #8B5CF6);
+  background: var(--section-accent, var(--studio-purple));
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(var(--section-accent-rgb, 139, 92, 246), 0.4);
@@ -150,7 +150,7 @@ const formattedDuration = computed(() => {
 .duration-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  background: var(--section-accent, #8B5CF6);
+  background: var(--section-accent, var(--studio-purple));
   border: none;
   border-radius: 50%;
   cursor: pointer;

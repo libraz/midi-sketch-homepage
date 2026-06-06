@@ -44,7 +44,7 @@ async function downloadMp3() {
     await audioExport.exportToMp3(
       studio.eventData.value,
       `midi-sketch-${Date.now()}.mp3`,
-      { mutedTracks: { SE: true } }
+      { mutedTracks: { SE: true }, drumKit: store.currentSongImage.value?.drumKit }
     )
   } catch (e: any) {
     devLog('MP3 Export Error', e.message)
@@ -139,20 +139,20 @@ async function downloadMp3() {
 .studio-output__rule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3));
+  background: linear-gradient(90deg, transparent, rgba(var(--studio-purple-rgb), 0.3));
 }
 
 .studio-output__rule:last-of-type {
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.3), transparent);
+  background: linear-gradient(90deg, rgba(var(--studio-purple-rgb), 0.3), transparent);
 }
 
 .studio-output__label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(167, 139, 250, 0.85);
+  color: rgba(var(--studio-purple-soft-rgb), 0.85);
   flex-shrink: 0;
 }
 
@@ -165,7 +165,7 @@ async function downloadMp3() {
 /* Beta Section */
 .beta-section {
   margin-top: 1rem;
-  border: 1px dashed rgba(250, 250, 250, 0.15);
+  border: 1px dashed rgba(var(--studio-ink-rgb), 0.15);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -176,7 +176,7 @@ async function downloadMp3() {
   justify-content: space-between;
   padding: 0.75rem 1rem;
   cursor: pointer;
-  background: rgba(250, 250, 250, 0.02);
+  background: rgba(var(--studio-ink-rgb), 0.02);
   transition: background 0.2s ease;
   list-style: none;
 }
@@ -186,7 +186,7 @@ async function downloadMp3() {
 }
 
 .beta-section__header:hover {
-  background: rgba(250, 250, 250, 0.04);
+  background: rgba(var(--studio-ink-rgb), 0.04);
 }
 
 .beta-section__title {
@@ -195,11 +195,11 @@ async function downloadMp3() {
   gap: 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
 }
 
 .beta-section__chevron {
-  color: rgba(250, 250, 250, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   transition: transform 0.2s ease;
 }
 
@@ -209,12 +209,12 @@ async function downloadMp3() {
 
 .beta-section__content {
   padding: 0.75rem 1rem 1rem;
-  border-top: 1px dashed rgba(250, 250, 250, 0.1);
+  border-top: 1px dashed rgba(var(--studio-ink-rgb), 0.1);
 }
 
 .beta-section__description {
   font-size: 0.75rem;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   margin: 0 0 0.75rem 0;
 }
 
@@ -232,9 +232,9 @@ async function downloadMp3() {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #F59E0B;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--studio-orange);
+  background: rgba(var(--studio-orange-rgb), 0.15);
+  border: 1px solid rgba(var(--studio-orange-rgb), 0.3);
   border-radius: 4px;
 }
 
@@ -249,20 +249,20 @@ async function downloadMp3() {
   gap: 0.5rem;
   padding: 0.5rem 0.875rem;
   background: transparent;
-  border: 1px solid rgba(250, 250, 250, 0.15);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.15);
   border-radius: 6px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .beta-button:hover:not(:disabled) {
-  background: rgba(250, 250, 250, 0.05);
-  border-color: rgba(250, 250, 250, 0.25);
-  color: rgba(250, 250, 250, 0.8);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border-color: rgba(var(--studio-ink-rgb), 0.25);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 .beta-button:disabled {
@@ -271,8 +271,8 @@ async function downloadMp3() {
 }
 
 .beta-button--loading {
-  color: rgba(99, 102, 241, 0.8);
-  border-color: rgba(99, 102, 241, 0.3);
+  color: rgba(var(--studio-blue-rgb), 0.8);
+  border-color: rgba(var(--studio-blue-rgb), 0.3);
 }
 
 .beta-button__icon {

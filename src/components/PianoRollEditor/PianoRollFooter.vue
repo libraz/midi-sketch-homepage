@@ -69,8 +69,8 @@ defineProps<{
   justify-content: space-between;
   align-items: center;
   padding: 0.375rem 0.75rem;
-  background: rgba(22, 22, 32, 0.95);
-  border-top: 1px solid rgba(139, 92, 246, 0.15);
+  background: rgba(var(--studio-panel-rgb), 0.95);
+  border-top: 1px solid rgba(var(--studio-purple-rgb), 0.15);
   min-height: 28px;
 }
 
@@ -88,9 +88,9 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 .status-item svg {
@@ -104,21 +104,21 @@ defineProps<{
 }
 
 .note-info--placeholder {
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   font-size: 0.7rem;
 }
 
 .note-info__name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .note-info__midi {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 .note-info__safety {
@@ -131,24 +131,24 @@ defineProps<{
 }
 
 .note-info__safety--safe {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ADE80;
+  background: rgba(var(--studio-green-rgb), 0.15);
+  color: var(--studio-green);
 }
 
 .note-info__safety--warning {
-  background: rgba(251, 191, 36, 0.15);
-  color: #FBBF24;
+  background: rgba(var(--studio-amber-rgb), 0.15);
+  color: var(--studio-amber);
 }
 
 .note-info__safety--dissonant {
-  background: rgba(248, 113, 113, 0.15);
-  color: #F87171;
+  background: rgba(var(--studio-red-rgb), 0.15);
+  color: var(--studio-red);
 }
 
 .note-info__reason {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 @media (max-width: 640px) {

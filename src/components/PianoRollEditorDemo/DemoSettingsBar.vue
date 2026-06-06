@@ -106,7 +106,7 @@ defineEmits<{
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 3px;
   color: rgba(255, 255, 255, 0.6);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   cursor: pointer;
   transition: all 0.15s;

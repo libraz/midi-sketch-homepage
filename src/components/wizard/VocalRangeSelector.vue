@@ -120,13 +120,13 @@ const rangeBarStyle = computed(() => {
 
 <style scoped>
 .vocal-range-selector {
-  --accent-color: var(--step-accent, #EC4899);
+  --accent-color: var(--step-accent, var(--studio-pink));
 }
 
 .preset-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   margin: 0 0 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -145,22 +145,22 @@ const rangeBarStyle = computed(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.75rem 0.5rem;
-  background: rgba(30, 30, 42, 0.6);
-  border: 1px solid rgba(236, 72, 153, 0.12);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-pink-rgb), 0.12);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .vocal-preset:hover {
-  border-color: rgba(236, 72, 153, 0.3);
+  border-color: rgba(var(--studio-pink-rgb), 0.3);
   transform: translateY(-2px);
 }
 
 .vocal-preset--active {
-  background: rgba(236, 72, 153, 0.15);
+  background: rgba(var(--studio-pink-rgb), 0.15);
   border-color: var(--accent-color);
-  box-shadow: 0 0 16px -4px rgba(236, 72, 153, 0.4);
+  box-shadow: 0 0 16px -4px rgba(var(--studio-pink-rgb), 0.4);
 }
 
 .vocal-preset__icon {
@@ -168,18 +168,18 @@ const rangeBarStyle = computed(() => {
 }
 
 .vocal-preset__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   text-align: center;
   line-height: 1.2;
 }
 
 .vocal-preset__range {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
 }
 
 /* Visual Range Bar */
@@ -190,7 +190,7 @@ const rangeBarStyle = computed(() => {
 .range-bar {
   position: relative;
   height: 24px;
-  background: rgba(30, 30, 42, 0.8);
+  background: rgba(var(--studio-panel-raised-rgb), 0.8);
   border-radius: 12px;
   overflow: visible;
 }
@@ -201,7 +201,7 @@ const rangeBarStyle = computed(() => {
   height: 100%;
   background: linear-gradient(90deg, var(--accent-color), #DB2777);
   border-radius: 12px;
-  box-shadow: 0 0 16px rgba(236, 72, 153, 0.4);
+  box-shadow: 0 0 16px rgba(var(--studio-pink-rgb), 0.4);
   transition: left 0.15s ease, width 0.15s ease;
 }
 
@@ -216,13 +216,13 @@ const rangeBarStyle = computed(() => {
 .range-bar__note {
   display: block;
   padding: 2px 6px;
-  background: rgba(20, 20, 28, 0.95);
+  background: rgba(var(--studio-panel-rgb), 0.95);
   border: 1px solid var(--accent-color);
   border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   white-space: nowrap;
 }
 
@@ -234,9 +234,9 @@ const rangeBarStyle = computed(() => {
   display: flex;
   justify-content: space-between;
   margin-top: 0.5rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: rgba(250, 250, 250, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
 }
 
 .range-inputs {
@@ -253,14 +253,14 @@ const rangeBarStyle = computed(() => {
 
 .range-input label {
   font-size: 0.8rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
 }
 
 .range-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .slider {
@@ -268,7 +268,7 @@ const rangeBarStyle = computed(() => {
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(236, 72, 153, 0.15);
+  background: rgba(var(--studio-pink-rgb), 0.15);
   border-radius: 3px;
   cursor: pointer;
 }
@@ -280,6 +280,6 @@ const rangeBarStyle = computed(() => {
   background: var(--accent-color);
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+  box-shadow: 0 2px 8px rgba(var(--studio-pink-rgb), 0.4);
 }
 </style>

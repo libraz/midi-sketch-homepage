@@ -1,39 +1,73 @@
 import { Soundfont, DrumMachine } from 'smplr'
 
 export const DEMO_SOUNDFONT_KIT = 'FluidR3_GM'
-export const DEMO_DRUM_MACHINE = 'TR-808'
 
-// GM drum note number to demo drum-machine sample group mapping
-export const GM_TO_DRUM: Record<number, string> = {
-  35: 'kick',         // Acoustic Bass Drum
-  36: 'kick',         // Bass Drum 1
-  37: 'rimshot',      // Side Stick
-  38: 'snare',        // Acoustic Snare
-  39: 'clap',         // Hand Clap
-  40: 'snare',        // Electric Snare
-  41: 'tom-low',      // Low Floor Tom
-  42: 'hihat-closed', // Closed Hi-Hat
-  43: 'tom-low',      // High Floor Tom
-  44: 'hihat-closed', // Pedal Hi-Hat
-  45: 'tom-low',      // Low Tom
-  46: 'hihat-open',   // Open Hi-Hat
-  47: 'tom-low',      // Low-Mid Tom
-  48: 'tom-high',     // Hi-Mid Tom
-  49: 'cymball',      // Crash Cymbal 1
-  50: 'tom-high',     // High Tom
-  51: 'cymball',      // Ride Cymbal 1
-  52: 'cymball',      // Chinese Cymbal
-  53: 'cymball',      // Ride Bell
-  54: 'clave',        // Tambourine -> clave
-  55: 'cymball',      // Splash Cymbal
-  56: 'cowbell',      // Cowbell
-  57: 'cymball',      // Crash Cymbal 2
-  60: 'conga-high',   // Hi Bongo
-  61: 'conga-low',    // Low Bongo
-  62: 'conga-high',   // Mute Hi Conga
-  63: 'conga-high',   // Open Hi Conga
-  64: 'conga-low',    // Low Conga
-  75: 'clave',        // Claves
+/** Drum machines available in the smplr drum-machine dataset */
+export type DrumKitName = 'TR-808' | 'LM-2' | 'Casio-RZ1' | 'MFB-512' | 'Roland CR-8000'
+
+export const DEMO_DRUM_MACHINE: DrumKitName = 'TR-808'
+
+// GM drum note number to drum-machine sample name, per kit.
+// Sample names must match each kit's dm.json exactly
+// (see https://smpldsnds.github.io/drum-machines/<kit>/dm.json) —
+// unknown names fail silently, so keep these lists in sync with the datasets.
+// GM notes: 35/36 kick, 37 side stick, 38/40 snare, 39 clap, 41-50 toms/hats,
+// 49-59 cymbals, 54 tambourine, 56 cowbell, 60-64 congas, 69/70/82 shakers, 75 claves.
+const GM_TO_DRUM_BY_KIT: Record<DrumKitName, Record<number, string>> = {
+  'TR-808': {
+    35: 'kick', 36: 'kick', 37: 'rimshot', 38: 'snare', 39: 'clap', 40: 'snare',
+    41: 'tom-low', 42: 'hihat-close', 43: 'tom-low', 44: 'hihat-close',
+    45: 'tom-low', 46: 'hihat-open', 47: 'mid-tom', 48: 'mid-tom',
+    49: 'cymbal', 50: 'tom-hi', 51: 'cymbal', 52: 'cymbal', 53: 'cymbal',
+    54: 'maraca', 55: 'cymbal', 56: 'cowbell', 57: 'cymbal', 59: 'cymbal',
+    60: 'conga-hi', 61: 'conga-low', 62: 'conga-mid', 63: 'conga-hi', 64: 'conga-low',
+    69: 'maraca', 70: 'maraca', 75: 'clave', 82: 'maraca',
+  },
+  // LinnDrum — sampled real drums; the closest to an acoustic pop/band kit
+  'LM-2': {
+    35: 'kick', 36: 'kick', 37: 'stick-m', 38: 'snare-m', 39: 'clap', 40: 'snare-h',
+    41: 'tom-ll', 42: 'hhclosed', 43: 'tom-l', 44: 'hhclosed',
+    45: 'tom-m', 46: 'hhopen', 47: 'tom-m', 48: 'tom-h',
+    49: 'crash', 50: 'tom-hh', 51: 'ride', 52: 'crash', 53: 'ride',
+    54: 'tambourine', 55: 'crash', 56: 'cowbell', 57: 'crash', 59: 'ride',
+    60: 'conga-h', 61: 'conga-l', 62: 'conga-m', 63: 'conga-h', 64: 'conga-ll',
+    69: 'cabasa', 70: 'cabasa', 75: 'stick-h', 82: 'cabasa',
+  },
+  // 80s digital crunch; no congas/shakers, so those fall back to toms/hats
+  'Casio-RZ1': {
+    35: 'kick', 36: 'kick', 37: 'clave', 38: 'snare', 39: 'clap', 40: 'snare',
+    41: 'tom-3', 42: 'hihat-closed', 43: 'tom-3', 44: 'hihat-closed',
+    45: 'tom-2', 46: 'hihat-open', 47: 'tom-2', 48: 'tom-1',
+    49: 'crash', 50: 'tom-1', 51: 'ride', 52: 'ride', 53: 'ride',
+    54: 'hihat-closed', 55: 'crash', 56: 'cowbell', 57: 'crash', 59: 'ride',
+    60: 'tom-1', 61: 'tom-2', 62: 'tom-1', 63: 'tom-1', 64: 'tom-2',
+    69: 'hihat-closed', 70: 'hihat-closed', 75: 'clave', 82: 'hihat-closed',
+  },
+  // Minimal analog kit; percussion approximated with hats/toms
+  'MFB-512': {
+    35: 'kick', 36: 'kick', 37: 'snare', 38: 'snare', 39: 'clap', 40: 'snare',
+    41: 'tom-low', 42: 'hihat-closed', 43: 'tom-low', 44: 'hihat-closed',
+    45: 'tom-mid', 46: 'hihat-open', 47: 'tom-mid', 48: 'tom-hi',
+    49: 'cymbal', 50: 'tom-hi', 51: 'cymbal', 52: 'cymbal', 53: 'cymbal',
+    54: 'hihat-closed', 55: 'cymbal', 56: 'hihat-closed', 57: 'cymbal', 59: 'cymbal',
+    60: 'tom-hi', 61: 'tom-mid', 62: 'tom-hi', 63: 'tom-hi', 64: 'tom-mid',
+    69: 'hihat-closed', 70: 'hihat-closed', 75: 'hihat-closed', 82: 'hihat-closed',
+  },
+  // Disco-era analog ('cymball' is the dataset's own spelling)
+  'Roland CR-8000': {
+    35: 'kick', 36: 'kick', 37: 'rimshot', 38: 'snare', 39: 'clap', 40: 'snare',
+    41: 'tom-low', 42: 'hihat-closed', 43: 'tom-low', 44: 'hihat-closed',
+    45: 'tom-low', 46: 'hihat-open', 47: 'tom-high', 48: 'tom-high',
+    49: 'cymball', 50: 'tom-high', 51: 'cymball', 52: 'cymball', 53: 'cymball',
+    54: 'hihat-closed', 55: 'cymball', 56: 'cowbell', 57: 'cymball', 59: 'cymball',
+    60: 'conga-high', 61: 'conga-low', 62: 'conga-high', 63: 'conga-high', 64: 'conga-low',
+    69: 'hihat-closed', 70: 'hihat-closed', 75: 'clave', 82: 'hihat-closed',
+  },
+}
+
+/** Resolve a GM drum note to the given kit's sample name (undefined = unmapped, stays silent) */
+export function gmToDrumSample(gmNote: number, kit: DrumKitName = DEMO_DRUM_MACHINE): string | undefined {
+  return GM_TO_DRUM_BY_KIT[kit]?.[gmNote] ?? GM_TO_DRUM_BY_KIT[DEMO_DRUM_MACHINE][gmNote]
 }
 
 // GM program number (0-127) to smplr instrument name
@@ -314,6 +348,30 @@ export function getRequiredInstruments(tracks: TrackInfo[]): Map<string, string>
 const instrumentCache = new Map<string, Soundfont>()
 const loadingPromises = new Map<string, Promise<Soundfont>>()
 
+// Drum machine cache for real-time playback: kit name -> loaded instance.
+// Keyed per kit so switching song images swaps kits without re-fetching samples.
+const drumMachineCache = new Map<DrumKitName, Promise<DrumMachine>>()
+
+/**
+ * Load a drum machine for the given kit.
+ * Real-time instances are cached per kit; offline (disableScheduler) instances are always fresh.
+ */
+export function loadDrumMachine(
+  audioContext: AudioContext,
+  kit: DrumKitName = DEMO_DRUM_MACHINE,
+  disableScheduler = false
+): Promise<DrumMachine> {
+  if (disableScheduler) {
+    return new DrumMachine(audioContext, { instrument: kit, disableScheduler: true }).load
+  }
+  let cached = drumMachineCache.get(kit)
+  if (!cached) {
+    cached = new DrumMachine(audioContext, { instrument: kit }).load
+    drumMachineCache.set(kit, cached)
+  }
+  return cached
+}
+
 export interface LoadedInstruments {
   trackMap: Map<string, Soundfont>
   drums: DrumMachine
@@ -327,9 +385,10 @@ export interface LoadedInstruments {
 export async function loadInstrumentsForTracks(
   audioContext: AudioContext,
   tracks: TrackInfo[],
-  options?: { disableScheduler?: boolean }
+  options?: { disableScheduler?: boolean; drumKit?: DrumKitName }
 ): Promise<LoadedInstruments> {
   const disableScheduler = options?.disableScheduler ?? false
+  const drumKit = options?.drumKit ?? DEMO_DRUM_MACHINE
   const required = getRequiredInstruments(tracks)
 
   // Collect unique instrument names
@@ -389,20 +448,10 @@ export async function loadInstrumentsForTracks(
     }
   }
 
-  // Load drums
-  let drums: DrumMachine
-  if (disableScheduler) {
-    const drumsPromise = new DrumMachine(audioContext, {
-      instrument: DEMO_DRUM_MACHINE,
-      disableScheduler: true,
-    }).load
-    loadPromises.push(drumsPromise.then(() => {}))
-    drums = await drumsPromise
-  } else {
-    // For real-time, drums are managed by the caller (useMidiPlayer keeps its own instance)
-    // We still need to return one, so load or reuse
-    drums = await new DrumMachine(audioContext, { instrument: DEMO_DRUM_MACHINE }).load
-  }
+  // Load drums for the requested kit (cached per kit for real-time playback)
+  const drumsPromise = loadDrumMachine(audioContext, drumKit, disableScheduler)
+  loadPromises.push(drumsPromise.then(() => {}))
+  const drums = await drumsPromise
 
   await Promise.all(loadPromises)
 

@@ -82,21 +82,21 @@ function handleEditorSaved() {
   gap: 0.5rem;
   padding: 0.45rem 0.8rem;
   background: transparent;
-  border: 1px solid rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.15);
   border-radius: 100px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: rgba(250, 250, 250, 0.55);
+  color: rgba(var(--studio-ink-rgb), 0.55);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .studio-screen__back:hover {
-  background: rgba(139, 92, 246, 0.08);
-  border-color: rgba(139, 92, 246, 0.35);
-  color: rgba(250, 250, 250, 0.85);
+  background: rgba(var(--studio-purple-rgb), 0.08);
+  border-color: rgba(var(--studio-purple-rgb), 0.35);
+  color: rgba(var(--studio-ink-rgb), 0.85);
   transform: translateX(-2px);
 }
 </style>

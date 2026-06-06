@@ -415,7 +415,7 @@
       "generating": "生成中..."
     },
     "result": {
-      "success": "BGM生成完了！",
+      "success": "BGM生成が完了しました",
       "preview": "プレビュー",
       "play": "再生",
       "pause": "一時停止",
@@ -624,7 +624,7 @@
     }
   },
   "finalStep": {
-    "title": "完成！",
+    "title": "完成",
     "subtitle": "メロディ付きの完成トラックをプレビュー",
     "generating": "メロディを生成中...",
     "complete": "トラック完成",
@@ -751,83 +751,88 @@
   "songImages": {
     "idol-classic": {
       "name": "王道アイドル曲",
-      "tagline": "キラキラ・キャッチー・元気いっぱい",
-      "description": "王道のアイドルサウンド。アップテンポでキャッチー、ちょっと甘さも"
+      "tagline": "明るくキャッチーな王道路線",
+      "description": "アップテンポで親しみやすい、定番のアイドルサウンド"
     },
     "idol-energy": {
       "name": "ハイエナジーアイドル",
-      "tagline": "全力全開！盛り上がり最高潮",
-      "description": "ライブで盛り上がる！速くてパワフルな曲"
+      "tagline": "速いテンポとパワフルな展開",
+      "description": "テンポが速く、強いビートで押していくタイプの曲調"
     },
     "idol-emotional": {
       "name": "エモーショナルアイドル",
-      "tagline": "心に響くアイドルバラード",
-      "description": "ストーリーを感じる、心に残るアイドル曲"
+      "tagline": "しっとりとしたアイドルバラード",
+      "description": "テンポを落として歌を聴かせる、物語性のあるアイドル曲"
     },
     "jpop-standard": {
       "name": "J-POP スタンダード",
-      "tagline": "日本のポップスの王道",
-      "description": "聴き馴染みのあるコード進行で安定のJ-POPサウンド"
+      "tagline": "定番のJ-POPスタイル",
+      "description": "聴き馴染みのあるコード進行を使ったスタンダードなJ-POP"
     },
     "citypop": {
       "name": "シティポップ",
-      "tagline": "グルーヴィーで都会的、ノスタルジック",
-      "description": "80年代の日本のシティポップにインスパイアされた洗練されたサウンド"
+      "tagline": "都会的でノスタルジックなグルーヴ",
+      "description": "80年代の日本のシティポップを参照したサウンド"
     },
     "anime-song": {
       "name": "アニメソング風",
-      "tagline": "壮大でドラマチック、印象的",
-      "description": "お気に入りのアニメのOPになりそうな力強い曲"
+      "tagline": "ドラマチックな展開と強いメロディ",
+      "description": "アニメ主題歌風の、展開の起伏が大きい曲調"
     },
     "vocaloid-anime": {
       "name": "ボカロ / アニメOP",
       "tagline": "速いテンポ、ドラマチックな展開",
-      "description": "現代ボカロ・アニメOP風 - 速いテンポとドラマチックな曲展開"
+      "description": "現代のボカロ・アニメOP風。速いテンポと起伏の大きい構成"
+    },
+    "vocaloid-drive": {
+      "name": "ボカロ・ドライブ",
+      "tagline": "刻み続けるリフ、疾走感MAX",
+      "description": "リフ固定でコードパルスと16分を刻み続ける、フック全開のリズム駆動ボカロスタイル"
     },
     "rock-pop": {
       "name": "ロックポップ",
-      "tagline": "ギターが映えるエネルギッシュサウンド",
-      "description": "ドライブ感のあるギターとパワフルなドラムのバンドサウンド"
+      "tagline": "ギター主体のバンドサウンド",
+      "description": "ドライブ感のあるギターとドラムによるバンド編成の曲調"
     },
     "dance-pop": {
       "name": "ダンスポップ",
-      "tagline": "踊りたくなるビート",
-      "description": "体が自然と動き出すグルーヴィーなビートとキャッチーなフック"
+      "tagline": "リズム主体のダンスビート",
+      "description": "リズムを前面に出したダンス寄りのポップス"
     },
     "edm-synth": {
       "name": "EDM / シンセポップ",
-      "tagline": "エレクトロニックビート、ビッグドロップ",
-      "description": "パワフルなシンセが映えるモダンなエレクトロニックサウンド"
+      "tagline": "シンセ主体のエレクトロニックサウンド",
+      "description": "シンセサイザーを中心としたモダンなエレクトロポップ"
     },
     "ballad-emotional": {
       "name": "エモーショナルバラード",
-      "tagline": "心を込めて歌い上げる",
-      "description": "ゆっくりと感情を込めて物語を紡ぐ曲"
+      "tagline": "スローテンポのバラード",
+      "description": "ゆったりとしたテンポで歌を聴かせるバラード"
     },
     "love-song": {
       "name": "切ないラブソング",
-      "tagline": "切なくて美しい",
-      "description": "恋と切なさを歌うミディアムテンポの曲"
+      "tagline": "ミディアムテンポの切ない曲調",
+      "description": "恋愛や切なさをテーマにしたミディアムテンポの曲"
     },
     "synthwave": {
       "name": "シンセウェイブ",
-      "tagline": "レトロシンセ、ネオンの輝き",
-      "description": "80年代インスパイアのシンセサウンドをモダンにアレンジ"
+      "tagline": "80年代風レトロシンセ",
+      "description": "80年代風のシンセサウンドを現代的に再構成したスタイル"
     },
     "electronica": {
       "name": "エレクトロニカ",
-      "tagline": "パターンが織りなすエレクトロ",
-      "description": "重なり合うエレクトロニックパターンと変化するテクスチャ"
+      "tagline": "反復パターン主体のエレクトロニック",
+      "description": "重なり合うパターンと変化するテクスチャによる構成"
     },
     "chill-relax": {
       "name": "チル / リラックス",
-      "tagline": "ゆったり心地よい",
-      "description": "リラックスできる心地よいBGM"
+      "tagline": "ゆったりとした落ち着いたテンポ",
+      "description": "落ち着いたテンポの、BGM向きのリラックスした曲調"
     },
     "instrumental": {
       "name": "インストゥルメンタル",
-      "tagline": "言葉のない音楽",
-      "description": "動画や配信のBGMにぴったりな楽曲"
+      "tagline": "ボーカルなしの構成",
+      "description": "動画や配信のBGMに使いやすいインストゥルメンタル"
     }
   },
   "chordProgressions": {
@@ -871,7 +876,7 @@
   "share": {
     "shareOnX": "Xでシェア",
     "copyUrl": "URLをコピー",
-    "copied": "コピーしました！トラックを聴いてメロディ生成に進んでください",
+    "copied": "コピーしました。トラックを聴いてメロディ生成に進んでください",
     "xShare": "この楽曲をXでシェア",
     "tweetBgm": "MIDI SketchでBGMを作成しました！",
     "tweetVocal": "MIDI Sketchでボーカルメロディを作成しました！",
@@ -923,9 +928,10 @@
     "dismiss": "閉じる"
   },
   "studio": {
+    "themeToggle": "ライト/ダークテーマを切り替え",
     "entry": {
       "imageTitle": "曲のイメージを選ぶ",
-      "imageHint": "選んだ瞬間に生成が始まります。細かい設定はすべて自動でチューニングされます。",
+      "imageHint": "選ぶと生成が始まります。細かい設定は自動で決まり、あとから調整できます。",
       "generate": "生成する"
     },
     "player": {

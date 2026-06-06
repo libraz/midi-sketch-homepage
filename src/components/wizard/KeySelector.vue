@@ -282,8 +282,8 @@ onUnmounted(() => {
 
 <style scoped>
 .key-selector {
-  --accent-color: var(--section-accent, var(--step-accent, #8B5CF6));
-  --accent-rgb: var(--section-accent-rgb, 139, 92, 246);
+  --accent-color: var(--section-accent, var(--step-accent, var(--studio-purple)));
+  --accent-rgb: var(--section-accent-rgb, var(--studio-purple-rgb));
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -312,7 +312,7 @@ onUnmounted(() => {
 }
 
 .key-header__key {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--accent-color);
@@ -320,10 +320,10 @@ onUnmounted(() => {
 }
 
 .key-header__mode {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -352,18 +352,18 @@ onUnmounted(() => {
 }
 
 .key-header__chords-label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.6rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   white-space: nowrap;
 }
 
 .key-header__chords-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
   letter-spacing: 0.01em;
 }
 
@@ -595,7 +595,7 @@ onUnmounted(() => {
 }
 
 .piano-key__label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 600;
   color: #555;

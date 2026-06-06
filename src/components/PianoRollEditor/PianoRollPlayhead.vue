@@ -51,7 +51,7 @@ function handleMouseDown(e: MouseEvent) {
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 10px solid #F87171;
+  border-top: 10px solid var(--studio-red);
   pointer-events: auto;
 }
 
@@ -61,8 +61,8 @@ function handleMouseDown(e: MouseEvent) {
   left: -1px;
   width: 2px;
   height: 100%;
-  background: #F87171;
-  box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
+  background: var(--studio-red);
+  box-shadow: 0 0 6px rgba(var(--studio-red-rgb), 0.5);
   pointer-events: none;
 }
 
@@ -78,10 +78,10 @@ function handleMouseDown(e: MouseEvent) {
 }
 
 .css-playhead:hover .playhead-line {
-  box-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+  box-shadow: 0 0 10px rgba(var(--studio-red-rgb), 0.8);
 }
 
 .css-playhead:hover .playhead-marker {
-  border-top-color: #FF6B6B;
+  border-top-color: var(--studio-red);
 }
 </style>

@@ -8,6 +8,10 @@ If terms like chord progression, key, or motif are unfamiliar, start with the [C
 
 ## Quick Start
 
+::: warning BETA
+The npm package is not yet published. During the beta period, please use the library via the [demo page](/) or build from source. See [Installation](./installation) for details.
+:::
+
 ```javascript
 import { MidiSketch, init, createDefaultConfig, downloadMidi } from '@libraz/midi-sketch'
 

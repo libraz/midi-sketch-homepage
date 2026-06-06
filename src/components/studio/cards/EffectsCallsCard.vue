@@ -206,8 +206,8 @@ const mixPatternOptions = [
 
 <style scoped>
 .effects-calls-card {
-  --step-accent: #60A5FA;
-  --accent-rgb: 96, 165, 250;
+  --step-accent: var(--studio-blue);
+  --accent-rgb: var(--studio-blue-rgb);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -247,19 +247,19 @@ const mixPatternOptions = [
   flex-direction: column;
   gap: 0.5rem;
   padding-left: 0.5rem;
-  border-left: 2px solid rgba(96, 165, 250, 0.2);
+  border-left: 2px solid rgba(var(--studio-blue-rgb), 0.2);
 }
 
 .sub-setting__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 .sub-setting__hint {
   font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
 }
 
 /* Compact Buttons */
@@ -276,28 +276,28 @@ const mixPatternOptions = [
   justify-content: center;
   gap: 0.35rem;
   padding: 0.5rem 0.5rem;
-  background: rgba(30, 30, 42, 0.6);
-  border: 1px solid rgba(96, 165, 250, 0.12);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-blue-rgb), 0.12);
   border-radius: 8px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .compact-btn:hover {
-  border-color: rgba(96, 165, 250, 0.3);
-  color: #FAFAFA;
-  background: rgba(96, 165, 250, 0.08);
+  border-color: rgba(var(--studio-blue-rgb), 0.3);
+  color: var(--studio-text-primary);
+  background: rgba(var(--studio-blue-rgb), 0.08);
 }
 
 .compact-btn--active {
-  background: rgba(96, 165, 250, 0.2);
+  background: rgba(var(--studio-blue-rgb), 0.2);
   border-color: var(--step-accent);
-  color: #FAFAFA;
-  box-shadow: 0 0 12px -4px rgba(96, 165, 250, 0.4);
+  color: var(--studio-text-primary);
+  box-shadow: 0 0 12px -4px rgba(var(--studio-blue-rgb), 0.4);
 }
 </style>

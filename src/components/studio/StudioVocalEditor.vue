@@ -569,7 +569,7 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--studio-scrim);
   /* backdrop-filter removed for performance */
 }
 
@@ -579,7 +579,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #0c0c12;
+  background: rgb(var(--studio-panel-deep-rgb));
   padding: 1rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -604,10 +604,10 @@ onUnmounted(() => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: rgba(250, 250, 250, 0.05);
-  border: 1px solid rgba(250, 250, 250, 0.15);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.15);
   border-radius: 8px;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   font-size: 1.4rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -616,22 +616,22 @@ onUnmounted(() => {
 }
 
 .close-button:hover {
-  background: rgba(248, 113, 113, 0.15);
-  border-color: rgba(248, 113, 113, 0.4);
-  color: #F87171;
+  background: rgba(var(--studio-red-rgb), 0.15);
+  border-color: rgba(var(--studio-red-rgb), 0.4);
+  color: var(--studio-red);
 }
 
 .editing-title {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1.25rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0 0 0.25rem 0;
 }
 
 .editing-hint {
   font-size: 0.85rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   margin: 0;
 }
 
@@ -672,21 +672,21 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   padding: 4px 10px;
-  background: rgba(12, 12, 18, 0.9);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(var(--studio-panel-deep-rgb), 0.9);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.3);
   border-radius: 4px;
   font-size: 12px;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   z-index: 10;
 }
 
 .staff-note-info__name {
   font-weight: 600;
-  color: #A78BFA;
+  color: var(--studio-purple-soft);
 }
 
 .staff-note-info__midi {
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 .editing-actions {
@@ -696,7 +696,7 @@ onUnmounted(() => {
   gap: 1rem;
   flex-shrink: 0;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(250, 250, 250, 0.1);
+  border-top: 1px solid rgba(var(--studio-ink-rgb), 0.1);
 }
 
 .editing-actions-right {
@@ -713,7 +713,7 @@ onUnmounted(() => {
   padding: 0.75rem 1.25rem;
   border: none;
   border-radius: 8px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -721,38 +721,38 @@ onUnmounted(() => {
 }
 
 .action-button--primary {
-  background: linear-gradient(135deg, #EC4899, #DB2777);
-  color: white;
-  box-shadow: 0 4px 12px -2px rgba(236, 72, 153, 0.4);
+  background: linear-gradient(135deg, var(--studio-pink), var(--studio-pink-soft));
+  color: var(--studio-on-accent);
+  box-shadow: 0 4px 12px -2px rgba(var(--studio-pink-rgb), 0.4);
 }
 
 .action-button--primary:hover {
-  box-shadow: 0 6px 16px -2px rgba(236, 72, 153, 0.5);
+  box-shadow: 0 6px 16px -2px rgba(var(--studio-pink-rgb), 0.5);
   transform: translateY(-1px);
 }
 
 .action-button--secondary {
-  background: rgba(250, 250, 250, 0.05);
-  border: 1px solid rgba(250, 250, 250, 0.15);
-  color: rgba(250, 250, 250, 0.7);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.15);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 .action-button--secondary:hover {
-  background: rgba(250, 250, 250, 0.1);
-  border-color: rgba(250, 250, 250, 0.25);
-  color: rgba(250, 250, 250, 0.9);
+  background: rgba(var(--studio-ink-rgb), 0.1);
+  border-color: rgba(var(--studio-ink-rgb), 0.25);
+  color: rgba(var(--studio-ink-rgb), 0.9);
 }
 
 .action-button--cancel {
   background: transparent;
-  border: 1px solid rgba(250, 250, 250, 0.2);
-  color: rgba(250, 250, 250, 0.6);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.2);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 .action-button--cancel:hover {
-  background: rgba(250, 250, 250, 0.05);
-  border-color: rgba(250, 250, 250, 0.3);
-  color: rgba(250, 250, 250, 0.8);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border-color: rgba(var(--studio-ink-rgb), 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 @media (max-width: 640px) {

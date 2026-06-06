@@ -43,10 +43,10 @@ function handleClick() {
   align-items: flex-start;
   gap: 0.25rem;
   padding: 0.875rem 1rem;
-  background: rgba(30, 30, 42, 0.6);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
   border: 1px solid rgba(var(--accent-rgb, 139, 92, 246), 0.12);
   border-radius: 12px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -70,7 +70,7 @@ function handleClick() {
 .option-card__title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .option-card--active .option-card__title {
@@ -80,12 +80,12 @@ function handleClick() {
 .option-card__desc {
   font-size: 0.75rem;
   font-weight: 400;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   line-height: 1.4;
 }
 
 .option-card--active .option-card__desc {
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
 }
 
 /* Disabled state */
@@ -97,7 +97,7 @@ function handleClick() {
 
 .option-card--disabled:hover {
   border-color: rgba(var(--accent-rgb, 139, 92, 246), 0.12);
-  background: rgba(30, 30, 42, 0.6);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
 }
 
 /* Compact variant */

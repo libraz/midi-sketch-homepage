@@ -63,6 +63,7 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | 9th | The extension a 9th above the root | `chordExt9th` / `chordExt9thProb` (default `0.25`) |
 | Tritone | The interval of 6 semitones | — |
 | Tritone substitution | Replacing a dominant with the chord a tritone away | `chordExtTritoneSub` / `chordExtTritoneSubProb` (default `0.5`) |
+| Secondary dominant | A dominant 7th resolving to a chord other than the tonic (`V/V` etc.) | — (inserted automatically) |
 | Chord tone | A note that belongs to the current chord | — |
 | Passing tone | A non-chord note bridging two chord tones | — |
 

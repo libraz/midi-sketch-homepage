@@ -26,6 +26,9 @@ export const SONG_IMAGE_BLUEPRINT_MAP: Record<string, number> = {
   citypop: 2, // StoryPop
   'anime-song': 0, // Traditional
   'vocaloid-anime': 2, // StoryPop (gradual build, evolving)
+  // RhythmLock + anime_opening style preset triggers the WASM RhythmSync lead
+  // setting (Vocaloid vocal style, max hook, driving 16th groove, locked riff)
+  'vocaloid-drive': 1, // RhythmLock
   'rock-pop': 1, // RhythmLock
 
   // Dance / Electronic category

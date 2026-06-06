@@ -22,8 +22,8 @@ defineProps<{
 
 <style scoped>
 .setting-section {
-  background: rgba(20, 20, 28, 0.4);
-  border: 1px solid rgba(var(--accent-rgb, 139, 92, 246), 0.1);
+  background: rgba(var(--studio-panel-rgb), 0.4);
+  border: 1px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.1);
   border-radius: 16px;
   padding: 1.25rem;
 }
@@ -31,20 +31,20 @@ defineProps<{
 .setting-section--featured {
   background: linear-gradient(
     135deg,
-    rgba(var(--accent-rgb, 139, 92, 246), 0.08) 0%,
-    rgba(20, 20, 28, 0.5) 100%
+    rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.08) 0%,
+    rgba(var(--studio-panel-rgb), 0.5) 100%
   );
-  border-color: rgba(var(--accent-rgb, 139, 92, 246), 0.2);
+  border-color: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.2);
 }
 
 .setting-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 600;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0 0 0.5rem;
 }
 
@@ -54,18 +54,18 @@ defineProps<{
 
 .setting-description {
   font-size: 0.8rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
   margin: 0 0 0.5rem;
   line-height: 1.5;
 }
 
 .setting-hint {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: rgba(var(--accent-rgb, 139, 92, 246), 0.7);
+  color: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.7);
   margin: 0 0 1rem;
   padding: 0.375rem 0.5rem;
-  background: rgba(var(--accent-rgb, 139, 92, 246), 0.08);
+  background: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.08);
   border-radius: 6px;
   display: inline-block;
 }

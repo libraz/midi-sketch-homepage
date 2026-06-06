@@ -55,7 +55,7 @@ defineProps<{
 }
 
 .summary-item__label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 500;
   color: rgba(250, 250, 250, 0.4);
@@ -64,7 +64,7 @@ defineProps<{
 }
 
 .summary-item__value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--accent);

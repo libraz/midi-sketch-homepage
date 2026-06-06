@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useData } from 'vitepress'
 import {
   type PlacedNote,
   type PianoRollSafetyInfo,
@@ -9,6 +10,7 @@ import {
   NoteSafety,
   type NoteSafetyLevel,
 } from './types'
+import { getPianoRollPalette } from './palette'
 import { useViewport } from './composables/useViewport'
 import { useNoteInteraction } from './composables/useNoteInteraction'
 import { useLayeredCanvas } from './composables/useLayeredCanvas'
@@ -140,6 +142,10 @@ const currentChord = computed<ChordInfo>(() => {
   }
 })
 
+// Theme-aware canvas palette (follows the site appearance toggle)
+const { isDark } = useData()
+const palette = computed(() => getPianoRollPalette(isDark.value))
+
 // Initialize layered canvas composable
 const layeredCanvas = useLayeredCanvas({
   canvasRefs: {
@@ -186,6 +192,7 @@ const layeredCanvas = useLayeredCanvas({
   xToTick: viewport.xToTick,
   isInVocalRange: viewport.isInVocalRange,
   playheadTick: ref(null), // Playhead is now CSS-based
+  palette,
 })
 
 // Redraw functions with layer awareness
@@ -452,6 +459,11 @@ watch([interaction.isDragging, interaction.isSelecting], () => {
   redrawOverlay()
 })
 
+// Watch theme palette - re-render every canvas layer on appearance toggle
+watch(palette, () => {
+  redrawAll()
+})
+
 // ============================================================================
 // Lifecycle
 // ============================================================================
@@ -566,18 +578,17 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 .piano-roll-editor {
-  --accent: #8B5CF6;
-  --safe: #4ADE80;
-  --warning: #FBBF24;
-  --danger: #F87171;
-  --surface: rgba(12, 12, 18, 0.98);
-  --surface-elevated: rgba(22, 22, 32, 0.95);
-  --border: rgba(139, 92, 246, 0.15);
-  --text-primary: #FAFAFA;
-  --text-secondary: rgba(250, 250, 250, 0.6);
+  --accent: var(--studio-purple);
+  --safe: var(--studio-green);
+  --warning: var(--studio-amber);
+  --danger: var(--studio-red);
+  --surface: rgba(var(--studio-panel-deep-rgb), 0.98);
+  --surface-elevated: rgba(var(--studio-panel-rgb), 0.95);
+  --border: rgba(var(--studio-purple-rgb), 0.15);
+  --text-primary: var(--studio-text-primary);
+  --text-secondary: rgba(var(--studio-ink-rgb), 0.6);
 
   display: flex;
   flex-direction: column;
@@ -585,7 +596,7 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
   position: relative;
   user-select: none;
 }

@@ -36,8 +36,8 @@ function isInVocalRange(pitch: number, range: { low: number; high: number }): bo
   width: 40px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(90deg, rgba(25, 25, 35, 0.98) 0%, rgba(20, 20, 28, 0.95) 100%);
-  border-right: 1px solid rgba(139, 92, 246, 0.15);
+  background: linear-gradient(90deg, rgba(var(--studio-panel-raised-rgb), 0.98) 0%, rgba(var(--studio-panel-rgb), 0.95) 100%);
+  border-right: 1px solid rgba(var(--studio-purple-rgb), 0.15);
   flex-shrink: 0;
   position: sticky;
   left: 0;
@@ -75,7 +75,7 @@ function isInVocalRange(pitch: number, range: { low: number; high: number }): bo
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #8B5CF6;
+  background: var(--studio-purple);
   opacity: 0.4;
 }
 
@@ -97,7 +97,7 @@ function isInVocalRange(pitch: number, range: { low: number; high: number }): bo
 }
 
 .piano-key__label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.45rem;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.5);

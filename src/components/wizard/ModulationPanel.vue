@@ -99,15 +99,15 @@ const currentTimingOption = computed(() =>
 }
 
 .sub-label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.8);
 }
 
 .sub-hint {
   font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
   margin: 0;
 }
 

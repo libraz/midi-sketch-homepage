@@ -142,23 +142,23 @@ const advancedSummary = computed(() => {
 
 <style scoped>
 .key-tempo-section {
-  --section-accent: #8B5CF6;
-  --section-accent-rgb: 139, 92, 246;
+  --section-accent: var(--studio-purple);
+  --section-accent-rgb: var(--studio-purple-rgb);
 }
 
 .key-tempo-section--purple {
-  --section-accent: #8B5CF6;
-  --section-accent-rgb: 139, 92, 246;
+  --section-accent: var(--studio-purple);
+  --section-accent-rgb: var(--studio-purple-rgb);
 }
 
 .key-tempo-section--pink {
-  --section-accent: #EC4899;
-  --section-accent-rgb: 236, 72, 153;
+  --section-accent: var(--studio-pink);
+  --section-accent-rgb: var(--studio-pink-rgb);
 }
 
 .key-tempo-section--blue {
-  --section-accent: #60A5FA;
-  --section-accent-rgb: 96, 165, 250;
+  --section-accent: var(--studio-blue);
+  --section-accent-rgb: var(--studio-blue-rgb);
 }
 
 .key-tempo-stack {
@@ -207,10 +207,10 @@ const advancedSummary = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.9);
+  color: rgba(var(--studio-ink-rgb), 0.9);
   margin: 0;
 }
 
@@ -224,13 +224,13 @@ const advancedSummary = computed(() => {
   border: 1px solid rgba(var(--section-accent-rgb), 0.12);
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(20, 20, 28, 0.3);
+  background: rgba(var(--studio-panel-rgb), 0.3);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .advanced-accordion--open {
   border-color: rgba(var(--section-accent-rgb), 0.25);
-  background: rgba(20, 20, 28, 0.5);
+  background: rgba(var(--studio-panel-rgb), 0.5);
 }
 
 .advanced-accordion__header {
@@ -251,7 +251,7 @@ const advancedSummary = computed(() => {
 
 .advanced-accordion__icon {
   font-size: 0.9rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   transition: color 0.2s ease;
 }
 
@@ -260,20 +260,20 @@ const advancedSummary = computed(() => {
 }
 
 .advanced-accordion__title {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   transition: color 0.2s ease;
 }
 
 .advanced-accordion--open .advanced-accordion__title {
-  color: rgba(250, 250, 250, 0.9);
+  color: rgba(var(--studio-ink-rgb), 0.9);
 }
 
 .advanced-accordion__summary {
   margin-left: auto;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--section-accent);
   opacity: 0.8;
@@ -286,7 +286,7 @@ const advancedSummary = computed(() => {
   justify-content: center;
   width: 20px;
   height: 20px;
-  color: rgba(250, 250, 250, 0.4);
+  color: rgba(var(--studio-ink-rgb), 0.4);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
 }
 

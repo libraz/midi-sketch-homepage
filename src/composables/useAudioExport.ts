@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { Mp3Encoder } from '@breezystack/lamejs'
-import { GM_TO_DRUM, loadInstrumentsForTracks, scaleTrackVelocity } from '@/utils/gmInstruments'
+import { type DrumKitName, gmToDrumSample, loadInstrumentsForTracks, scaleTrackVelocity } from '@/utils/gmInstruments'
 
 interface MidiNote {
   note?: number
@@ -39,6 +39,8 @@ export interface ExportOptions {
   bitrate?: number
   /** Track mute settings */
   mutedTracks?: Record<string, boolean>
+  /** Drum machine kit (per song image); defaults to TR-808 */
+  drumKit?: DrumKitName
 }
 
 export type ExportStatus =
@@ -62,7 +64,7 @@ export function useAudioExport() {
     filename: string = 'output.mp3',
     options: ExportOptions = {}
   ): Promise<void> {
-    const { bitrate = 192, mutedTracks = { SE: true } } = options
+    const { bitrate = 192, mutedTracks = { SE: true }, drumKit } = options
 
     isExporting.value = true
     exportStatus.value = 'loading-instruments'
@@ -98,7 +100,7 @@ export function useAudioExport() {
       const { trackMap, drums } = await loadInstrumentsForTracks(
         offlineCtx as unknown as AudioContext,
         eventData.tracks,
-        { disableScheduler: true }
+        { disableScheduler: true, drumKit }
       )
 
       exportStatus.value = 'scheduling'
@@ -120,7 +122,7 @@ export function useAudioExport() {
           const durationSeconds = ticksToSeconds(durationTicks)
 
           if (isDrumTrack) {
-            const drumSample = GM_TO_DRUM[noteNum]
+            const drumSample = gmToDrumSample(noteNum, drumKit)
             if (drumSample) {
               drums.start({
                 note: drumSample,

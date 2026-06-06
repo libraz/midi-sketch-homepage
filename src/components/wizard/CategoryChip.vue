@@ -87,7 +87,7 @@ watch(() => props.activeId, () => {
 }
 
 .category-chip {
-  --chip-color: #8B5CF6;
+  --chip-color: var(--studio-purple);
 
   display: inline-flex;
   align-items: center;
@@ -98,10 +98,10 @@ watch(() => props.activeId, () => {
   background: color-mix(in srgb, var(--chip-color) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--chip-color) 25%, transparent);
   border-radius: 100px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 500;
-  color: color-mix(in srgb, var(--chip-color) 80%, #FAFAFA);
+  color: color-mix(in srgb, var(--chip-color) 80%, var(--studio-text-primary));
   cursor: pointer;
   transition: all 0.25s ease;
 }
@@ -115,7 +115,7 @@ watch(() => props.activeId, () => {
 .category-chip--active {
   background: color-mix(in srgb, var(--chip-color) 25%, transparent);
   border-color: var(--chip-color);
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   box-shadow: 0 0 24px -4px color-mix(in srgb, var(--chip-color) 50%, transparent);
 }
 

@@ -1,0 +1,109 @@
+/**
+ * Demo studio theme tokens.
+ *
+ * Light values live on :root; `.dark` (toggled on <html> by the VitePress
+ * appearance switch) overrides them. Demo components reference these tokens
+ * instead of hardcoded colors so the demo follows the site-wide appearance.
+ *
+ * Naming convention:
+ *   --studio-*-rgb  → bare "R, G, B" channels, meant for `rgba(var(--…-rgb), A)`
+ *                     so each call site keeps its original alpha.
+ *   --studio-*      → ready-to-use color values.
+ */
+
+:root {
+  /* Backgrounds */
+  --studio-page-bg: #f5f4fa;
+  --studio-page-bg-rgb: 245, 244, 250;
+  --studio-bg-deep: #eceaf4;
+  --studio-panel-deep-rgb: 252, 252, 255;
+  --studio-panel-rgb: 255, 255, 255;
+  --studio-panel-raised-rgb: 255, 255, 255;
+
+  /* Neutral ink: text and subtle surfaces (replaces white-alpha on dark) */
+  --studio-ink-rgb: 24, 20, 35;
+  --studio-text-primary: #1b1726;
+
+  /* Text/icons sitting on saturated accent fills (always light) */
+  --studio-on-accent: #ffffff;
+
+  /* Accents */
+  --studio-purple: #7c3aed;
+  --studio-purple-rgb: 124, 58, 237;
+  --studio-purple-soft: #6d28d9;
+  --studio-purple-soft-rgb: 109, 40, 217;
+  --studio-pink: #db2777;
+  --studio-pink-rgb: 219, 39, 119;
+  --studio-pink-soft: #be185d;
+  --studio-blue: #2563eb;
+  --studio-blue-rgb: 37, 99, 235;
+  --studio-blue-soft-rgb: 29, 78, 216;
+  --studio-green: #16a34a;
+  --studio-green-rgb: 22, 163, 74;
+  --studio-amber: #d97706;
+  --studio-amber-rgb: 217, 119, 6;
+  --studio-orange: #b45309;
+  --studio-orange-rgb: 180, 83, 9;
+  --studio-red: #dc2626;
+  --studio-red-rgb: 220, 38, 38;
+  --studio-cyan: #0891b2;
+  --studio-cyan-rgb: 8, 145, 178;
+
+  /* Shadows & overlays */
+  --studio-shadow-strong: rgba(76, 60, 130, 0.25);
+  --studio-shadow-mid: rgba(76, 60, 130, 0.15);
+  --studio-shadow-soft: rgba(76, 60, 130, 0.08);
+  --studio-scrim: rgba(28, 20, 55, 0.4);
+
+  /* Atmosphere */
+  --studio-orb-opacity: 0.18;
+  --studio-noise-opacity: 0.015;
+}
+
+.dark {
+  /* Backgrounds */
+  --studio-page-bg: #050508;
+  --studio-page-bg-rgb: 5, 5, 8;
+  --studio-bg-deep: #07070a;
+  --studio-panel-deep-rgb: 12, 12, 18;
+  --studio-panel-rgb: 20, 20, 28;
+  --studio-panel-raised-rgb: 28, 28, 40;
+
+  /* Neutral ink */
+  --studio-ink-rgb: 250, 250, 250;
+  --studio-text-primary: #fafafa;
+
+  --studio-on-accent: #ffffff;
+
+  /* Accents */
+  --studio-purple: #8b5cf6;
+  --studio-purple-rgb: 139, 92, 246;
+  --studio-purple-soft: #a78bfa;
+  --studio-purple-soft-rgb: 167, 139, 250;
+  --studio-pink: #ec4899;
+  --studio-pink-rgb: 236, 72, 153;
+  --studio-pink-soft: #f472b6;
+  --studio-blue: #60a5fa;
+  --studio-blue-rgb: 96, 165, 250;
+  --studio-blue-soft-rgb: 147, 197, 253;
+  --studio-green: #4ade80;
+  --studio-green-rgb: 74, 222, 128;
+  --studio-amber: #fbbf24;
+  --studio-amber-rgb: 251, 191, 36;
+  --studio-orange: #f59e0b;
+  --studio-orange-rgb: 245, 158, 11;
+  --studio-red: #f87171;
+  --studio-red-rgb: 248, 113, 113;
+  --studio-cyan: #06b6d4;
+  --studio-cyan-rgb: 6, 182, 212;
+
+  /* Shadows & overlays */
+  --studio-shadow-strong: rgba(0, 0, 0, 0.5);
+  --studio-shadow-mid: rgba(0, 0, 0, 0.3);
+  --studio-shadow-soft: rgba(0, 0, 0, 0.15);
+  --studio-scrim: rgba(0, 0, 0, 0.6);
+
+  /* Atmosphere */
+  --studio-orb-opacity: 0.5;
+  --studio-noise-opacity: 0.03;
+}

@@ -10,7 +10,7 @@ import KeyTempoSection from '@/components/wizard/KeyTempoSection.vue'
 
 <style scoped>
 .key-tempo-card {
-  --step-accent: #8B5CF6;
-  --accent-rgb: 139, 92, 246;
+  --step-accent: var(--studio-purple);
+  --accent-rgb: var(--studio-purple-rgb);
 }
 </style>

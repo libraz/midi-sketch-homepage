@@ -484,8 +484,8 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 <style scoped>
 .arrangement-card {
-  --step-accent: #60A5FA;
-  --accent-rgb: 96, 165, 250;
+  --step-accent: var(--studio-blue);
+  --accent-rgb: var(--studio-blue-rgb);
 }
 
 /* RhythmSync Info Banner */
@@ -495,8 +495,8 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   gap: 0.75rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  background: rgba(139, 92, 246, 0.08);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: rgba(var(--studio-purple-rgb), 0.08);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.25);
   border-radius: 10px;
 }
 
@@ -507,7 +507,7 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 .rhythm-sync-banner__text {
   font-size: 0.8rem;
-  color: rgba(167, 139, 250, 0.9);
+  color: rgba(var(--studio-purple-soft-rgb), 0.9);
   line-height: 1.5;
 }
 
@@ -518,11 +518,11 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 }
 
 .arrangement-hint {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: rgba(96, 165, 250, 0.7);
+  color: rgba(var(--studio-blue-rgb), 0.7);
   padding: 0.375rem 0.5rem;
-  background: rgba(96, 165, 250, 0.08);
+  background: rgba(var(--studio-blue-rgb), 0.08);
   border-radius: 6px;
   display: inline-block;
   margin-bottom: 0.75rem;
@@ -540,8 +540,8 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   display: flex;
   flex-direction: column;
   min-height: 110px;
-  background: rgba(20, 20, 28, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-panel-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.1);
   border-radius: 12px;
   padding: 0.875rem;
   cursor: pointer;
@@ -563,9 +563,9 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 }
 
 .blueprint-card:hover {
-  border-color: rgba(139, 92, 246, 0.25);
+  border-color: rgba(var(--studio-purple-rgb), 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px -8px var(--studio-shadow-mid);
 }
 
 .blueprint-card:hover .blueprint-card__glow {
@@ -575,10 +575,10 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 .blueprint-card--selected,
 .blueprint-card--selected:hover {
   border-color: var(--step-accent);
-  background: rgba(96, 165, 250, 0.08);
+  background: rgba(var(--studio-blue-rgb), 0.08);
   box-shadow:
     0 0 0 2px var(--step-accent),
-    0 0 32px -8px rgba(96, 165, 250, 0.4);
+    0 0 32px -8px rgba(var(--studio-blue-rgb), 0.4);
 }
 
 .blueprint-card--selected .blueprint-card__glow,
@@ -604,14 +604,14 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
+  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.15), rgba(var(--studio-pink-rgb), 0.1));
   border-radius: 9px;
   flex-shrink: 0;
 }
 
 .blueprint-card__icon {
   font-size: 1.1rem;
-  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.4));
+  filter: drop-shadow(0 0 6px rgba(var(--studio-purple-rgb), 0.4));
 }
 
 .blueprint-card__chips {
@@ -623,11 +623,11 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 }
 
 .blueprint-card__badge {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--step-accent);
-  background: rgba(96, 165, 250, 0.2);
+  background: rgba(var(--studio-blue-rgb), 0.2);
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   letter-spacing: 0.02em;
@@ -635,12 +635,12 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 }
 
 .blueprint-card__rhythm-tag {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   font-weight: 600;
-  color: #F59E0B;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--studio-orange);
+  background: rgba(var(--studio-orange-rgb), 0.15);
+  border: 1px solid rgba(var(--studio-orange-rgb), 0.3);
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   letter-spacing: 0.02em;
@@ -650,24 +650,24 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 .blueprint-card__drums-tag {
   font-size: 0.7rem;
   padding: 0.1rem 0.3rem;
-  background: rgba(96, 165, 250, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  background: rgba(var(--studio-blue-rgb), 0.12);
+  border: 1px solid rgba(var(--studio-blue-rgb), 0.25);
   border-radius: 4px;
   cursor: help;
 }
 
 .blueprint-card__name {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0 0 0.25rem;
   letter-spacing: -0.01em;
 }
 
 .blueprint-card__desc {
   font-size: 0.72rem;
-  color: rgba(250, 250, 250, 0.5);
+  color: rgba(var(--studio-ink-rgb), 0.5);
   margin: 0;
   line-height: 1.4;
 }
@@ -683,10 +683,10 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   justify-content: center;
   background: var(--step-accent);
   border-radius: 50%;
-  color: white;
+  color: var(--studio-on-accent);
   font-size: 0.65rem;
   font-weight: 700;
-  box-shadow: 0 2px 8px -2px rgba(96, 165, 250, 0.5);
+  box-shadow: 0 2px 8px -2px rgba(var(--studio-blue-rgb), 0.5);
   animation: check-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 2;
 }
@@ -716,13 +716,13 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 /* Recommended badge (for blueprint suggestions) */
 .recommended-badge {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   padding: 0.25rem 0.5rem;
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(var(--studio-green-rgb), 0.2);
+  border: 1px solid rgba(var(--studio-green-rgb), 0.3);
   border-radius: 4px;
-  color: #22C55E;
+  color: var(--studio-green);
   margin-left: 0.5rem;
 }
 
@@ -737,8 +737,8 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 .ext-desc-list {
   margin-top: 0.75rem;
   padding: 0.625rem 0.875rem;
-  background: rgba(96, 165, 250, 0.06);
-  border: 1px solid rgba(96, 165, 250, 0.15);
+  background: rgba(var(--studio-blue-rgb), 0.06);
+  border: 1px solid rgba(var(--studio-blue-rgb), 0.15);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -748,12 +748,12 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 .ext-desc-list__item {
   margin: 0;
   font-size: 0.75rem;
-  color: rgba(250, 250, 250, 0.65);
+  color: rgba(var(--studio-ink-rgb), 0.65);
   line-height: 1.5;
 }
 
 .ext-desc-list__item strong {
-  color: rgba(147, 197, 253, 0.9);
+  color: rgba(var(--studio-blue-soft-rgb), 0.9);
 }
 
 /* Advanced probability subsection */
@@ -768,10 +768,10 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   padding: 0.4rem 0.6rem;
   background: transparent;
   border: none;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
-  color: rgba(147, 197, 253, 0.9);
+  color: rgba(var(--studio-blue-soft-rgb), 0.9);
   cursor: pointer;
 }
 
@@ -794,7 +794,7 @@ watch(blueprintNeedsDrums, (needsDrums) => {
 
 .sub-setting__hint {
   font-size: 0.7rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
 }
 
 /* Sub-setting (Pattern, Speed) */
@@ -803,25 +803,25 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   flex-direction: column;
   gap: 0.5rem;
   padding-left: 0.5rem;
-  border-left: 2px solid rgba(96, 165, 250, 0.2);
+  border-left: 2px solid rgba(var(--studio-blue-rgb), 0.2);
 }
 
 .sub-setting__label {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
 }
 
 /* Warning hint */
 .warning-hint {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(234, 179, 8, 0.1);
-  border: 1px solid rgba(234, 179, 8, 0.2);
+  background: rgba(var(--studio-amber-rgb), 0.1);
+  border: 1px solid rgba(var(--studio-amber-rgb), 0.2);
   border-radius: 8px;
   font-size: 0.75rem;
-  color: rgba(234, 179, 8, 0.9);
+  color: rgba(var(--studio-amber-rgb), 0.9);
 }
 
 /* Compact Buttons */
@@ -854,29 +854,29 @@ watch(blueprintNeedsDrums, (needsDrums) => {
   justify-content: center;
   gap: 0.35rem;
   padding: 0.5rem 0.5rem;
-  background: rgba(30, 30, 42, 0.6);
-  border: 1px solid rgba(96, 165, 250, 0.12);
+  background: rgba(var(--studio-panel-raised-rgb), 0.6);
+  border: 1px solid rgba(var(--studio-blue-rgb), 0.12);
   border-radius: 8px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .compact-btn:hover {
-  border-color: rgba(96, 165, 250, 0.3);
-  color: #FAFAFA;
-  background: rgba(96, 165, 250, 0.08);
+  border-color: rgba(var(--studio-blue-rgb), 0.3);
+  color: var(--studio-text-primary);
+  background: rgba(var(--studio-blue-rgb), 0.08);
 }
 
 .compact-btn--active {
-  background: rgba(96, 165, 250, 0.2);
+  background: rgba(var(--studio-blue-rgb), 0.2);
   border-color: var(--step-accent);
-  color: #FAFAFA;
-  box-shadow: 0 0 12px -4px rgba(96, 165, 250, 0.4);
+  color: var(--studio-text-primary);
+  box-shadow: 0 0 12px -4px rgba(var(--studio-blue-rgb), 0.4);
 }
 
 .compact-btn__icon {

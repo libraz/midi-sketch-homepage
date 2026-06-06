@@ -6,7 +6,6 @@ import {
   type ChordAtBar,
   NoteSafety,
   type NoteSafetyLevel,
-  SAFETY_COLORS,
   NOTE_NAMES,
   MIN_NOTE,
   MAX_NOTE,
@@ -15,6 +14,7 @@ import {
   isBlackKey,
   getReasonText,
 } from '@/components/PianoRollEditor/types'
+import type { PianoRollPalette } from '@/components/PianoRollEditor/palette'
 
 // ============================================================================
 // Layered Canvas Composable - Separates drawing into layers for performance
@@ -80,6 +80,9 @@ export interface LayeredCanvasContext {
 
   // Playback
   playheadTick: Ref<number | null>
+
+  // Theme-aware canvas palette (re-render when it changes)
+  palette: Ref<PianoRollPalette> | ComputedRef<PianoRollPalette>
 }
 
 // Helper function for rounded rectangles
@@ -157,13 +160,14 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     const noteH = ctx.noteHeight.value
     const dpr = ctx.dpr.value
     const totalTicks = ctx.totalTicks.value
+    const palette = ctx.palette.value
 
     context.clearRect(0, 0, width * dpr, height * dpr)
     context.save()
     context.scale(dpr, dpr)
 
     // Background - full canvas
-    context.fillStyle = 'rgba(12, 12, 18, 0.98)'
+    context.fillStyle = palette.background
     context.fillRect(0, 0, width, height)
 
     // Draw ALL note rows (full height)
@@ -173,21 +177,21 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
       const inRange = ctx.isInVocalRange(pitch)
 
       // Base row color
-      context.fillStyle = black ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.03)'
+      context.fillStyle = black ? palette.blackKeyRow : palette.whiteKeyRow
       context.fillRect(0, y, width, noteH)
 
       // Vocal range indicator
       if (inRange) {
-        context.fillStyle = 'rgba(139, 92, 246, 0.08)'
+        context.fillStyle = palette.vocalRangeHighlight
         context.fillRect(0, y, width, noteH)
       } else {
-        context.fillStyle = 'rgba(0, 0, 0, 0.5)'
+        context.fillStyle = palette.outOfRangeOverlay
         context.fillRect(0, y, width, noteH)
       }
     }
 
     // Draw stripe pattern for out-of-range rows (batched)
-    context.strokeStyle = 'rgba(60, 60, 70, 0.4)'
+    context.strokeStyle = palette.outOfRangeStripe
     context.lineWidth = 1
     context.beginPath()
     for (let pitch = MIN_NOTE; pitch <= MAX_NOTE; pitch++) {
@@ -204,7 +208,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     context.stroke()
 
     // Draw horizontal grid lines (batched)
-    context.strokeStyle = 'rgba(255, 255, 255, 0.05)'
+    context.strokeStyle = palette.horizontalGridLine
     context.lineWidth = 0.5
     context.beginPath()
     for (let pitch = MIN_NOTE; pitch <= MAX_NOTE; pitch++) {
@@ -215,7 +219,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     context.stroke()
 
     // Draw octave lines (batched)
-    context.strokeStyle = 'rgba(139, 92, 246, 0.3)'
+    context.strokeStyle = palette.octaveLine
     context.lineWidth = 1
     context.beginPath()
     for (let pitch = MIN_NOTE; pitch <= MAX_NOTE; pitch++) {
@@ -229,7 +233,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
 
     // Draw vertical grid lines - ALL ticks
     // Sub-beat lines
-    context.strokeStyle = 'rgba(255, 255, 255, 0.05)'
+    context.strokeStyle = palette.subBeatLine
     context.lineWidth = 0.5
     context.beginPath()
     for (let tick = 0; tick <= totalTicks; tick += ctx.gridSnap.value) {
@@ -242,7 +246,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     context.stroke()
 
     // Beat lines
-    context.strokeStyle = 'rgba(139, 92, 246, 0.15)'
+    context.strokeStyle = palette.beatLine
     context.lineWidth = 0.5
     context.beginPath()
     for (let tick = 0; tick <= totalTicks; tick += PPQ) {
@@ -255,7 +259,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     context.stroke()
 
     // Bar lines
-    context.strokeStyle = 'rgba(139, 92, 246, 0.3)'
+    context.strokeStyle = palette.barLine
     context.lineWidth = 1
     context.beginPath()
     for (let tick = 0; tick <= totalTicks; tick += 4 * PPQ) {
@@ -266,7 +270,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     context.stroke()
 
     // Bar numbers
-    context.fillStyle = 'rgba(255, 255, 255, 0.4)'
+    context.fillStyle = palette.barNumber
     context.font = '9px JetBrains Mono, monospace'
     for (let tick = 0; tick <= totalTicks; tick += 4 * PPQ) {
       const x = ctx.tickToX(tick)
@@ -361,7 +365,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
           ? ctx.getSafetyAtTick.value(seg.startTick)
           : ctx.safetyInfo.value
         const segSafety = segSafetyInfo?.safety?.[pitch] ?? getNoteSafety(pitch, ctx.safetyInfo.value, ctx.currentChord.value, inRange)
-        const colors = SAFETY_COLORS[segSafety]
+        const colors = ctx.palette.value.safety[segSafety]
 
         context.fillStyle = colors.bg
         context.fillRect(seg.startX, y, segWidth, noteH)
@@ -382,6 +386,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
     isHoveredNote: boolean,
     isDraggingThis: boolean
   ) {
+    const palette = ctx.palette.value
     const endTick = startTick + duration
     const y = ctx.noteToY(pitch)
     const fullX = ctx.tickToX(startTick)
@@ -413,7 +418,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
         ? ctx.getSafetyAtTick.value(seg.startTick)
         : ctx.safetyInfo.value
       const segSafety = segSafetyInfo?.safety?.[pitch] ?? getNoteSafety(pitch, ctx.safetyInfo.value, ctx.currentChord.value, ctx.isInVocalRange(pitch))
-      const segColors = SAFETY_COLORS[segSafety]
+      const segColors = ctx.palette.value.safety[segSafety]
 
       context.fillStyle = segColors.text
       context.globalAlpha = isDraggingThis ? 0.9 : (isSelected ? 1 : 0.85)
@@ -440,10 +445,10 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
       context.globalAlpha = 1
 
       if (isSelected) {
-        context.strokeStyle = 'rgba(255, 255, 255, 0.9)'
+        context.strokeStyle = palette.selectedNoteBorder
         context.lineWidth = 2
       } else if (isHoveredNote) {
-        context.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+        context.strokeStyle = palette.hoveredNoteBorder
         context.lineWidth = 2
       } else {
         context.strokeStyle = segColors.border
@@ -454,7 +459,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
 
     // Selection indicator
     if (isSelected) {
-      context.fillStyle = 'rgba(255, 255, 255, 0.9)'
+      context.fillStyle = palette.selectionIndicator
       context.beginPath()
       context.moveTo(fullX, y + 2)
       context.lineTo(fullX + 6, y + 2)
@@ -472,7 +477,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
       const gridX = fullX + fullWidth - gridWidth - 6
       const centerY = y + noteH / 2
 
-      context.fillStyle = 'rgba(0, 0, 0, 0.5)'
+      context.fillStyle = palette.resizeHandleDot
       for (let row = 0; row < gridSize; row++) {
         for (let col = 0; col < gridSize; col++) {
           const dotX = gridX + col * dotSpacing
@@ -517,9 +522,9 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
       const sw = Math.abs(ctx.selectionEnd.value.x - ctx.selectionStart.value.x)
       const sh = Math.abs(ctx.selectionEnd.value.y - ctx.selectionStart.value.y)
 
-      context.fillStyle = 'rgba(139, 92, 246, 0.15)'
+      context.fillStyle = ctx.palette.value.selectionBoxFill
       context.fillRect(sx, sy, sw, sh)
-      context.strokeStyle = 'rgba(139, 92, 246, 0.6)'
+      context.strokeStyle = ctx.palette.value.selectionBoxBorder
       context.lineWidth = 1
       context.setLineDash([4, 2])
       context.strokeRect(sx, sy, sw, sh)
@@ -531,6 +536,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
   }
 
   function drawDragPreview(context: CanvasRenderingContext2D, noteH: number) {
+    const palette = ctx.palette.value
     context.setLineDash([4, 4])
 
     // Multi-note drag: draw ghost for all dragged notes
@@ -542,7 +548,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
         const ghostX = ctx.tickToX(ghostTick)
         const ghostWidth = Math.max(20, dragNote.duration * ctx.pixelsPerTick.value)
         const ghostSafety = getNoteSafety(ghostPitch, ctx.safetyInfo.value, ctx.currentChord.value, ctx.isInVocalRange(ghostPitch))
-        const ghostColors = SAFETY_COLORS[ghostSafety]
+        const ghostColors = palette.safety[ghostSafety]
 
         context.fillStyle = ghostColors.bg
         context.strokeStyle = ghostColors.border
@@ -557,7 +563,7 @@ export function useLayeredCanvas(ctx: LayeredCanvasContext) {
       const ghostX = ctx.tickToX(ctx.dragPreviewTick.value!)
       const ghostWidth = Math.max(20, (ctx.dragPreviewDuration.value ?? 480) * ctx.pixelsPerTick.value)
       const ghostSafety = getNoteSafety(ctx.dragPreviewPitch.value!, ctx.safetyInfo.value, ctx.currentChord.value, ctx.isInVocalRange(ctx.dragPreviewPitch.value!))
-      const ghostColors = SAFETY_COLORS[ghostSafety]
+      const ghostColors = palette.safety[ghostSafety]
 
       context.fillStyle = ghostColors.bg
       context.strokeStyle = ghostColors.border

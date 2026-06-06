@@ -69,7 +69,7 @@ defineProps<{
 }
 
 .info-section h4 {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.55rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
@@ -89,7 +89,7 @@ defineProps<{
   background: rgba(139, 92, 246, 0.2);
   border: 1px solid rgba(139, 92, 246, 0.4);
   border-radius: 3px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
   color: #A78BFA;
 }

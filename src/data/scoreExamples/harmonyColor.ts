@@ -70,6 +70,42 @@ export const harmonyColorExamples: Record<string, ScoreExampleDef> = {
     ],
   },
 
+  secondaryDominant: {
+    tags: ['secondary dominant'],
+    badge: { en: 'Secondary dominant', ja: 'セカンダリードミナント' },
+    title: { en: 'IV → V → I versus IV → V/V → V → I', ja: 'IV→V→I と IV→V/V→V→I' },
+    diagnosis: {
+      en: 'Inserting D7 before G aims a dominant pull at G itself — the F♯ makes G a temporary target.',
+      ja: 'Gの前にD7を挿入すると、ドミナントの引力がGそのものに向きます。F♯がGを一時的なターゲットにします。',
+    },
+    caption: {
+      en: 'D7 is the dominant 7th of G, so D7 "wants" to land on G exactly the way G7 wants to land on C. The borrowed F♯ — a note from outside C major — is what creates that temporary pull. MidiSketch inserts secondary dominants automatically based on section type and style; there is no config flag.',
+      ja: 'D7はGのドミナント7thなので、G7がCに着地したがるのとまったく同じように、D7はGに着地したがります。借りてきたF♯ — Cメジャーの外の音 — がその一時的な引力を生み出します。MidiSketchはセクションタイプとスタイルに基づいてセカンダリードミナントを自動挿入します。設定フラグはありません。',
+    },
+    time: '4/4',
+    bars: 2,
+    width: 640,
+    upperClef: 'treble',
+    lowerClef: 'treble',
+    upperLabel: { en: 'IV → V → I', ja: 'IV → V → I' },
+    lowerLabel: { en: 'IV → V/V → V → I', ja: 'IV → V/V → V → I' },
+    upper: [
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F', annotation: 'IV' },
+      { key: 'g/4', keys: ['g/4', 'b/4', 'd/5'], duration: 'h', chordSymbol: 'G', annotation: 'V' },
+      { key: 'c/4', keys: ['c/4', 'e/4', 'g/4'], duration: 'w', chordSymbol: 'C', annotation: 'I', color: GREEN },
+    ],
+    lower: [
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F', annotation: 'IV' },
+      { key: 'd/4', keys: ['d/4', 'f#/4', 'a/4', 'c/5'], accidentals: [null, '#', null, null], duration: 'h', chordSymbol: 'D7', annotation: 'V/V', color: AMBER },
+      { key: 'g/4', keys: ['g/4', 'b/4', 'd/5'], duration: 'h', chordSymbol: 'G', annotation: 'V' },
+      { key: 'c/4', keys: ['c/4', 'e/4', 'g/4'], duration: 'h', chordSymbol: 'C', annotation: 'I', color: GREEN },
+    ],
+    issues: [
+      { kind: 'motion', label: 'D7 → G', fromLower: 1, toLower: 2, color: GREEN },
+    ],
+    playback: 'sequential',
+  },
+
   tritoneInterval: {
     tags: ['tritone'],
     badge: { en: 'Tritone', ja: 'トライトーン' },

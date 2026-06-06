@@ -19,7 +19,7 @@ defineProps<{
 }
 
 .step-header__title {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1.5rem;
   font-weight: 700;
   color: #FAFAFA;

@@ -36,10 +36,10 @@ const emit = defineEmits<{
   padding: 0.875rem 1.5rem;
   border: none;
   border-radius: 12px;
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--studio-on-accent);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -73,11 +73,12 @@ const emit = defineEmits<{
   transform: translateY(2px);
 }
 
-/* Color variants */
+/* Color variants. Saturated brand gradients stay literal so the call-to-action
+   reads the same in both themes; only the colored glow uses the accent token. */
 .download-btn--purple {
   background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
   box-shadow:
-    0 4px 16px -4px rgba(139, 92, 246, 0.4),
+    0 4px 16px -4px rgba(var(--studio-purple-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -85,7 +86,7 @@ const emit = defineEmits<{
 .download-btn--purple:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 24px -4px rgba(139, 92, 246, 0.5),
+    0 8px 24px -4px rgba(var(--studio-purple-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -93,7 +94,7 @@ const emit = defineEmits<{
 .download-btn--green {
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   box-shadow:
-    0 4px 16px -4px rgba(16, 185, 129, 0.4),
+    0 4px 16px -4px rgba(var(--studio-green-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -101,7 +102,7 @@ const emit = defineEmits<{
 .download-btn--green:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 24px -4px rgba(16, 185, 129, 0.5),
+    0 8px 24px -4px rgba(var(--studio-green-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -109,7 +110,7 @@ const emit = defineEmits<{
 .download-btn--pink {
   background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
   box-shadow:
-    0 4px 16px -4px rgba(236, 72, 153, 0.4),
+    0 4px 16px -4px rgba(var(--studio-pink-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -117,7 +118,7 @@ const emit = defineEmits<{
 .download-btn--pink:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 24px -4px rgba(236, 72, 153, 0.5),
+    0 8px 24px -4px rgba(var(--studio-pink-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -125,7 +126,7 @@ const emit = defineEmits<{
 .download-btn--orange {
   background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
   box-shadow:
-    0 4px 16px -4px rgba(249, 115, 22, 0.4),
+    0 4px 16px -4px rgba(var(--studio-orange-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
@@ -133,7 +134,7 @@ const emit = defineEmits<{
 .download-btn--orange:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 24px -4px rgba(249, 115, 22, 0.5),
+    0 8px 24px -4px rgba(var(--studio-orange-rgb), 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }

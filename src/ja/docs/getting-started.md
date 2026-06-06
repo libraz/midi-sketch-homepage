@@ -8,6 +8,10 @@ MIDI Sketch は、ポップミュージックの MIDI スケッチを自動生�
 
 ## クイックスタート
 
+::: warning ベータ版
+npm パッケージはまだ公開されていません。ベータ期間中は[デモページ](/ja/)からライブラリをご利用いただくか、ソースからビルドしてください。詳細は[インストール](./installation)を参照してください。
+:::
+
 ```javascript
 import { MidiSketch, init, createDefaultConfig, downloadMidi } from '@libraz/midi-sketch'
 

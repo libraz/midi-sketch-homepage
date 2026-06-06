@@ -111,27 +111,8 @@ export const DURATION_OPTIONS = [
   { label: '1', value: 1920 },
 ] as const
 
-// Safety colors
-export const SAFETY_COLORS = {
-  [NoteSafety.Safe]: {
-    bg: 'rgba(74, 222, 128, 0.25)',
-    border: 'rgba(74, 222, 128, 0.6)',
-    glow: 'rgba(74, 222, 128, 0.4)',
-    text: '#4ADE80',
-  },
-  [NoteSafety.Warning]: {
-    bg: 'rgba(251, 191, 36, 0.2)',
-    border: 'rgba(251, 191, 36, 0.5)',
-    glow: 'rgba(251, 191, 36, 0.3)',
-    text: '#FBBF24',
-  },
-  [NoteSafety.Dissonant]: {
-    bg: 'rgba(248, 113, 113, 0.15)',
-    border: 'rgba(248, 113, 113, 0.4)',
-    glow: 'rgba(248, 113, 113, 0.25)',
-    text: '#F87171',
-  },
-} as const
+// Safety colors are theme-aware and live in the canvas palette
+// (see ./palette.ts → PianoRollPalette.safety).
 
 // ============================================================================
 // Utility Functions

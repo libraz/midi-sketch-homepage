@@ -6,9 +6,14 @@ import wasmMeta from '@/wasm/meta.json'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useI18n } from '@/composables/useI18n'
 
-const { lang } = useData()
+const { lang, isDark } = useData()
 const store = useWizardStore()
 const { t } = useI18n()
+
+// Light/dark theme toggle (shared with the docs site via VitePress appearance)
+function toggleTheme() {
+  isDark.value = !isDark.value
+}
 
 // Beta banner dismiss state
 const betaDismissed = ref(false)
@@ -23,6 +28,14 @@ const wasmBuildDate = computed(() => {
   return lang.value === 'ja'
     ? `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}版`
     : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+})
+
+// Short build-date label shown in the beta banner (e.g. "6月6日版" / "Jun 6 build")
+const buildDateLabel = computed(() => {
+  const d = new Date(wasmMeta.buildDate)
+  return lang.value === 'ja'
+    ? `${d.getMonth() + 1}月${d.getDate()}日版`
+    : `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} build`
 })
 
 // Initialize WASM lazily to avoid blocking page render
@@ -91,6 +104,7 @@ const otherLocales = computed(() =>
       <div v-if="!betaDismissed" class="beta-banner" role="status">
         <div class="beta-banner__inner">
           <span class="beta-banner__badge">{{ t('betaBanner.badge') }}</span>
+          <span class="beta-banner__date" :title="wasmMeta.buildDate">{{ buildDateLabel }}</span>
           <p class="beta-banner__message">{{ t('betaBanner.message') }}</p>
           <a
             href="https://github.com/libraz/midi-sketch/issues"
@@ -145,6 +159,23 @@ const otherLocales = computed(() =>
             <span>{{ locale.shortLabel }}</span>
           </a>
         </template>
+        <span class="demo-page__divider">·</span>
+        <button
+          class="demo-page__link demo-page__theme-toggle"
+          :aria-label="t('studio.themeToggle')"
+          :title="t('studio.themeToggle')"
+          @click="toggleTheme"
+        >
+          <!-- Sun (shown in dark mode → switches to light) -->
+          <svg class="demo-page__theme-icon demo-page__theme-icon--sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+          <!-- Moon (shown in light mode → switches to dark) -->
+          <svg class="demo-page__theme-icon demo-page__theme-icon--moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
       </div>
       <div class="demo-page__footer-version">
         <span class="demo-page__version" :title="`WASM Build: ${wasmMeta.md5}`">
@@ -156,15 +187,14 @@ const otherLocales = computed(() =>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Sans:wght@400;500;600;700&display=swap');
 
 .demo-page {
-  --demo-bg: #050508;
-  --demo-purple: #8B5CF6;
-  --demo-pink: #EC4899;
-  --demo-cyan: #06B6D4;
-  --demo-text: rgba(255, 255, 255, 0.6);
-  --demo-text-muted: rgba(255, 255, 255, 0.35);
+  --demo-bg: var(--studio-page-bg);
+  --demo-purple: var(--studio-purple);
+  --demo-pink: var(--studio-pink);
+  --demo-cyan: var(--studio-cyan);
+  --demo-text: rgba(var(--studio-ink-rgb), 0.6);
+  --demo-text-muted: rgba(var(--studio-ink-rgb), 0.35);
 
   min-height: 100vh;
   min-height: 100dvh;
@@ -172,7 +202,7 @@ const otherLocales = computed(() =>
   display: flex;
   overscroll-behavior: none;
   flex-direction: column;
-  font-family: 'Instrument Sans', -apple-system, sans-serif;
+  font-family: var(--font-body);
 }
 
 /* Backdrop Effects */
@@ -188,8 +218,8 @@ const otherLocales = computed(() =>
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(var(--studio-purple-rgb), 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--studio-purple-rgb), 0.03) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 70%);
@@ -199,7 +229,7 @@ const otherLocales = computed(() =>
   position: absolute;
   border-radius: 50%;
   filter: blur(100px);
-  opacity: 0.4;
+  opacity: calc(var(--studio-orb-opacity) * 0.8);
   animation: orb-float 25s ease-in-out infinite;
 }
 
@@ -227,7 +257,7 @@ const otherLocales = computed(() =>
   background: radial-gradient(circle, var(--demo-cyan) 0%, transparent 60%);
   top: 50%;
   left: -5%;
-  opacity: 0.2;
+  opacity: calc(var(--studio-orb-opacity) * 0.4);
   animation-delay: -16s;
 }
 
@@ -250,7 +280,7 @@ const otherLocales = computed(() =>
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.025;
+  opacity: var(--studio-noise-opacity);
   mix-blend-mode: overlay;
 }
 
@@ -261,8 +291,8 @@ const otherLocales = computed(() =>
   left: 0;
   right: 0;
   z-index: 10;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(139, 92, 246, 0.06) 100%);
-  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+  background: linear-gradient(135deg, rgba(var(--studio-orange-rgb), 0.08) 0%, rgba(var(--studio-purple-rgb), 0.06) 100%);
+  border-bottom: 1px solid rgba(var(--studio-orange-rgb), 0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -279,7 +309,7 @@ const otherLocales = computed(() =>
 
 .beta-banner__badge {
   flex-shrink: 0;
-  font-family: 'SF Mono', 'Monaco', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -290,10 +320,21 @@ const otherLocales = computed(() =>
   line-height: 1;
 }
 
+.beta-banner__date {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--studio-amber);
+  white-space: nowrap;
+  cursor: help;
+}
+
 .beta-banner__message {
   margin: 0;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--studio-ink-rgb), 0.55);
   line-height: 1.4;
 }
 
@@ -304,7 +345,7 @@ const otherLocales = computed(() =>
   gap: 0.3rem;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #FBBF24;
+  color: var(--studio-amber);
   text-decoration: none;
   white-space: nowrap;
   border-radius: 4px;
@@ -314,8 +355,12 @@ const otherLocales = computed(() =>
 }
 
 .beta-banner__cta:hover {
+  color: var(--studio-orange);
+  background: rgba(var(--studio-orange-rgb), 0.1);
+}
+
+.dark .beta-banner__cta:hover {
   color: #FDE68A;
-  background: rgba(245, 158, 11, 0.1);
 }
 
 .beta-banner__dismiss {
@@ -328,7 +373,7 @@ const otherLocales = computed(() =>
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   cursor: pointer;
   transition: all 0.15s ease;
   padding: 0;
@@ -336,8 +381,8 @@ const otherLocales = computed(() =>
 }
 
 .beta-banner__dismiss:hover {
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.06);
+  color: rgba(var(--studio-ink-rgb), 0.6);
+  background: rgba(var(--studio-ink-rgb), 0.06);
 }
 
 /* Banner transition */
@@ -379,9 +424,9 @@ const otherLocales = computed(() =>
   width: 100%;
   max-width: 1000px;
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.1),
-    0 50px 100px -20px rgba(0, 0, 0, 0.7),
-    0 30px 60px -30px rgba(139, 92, 246, 0.15);
+    0 0 0 1px rgba(var(--studio-purple-rgb), 0.1),
+    0 50px 100px -20px var(--studio-shadow-strong),
+    0 30px 60px -30px rgba(var(--studio-purple-rgb), 0.15);
 }
 
 /* Footer */
@@ -389,7 +434,7 @@ const otherLocales = computed(() =>
   position: relative;
   z-index: 2;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(to top, rgba(5, 5, 8, 0.9), transparent);
+  background: linear-gradient(to top, rgba(var(--studio-page-bg-rgb), 0.9), transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -424,7 +469,28 @@ const otherLocales = computed(() =>
 
 .demo-page__link:hover {
   color: var(--demo-text);
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(var(--studio-purple-rgb), 0.1);
+}
+
+/* Theme toggle (button variant of a footer link) */
+.demo-page__theme-toggle {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Icon visibility follows the html.dark class to avoid hydration mismatch */
+.demo-page__theme-icon--sun {
+  display: none;
+}
+
+.dark .demo-page__theme-icon--sun {
+  display: block;
+}
+
+.dark .demo-page__theme-icon--moon {
+  display: none;
 }
 
 .demo-page__link svg {
@@ -443,7 +509,7 @@ const otherLocales = computed(() =>
 }
 
 .demo-page__version {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--demo-text-muted);
   opacity: 0.6;
@@ -476,6 +542,11 @@ const otherLocales = computed(() =>
 
   .beta-banner__badge {
     order: 1;
+  }
+
+  .beta-banner__date {
+    order: 1;
+    font-size: 0.65rem;
   }
 
   .beta-banner__cta {

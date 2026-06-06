@@ -6,6 +6,8 @@ const props = defineProps<{
   open: boolean
   title: string
   icon?: string
+  /** Accent color of the card that opened the drawer (CSS color value) */
+  accent?: string
   /** Whether settings changed since last generation (shows Apply button) */
   stale?: boolean
   /** Whether a generation run is in progress */
@@ -48,7 +50,14 @@ function handleKeydown(e: KeyboardEvent) {
         <div class="card-drawer__backdrop" @click="emit('close')"></div>
 
         <!-- Panel -->
-        <div class="card-drawer__panel" role="dialog" aria-modal="true" :aria-label="title">
+        <div
+          class="card-drawer__panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title"
+          :style="{ '--drawer-accent': accent || 'var(--studio-purple)' }"
+        >
+          <span class="card-drawer__handle" aria-hidden="true"></span>
           <header class="card-drawer__header">
             <div class="card-drawer__title-group">
               <span v-if="icon" class="card-drawer__icon">{{ icon }}</span>
@@ -90,13 +99,13 @@ function handleKeydown(e: KeyboardEvent) {
   z-index: 9000;
   display: flex;
   justify-content: flex-end;
-  font-family: 'Instrument Sans', -apple-system, sans-serif;
+  font-family: var(--font-body);
 }
 
 .card-drawer__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--studio-scrim);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -107,18 +116,42 @@ function handleKeydown(e: KeyboardEvent) {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #0c0c12;
-  border-left: 1px solid rgba(139, 92, 246, 0.2);
-  box-shadow: -24px 0 64px -16px rgba(0, 0, 0, 0.6);
+  background: rgb(var(--studio-panel-deep-rgb));
+  border-left: 1px solid rgba(var(--studio-purple-rgb), 0.2);
+  box-shadow: -24px 0 64px -16px var(--studio-shadow-strong);
+}
+
+/* Bottom-sheet grab handle (visible on mobile only) */
+.card-drawer__handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  margin: 0.5rem auto 0;
+  background: rgba(var(--studio-ink-rgb), 0.18);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .card-drawer__header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.12);
+  border-bottom: 1px solid rgba(var(--studio-purple-rgb), 0.12);
   flex-shrink: 0;
+}
+
+/* Accent underline carried over from the card that opened the drawer */
+.card-drawer__header::after {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  bottom: -1px;
+  width: 48px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--drawer-accent), transparent);
 }
 
 .card-drawer__title-group {
@@ -129,13 +162,14 @@ function handleKeydown(e: KeyboardEvent) {
 
 .card-drawer__icon {
   font-size: 1.1rem;
-  color: #A78BFA;
+  color: var(--drawer-accent, var(--studio-purple-soft));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--drawer-accent, var(--studio-purple)) 40%, transparent));
 }
 
 .card-drawer__title {
   font-size: 1rem;
   font-weight: 700;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   margin: 0;
 }
 
@@ -145,18 +179,18 @@ function handleKeydown(e: KeyboardEvent) {
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: rgba(250, 250, 250, 0.05);
-  border: 1px solid rgba(250, 250, 250, 0.12);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.12);
   border-radius: 8px;
-  color: rgba(250, 250, 250, 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.6);
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .card-drawer__close:hover {
-  background: rgba(250, 250, 250, 0.1);
-  color: #FAFAFA;
+  background: rgba(var(--studio-ink-rgb), 0.1);
+  color: var(--studio-text-primary);
 }
 
 .card-drawer__content {
@@ -172,27 +206,27 @@ function handleKeydown(e: KeyboardEvent) {
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  border-top: 1px solid rgba(139, 92, 246, 0.12);
+  border-top: 1px solid rgba(var(--studio-purple-rgb), 0.12);
   flex-shrink: 0;
-  background: rgba(12, 12, 18, 0.95);
+  background: rgba(var(--studio-panel-deep-rgb), 0.95);
 }
 
 .card-drawer__done {
   padding: 0.625rem 1.25rem;
   background: transparent;
-  border: 1px solid rgba(250, 250, 250, 0.15);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.15);
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .card-drawer__done:hover {
-  background: rgba(250, 250, 250, 0.06);
-  color: #FAFAFA;
+  background: rgba(var(--studio-ink-rgb), 0.06);
+  color: var(--studio-text-primary);
 }
 
 .card-drawer__apply {
@@ -200,21 +234,21 @@ function handleKeydown(e: KeyboardEvent) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.5rem;
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, var(--studio-purple) 0%, color-mix(in srgb, var(--studio-purple) 65%, var(--studio-pink)) 100%);
   border: none;
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
-  color: white;
+  color: var(--studio-on-accent);
   cursor: pointer;
-  box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 8px 24px -8px rgba(var(--studio-purple-rgb), 0.5);
   transition: all 0.2s ease;
 }
 
 .card-drawer__apply:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 32px -8px rgba(139, 92, 246, 0.6);
+  box-shadow: 0 12px 32px -8px rgba(var(--studio-purple-rgb), 0.6);
 }
 
 .card-drawer__apply:disabled {
@@ -226,7 +260,7 @@ function handleKeydown(e: KeyboardEvent) {
   width: 12px;
   height: 12px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: var(--studio-on-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -267,8 +301,16 @@ function handleKeydown(e: KeyboardEvent) {
     width: 100%;
     height: 88dvh;
     border-left: none;
-    border-top: 1px solid rgba(139, 92, 246, 0.25);
+    border-top: 1px solid rgba(var(--studio-purple-rgb), 0.25);
     border-radius: 20px 20px 0 0;
+  }
+
+  .card-drawer__handle {
+    display: block;
+  }
+
+  .card-drawer__header {
+    padding-top: 0.625rem;
   }
 
   .card-drawer__content {

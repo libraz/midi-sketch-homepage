@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <button
     class="customization-card"
     :class="{ 'customization-card--modified': modified }"
-    :style="{ '--card-accent': accent || '#8B5CF6' }"
+    :style="{ '--card-accent': accent || 'var(--studio-purple)' }"
     @click="emit('open')"
   >
     <!-- Rack module accent edge -->
@@ -43,9 +43,9 @@ const emit = defineEmits<{
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 1.125rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 40%),
-    rgba(18, 18, 26, 0.75);
-  border: 1px solid rgba(139, 92, 246, 0.12);
+    linear-gradient(180deg, rgba(var(--studio-ink-rgb), 0.025), transparent 40%),
+    rgba(var(--studio-panel-rgb), 0.75);
+  border: 1px solid rgba(var(--studio-purple-rgb), 0.12);
   border-radius: 14px;
   cursor: pointer;
   text-align: left;
@@ -67,18 +67,25 @@ const emit = defineEmits<{
   transition: opacity 0.25s ease, top 0.25s ease, bottom 0.25s ease;
 }
 
-.customization-card:hover {
+.customization-card:hover,
+.customization-card:focus-visible {
   border-color: color-mix(in srgb, var(--card-accent) 55%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%),
-    rgba(22, 22, 32, 0.85);
+    linear-gradient(180deg, rgba(var(--studio-ink-rgb), 0.04), transparent 40%),
+    rgba(var(--studio-panel-raised-rgb), 0.85);
   transform: translateY(-2px);
   box-shadow:
-    0 12px 28px -14px rgba(0, 0, 0, 0.7),
+    0 12px 28px -14px var(--studio-shadow-strong),
     0 0 24px -12px var(--card-accent);
 }
 
-.customization-card:hover .customization-card__edge {
+.customization-card:focus-visible {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 2px;
+}
+
+.customization-card:hover .customization-card__edge,
+.customization-card:focus-visible .customization-card__edge {
   opacity: 1;
   top: 6px;
   bottom: 6px;
@@ -92,8 +99,8 @@ const emit = defineEmits<{
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(250, 250, 250, 0.08);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  background: rgba(var(--studio-ink-rgb), 0.08);
+  box-shadow: inset 0 1px 2px var(--studio-shadow-strong);
   transition: all 0.3s ease;
 }
 
@@ -113,8 +120,13 @@ const emit = defineEmits<{
   flex-shrink: 0;
   font-size: 1.15rem;
   color: var(--card-accent);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14), rgba(236, 72, 153, 0.07));
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  /* Chip tint follows the module's own accent color */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--card-accent) 14%, transparent),
+    color-mix(in srgb, var(--card-accent) 5%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--card-accent) 18%, transparent);
   border-radius: 10px;
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--card-accent) 35%, transparent));
 }
@@ -131,13 +143,13 @@ const emit = defineEmits<{
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 .customization-card__summary {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.66rem;
-  color: rgba(250, 250, 250, 0.45);
+  color: rgba(var(--studio-ink-rgb), 0.45);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -146,7 +158,7 @@ const emit = defineEmits<{
 .customization-card__chevron {
   flex-shrink: 0;
   font-size: 1.2rem;
-  color: rgba(250, 250, 250, 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.3);
   transition: transform 0.2s ease, color 0.2s ease;
 }
 

@@ -94,10 +94,10 @@ function handleRewindClick() {
 
 <style scoped>
 .transport-bar {
-  --accent: rgb(var(--accent-rgb, 139, 92, 246));
-  --accent-alpha: rgba(var(--accent-rgb, 139, 92, 246), 0.15);
-  --pink: #EC4899;
-  --bg-dark: rgba(15, 15, 22, 0.9);
+  --accent: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
+  --accent-alpha: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.15);
+  --pink: var(--studio-pink);
+  --bg-dark: rgba(var(--studio-panel-deep-rgb), 0.9);
 
   display: flex;
   align-items: center;
@@ -108,8 +108,8 @@ function handleRewindClick() {
   gap: 4px;
   backdrop-filter: blur(12px);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 4px 16px var(--studio-shadow-strong),
+    inset 0 1px 0 rgba(var(--studio-ink-rgb), 0.04);
 }
 
 /* Base button style */
@@ -120,7 +120,7 @@ function handleRewindClick() {
   justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(250, 250, 250, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
   border-radius: 50%;
   overflow: hidden;
@@ -147,21 +147,21 @@ function handleRewindClick() {
 .transport-btn--play {
   width: 44px;
   height: 44px;
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
 }
 
 /* Hover states */
 .transport-btn:hover:not(:disabled) {
-  color: #FAFAFA;
+  color: var(--studio-text-primary);
   transform: scale(1.08);
 }
 
 .transport-btn--rewind:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(var(--accent-rgb, 139, 92, 246), 0.3);
+  box-shadow: 0 0 20px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.3);
 }
 
 .transport-btn--play:hover:not(:disabled) {
-  box-shadow: 0 0 24px rgba(var(--accent-rgb, 139, 92, 246), 0.4);
+  box-shadow: 0 0 24px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.4);
 }
 
 /* Active press */
@@ -242,7 +242,7 @@ function handleRewindClick() {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle at center, rgba(var(--studio-ink-rgb), 0.5) 0%, rgba(var(--studio-ink-rgb), 0) 70%);
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
@@ -323,10 +323,10 @@ function handleRewindClick() {
 /* Active (playing) state */
 .transport-btn--active {
   background: linear-gradient(135deg, var(--accent), var(--pink));
-  color: white;
+  color: var(--studio-on-accent);
   box-shadow:
-    0 0 20px rgba(var(--accent-rgb, 139, 92, 246), 0.5),
-    0 0 40px rgba(236, 72, 153, 0.2);
+    0 0 20px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.5),
+    0 0 40px rgba(var(--studio-pink-rgb), 0.2);
 }
 
 .transport-btn--active .btn-glow {
@@ -347,16 +347,16 @@ function handleRewindClick() {
 
 .transport-btn--active:hover:not(:disabled) {
   box-shadow:
-    0 0 28px rgba(var(--accent-rgb, 139, 92, 246), 0.6),
-    0 0 50px rgba(236, 72, 153, 0.25);
+    0 0 28px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.6),
+    0 0 50px rgba(var(--studio-pink-rgb), 0.25);
 }
 
 /* Paused state */
 .transport-btn--paused {
-  background: rgba(236, 72, 153, 0.25);
+  background: rgba(var(--studio-pink-rgb), 0.25);
 }
 
 .transport-btn--paused:hover:not(:disabled) {
-  background: rgba(236, 72, 153, 0.35);
+  background: rgba(var(--studio-pink-rgb), 0.35);
 }
 </style>

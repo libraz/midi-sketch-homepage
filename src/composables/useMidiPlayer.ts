@@ -1,10 +1,12 @@
 import { ref, onUnmounted } from 'vue'
 import { Soundfont, DrumMachine } from 'smplr'
+import { devLog } from '@/utils/devLog'
 import { type ChordTiming, getRootMidiNote } from '@/utils/chordUtils'
 import {
-  DEMO_DRUM_MACHINE,
   DEMO_SOUNDFONT_KIT,
-  GM_TO_DRUM,
+  type DrumKitName,
+  gmToDrumSample,
+  loadDrumMachine,
   loadInstrumentsForTracks,
   getRequiredInstruments,
   scaleTrackVelocity,
@@ -72,21 +74,35 @@ export interface PlayOptions {
   chordTimings?: ChordTiming[]
   musicKey?: number
   playRootNotes?: boolean
+  /** Drum machine kit (per song image); defaults to TR-808 */
+  drumKit?: DrumKitName
 }
 
-export function useMidiPlayer() {
-  const isPlaying = ref(false)
-  const isPaused = ref(false)
-  const currentTick = ref(0)
-  const duration = ref(0)
+// ============================================
+// Module-level singleton playback state
+// ============================================
+// The audio engine (audioContext, instruments) is module-level, so the
+// reactive transport state must be too: every useMidiPlayer() caller —
+// StudioPlayer (transport), useStudioGeneration (regen playback
+// preservation), StudioOutputBar, etc. — observes and controls the same
+// playback. Per-call refs used to split this state across instances,
+// so regeneration could not see (or stop) the audio started elsewhere.
+const isPlaying = ref(false)
+const isPaused = ref(false)
+const currentTick = ref(0)
+const duration = ref(0)
 
-  let animationFrame: number | null = null
-  let startTime = 0
-  let pausedTick = 0
-  let bpm = 120
-  let ppq = 480
-  let stopTimeout: ReturnType<typeof setTimeout> | null = null
-  let cachedEventData: EventData | null = null
+let animationFrame: number | null = null
+let startTime = 0
+let pausedTick = 0
+let bpm = 120
+let ppq = 480
+let stopTimeout: ReturnType<typeof setTimeout> | null = null
+let cachedEventData: EventData | null = null
+// Cached play options for resume
+let cachedPlayOptions: PlayOptions = {}
+
+export function useMidiPlayer() {
 
   async function init() {
     // Already initialized
@@ -108,13 +124,14 @@ export function useMidiPlayer() {
       try {
         audioContext = new AudioContext()
 
-        // Load only bass and drums at init (minimal footprint)
+        // Load only bass and drums at init (minimal footprint).
+        // The default kit is a warm-up; play() swaps in the song image's kit.
         const [loadedBass, loadedDrums] = await Promise.all([
           new Soundfont(audioContext, {
             instrument: 'electric_bass_finger',
             kit: DEMO_SOUNDFONT_KIT,
           }).load,
-          new DrumMachine(audioContext, { instrument: DEMO_DRUM_MACHINE }).load
+          loadDrumMachine(audioContext)
         ])
 
         bass = loadedBass
@@ -142,9 +159,6 @@ export function useMidiPlayer() {
     return (seconds * bpm / 60) * ppq
   }
 
-  // Cached play options for resume
-  let cachedPlayOptions: PlayOptions = {}
-
   async function play(eventData: EventData, fromTick: number = 0, options: PlayOptions = {}) {
     // Block playback if not ready
     if (!globalIsReady.value) {
@@ -171,9 +185,11 @@ export function useMidiPlayer() {
     // stay in sync even when the generated MIDI program changes.
     globalIsLoading.value = needsLoad
     try {
-      const result = await loadInstrumentsForTracks(audioContext, eventData.tracks)
+      const result = await loadInstrumentsForTracks(audioContext, eventData.tracks, {
+        drumKit: options.drumKit,
+      })
       trackInstrumentMap = result.trackMap
-      // Keep our existing drums instance (don't replace)
+      drums = result.drums // kit follows the current song image (cached per kit)
     } finally {
       globalIsLoading.value = false
     }
@@ -189,7 +205,14 @@ export function useMidiPlayer() {
     }
 
     const offsetSeconds = ticksToSeconds(fromTick)
-    startTime = audioContext.currentTime - offsetSeconds
+
+    // Anchor ALL note scheduling to a single timestamp. audioContext.currentTime
+    // keeps advancing while the scheduling loop below runs, so reading it per
+    // note would skew tracks scheduled later in the loop. The small margin also
+    // keeps the first notes from landing in the past (= played late).
+    const SCHEDULE_AHEAD_SECONDS = 0.1
+    const scheduleAnchor = audioContext.currentTime + SCHEDULE_AHEAD_SECONDS
+    startTime = scheduleAnchor - offsetSeconds
 
     // Play root notes if enabled
     if (options.playRootNotes && options.chordTimings && bass) {
@@ -214,7 +237,7 @@ export function useMidiPlayer() {
           bass.start({
             note: rootNote,
             velocity: 62,  // Moderate velocity for root notes
-            time: audioContext.currentTime + adjustedStartSeconds,
+            time: scheduleAnchor + adjustedStartSeconds,
             duration: Math.min(adjustedDuration, ticksToSeconds(ppq * 2))  // Max 2 beats duration
           })
         }
@@ -254,13 +277,13 @@ export function useMidiPlayer() {
 
         if (adjustedDuration > 0) {
           if (isDrumTrack && drums) {
-            // Convert GM drum note to the configured demo drum-machine group
-            const drumSample = GM_TO_DRUM[noteNum]
+            // Convert GM drum note to the current kit's sample name
+            const drumSample = gmToDrumSample(noteNum, options.drumKit)
             if (drumSample) {
               drums.start({
                 note: drumSample,
                 velocity: scaleTrackVelocity(track, note.velocity),
-                time: audioContext.currentTime + adjustedStartSeconds,
+                time: scheduleAnchor + adjustedStartSeconds,
                 duration: adjustedDuration
               })
             }
@@ -271,7 +294,7 @@ export function useMidiPlayer() {
               instrument.start({
                 note: noteNum,
                 velocity: scaleTrackVelocity(track, note.velocity),
-                time: audioContext.currentTime + adjustedStartSeconds,
+                time: scheduleAnchor + adjustedStartSeconds,
                 duration: adjustedDuration
               })
             }
@@ -279,6 +302,8 @@ export function useMidiPlayer() {
         }
       }
     }
+
+    devLog('Player play', { fromTick: Math.round(fromTick), tracks: eventData.tracks.length })
 
     duration.value = maxTick
     isPlaying.value = true
@@ -297,7 +322,8 @@ export function useMidiPlayer() {
       if (!isPlaying.value || !audioContext) return
 
       const elapsed = audioContext.currentTime - startTime
-      currentTick.value = secondsToTicks(elapsed)
+      // Clamp: elapsed is briefly negative while the schedule-ahead margin elapses
+      currentTick.value = Math.max(0, secondsToTicks(elapsed))
 
       // Check both tick-based and time-based conditions for stopping
       if (currentTick.value >= duration.value || elapsed >= totalDurationSeconds + 0.1) {
@@ -359,6 +385,9 @@ export function useMidiPlayer() {
   }
 
   function stop() {
+    if (isPlaying.value || isPaused.value) {
+      devLog('Player stop', { atTick: Math.round(currentTick.value) })
+    }
     isPlaying.value = false
     isPaused.value = false
     currentTick.value = 0
