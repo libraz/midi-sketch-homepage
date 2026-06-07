@@ -931,52 +931,53 @@
     "themeToggle": "Toggle light/dark theme",
     "entry": {
       "imageTitle": "Pick a song image",
-      "imageHint": "Generation starts when you pick one. The details are set automatically and can be adjusted later.",
-      "generate": "Generate"
+      "imageHint": "Pick one, fine-tune the essentials below, then generate.",
+      "generate": "Generate",
+      "select": "Select",
+      "setupTitle": "Generate with these settings",
+      "setupHint": "Set to the genre's recommendations — tweak anything before generating.",
+      "generateCta": "Generate"
+    },
+    "essentials": {
+      "title": "Essentials",
+      "genre": "Genre",
+      "genreTitle": "Choose a genre",
+      "key": "Key",
+      "keyTitle": "Key",
+      "bpm": "Tempo",
+      "bpmTitle": "Tempo",
+      "bpmUp": "Increase tempo",
+      "bpmDown": "Decrease tempo",
+      "chord": "Chords",
+      "chordTitle": "Chord progression",
+      "chordAuto": "Auto"
+    },
+    "apply": {
+      "regenerate": "Apply & Regenerate",
+      "regenerating": "Regenerating…",
+      "upToDate": "Up to date"
+    },
+    "sheet": {
+      "close": "Close"
+    },
+    "moreOptions": {
+      "toggle": "More options",
+      "sections": {
+        "vocal": "Vocal",
+        "arrangement": "Arrangement",
+        "structure": "Structure",
+        "effects": "Effects",
+        "fineTune": "Fine-tune"
+      }
     },
     "player": {
       "initializing": "Warming up the sound engine…",
       "generatingVocal": "Writing the vocal melody…",
       "generatingAccomp": "Building the arrangement…",
       "regenerateMelody": "New Melody",
-      "regenerateBgm": "New Arrangement",
-      "stale": "Settings changed",
-      "apply": "Apply"
+      "regenerateBgm": "New Arrangement"
     },
     "backToEntry": "Choose another song image",
-    "cards": {
-      "title": "Customize",
-      "hint": "Open a card to tweak just that part. Changes are applied on regenerate.",
-      "chord": {
-        "title": "Chord Progression"
-      },
-      "keyTempo": {
-        "title": "Key & Tempo"
-      },
-      "vocal": {
-        "title": "Vocal & Melody"
-      },
-      "arrangement": {
-        "title": "Arrangement"
-      },
-      "effects": {
-        "title": "Effects & Calls",
-        "call": "Calls",
-        "humanize": "Humanize",
-        "none": "Off"
-      },
-      "fineTune": {
-        "title": "Fine-tune",
-        "auto": "All auto",
-        "overrides": "{n} overrides"
-      }
-    },
-    "drawer": {
-      "close": "Close",
-      "done": "Done",
-      "apply": "Apply & Regenerate",
-      "applying": "Regenerating…"
-    },
     "output": {
       "title": "Output"
     }

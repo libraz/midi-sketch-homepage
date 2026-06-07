@@ -7,6 +7,7 @@ import { warmupChordPlayer } from '@/composables/useChordPlayer'
 import CategoryChip from '@/components/wizard/CategoryChip.vue'
 import type { CategoryItem } from '@/components/wizard/CategoryChip.vue'
 import type { FlowType } from '@/composables/useWizardFlow'
+import EntrySetupPanel from './EntrySetupPanel.vue'
 
 const emit = defineEmits<{
   (e: 'generate'): void
@@ -81,9 +82,17 @@ function getStyleIcon(category: string): string {
   return icons[category] || '♪'
 }
 
-// Picking an image starts generation immediately (generate-first)
-function selectStyle(id: string) {
+// Picking a genre selects it (resets the essentials to that genre's
+// recommendations + re-baselines) but does NOT generate. The user tunes
+// Key/BPM/Chord in the setup panel below, then commits via "Generate".
+function selectGenre(id: string) {
+  // Re-tapping the active genre would wipe in-panel tweaks — keep them.
+  if (store.config.songImageId === id) return
   store.selectSongImage(id)
+}
+
+// Commit the current (genre + tuned essentials) config to generation.
+function startGeneration() {
   // Pre-warmup audio for chord previews in the studio
   warmupChordPlayer()
   emit('generate')
@@ -136,14 +145,21 @@ function selectStyle(id: string) {
           v-for="image in filteredImages"
           :key="image.id"
           class="entry-card"
+          :class="{ 'entry-card--active': store.config.songImageId === image.id }"
           :style="{ '--card-accent': image.color }"
           role="button"
+          :aria-pressed="store.config.songImageId === image.id"
           tabindex="0"
-          @click="selectStyle(image.id)"
-          @keydown.enter="selectStyle(image.id)"
+          @click="selectGenre(image.id)"
+          @keydown.enter="selectGenre(image.id)"
         >
           <div class="entry-card__glow"></div>
           <span class="entry-card__watermark" aria-hidden="true">{{ getStyleIcon(image.category) }}</span>
+          <span
+            v-if="store.config.songImageId === image.id"
+            class="entry-card__check"
+            aria-hidden="true"
+          >✓</span>
           <div class="entry-card__content">
             <div class="entry-card__icon-wrap">
               <span class="entry-card__icon">{{ getStyleIcon(image.category) }}</span>
@@ -153,11 +169,13 @@ function selectStyle(id: string) {
           </div>
           <span class="entry-card__bpm">BPM {{ image.tempoRange.min }}-{{ image.tempoRange.max }}</span>
           <span class="entry-card__go">
-            <span class="entry-card__eq" aria-hidden="true"><i></i><i></i><i></i></span>
-            {{ t('studio.entry.generate') }}
+            {{ store.config.songImageId === image.id ? t('studio.entry.generate') : t('studio.entry.select') }}
           </span>
         </article>
       </div>
+
+      <!-- Pre-generation essentials: tune Key/BPM/Chord, then generate -->
+      <EntrySetupPanel @generate="startGeneration" />
     </div>
   </div>
 </template>
@@ -208,8 +226,7 @@ function selectStyle(id: string) {
   .entry-screen__heading,
   .entry-screen__hint,
   .entry-grid,
-  .entry-grid .entry-card,
-  .entry-card__eq i {
+  .entry-grid .entry-card {
     animation: none;
   }
 }
@@ -388,6 +405,34 @@ function selectStyle(id: string) {
   opacity: 0.2;
 }
 
+/* Selected genre: persistent accent ring + tint */
+.entry-card--active {
+  border-color: var(--card-accent, var(--studio-purple));
+  background: color-mix(in srgb, var(--card-accent, var(--studio-purple)) 8%, rgba(var(--studio-panel-rgb), 0.6));
+  box-shadow: 0 0 0 1px var(--card-accent, var(--studio-purple));
+}
+
+.entry-card--active .entry-card__glow {
+  opacity: 0.15;
+}
+
+.entry-card__check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-accent, var(--studio-purple));
+  border-radius: 50%;
+  color: var(--studio-on-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
 /* Oversized ghost glyph bleeding off the top-right corner */
 .entry-card__watermark {
   position: absolute;
@@ -485,37 +530,10 @@ function selectStyle(id: string) {
 }
 
 .entry-card:hover .entry-card__go,
-.entry-card:focus-visible .entry-card__go {
+.entry-card:focus-visible .entry-card__go,
+.entry-card--active .entry-card__go {
   opacity: 1;
   transform: translateX(0);
-}
-
-/* Tiny equalizer: three bars bouncing while the card is hovered */
-.entry-card__eq {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 0.7rem;
-}
-
-.entry-card__eq i {
-  width: 2.5px;
-  height: 30%;
-  background: currentColor;
-  border-radius: 1px;
-}
-
-.entry-card:hover .entry-card__eq i,
-.entry-card:focus-visible .entry-card__eq i {
-  animation: eq-bounce 0.9s ease-in-out infinite;
-}
-
-.entry-card__eq i:nth-child(2) { animation-delay: 0.15s; }
-.entry-card__eq i:nth-child(3) { animation-delay: 0.3s; }
-
-@keyframes eq-bounce {
-  0%, 100% { height: 30%; }
-  50% { height: 100%; }
 }
 
 @media (max-width: 640px) {

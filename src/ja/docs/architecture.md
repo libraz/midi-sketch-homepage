@@ -330,7 +330,7 @@ std::mt19937 rng(seed);  // Same seed = same output
 
 Emscripten経由でWebAssemblyにコンパイル：
 
-- **出力**: 約555KB WASM（gzip: 約225KB）+ 約80KB JS（ラッパー + グルー）
+- **出力**: 約<WasmStat type="size" /> WASM（gzip: 約<WasmStat type="gzip" />）+ 約<WasmStat type="js" /> JS（ラッパー + グルー）
 - **外部依存なし**: 純粋なC++17
 - **ES6モジュール**: モジュラーJavaScriptラッパー
 

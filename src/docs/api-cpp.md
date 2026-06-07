@@ -281,7 +281,7 @@ Get library version string.
 
 ```cpp
 const char* version = MidiSketch::version();
-// "0.1.0"
+// e.g. "0.2.1"
 ```
 
 ---

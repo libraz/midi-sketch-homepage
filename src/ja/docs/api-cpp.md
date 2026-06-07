@@ -281,7 +281,7 @@ MidiFormat format = sketch.getMidiFormat();
 
 ```cpp
 const char* version = MidiSketch::version();
-// "0.1.0"
+// 例: "0.2.1"
 ```
 
 ---

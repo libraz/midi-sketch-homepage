@@ -1,9 +1,12 @@
 {
-  "size": 655375,
+  "version": "0.2.1",
+  "size": 656175,
   "sizeKB": 640,
-  "gzipSize":   257809,
-  "gzipKB": 251,
-  "md5": "248928b71628a4e756f7d5b9fd392394",
-  "buildDate": "2026-06-06T20:05:21Z",
-  "commitHash": "c1722dc"
+  "gzipSize": 258143,
+  "gzipKB": 252,
+  "jsSize": 83869,
+  "jsKB": 81,
+  "md5": "1923c4727941556c84b5bc6919dcd9c2",
+  "buildDate": "2026-06-07T07:07:35Z",
+  "commitHash": "2de62cc"
 }

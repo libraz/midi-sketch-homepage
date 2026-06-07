@@ -303,7 +303,7 @@ flowchart LR
 
 ## 軽量＆ポータブル
 
-- **約555KB WASM**（gzip: 約225KB）+ 約80KB JS
+- **約<WasmStat type="size" /> WASM**（gzip: 約<WasmStat type="gzip" />）+ 約<WasmStat type="js" /> JS
 - **外部依存なし**（純粋なC++17）
 - ブラウザ、Node.js、ネイティブCLIで動作
 - API呼び出し不要、インターネット不要

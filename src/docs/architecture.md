@@ -330,7 +330,7 @@ When seed is 0, current clock time is used for randomization.
 
 The library compiles to WebAssembly via Emscripten:
 
-- **Output**: ~555KB WASM (gzip: ~225KB) + ~80KB JS (wrapper + glue)
+- **Output**: ~<WasmStat type="size" /> WASM (gzip: ~<WasmStat type="gzip" />) + ~<WasmStat type="js" /> JS (wrapper + glue)
 - **No external dependencies**: Pure C++17
 - **ES6 module**: Modular JavaScript wrapper
 

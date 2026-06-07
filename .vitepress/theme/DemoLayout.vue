@@ -179,7 +179,7 @@ const otherLocales = computed(() =>
       </div>
       <div class="demo-page__footer-version">
         <span class="demo-page__version" :title="`WASM Build: ${wasmMeta.md5}`">
-          midi-sketch {{ store.libVersion || '...' }} ({{ wasmHash }}) · {{ wasmBuildDate }}
+          midi-sketch {{ store.libVersion || wasmMeta.version }} ({{ wasmHash }}) · {{ wasmBuildDate }}
         </span>
       </div>
     </footer>

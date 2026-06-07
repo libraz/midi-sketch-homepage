@@ -931,52 +931,53 @@
     "themeToggle": "ライト/ダークテーマを切り替え",
     "entry": {
       "imageTitle": "曲のイメージを選ぶ",
-      "imageHint": "選ぶと生成が始まります。細かい設定は自動で決まり、あとから調整できます。",
-      "generate": "生成する"
+      "imageHint": "選んで、下の基本設定を微調整してから生成します。",
+      "generate": "生成する",
+      "select": "選択",
+      "setupTitle": "この設定で生成",
+      "setupHint": "推奨値にセット済み。生成前に自由に調整できます。",
+      "generateCta": "この内容で生成"
+    },
+    "essentials": {
+      "title": "基本設定",
+      "genre": "ジャンル",
+      "genreTitle": "ジャンルを選ぶ",
+      "key": "キー",
+      "keyTitle": "キー",
+      "bpm": "テンポ",
+      "bpmTitle": "テンポ",
+      "bpmUp": "テンポを上げる",
+      "bpmDown": "テンポを下げる",
+      "chord": "コード",
+      "chordTitle": "コード進行",
+      "chordAuto": "自動"
+    },
+    "apply": {
+      "regenerate": "反映して再生成",
+      "regenerating": "再生成中…",
+      "upToDate": "最新の状態"
+    },
+    "sheet": {
+      "close": "閉じる"
+    },
+    "moreOptions": {
+      "toggle": "詳細設定",
+      "sections": {
+        "vocal": "ボーカル",
+        "arrangement": "アレンジ",
+        "structure": "構成",
+        "effects": "演出",
+        "fineTune": "微調整"
+      }
     },
     "player": {
       "initializing": "サウンドエンジンを準備中…",
       "generatingVocal": "ボーカルメロディを作曲中…",
       "generatingAccomp": "アレンジを構築中…",
       "regenerateMelody": "別のメロディ",
-      "regenerateBgm": "別のアレンジ",
-      "stale": "設定が変更されています",
-      "apply": "反映"
+      "regenerateBgm": "別のアレンジ"
     },
     "backToEntry": "曲のイメージを選び直す",
-    "cards": {
-      "title": "カスタマイズ",
-      "hint": "気になるカードを開いて、その部分だけ調整できます。変更は再生成時に反映されます。",
-      "chord": {
-        "title": "コード進行"
-      },
-      "keyTempo": {
-        "title": "キー＆テンポ"
-      },
-      "vocal": {
-        "title": "ボーカル＆メロディ"
-      },
-      "arrangement": {
-        "title": "アレンジ"
-      },
-      "effects": {
-        "title": "演出＆コール",
-        "call": "コール",
-        "humanize": "ヒューマナイズ",
-        "none": "オフ"
-      },
-      "fineTune": {
-        "title": "微調整",
-        "auto": "すべて自動",
-        "overrides": "{n}項目を調整中"
-      }
-    },
-    "drawer": {
-      "close": "閉じる",
-      "done": "完了",
-      "apply": "反映して再生成",
-      "applying": "再生成中…"
-    },
     "output": {
       "title": "出力"
     }

@@ -303,7 +303,7 @@ Use `generateVocal()` to create the initial melody, then call `regenerateVocal()
 
 ## Lightweight & Portable
 
-- **~555KB WASM** (gzip: ~225KB) + ~80KB JS
+- **~<WasmStat type="size" /> WASM** (gzip: ~<WasmStat type="gzip" />) + ~<WasmStat type="js" /> JS
 - **No external dependencies** (pure C++17)
 - Runs in browser, Node.js, or native CLI
 - No API calls, no internet required

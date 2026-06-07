@@ -4,7 +4,8 @@ import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useStudioGeneration } from '@/composables/useStudioGeneration'
 import StudioPlayer from './StudioPlayer.vue'
-import StudioCardGrid from './StudioCardGrid.vue'
+import StudioEssentialsBar from './StudioEssentialsBar.vue'
+import StudioMoreOptions from './StudioMoreOptions.vue'
 import StudioOutputBar from './StudioOutputBar.vue'
 import StudioVocalEditor from './StudioVocalEditor.vue'
 
@@ -51,9 +52,11 @@ function handleEditorSaved() {
     <!-- Player -->
     <StudioPlayer />
 
-    <!-- Customization cards: stay mounted during regeneration so an open
-         drawer survives an Apply (eventData keeps the previous result) -->
-    <StudioCardGrid v-if="studio.eventData.value" />
+    <!-- Essentials: always-visible high-value controls + single Apply CTA -->
+    <StudioEssentialsBar v-if="studio.eventData.value" />
+
+    <!-- Deep settings: progressive-disclosure container (tabbed sections) -->
+    <StudioMoreOptions v-if="studio.eventData.value" />
 
     <!-- Output actions -->
     <StudioOutputBar v-if="studio.eventData.value" @edit="startEditing" />

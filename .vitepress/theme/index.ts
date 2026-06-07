@@ -7,6 +7,7 @@ import '@/styles/demo-theme.css'
 import MidiDemo from './MidiDemo.vue'
 import MidiStudio from '@/components/studio/MidiStudio.vue'
 import ScoreExample from '@/components/ScoreExample.vue'
+import WasmStat from '@/components/WasmStat.vue'
 import DemoLayout from './DemoLayout.vue'
 import PreviewLayout from './PreviewLayout.vue'
 
@@ -26,5 +27,6 @@ export default {
     app.component('MidiDemo', MidiDemo)
     app.component('MidiStudio', MidiStudio)
     app.component('ScoreExample', ScoreExample)
+    app.component('WasmStat', WasmStat)
   }
 } satisfies Theme

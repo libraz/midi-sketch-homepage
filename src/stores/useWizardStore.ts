@@ -1,5 +1,5 @@
 import { ref, computed, reactive, watch } from 'vue'
-import { songImages } from '@/data/songImages'
+import { songImages, songImageCategories } from '@/data/songImages'
 import {
   useWizardFlow,
   VOCAL_AFFECTING_KEYS,
@@ -369,13 +369,23 @@ export function useWizardStore() {
     songImages.find(s => s.id === config.songImageId)
   )
 
-  function selectSongImage(id: string) {
+  /**
+   * Apply a song image's derived defaults to the config in place.
+   * Shared by the entry-screen pick (selectSongImage) and the in-studio
+   * genre switch (changeGenre). Resets the songwriter-facing essentials
+   * (style, BPM, key, chord) to the new genre's recommendations and keeps
+   * activeCategory in sync so the Essentials bar reflects the switch.
+   * @param id Song image id to apply.
+   * @returns true if the id resolved to a known song image.
+   */
+  function applySongImageDefaults(id: string): boolean {
     const image = songImages.find(s => s.id === id)
-    if (!image) return
+    if (!image) return false
 
     config.songImageId = id
     config.stylePresetId = image.stylePresetIds[0]
     config.bpm = image.tempoRange.default
+    config.key = 0
     config.timbreId = image.defaultTimbre
     config.blueprintId = getRecommendedBlueprintId(id)
 
@@ -384,11 +394,37 @@ export function useWizardStore() {
       config.chordProgressionId = image.recommendedChords[0]
     }
 
+    // Keep the category filter aligned with the selected image
+    const category = songImageCategories.find(c => c.images.includes(id))
+    if (category) config.activeCategory = category.id
+
+    return true
+  }
+
+  function selectSongImage(id: string) {
+    if (!applySongImageDefaults(id)) return
+
     // Invalidate generation if already past this step
     if (vocalGenerated.value) invalidateVocal()
     if (bgmGenerated.value) invalidateBgm()
 
     // The newly selected image's derived values become the baseline
+    snapshotBaseline()
+  }
+
+  /**
+   * Switch the genre/style from inside the studio. Mirrors selectSongImage
+   * but is meant to run after generation: it re-derives the essentials,
+   * invalidates the affected pipeline, and re-baselines so "modified"
+   * indicators reset relative to the new genre.
+   * @param id Song image id to switch to.
+   */
+  function changeGenre(id: string) {
+    if (!applySongImageDefaults(id)) return
+
+    if (vocalGenerated.value) invalidateVocal()
+    if (bgmGenerated.value) invalidateBgm()
+
     snapshotBaseline()
   }
 
@@ -495,6 +531,7 @@ export function useWizardStore() {
 
     // Config helpers
     selectSongImage,
+    changeGenre,
     selectChordProgression,
     setKey,
     setBpm,

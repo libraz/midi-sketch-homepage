@@ -134,17 +134,6 @@ function shuffleVocal() {
 
     <!-- Preview Player (kept mounted during regeneration) -->
     <template v-if="eventData">
-      <!-- Stale indicator: settings changed since last generation -->
-      <button
-        v-if="studio.isStale.value"
-        class="studio-player__stale-pill"
-        @click="studio.applyChanges()"
-      >
-        <span class="studio-player__stale-dot"></span>
-        <span>{{ t('studio.player.stale') }}</span>
-        <span class="studio-player__stale-action">{{ t('studio.player.apply') }}</span>
-      </button>
-
       <GenerationPreview
         :event-data="eventData"
         :current-tick="currentTick"
@@ -228,51 +217,6 @@ function shuffleVocal() {
 .studio-player {
   --accent-rgb: var(--studio-purple-rgb);
   text-align: center;
-}
-
-.studio-player__stale-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  padding: 0.45rem 0.9rem;
-  background: rgba(var(--studio-orange-rgb), 0.12);
-  border: 1px solid rgba(var(--studio-orange-rgb), 0.35);
-  border-radius: 100px;
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--studio-amber);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.studio-player__stale-pill:hover {
-  background: rgba(var(--studio-orange-rgb), 0.2);
-  border-color: rgba(var(--studio-orange-rgb), 0.5);
-}
-
-.studio-player__stale-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--studio-orange);
-  animation: stale-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes stale-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.studio-player__stale-action {
-  padding-left: 0.5rem;
-  border-left: 1px solid rgba(var(--studio-orange-rgb), 0.3);
-  color: var(--studio-amber);
-}
-
-.dark .studio-player__stale-action {
-  color: #fde68a;
 }
 
 .studio-player__edited {

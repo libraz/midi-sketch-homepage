@@ -14,8 +14,21 @@ if [ -f "$WASM_FILE" ]; then
     MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
   fi
   SIZE_KB=$((SIZE / 1024))
-  GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
+  GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c | tr -d ' ')
   GZIP_KB=$((GZIP_SIZE / 1024))
+
+  # Total JS size (wrapper + Emscripten glue)
+  JS_SIZE=0
+  for js_file in src/wasm/index.js src/wasm/midisketch.js; do
+    if [ -f "$js_file" ]; then
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        JS_SIZE=$((JS_SIZE + $(stat -f%z "$js_file")))
+      else
+        JS_SIZE=$((JS_SIZE + $(stat -c%s "$js_file")))
+      fi
+    fi
+  done
+  JS_KB=$((JS_SIZE / 1024))
 
   # Get build date (ISO 8601)
   BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -26,6 +39,12 @@ if [ -f "$WASM_FILE" ]; then
     COMMIT_HASH=$(git -C "$MIDI_SKETCH_DIR" rev-parse --short HEAD)
   fi
 
+  # Get library version from midi-sketch package.json
+  VERSION=""
+  if [ -f "$MIDI_SKETCH_DIR/package.json" ]; then
+    VERSION=$(grep -o '"version": *"[^"]*"' "$MIDI_SKETCH_DIR/package.json" | head -1 | cut -d'"' -f4)
+  fi
+
   # Get old MD5 if meta.json exists
   OLD_MD5=""
   if [ -f "$META_FILE" ]; then
@@ -34,10 +53,13 @@ if [ -f "$WASM_FILE" ]; then
 
   cat > "$META_FILE" << EOF
 {
+  "version": "$VERSION",
   "size": $SIZE,
   "sizeKB": $SIZE_KB,
   "gzipSize": $GZIP_SIZE,
   "gzipKB": $GZIP_KB,
+  "jsSize": $JS_SIZE,
+  "jsKB": $JS_KB,
   "md5": "$MD5",
   "buildDate": "$BUILD_DATE",
   "commitHash": "$COMMIT_HASH"
@@ -58,6 +80,7 @@ EOF
     echo "   Size: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
   fi
   echo "   Build: $BUILD_DATE"
+  [ -n "$VERSION" ] && echo "   Version: $VERSION"
   [ -n "$COMMIT_HASH" ] && echo "   Commit: $COMMIT_HASH"
 else
   echo "❌ WASM file not found: $WASM_FILE"
