@@ -2,6 +2,10 @@
 
 This document details each track generator in [MIDI Sketch](https://github.com/libraz/midi-sketch).
 
+::: tip New to music theory?
+The tracks below map onto musical roles — melody, chords, bass, motif, arpeggio. If those terms are new, start with the [Course](/docs/course/primer); it teaches the concepts behind every generator with playable notation.
+:::
+
 ## Track Overview
 
 MIDI Sketch generates 9 tracks across different MIDI channels:

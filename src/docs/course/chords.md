@@ -74,6 +74,10 @@ An **arpeggio** is a chord played one note at a time in sequence rather than str
 
 A block chord is a parallel read of the set; an arpeggio is a serial one. MidiSketch's arpeggio track turns block chords into broken patterns automatically — `arpeggioEnabled` toggles it and `arpeggioPattern` (`0`–`7`: Up, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord) chooses the iteration order.
 
+::: warning Common pitfall — the arpeggio track is opt-in
+`arpeggioEnabled` defaults to `false`, even in arpeggio-oriented styles like SynthDriven. If you expect a broken-chord track and get none, set `arpeggioEnabled: true` explicitly — selecting a style alone will not turn it on.
+:::
+
 ## MidiSketch mapping
 
 | Concept | Config field | Range / notes |

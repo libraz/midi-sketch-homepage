@@ -2,6 +2,10 @@
 
 This document describes the relationships between `SongConfig` options in MIDI Sketch.
 
+::: tip New to these settings?
+The fields related here — `key`, `mood`, `formId`, the `chordExt*` family — are introduced one chapter at a time in the course. The capstone [Mapping Concepts to Config](/docs/course/config-mapping) collects them into a single lookup table.
+:::
+
 ## Relationship Types
 
 Options have the following relationships:

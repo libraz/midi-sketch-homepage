@@ -74,6 +74,10 @@
 
 ブロックコードは集合の並列読み出し、アルペジオは直列読み出しです。MidiSketchのアルペジオトラックはブロックコードを分散パターンへ自動変換します。`arpeggioEnabled` で切り替え、`arpeggioPattern`（`0`〜`7`：Up、Down、UpDown、Random、Pinwheel、PedalRoot、Alberti、BrokenChord）で反復の順序を選びます。
 
+::: warning よくある落とし穴 — アルペジオトラックはオプトイン
+`arpeggioEnabled` は既定で `false` です。SynthDriven のようなアルペジオ志向のスタイルでもそうです。分散和音のトラックが出るはずなのに出ない場合は、`arpeggioEnabled: true` を明示してください。スタイルを選ぶだけでは有効になりません。
+:::
+
 ## MidiSketchとの対応
 
 | 概念 | 設定フィールド | 範囲・備考 |

@@ -52,6 +52,7 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Royal Road progression | The common J-pop `IV–V–iii–vi` loop | `chordProgressionId` |
 | Four-chord loop | A four-chord cycle repeated under a section | `chordProgressionId` |
 | Vamp | A short progression looped as a backdrop | `chordProgressionId` |
+| Borrowed chord (`♭VII`) | A chord pulled in from the parallel key, e.g. `I-♭VII-IV-I` | `chordProgressionId` (Rock presets) |
 
 ## Harmony
 
@@ -90,6 +91,7 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Interlude | An instrumental section between sung sections | `formId` |
 | Outro | The closing section | `formId` |
 | Song form | The ordered sequence of sections | `formId` (`0`–`17`), `formExplicit`, `targetDurationSeconds` |
+| Modulation (key change) | Shifting the whole song to a new key, usually the final chorus up a step | `modulationTiming`, `modulationSemitones` |
 
 ## Generation
 

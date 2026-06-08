@@ -82,6 +82,10 @@ MidiSketchのコールシステムは `callSetting`（0 = Auto、1 = Enabled、2
 
 `hookIntensity` 0 ではラインは自由に流れ、4（Maximum）では1つの細胞を執拗に叩き込みます。これと並んで、より細かなメロディ制御がラインを直接形作れます。`melodyMaxLeap`（0 = preset、1-12半音）はメロディの跳躍幅を制限し、`melodyPhraseLength`（0 = preset、1-8小節）はフレーズの長さを設定し、`melodyHookRepetition`（0 = preset、1 = off、2 = on）はフック反復を明示的に切り替えます。
 
+::: warning よくある落とし穴 — `motifLength` は小節単位で、0/1/2/4 のみ
+`motifLength` は拍や音数ではなく小節で測り、`0`（auto）・`1`・`2`・`4` しか受け付けません。`3` のような値は「3拍」ではなく範囲外で、`validateConfig` に拒否されます。細胞の音数を制御するには `motifNoteCount`（`3`〜`8`）を使ってください。
+:::
+
 ## MidiSketchとの対応
 
 | 概念 | MidiSketchの制御 | 値 |

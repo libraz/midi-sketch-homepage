@@ -2,6 +2,10 @@
 
 This document explains the candidate selection and evaluation mechanism used in melody generation.
 
+::: tip New to music theory?
+This page assumes the melodic vocabulary — chord tones, passing tones, motifs, hooks. If those are unfamiliar, the course chapter [Melody, Motifs & Hooks](/docs/course/melody-motif) teaches them with playable examples first.
+:::
+
 ## Overview
 
 MIDI Sketch generates multiple melody candidates and selects one through an evaluation system.

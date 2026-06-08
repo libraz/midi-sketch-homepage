@@ -58,6 +58,18 @@ A **four-chord loop** is any short four-chord cycle repeated throughout a song; 
 
 The `I-V-vi-IV` loop starts at home and returns, unlike the Royal Road, which is why it feels resolved yet still danceable on repeat. Both are just different orderings of mostly the same diatonic chords — the ordering is the whole design.
 
+## Borrowed chords: stepping briefly outside the key
+
+Every progression so far stays inside the seven diatonic chords. A progression can also pull a single chord in from outside the key for a splash of color — without changing where the song calls home.
+
+::: info Borrowed chord (♭VII)
+A **borrowed chord** is a chord taken from the parallel key (here, the parallel minor) and dropped into an otherwise diatonic progression. The most common one in pop and rock is **♭VII** — in C major, a B♭ major chord. Its root sits a whole step below the tonic instead of the diatonic `vii°`, giving a bright, anthemic lift that falls back to `I`. It is the signature sound of the `I-♭VII-IV-I` rock cadence.
+:::
+
+<ScoreExample example="borrowedFlatVII" locale="en" />
+
+`I-♭VII-IV-I` (C - B♭ - F - C) trades the leading-tone pull of a diatonic cadence for a plagal, mixolydian brightness — the move behind countless rock and anime choruses. MidiSketch ships two such progressions (the Rock presets), selectable like any other via `chordProgressionId`; ♭VII is the only borrowed chord in the preset set, and the engine voices and analyzes it correctly even though it sits outside the key.
+
 ## Vamps: a progression can be tiny
 
 Loop length is itself a stylistic choice. A progression does not need three or four chords; two are often enough to establish a mood.
@@ -75,6 +87,7 @@ A two-chord vamp like `Am`↔`F` already carries a complete mood. MidiSketch tre
 | Concept | MidiSketch control | Notes |
 | --- | --- | --- |
 | Choosing a progression | `chordProgressionId` (0-21) | 22 preset progressions; `getChords()` lists them all |
+| Borrowed chord (`♭VII`) | `chordProgressionId` (Rock presets) | `I-♭VII-IV-I` / `I-IV-♭VII-I`; the only borrowed chord in the preset set |
 | How progressions are written | degree (Roman numeral) notation | e.g. `IV-V-iii-vi`, key-independent so it transposes to any key |
 | Loop length as a style choice | short vamps vs. long cycles | BehavioralLoop blueprint exploits very short loops (forward reference, Chapter 7) |
 

@@ -2,6 +2,10 @@
 
 This document lists all available presets in [MIDI Sketch](https://github.com/libraz/midi-sketch).
 
+::: tip New to these settings?
+Each preset is a bundle of the config fields taught in the course. The capstone chapter [Mapping Concepts to Config](/docs/course/config-mapping) shows how every preset value maps back to a musical idea.
+:::
+
 ## Structure Patterns
 
 18 song structure patterns are available:

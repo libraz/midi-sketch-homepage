@@ -120,6 +120,10 @@ Call `validateConfig(config)` first to check every field is in range before gene
 
 Across all nine generated tracks (Vocal ch0, Chord ch1, Bass ch2, Motif ch3, Arpeggio ch4, Aux ch5, Guitar ch6, Drums ch9, SE ch15), the guitar track is on by default (`guitarEnabled: true`).
 
+::: warning Common pitfall — several values need an explicit flag to take effect
+A value you set is silently ignored unless its companion flag is on: `mood` needs `moodExplicit`, the `chordExt*Prob` values need `chordExtProbExplicit`, `formId` is only honoured exactly with `formExplicit`, and drum state needs `drumsEnabledExplicit`. If a setting "does nothing", check for its `*Explicit` flag first. Always run `validateConfig(config)` before generating — an out-of-range field rejects the whole generation rather than clamping.
+:::
+
 ## MidiSketch mapping
 
 | Concept | Config field | Range / notes |

@@ -52,7 +52,13 @@ A **secondary dominant** is a dominant 7th chord that resolves to a diatonic cho
 
 <ScoreExample example="secondaryDominant" locale="en" />
 
-D7 contains an F♯ — a note from outside C major. That borrowed accidental momentarily treats G as a "temporary tonic", which is why `F → D7 → G` feels more persuasive than plain `F → G`. MidiSketch inserts secondary dominants automatically: longer chords are preferred candidates, B-sections favor them, and jazz or city-pop styles use more of them — there is no flag to set.
+D7 contains an F♯ — a note from outside C major. That borrowed accidental momentarily treats G as a "temporary tonic", which is why `F → D7 → G` feels more persuasive than plain `F → G`.
+
+The same device aimed at the relative-minor chord — `V/vi`, or E7 resolving to Am — is the single most common secondary dominant in J-pop, recoloring the move into vi.
+
+<ScoreExample example="secondaryDominantVi" locale="en" />
+
+MidiSketch inserts secondary dominants automatically — there is no flag to set. It builds the dominant of an upcoming diatonic chord (commonly `ii`, `IV`, or `vi`), favors high-tension sections such as the pre-chorus and especially the approach into the chorus, and caps roughly one per eight bars with a cooldown so each one stays an event rather than a habit.
 
 ## The tritone: the engine of tension
 
@@ -85,6 +91,10 @@ None of these extensions are all-or-nothing. MidiSketch applies each one stochas
 <ScoreExample example="extensionProb" locale="en" />
 
 Each extension type has its own independent probability (sus 0.2, 7th 0.15, 9th 0.25, tritone sub 0.5 when enabled). By default, the selected mood auto-adjusts these probabilities; set `chordExtProbExplicit: true` to lock your own values and override mood-based tuning. If you want the engine to flag which added notes are safe color versus genuine dissonance, the piano-roll safety API marks chord tones green, tensions yellow, and dissonances red (see [/docs/api-js](/docs/api-js)).
+
+::: warning Common pitfall — your probabilities are overridden unless you lock them
+By default the selected `mood` auto-tunes every `chordExt*Prob`, so a value you set by hand can be silently replaced. Set `chordExtProbExplicit: true` to lock your own probabilities and stop mood from overriding them. The enable flags (`chordExt7th` etc.) are always honoured; only the probabilities are auto-tuned.
+:::
 
 ## MidiSketch mapping
 

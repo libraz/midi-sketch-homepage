@@ -120,6 +120,10 @@ sketch.generateFromConfig(config)
 
 生成される9つのトラック（Vocal ch0、Chord ch1、Bass ch2、Motif ch3、Arpeggio ch4、Aux ch5、Guitar ch6、Drums ch9、SE ch15）のうち、ギタートラックは既定で有効です（`guitarEnabled: true`）。
 
+::: warning よくある落とし穴 — いくつかの値は明示フラグがないと効かない
+設定した値は、対になるフラグが立っていないと黙って無視されます。`mood` には `moodExplicit`、`chordExt*Prob` には `chordExtProbExplicit`、`formId` を正確に尊重させるには `formExplicit`、ドラムの状態には `drumsEnabledExplicit` が必要です。設定が「効かない」ときは、まず対応する `*Explicit` フラグを確認してください。生成の前に必ず `validateConfig(config)` を実行してください。範囲外のフィールドはクランプされず、生成全体が拒否されます。
+:::
+
 ## MidiSketchとの対応
 
 | 概念 | 設定フィールド | 範囲・備考 |

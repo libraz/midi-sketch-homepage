@@ -106,6 +106,41 @@ export const harmonyColorExamples: Record<string, ScoreExampleDef> = {
     playback: 'sequential',
   },
 
+  secondaryDominantVi: {
+    tags: ['secondary dominant', 'V/vi'],
+    badge: { en: 'V/vi (E7→Am)', ja: 'V/vi（E7→Am）' },
+    title: { en: 'IV → V → vi versus IV → V/vi → vi', ja: 'IV→V→vi と IV→V/vi→vi' },
+    diagnosis: {
+      en: 'Swapping the diatonic V for E7 aims a dominant pull straight at Am — the borrowed G♯ makes Am a temporary tonic.',
+      ja: 'ダイアトニックのVをE7に差し替えると、ドミナントの引力がAmそのものに向きます。借りてきたG♯がAmを一時的なトニックにします。',
+    },
+    caption: {
+      en: 'E7 is the dominant 7th of Am, so it "wants" to land on Am exactly the way G7 wants C. The borrowed G♯ — a note from outside C major — creates that pull. V/vi (E7 → Am) is the most common secondary dominant in J-pop, recoloring the move into the relative-minor chord. MidiSketch inserts it automatically based on section tension; there is no config flag.',
+      ja: 'E7はAmのドミナント7thなので、G7がCに着地したがるのとまったく同じように、Amに着地したがります。借りてきたG♯ — Cメジャーの外の音 — がその引力を生み出します。V/vi（E7→Am）はJ-POPで最もよく使われるセカンダリードミナントで、平行短調のコードへの動きを彩り直します。MidiSketchはセクションtensionに基づいて自動挿入します。設定フラグはありません。',
+    },
+    time: '4/4',
+    bars: 2,
+    width: 640,
+    upperClef: 'treble',
+    lowerClef: 'treble',
+    upperLabel: { en: 'IV → V → vi', ja: 'IV → V → vi' },
+    lowerLabel: { en: 'IV → V/vi → vi', ja: 'IV → V/vi → vi' },
+    upper: [
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F', annotation: 'IV' },
+      { key: 'g/4', keys: ['g/4', 'b/4', 'd/5'], duration: 'h', chordSymbol: 'G', annotation: 'V' },
+      { key: 'a/4', keys: ['a/4', 'c/5', 'e/5'], duration: 'w', chordSymbol: 'Am', annotation: 'vi', color: GREEN },
+    ],
+    lower: [
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F', annotation: 'IV' },
+      { key: 'e/4', keys: ['e/4', 'g#/4', 'b/4', 'd/5'], accidentals: [null, '#', null, null], duration: 'h', chordSymbol: 'E7', annotation: 'V/vi', color: AMBER },
+      { key: 'a/4', keys: ['a/4', 'c/5', 'e/5'], duration: 'w', chordSymbol: 'Am', annotation: 'vi', color: GREEN },
+    ],
+    issues: [
+      { kind: 'motion', label: 'E7 → Am', fromLower: 1, toLower: 2, color: GREEN },
+    ],
+    playback: 'sequential',
+  },
+
   tritoneInterval: {
     tags: ['tritone'],
     badge: { en: 'Tritone', ja: 'トライトーン' },

@@ -82,6 +82,10 @@ Every interactive example here is drawn on a **staff** with a **clef**.
 A **staff** is the five horizontal lines notes are placed on; higher on the staff means higher pitch. A **clef** at the left fixes the reference: the **treble clef** used throughout this course pins the second line to `G4`. You do not need to sight-read — treat the staff as a vertical pitch axis and the clef as its origin marker.
 :::
 
+::: warning Common pitfall — `bpm: 0` is not silence
+`bpm: 0` does not mean "no tempo" — it tells the engine to use the style preset's default tempo. To pin a tempo, set a real value in `40`–`240`. Anything outside that range (or a `vocalLow`/`vocalHigh` outside `36`–`96`) is rejected by `validateConfig`, not clamped.
+:::
+
 ## MidiSketch mapping
 
 | Concept | Config field | Range / notes |

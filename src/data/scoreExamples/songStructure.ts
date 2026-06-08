@@ -166,4 +166,38 @@ export const songStructureExamples: Record<string, ScoreExampleDef> = {
       { key: 'c/5', duration: 'w', annotation: 'Outro' },
     ],
   },
+
+  modulationLift: {
+    tags: ['modulationTiming', 'modulationSemitones'],
+    badge: { en: 'Key change', ja: '転調' },
+    title: { en: 'The final-chorus lift: same loop, up +2', ja: '最後のサビの転調：同じループを+2' },
+    diagnosis: {
+      en: 'The last chorus repeats a whole step higher (+2 semitones) — identical shapes, fresh lift.',
+      ja: '最後のサビが全音上（+2半音）で繰り返されます。形は同じ、高揚感だけ新しい。',
+    },
+    caption: {
+      en: 'A late, upward key change reinjects energy without new material: the F-G-Em-Am chorus loop (in C) simply repeats up a whole step in D as G-A-F♯m-Bm. The function is unchanged — only the absolute pitch rises, which the ear hears as a surge. MidiSketch automates this via modulationTiming (LastChorus is the classic choice) and modulationSemitones (+1 to +4).',
+      ja: '終盤の上方転調は、新しい素材なしにエネルギーを注ぎ直します。F-G-Em-Am のサビループ（C）が、全音上のDで G-A-F♯m-Bm として繰り返されるだけです。機能は変わらず絶対音高だけが上がり、耳には高揚として届きます。MidiSketchは modulationTiming（定番は LastChorus）と modulationSemitones（+1〜+4）で自動化します。',
+    },
+    time: '4/4',
+    bars: 2,
+    width: 640,
+    upperClef: 'treble',
+    lowerClef: 'treble',
+    upperLabel: { en: 'last chorus (C)', ja: '最後のサビ（C）' },
+    lowerLabel: { en: 'repeat, up +2 (D)', ja: '繰り返し、+2（D）' },
+    upper: [
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F' },
+      { key: 'g/4', keys: ['g/4', 'b/4', 'd/5'], duration: 'h', chordSymbol: 'G' },
+      { key: 'e/4', keys: ['e/4', 'g/4', 'b/4'], duration: 'h', chordSymbol: 'Em' },
+      { key: 'a/4', keys: ['a/4', 'c/5', 'e/5'], duration: 'h', chordSymbol: 'Am' },
+    ],
+    lower: [
+      { key: 'g/4', keys: ['g/4', 'b/4', 'd/5'], duration: 'h', chordSymbol: 'G', color: AMBER },
+      { key: 'a/4', keys: ['a/4', 'c#/5', 'e/5'], accidentals: [null, '#', null], duration: 'h', chordSymbol: 'A', color: AMBER },
+      { key: 'f#/4', keys: ['f#/4', 'a/4', 'c#/5'], accidentals: ['#', null, '#'], duration: 'h', chordSymbol: 'F♯m', color: AMBER },
+      { key: 'b/4', keys: ['b/4', 'd/5', 'f#/5'], accidentals: [null, null, '#'], duration: 'h', chordSymbol: 'Bm', color: AMBER },
+    ],
+    playback: 'sequential',
+  },
 }

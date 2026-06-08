@@ -80,6 +80,22 @@ A **song form** is the ordered sequence of sections that makes up a complete son
 
 The schematic above is not a melody — each whole note stands for one section, drawn at the register that section typically occupies, so you can see the shape of a song at a glance: a low verse, a rising pre-chorus, a high chorus, a settling outro. MidiSketch ships 18 such structure presets (`formId` 0–17) that assemble sections into complete songs.
 
+::: warning Common pitfall — `targetDurationSeconds` overrides `formId`
+If `targetDurationSeconds` is greater than `0`, the engine auto-builds a structure to fit that length and ignores `formId`'s section layout. Leave it at `0` to honour `formId`. Likewise `formExplicit: false` lets the engine adapt your chosen form — set it `true` to lock the form exactly as numbered.
+:::
+
+## The final-chorus key change: modulation
+
+One structural device earns its own section because it is almost a cliché of the form: lifting the last chorus into a higher key. It adds no new melody or harmony — it transposes a section the listener already knows, and that familiarity-plus-lift is the whole effect.
+
+::: info Modulation (key change / 転調)
+**Modulation** is a shift of the entire song to a new key partway through. In pop it is overwhelmingly a *late, upward* move — the final chorus jumps up a step or two — used as a last-minute energy injection. Because every part transposes together, the harmony's function is unchanged; only the absolute pitch rises, which the ear hears as a fresh surge.
+:::
+
+<ScoreExample example="modulationLift" locale="en" />
+
+MidiSketch controls this with two fields. `modulationTiming` chooses *when* the key change happens: `LastChorus` (the classic final-chorus lift), `AfterBridge`, `EachChorus` (rare and aggressive), `Random`, or `None`. `modulationSemitones` chooses *how far*: `+1` to `+4`, with `+2` (a whole step) the most common pop choice. A `+1` lift is subtle; `+3`–`+4` is dramatic but pushes the chorus higher into the vocal range, so pick the amount with `vocalHigh` in mind.
+
 ## MidiSketch mapping
 
 | Concept | Config field | Range / notes |
@@ -87,6 +103,8 @@ The schematic above is not a melody — each whole note stands for one section, 
 | Song form preset | `formId` | `0`–`17` (18 structure presets) |
 | Use the form exactly as given | `formExplicit` | `true` = honour `formId`; `false` = engine may adapt |
 | Build a form to a target length | `targetDurationSeconds` | seconds; `0` = use `formId`'s structure |
+| Final-chorus key change | `modulationTiming` | `None` / `LastChorus` / `AfterBridge` / `EachChorus` / `Random` |
+| Key-change amount | `modulationSemitones` | `+1`–`+4` semitones (`+2` most common) |
 | Section roles | (internal) | Intro / Verse (A) / Bridge (B) / Chorus / Interlude / Outro |
 
 When `targetDurationSeconds` is `0`, the engine uses the structure from `formId`; set a positive value to auto-build a structure of roughly that length instead.

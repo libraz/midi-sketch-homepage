@@ -52,6 +52,7 @@
 | 王道進行 | J-popで定番の `IV–V–iii–vi` ループ | `chordProgressionId` |
 | 4コードループ | セクションの下で繰り返す4コードの循環 | `chordProgressionId` |
 | ヴァンプ | 背景として反復される短い進行 | `chordProgressionId` |
+| 借用和音（`♭VII`） | 平行調から引き込んだコード。例 `I-♭VII-IV-I` | `chordProgressionId`（Rockプリセット） |
 
 ## ハーモニー
 
@@ -90,6 +91,7 @@
 | 間奏 | 歌セクションのあいだのインストゥルメンタル・セクション | `formId` |
 | アウトロ | 締めのセクション | `formId` |
 | 楽曲フォーム | セクションの順序付き並び | `formId`（`0`〜`17`）、`formExplicit`、`targetDurationSeconds` |
+| 転調（キーチェンジ） | 曲全体を新しいキーへ移すこと。多くは最後のサビを1段上げる | `modulationTiming`、`modulationSemitones` |
 
 ## 生成
 

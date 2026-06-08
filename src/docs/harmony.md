@@ -6,6 +6,10 @@ This document explains the harmonic system in [MIDI Sketch](https://github.com/l
 This page uses music theory terminology. These concepts are handled automatically by the system, but understanding them allows for more precise parameter selection.
 :::
 
+::: tip New to these terms?
+Degree, cadence, secondary dominant, tritone substitution and the rest are taught from scratch — with playable examples — in the course chapters [Chord Progressions](/docs/course/progressions) and [Harmony & Color](/docs/course/harmony-color).
+:::
+
 ::: tip New to music theory?
 If chords and progressions are new to you, the [Course](/docs/course/chords) builds them up from scratch with playable notation examples — start there, then come back to this reference.
 :::

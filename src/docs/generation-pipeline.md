@@ -2,6 +2,10 @@
 
 This document explains the step-by-step music generation process in [MIDI Sketch](https://github.com/libraz/midi-sketch).
 
+::: tip New to music theory?
+The pipeline assembles sections — verse, pre-chorus, chorus — into a song form. If that vocabulary is unfamiliar, the course chapter [Song Structure](/docs/course/song-structure) explains it with playable examples first.
+:::
+
 ## Pipeline Overview
 
 MIDI Sketch supports multiple generation workflows depending on the composition style and use case.

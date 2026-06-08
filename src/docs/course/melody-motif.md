@@ -82,6 +82,10 @@ Finally, remember that repetition itself is a continuous parameter, not a yes/no
 
 At `hookIntensity` 0 the line flows freely; at 4 (Maximum) it hammers a single cell relentlessly. Alongside this, finer melody controls let you shape the line directly: `melodyMaxLeap` (0 = preset, 1-12 semitones) caps how far the melody jumps, `melodyPhraseLength` (0 = preset, 1-8 bars) sets phrase length, and `melodyHookRepetition` (0 = preset, 1 = off, 2 = on) toggles hook repetition explicitly.
 
+::: warning Common pitfall — `motifLength` is in bars, and only 0/1/2/4
+`motifLength` is measured in bars, not beats or notes, and accepts only `0` (auto), `1`, `2`, or `4`. A value like `3` is not "three beats" — it is out of range and `validateConfig` rejects it. Use `motifNoteCount` (`3`–`8`) to control how many notes the cell has.
+:::
+
 ## MidiSketch mapping
 
 | Concept | MidiSketch control | Values |

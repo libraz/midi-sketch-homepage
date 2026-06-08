@@ -66,6 +66,10 @@ An **interval** is the distance between two pitches. Counted in scale steps it g
 
 Notice each pair already sounds consonant on its own. Stacking thirds is the recipe for chords: in Chapter 2 a triad is nothing more than two thirds piled on a root — the harmonic primitive falls straight out of this interval.
 
+::: warning Common pitfall — `mood` needs `moodExplicit`
+Setting `mood` alone often appears to do nothing: by default the engine treats it as a hint and may override it. To make a `mood` value apply exactly, also set `moodExplicit: true`. (`key`, by contrast, always applies.)
+:::
+
 ## MidiSketch mapping
 
 | Concept | Config field | Range / notes |

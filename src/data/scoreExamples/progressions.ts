@@ -53,6 +53,31 @@ export const progressionsExamples: Record<string, ScoreExampleDef> = {
     ],
   },
 
+  borrowedFlatVII: {
+    tags: ['chordProgressionId', 'I-bVII-IV-I'],
+    badge: { en: 'Borrowed ♭VII', ja: '借用 ♭VII' },
+    title: { en: 'The ♭VII rock cadence: I - ♭VII - IV - I', ja: '♭VIIのロックケーデンス：I - ♭VII - IV - I' },
+    diagnosis: {
+      en: 'B♭ is borrowed from outside C major — a whole step below the tonic — for an anthemic, mixolydian lift.',
+      ja: 'B♭はCメジャーの外（トニックの全音下）から借りてきた音で、高揚感のあるミクソリディアンの「持ち上げ」を生みます。',
+    },
+    caption: {
+      en: 'C → B♭ → F → C trades the leading-tone pull of a diatonic cadence for a bright, plagal brightness. The ♭VII chord (B♭ major) is borrowed from the parallel minor; its root sits a whole step below the tonic instead of the diatonic vii°. This is the signature sound of countless rock and anime choruses. MidiSketch ships two such Rock presets, selectable via chordProgressionId like any other progression.',
+      ja: 'C → B♭ → F → C は、ダイアトニックなケーデンスの導音による引力を、明るいプラガルな響きに置き換えます。♭VIIコード（B♭メジャー）は平行短調から借りた和音で、その根音はダイアトニックのvii°ではなくトニックの全音下にあります。無数のロックやアニメのサビを象徴する響きです。MidiSketchはこうしたRockプリセットを2つ収録し、他の進行と同じく chordProgressionId で選択できます。',
+    },
+    time: '4/4',
+    bars: 2,
+    width: 640,
+    upperClef: 'treble',
+    upperLabel: { en: 'chords', ja: 'コード' },
+    upper: [
+      { key: 'c/4', keys: ['c/4', 'e/4', 'g/4'], duration: 'h', chordSymbol: 'C', annotation: 'I' },
+      { key: 'bb/3', keys: ['bb/3', 'd/4', 'f/4'], accidentals: ['b', null, null], duration: 'h', chordSymbol: 'B♭', annotation: '♭VII', color: AMBER },
+      { key: 'f/4', keys: ['f/4', 'a/4', 'c/5'], duration: 'h', chordSymbol: 'F', annotation: 'IV' },
+      { key: 'c/4', keys: ['c/4', 'e/4', 'g/4'], duration: 'h', chordSymbol: 'C', annotation: 'I', color: GREEN },
+    ],
+  },
+
   cadenceVI: {
     tags: ['cadence', 'V-I'],
     badge: { en: 'Cadence', ja: 'カデンツ' },

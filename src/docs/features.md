@@ -2,6 +2,10 @@
 
 MIDI Sketch is a music theory-based MIDI generator that creates complete pop music arrangements.
 
+::: tip New to music theory?
+This page describes features in musical terms — keys, progressions, hooks, song forms. If any are unfamiliar, the [Course](/docs/course/primer) teaches the basics behind every feature with playable examples.
+:::
+
 ## MIDI Output, Not Audio
 
 Unlike AI audio generators (Suno, Udio, etc.), MIDI Sketch outputs **editable MIDI data**.
