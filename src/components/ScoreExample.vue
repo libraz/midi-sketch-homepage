@@ -1,5 +1,5 @@
 <template>
-  <figure class="score-example" :data-status="status">
+  <figure class="score-example" :data-status="status" :data-playing="playingId === example">
     <div class="score-example__header">
       <span class="score-example__badge">{{ view.badge }}</span>
       <strong>{{ view.title }}</strong>
@@ -12,11 +12,12 @@
         :disabled="isLoading"
         @click="togglePlay"
       >
-        <svg v-if="playingId !== example" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M4 2.5v11l9-5.5z" />
+        <span v-if="pending && playingId !== example" class="score-example__play-loader" aria-hidden="true" />
+        <svg v-else-if="playingId !== example" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4.6 3.1a.66.66 0 0 1 1-.57l8 4.9a.66.66 0 0 1 0 1.14l-8 4.9a.66.66 0 0 1-1-.57z" />
         </svg>
         <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-          <rect x="3.5" y="3.5" width="9" height="9" rx="1" />
+          <rect x="3.8" y="3.8" width="8.4" height="8.4" rx="1.6" />
         </svg>
       </button>
     </div>
@@ -33,6 +34,9 @@
         class="score-example__renderer"
         :aria-hidden="status !== 'ready'"
       />
+      <div class="score-example__progress" aria-hidden="true">
+        <div ref="progressFill" class="score-example__progress-fill" />
+      </div>
     </div>
     <figcaption>{{ view.caption }}</figcaption>
     <div class="score-example__diagnosis">
@@ -65,7 +69,10 @@ const props = withDefaults(defineProps<{
 })
 
 const target = ref<HTMLDivElement | null>(null)
+const progressFill = ref<HTMLDivElement | null>(null)
 const status = ref<Status>('loading')
+/** True between the play click and the instrument being ready (spinner). */
+const pending = ref(false)
 const { play, isLoading, playingId, playbackState, audioNow } = useScorePlayer()
 
 const uiCopy: Record<ScoreLocale, { upper: string; middle: string; lower: string; play: string; stop: string }> = {
@@ -131,10 +138,13 @@ const staveCount = computed(() => view.value.parts.length)
 const height = computed(() => staveCount.value === 3 ? 335 : staveCount.value === 2 ? 235 : 165)
 
 async function togglePlay() {
+  pending.value = true
   try {
     await play(props.example, def.value)
   } catch (error) {
     console.error('[ScoreExample] playback failed', error)
+  } finally {
+    pending.value = false
   }
 }
 
@@ -610,6 +620,7 @@ function hideHighlights() {
   for (const circle of Object.values(highlightCircles)) {
     if (circle) circle.style.visibility = 'hidden'
   }
+  if (progressFill.value) progressFill.value.style.transform = 'scaleX(0)'
 }
 
 function highlightTick() {
@@ -620,6 +631,12 @@ function highlightTick() {
     return
   }
   const t = audioNow() - state.startTime
+  // Advance the progress hairline across the example's full duration.
+  if (progressFill.value) {
+    const total = state.windows.reduce((max, w) => Math.max(max, w.end), 0)
+    const ratio = total > 0 ? Math.min(1, Math.max(0, t / total)) : 0
+    progressFill.value.style.transform = `scaleX(${ratio})`
+  }
   for (const part of ['upper', 'middle', 'lower'] as const) {
     const circle = highlightCircles[part]
     if (!circle) continue
