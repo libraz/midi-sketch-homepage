@@ -3,6 +3,7 @@ import { Soundfont } from 'smplr'
 import type { ScoreExampleDef, StaffNote } from '@/data/scoreExamples/types'
 import { durationBeats } from '@/data/scoreExamples/types'
 import { staffKeyToMidi } from '@/utils/midiUtils'
+import { createAudioContext } from '@/utils/webAudio'
 
 /**
  * Lightweight shared player for course score examples.
@@ -64,7 +65,7 @@ async function loadInstrument(): Promise<Soundfont> {
   if (!loadPromise) {
     loadPromise = (async () => {
       if (!audioContext || audioContext.state === 'closed') {
-        audioContext = new AudioContext()
+        audioContext = createAudioContext()
       }
       const sf = await new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load
       instrument = sf
@@ -177,11 +178,13 @@ export function useScorePlayer() {
 
     // Create/resume the AudioContext inside the user gesture.
     if (!audioContext || audioContext.state === 'closed') {
-      audioContext = new AudioContext()
+      audioContext = createAudioContext()
       instrument = null
       loadPromise = null
     }
-    if (audioContext.state === 'suspended') {
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (audioContext.state !== 'running') {
       await audioContext.resume()
     }
 

@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import * as Tone from 'tone'
+import { configureAudioSession } from '@/utils/webAudio'
 
 // Degree to semitone interval mapping
 const degreeToSemitone: Record<string, number> = {
@@ -64,6 +65,7 @@ export async function warmupChordPlayer() {
   if (isWarmedUp) return
 
   try {
+    configureAudioSession()
     await Tone.start()
 
     if (!synth) {
@@ -95,6 +97,7 @@ export function useChordPlayer() {
   async function initSynth() {
     if (synth) return synth
 
+    configureAudioSession()
     await Tone.start()
 
     synth = new Tone.PolySynth(Tone.Synth, {

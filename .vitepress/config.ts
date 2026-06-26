@@ -1,9 +1,61 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 import { fileURLToPath, URL } from 'node:url'
+import { generateLlmsTxt } from './llms'
 
 const siteUrl = 'https://midisketch.libraz.net'
 const githubUrl = 'https://github.com/libraz/midi-sketch'
+
+// Featured top-level pages — shared between the landing demo and the llms.txt index.
+const enHighlights = [
+  { text: 'Studio (Browser Demo)', link: '/' }
+]
+
+// English docs sidebar — shared between the `/docs/` sidebar and the llms.txt index.
+const enDocsSidebar = [
+  {
+    text: 'Guide',
+    items: [
+      { text: 'Features', link: '/docs/features' },
+      { text: 'Getting Started', link: '/docs/getting-started' },
+      { text: 'Installation', link: '/docs/installation' },
+    ]
+  },
+  {
+    text: 'Course',
+    items: [
+      { text: '0 · Music Primer for Engineers', link: '/docs/course/primer' },
+      { text: '1 · Scales & Keys', link: '/docs/course/scales-keys' },
+      { text: '2 · Chords & Triads', link: '/docs/course/chords' },
+      { text: '3 · Chord Progressions', link: '/docs/course/progressions' },
+      { text: '4 · Harmony & Color', link: '/docs/course/harmony-color' },
+      { text: '5 · Melody, Motifs & Hooks', link: '/docs/course/melody-motif' },
+      { text: '6 · Song Structure', link: '/docs/course/song-structure' },
+      { text: '7 · Mapping to MidiSketch', link: '/docs/course/config-mapping' },
+      { text: 'Music Term Reference', link: '/docs/course/glossary' },
+    ]
+  },
+  {
+    text: 'Technical',
+    items: [
+      { text: 'Architecture', link: '/docs/architecture' },
+      { text: 'Generation Pipeline', link: '/docs/generation-pipeline' },
+      { text: 'Track Generators', link: '/docs/track-generators' },
+      { text: 'Melody Evaluation', link: '/docs/melody-evaluation' },
+      { text: 'Harmony', link: '/docs/harmony' },
+      { text: 'Presets', link: '/docs/presets' },
+    ]
+  },
+  {
+    text: 'Reference',
+    items: [
+      { text: 'JavaScript API', link: '/docs/api-js' },
+      { text: 'C++ API', link: '/docs/api-cpp' },
+      { text: 'CLI Reference', link: '/docs/cli' },
+      { text: 'Option Relationships', link: '/docs/option-relationships' },
+    ]
+  }
+]
 
 // JSON-LD: SoftwareApplication schema
 const softwareApplicationJsonLd = {
@@ -128,6 +180,19 @@ export default withMermaid(defineConfig({
     hostname: siteUrl
   },
 
+  // Emit an llms.txt index (https://llmstxt.org) into the build output.
+  buildEnd(siteConfig) {
+    generateLlmsTxt({
+      siteUrl,
+      srcDir: siteConfig.srcDir,
+      outDir: siteConfig.outDir,
+      summary:
+        'Music theory-based pop music MIDI generator. Generates reproducible, multi-track MIDI (drums, bass, chords, arpeggio, melody) you can import and edit in any DAW — not finished AI audio. Runs in the browser via WebAssembly, plus Node.js and C++. MIT licensed.',
+      highlights: enHighlights,
+      docsSidebar: enDocsSidebar
+    })
+  },
+
   head: [
     ['meta', { name: 'theme-color', content: '#8B5CF6' }],
     ['link', { rel: 'icon', href: '/favicon.ico', sizes: '48x48' }],
@@ -176,50 +241,7 @@ export default withMermaid(defineConfig({
           { text: 'GitHub', link: githubUrl }
         ],
         sidebar: {
-          '/docs/': [
-            {
-              text: 'Guide',
-              items: [
-                { text: 'Features', link: '/docs/features' },
-                { text: 'Getting Started', link: '/docs/getting-started' },
-                { text: 'Installation', link: '/docs/installation' },
-              ]
-            },
-            {
-              text: 'Course',
-              items: [
-                { text: '0 · Music Primer for Engineers', link: '/docs/course/primer' },
-                { text: '1 · Scales & Keys', link: '/docs/course/scales-keys' },
-                { text: '2 · Chords & Triads', link: '/docs/course/chords' },
-                { text: '3 · Chord Progressions', link: '/docs/course/progressions' },
-                { text: '4 · Harmony & Color', link: '/docs/course/harmony-color' },
-                { text: '5 · Melody, Motifs & Hooks', link: '/docs/course/melody-motif' },
-                { text: '6 · Song Structure', link: '/docs/course/song-structure' },
-                { text: '7 · Mapping to MidiSketch', link: '/docs/course/config-mapping' },
-                { text: 'Music Term Reference', link: '/docs/course/glossary' },
-              ]
-            },
-            {
-              text: 'Technical',
-              items: [
-                { text: 'Architecture', link: '/docs/architecture' },
-                { text: 'Generation Pipeline', link: '/docs/generation-pipeline' },
-                { text: 'Track Generators', link: '/docs/track-generators' },
-                { text: 'Melody Evaluation', link: '/docs/melody-evaluation' },
-                { text: 'Harmony', link: '/docs/harmony' },
-                { text: 'Presets', link: '/docs/presets' },
-              ]
-            },
-            {
-              text: 'Reference',
-              items: [
-                { text: 'JavaScript API', link: '/docs/api-js' },
-                { text: 'C++ API', link: '/docs/api-cpp' },
-                { text: 'CLI Reference', link: '/docs/cli' },
-                { text: 'Option Relationships', link: '/docs/option-relationships' },
-              ]
-            }
-          ]
+          '/docs/': enDocsSidebar
         }
       }
     },

@@ -2,6 +2,7 @@ import { ref, onUnmounted, type Ref } from 'vue'
 import { Soundfont } from 'smplr'
 import type { PlacedNote, ChordAtBar } from '@/components/PianoRollEditor/types'
 import { PPQ } from '@/components/PianoRollEditor/types'
+import { createAudioContext } from '@/utils/webAudio'
 
 // ============================================================================
 // Piano Sound Composable - Sound playback for Piano Roll Editor
@@ -70,7 +71,7 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
 
     initPromise = (async () => {
       try {
-        audioContext = new AudioContext()
+        audioContext = createAudioContext()
         // Load piano and bass in parallel (same as useMidiPlayer)
         const [loadedPiano, loadedBass] = await Promise.all([
           new Soundfont(audioContext, { instrument: 'acoustic_grand_piano' }).load,
@@ -111,8 +112,9 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
 
     if (!audioContext || !piano) return
 
-    // Resume audio context if suspended
-    if (audioContext.state === 'suspended') {
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (audioContext.state !== 'running') {
       await audioContext.resume()
     }
 
@@ -139,8 +141,9 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
 
     if (!audioContext || !piano) return
 
-    // Resume audio context if suspended
-    if (audioContext.state === 'suspended') {
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (audioContext.state !== 'running') {
       await audioContext.resume()
     }
 
@@ -368,7 +371,8 @@ export function usePianoSound(options: UsePianoSoundOptions = {}) {
       }
     } else {
       // Tab became visible - resume audio context if needed
-      if (audioContext && audioContext.state === 'suspended') {
+      // (covers iOS Safari's non-standard 'interrupted' state too)
+      if (audioContext && audioContext.state !== 'running' && audioContext.state !== 'closed') {
         audioContext.resume()
       }
     }

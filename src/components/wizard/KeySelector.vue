@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import * as Tone from 'tone'
 import { useI18n } from '@/composables/useI18n'
 import { KEY_NAMES, midiToFreq } from '@/utils/midiUtils'
+import { configureAudioSession } from '@/utils/webAudio'
 
 const props = defineProps<{
   modelValue: number
@@ -48,6 +49,7 @@ const playingNoteKeyIndex = computed(() => {
 async function initScaleSynth() {
   if (scaleSynth) return scaleSynth
 
+  configureAudioSession()
   await Tone.start()
 
   scaleSynth = new Tone.Synth({
@@ -81,7 +83,10 @@ async function preloadAudio() {
       scaleSynth.volume.value = -8
     }
 
-    if (Tone.getContext().state === 'suspended') {
+    configureAudioSession()
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (Tone.getContext().state !== 'running') {
       await Tone.start()
     }
 
@@ -108,7 +113,10 @@ async function resumeAudioIfNeeded() {
   if (isAudioReady.value) return
 
   try {
-    if (Tone.getContext().state === 'suspended') {
+    configureAudioSession()
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (Tone.getContext().state !== 'running') {
       await Tone.start()
     }
 

@@ -1,6 +1,7 @@
 import { ref, onUnmounted } from 'vue'
 import { Soundfont, DrumMachine } from 'smplr'
 import { devLog } from '@/utils/devLog'
+import { createAudioContext } from '@/utils/webAudio'
 import { type ChordTiming, getRootMidiNote } from '@/utils/chordUtils'
 import {
   DEMO_SOUNDFONT_KIT,
@@ -133,7 +134,7 @@ export function useMidiPlayer() {
 
     initPromise = (async () => {
       try {
-        audioContext = new AudioContext()
+        audioContext = createAudioContext()
 
         // Load only bass and drums at init (minimal footprint).
         // The default kit is a warm-up; play() swaps in the song image's kit.
@@ -178,8 +179,9 @@ export function useMidiPlayer() {
 
     if (!audioContext || !bass) return
 
-    // Resume audio context if suspended
-    if (audioContext.state === 'suspended') {
+    // iOS Safari reports a non-standard 'interrupted' state after phone
+    // calls or app switches, so resume on anything that is not running.
+    if (audioContext.state !== 'running') {
       await audioContext.resume()
     }
 
