@@ -315,7 +315,7 @@ Use `generateVocal()` to create the initial melody, then call `regenerateVocal()
 ## Open Source
 
 ::: info License
-Apache 2.0 licensed - use generated MIDI commercially, modify and redistribute freely.
+AGPL-3.0 / Commercial dual licensed. The MIDI you generate is yours to use commercially. The engine is free to use, modify, and redistribute under AGPL-3.0; embedding it in a closed-source product or proprietary SaaS requires a commercial license.
 :::
 
 ---
