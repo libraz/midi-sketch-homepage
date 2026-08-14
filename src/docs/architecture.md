@@ -37,7 +37,7 @@ midi-sketch/
 │   ├── analysis/          # Dissonance analysis
 │   ├── midisketch.h       # Public C++ API
 │   └── midisketch_c.h     # C API (WASM interface)
-├── tests/                 # Google Test suite (63 test files)
+├── tests/                 # Google Test suite (127 test files)
 ├── dist/                  # WASM distribution
 └── demo/                  # Browser demo
 ```

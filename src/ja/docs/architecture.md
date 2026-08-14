@@ -37,7 +37,7 @@ midi-sketch/
 │   ├── analysis/          # 不協和音分析
 │   ├── midisketch.h       # 公開C++ API
 │   └── midisketch_c.h     # C API（WASMインターフェース）
-├── tests/                 # Google Testスイート（63テストファイル）
+├── tests/                 # Google Testスイート（127テストファイル）
 ├── dist/                  # WASM配布物
 └── demo/                  # ブラウザデモ
 ```
