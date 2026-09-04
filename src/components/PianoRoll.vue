@@ -92,6 +92,12 @@ const props = defineProps<{
   chordProgression?: string  // e.g., "I - V - vi - IV"
   musicKey?: number          // 0-11 (0=C)
   precomputedChordTimings?: ChordTiming[]  // Pre-computed timings (overrides chordProgression)
+  /**
+   * Mute state owned by the audio transport. The mixer is a view of the audio
+   * engine, so the flags must come from there: keeping a second copy here made
+   * the buttons lie whenever this component remounted while audio kept running.
+   */
+  mutedTracks?: Record<string, boolean>
 }>()
 
 const emit = defineEmits<{
@@ -108,6 +114,7 @@ const TRACK_COLOR_MAP: Record<string, string> = {
   'Motif': '#F97316',
   'Arpeggio': '#3B82F6',
   'SE': '#F472B6',
+  'Drums': '#94A3B8',
 }
 
 interface SectionColorSet {
@@ -154,19 +161,12 @@ const canvasWidth = ref(800)
 const canvasHeight = ref(180)
 const dpr = ref(1)
 
-// Track mute state (SE is muted by default)
-const mutedTracks = ref<Record<string, boolean>>({
-  SE: true
-})
-
 function isTrackMuted(trackName: string): boolean {
-  return mutedTracks.value[trackName] ?? false
+  return props.mutedTracks?.[trackName] ?? false
 }
 
 function toggleTrackMute(trackName: string) {
-  const newMuted = !isTrackMuted(trackName)
-  mutedTracks.value[trackName] = newMuted
-  emit('trackMuteChange', { track: trackName, muted: newMuted })
+  emit('trackMuteChange', { track: trackName, muted: !isTrackMuted(trackName) })
 }
 
 // Computed values
@@ -201,11 +201,71 @@ const timeRange = computed(() => {
 
 const ppq = computed(() => props.events?.ppq || 480)
 
-const totalWidth = computed(() => {
-  return (timeRange.value.max / (4 * ppq.value)) * 200
+const sections = computed(() => props.events?.sections || [])
+
+/**
+ * Length of the song in ticks. The section list is authoritative — it is what
+ * the audio transport uses as the end of playback — and only falls back to the
+ * note extent when no structure was returned.
+ */
+const songTicks = computed(() => {
+  const last = sections.value[sections.value.length - 1]
+  const sectionEnd = last ? (last.end_ticks ?? last.endTick ?? 0) : 0
+  return sectionEnd > 0 ? sectionEnd : timeRange.value.max
 })
 
-const sections = computed(() => props.events?.sections || [])
+const totalSongBars = computed(() => Math.max(1, songTicks.value / (4 * ppq.value)))
+
+// ============================================
+// Horizontal zoom
+// ============================================
+// A fixed 200px bar showed four bars of an eighty-bar song, so the roll read as
+// an empty grid on arrival. The width is now a user-controlled step, plus a fit
+// mode that solves for "the whole song across the viewport".
+const BAR_WIDTH_STEPS = [12, 20, 32, 50, 80, 125, 200]
+const DEFAULT_ZOOM_INDEX = 4
+
+const zoomIndex = ref(DEFAULT_ZOOM_INDEX)
+const isFitMode = ref(false)
+
+const fitBarWidth = computed(() =>
+  Math.max(4, canvasWidth.value / totalSongBars.value)
+)
+
+const barWidth = computed(() =>
+  isFitMode.value ? fitBarWidth.value : BAR_WIDTH_STEPS[zoomIndex.value]
+)
+
+const canZoomIn = computed(() => isFitMode.value || zoomIndex.value < BAR_WIDTH_STEPS.length - 1)
+const canZoomOut = computed(() => isFitMode.value || zoomIndex.value > 0)
+
+/** Step the zoom, leaving fit mode and continuing from the width it produced. */
+function stepZoom(direction: 1 | -1) {
+  if (isFitMode.value) {
+    isFitMode.value = false
+    // Continue from the step nearest to the width fit was showing
+    const current = fitBarWidth.value
+    let nearest = 0
+    for (let i = 1; i < BAR_WIDTH_STEPS.length; i++) {
+      if (Math.abs(BAR_WIDTH_STEPS[i] - current) < Math.abs(BAR_WIDTH_STEPS[nearest] - current)) {
+        nearest = i
+      }
+    }
+    zoomIndex.value = nearest
+  }
+  zoomIndex.value = Math.min(
+    BAR_WIDTH_STEPS.length - 1,
+    Math.max(0, zoomIndex.value + direction)
+  )
+}
+
+function toggleFit() {
+  isFitMode.value = !isFitMode.value
+}
+
+const totalWidth = computed(() =>
+  Math.max(canvasWidth.value, totalSongBars.value * barWidth.value)
+)
 
 // Parse chord progression and generate timings
 const parsedChords = computed(() => {
@@ -236,11 +296,51 @@ const chordTimings = computed((): ChordTiming[] => {
   })
 })
 
+/**
+ * Playhead position in ticks. Tick 0 is a real position — the top of the song —
+ * so it has to stay distinguishable from "no position", which is what a falsy
+ * check used to collapse it into.
+ */
+const playheadTick = computed(() => Math.max(0, props.currentTick ?? 0))
+
+/**
+ * Zoomed far out a chord block is a few pixels wide and its labels pile into an
+ * illegible smear, so each block drops its text independently and the lane
+ * degrades into a colour band rather than a mess.
+ */
+const chordBlocks = computed(() =>
+  chordTimings.value.map(timing => {
+    const width = tickToX(timing.endTick - timing.startTick)
+    return {
+      timing,
+      left: tickToX(timing.startTick),
+      width: Math.max(4, width - 2),
+      showName: width >= 26,
+      showDegree: width >= 54
+    }
+  })
+)
+
+const sectionBlocks = computed(() =>
+  sections.value.map(section => {
+    const start = section.start_ticks ?? section.startTick
+    const end = section.end_ticks ?? section.endTick
+    const width = tickToX(end - start)
+    return {
+      section,
+      left: tickToX(start) + 2,
+      width: Math.max(0, width - 4),
+      // The bar count is the first thing to go when the block gets tight
+      showBars: width >= 110
+    }
+  })
+)
+
 // Get current chord at playhead position
 const activeChord = computed(() => {
-  if (!props.currentTick || chordTimings.value.length === 0) return null
+  if (chordTimings.value.length === 0) return null
   for (const timing of chordTimings.value) {
-    if (props.currentTick >= timing.startTick && props.currentTick < timing.endTick) {
+    if (playheadTick.value >= timing.startTick && playheadTick.value < timing.endTick) {
       return timing
     }
   }
@@ -249,11 +349,11 @@ const activeChord = computed(() => {
 
 // Conversion functions
 function tickToX(tick: number): number {
-  return (tick / (4 * ppq.value)) * 200
+  return (tick / (4 * ppq.value)) * barWidth.value
 }
 
 function xToTick(x: number): number {
-  return (x / 200) * 4 * ppq.value
+  return (x / barWidth.value) * 4 * ppq.value
 }
 
 function noteToY(note: number, height: number): number {
@@ -268,22 +368,22 @@ function getNoteHeight(height: number): number {
 
 // Current position info
 const currentBar = computed(() => {
-  if (!props.currentTick || !props.events) return 1
-  return Math.floor(props.currentTick / (4 * ppq.value)) + 1
+  if (!props.events) return 1
+  return Math.floor(playheadTick.value / (4 * ppq.value)) + 1
 })
 
 const currentBeat = computed(() => {
-  if (!props.currentTick || !props.events) return 1
+  if (!props.events) return 1
   const barTicks = 4 * ppq.value
-  return Math.floor((props.currentTick % barTicks) / ppq.value) + 1
+  return Math.floor((playheadTick.value % barTicks) / ppq.value) + 1
 })
 
 const activeSection = computed(() => {
-  if (!props.currentTick || !sections.value.length) return null
+  if (!sections.value.length) return null
   for (const section of sections.value) {
     const start = section.start_ticks ?? section.startTick
     const end = section.end_ticks ?? section.endTick
-    if (props.currentTick >= start && props.currentTick < end) return section
+    if (playheadTick.value >= start && playheadTick.value < end) return section
   }
   return null
 })
@@ -302,19 +402,44 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${cs.toString().padStart(2, '0')}`
 }
 
-const currentTimeFormatted = computed(() => formatTime(ticksToSeconds(props.currentTick || 0)))
-const totalTimeFormatted = computed(() => formatTime(ticksToSeconds(timeRange.value.max)))
+const currentTimeFormatted = computed(() => formatTime(ticksToSeconds(playheadTick.value)))
+const totalTimeFormatted = computed(() => formatTime(ticksToSeconds(songTicks.value)))
 const totalBars = computed(() => sections.value.reduce((sum, s) => sum + s.bars, 0))
+// The structure bar lays sections out by bar count, so the marker riding on top
+// of it has to be a fraction of the same span — measuring against the note
+// extent instead drifted the marker away from the highlighted section.
 const progressPercent = computed(() => {
-  if (!props.currentTick || !timeRange.value.max) return 0
-  return Math.min(100, (props.currentTick / timeRange.value.max) * 100)
+  if (!songTicks.value) return 0
+  return Math.min(100, (playheadTick.value / songTicks.value) * 100)
 })
 
-// Visible tracks for legend
+// Pitched tracks drawn in the roll (drums are percussion, not pitches)
 const visibleTracks = computed(() => {
   if (!props.events?.tracks) return []
   return props.events.tracks.filter(t => t.name !== 'Drums' && t.notes?.length > 0)
 })
+
+/**
+ * Tracks offered in the mixer. Drums are excluded from the roll because their
+ * note numbers are kit slots rather than pitches, but they are still part of
+ * what you hear — leaving them out left the kit with no mute at all.
+ */
+const mixerTracks = computed(() => {
+  if (!props.events?.tracks) return []
+  return props.events.tracks.filter(t => t.notes?.length > 0)
+})
+
+const keyRowHeight = computed(() => {
+  const { min, max } = noteRange.value
+  return canvasHeight.value / (max - min + 1)
+})
+
+/**
+ * Below this row height the literal black/white keyboard degenerates into a
+ * high-contrast barcode that fights the notes for attention. The gutter then
+ * switches to a flat pitch scale carrying only the octave marks.
+ */
+const isCompactGutter = computed(() => keyRowHeight.value < 7)
 
 /**
  * Piano key rows for the left gutter, top (max pitch) to bottom (min pitch).
@@ -324,8 +449,7 @@ const visibleTracks = computed(() => {
  */
 const pianoKeyRows = computed(() => {
   const { min, max } = noteRange.value
-  const rowHeight = canvasHeight.value / (max - min + 1)
-  const showAllLabels = rowHeight >= 10
+  const showAllLabels = keyRowHeight.value >= 10
   const rows = []
   for (let pitch = max; pitch >= min; pitch--) {
     const name = NOTE_NAMES[pitch % 12]
@@ -411,20 +535,31 @@ function draw() {
   const startBar = Math.floor(xToTick(scrollLeft.value) / barTicks)
   const endBar = Math.ceil(xToTick(scrollLeft.value + width) / barTicks)
 
+  // Zoomed out, a line and a number per bar collapse into noise: thin the grid
+  // and the labels so both stay legible at every zoom step.
+  const labelEvery = Math.max(1, Math.ceil(40 / barWidth.value))
+  const lineEvery = barWidth.value < 6 ? 4 : 1
+
   for (let bar = startBar; bar <= endBar; bar++) {
+    if (bar < 0) continue
     const x = tickToX(bar * barTicks) - scrollLeft.value
     if (x < 0 || x > width) continue
 
-    ctx.strokeStyle = bar % 4 === 0 ? colors.barGroupLine : colors.barLine
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, height)
-    ctx.stroke()
+    const isGroup = bar % 4 === 0
+    if (isGroup || bar % lineEvery === 0) {
+      ctx.strokeStyle = isGroup ? colors.barGroupLine : colors.barLine
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, height)
+      ctx.stroke()
+    }
 
     // Bar numbers
-    ctx.fillStyle = colors.barNumber
-    ctx.font = '10px JetBrains Mono, monospace'
-    ctx.fillText(String(bar + 1), x + 4, 12)
+    if (bar % labelEvery === 0) {
+      ctx.fillStyle = colors.barNumber
+      ctx.font = '10px JetBrains Mono, monospace'
+      ctx.fillText(String(bar + 1), x + 4, 12)
+    }
   }
 
   // Draw notes
@@ -442,6 +577,9 @@ function draw() {
   for (const track of sortedTracks) {
     const color = getTrackColor(track.name)
     const notes = track.notes || []
+    // Muted tracks stay drawn but recede, so the mixer button and the roll
+    // always tell the same story about what you are hearing.
+    const muteScale = isTrackMuted(track.name) ? 0.22 : 1
 
     for (const note of notes) {
       const pitch = getNoteValue(note, 'pitch')
@@ -455,7 +593,7 @@ function draw() {
       if (x + noteWidth < 0 || x > width) continue
 
       const y = noteToY(pitch, height)
-      const opacity = 0.6 + (note.velocity / 127) * 0.4
+      const opacity = (0.6 + (note.velocity / 127) * 0.4) * muteScale
 
       // Draw note with rounded corners
       ctx.fillStyle = color
@@ -474,8 +612,8 @@ function draw() {
   ctx.globalAlpha = 1
 
   // Draw playhead
-  if (props.currentTick && props.currentTick > 0) {
-    const playheadX = Math.round(tickToX(props.currentTick) - scrollLeft.value)
+  {
+    const playheadX = Math.round(tickToX(playheadTick.value) - scrollLeft.value)
 
     if (playheadX >= 0 && playheadX <= width) {
       // Glow
@@ -516,10 +654,24 @@ function stopAnimation() {
   }
 }
 
+/**
+ * Drive every horizontally scrolling lane from one offset. The chord lane, the
+ * section lane and the note canvas share a timeline; letting each keep its own
+ * scrollLeft made them slide out of alignment as soon as one was dragged.
+ */
+function applyScrollLeft(offset: number, source?: HTMLElement) {
+  scrollLeft.value = offset
+  for (const lane of [containerRef.value, sectionTimelineRef.value, chordTimelineRef.value]) {
+    if (lane && lane !== source && lane.scrollLeft !== offset) {
+      lane.scrollLeft = offset
+    }
+  }
+}
+
 // Handle scroll
 function handleScroll(e: Event) {
   const target = e.target as HTMLElement
-  scrollLeft.value = target.scrollLeft
+  applyScrollLeft(target.scrollLeft, target)
   if (!props.isPlaying) draw()
 }
 
@@ -531,7 +683,7 @@ function handleCanvasClick(e: MouseEvent) {
   const rect = canvas.getBoundingClientRect()
   const x = e.clientX - rect.left + scrollLeft.value
   const tick = xToTick(x)
-  emit('seek', Math.max(0, tick))
+  emit('seek', Math.max(0, Math.min(songTicks.value, tick)))
 }
 
 // Section click
@@ -567,10 +719,7 @@ function setupCanvas() {
 // Auto-scroll during playback
 watch(() => props.currentTick, (tick) => {
   if (!tick || tick === 0) {
-    scrollLeft.value = 0
-    if (containerRef.value) containerRef.value.scrollLeft = 0
-    if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = 0
-    if (chordTimelineRef.value) chordTimelineRef.value.scrollLeft = 0
+    applyScrollLeft(0)
     draw()
     return
   }
@@ -581,14 +730,22 @@ watch(() => props.currentTick, (tick) => {
   const containerWidth = canvasWidth.value
 
   // Scroll to keep playhead at 30% from left
+  const maxScroll = Math.max(0, totalWidth.value - containerWidth)
   const targetScroll = playheadPos - containerWidth * 0.3
-  const newScrollLeft = Math.max(0, targetScroll)
 
-  scrollLeft.value = newScrollLeft
-  if (containerRef.value) containerRef.value.scrollLeft = newScrollLeft
-  if (sectionTimelineRef.value) sectionTimelineRef.value.scrollLeft = newScrollLeft
-  if (chordTimelineRef.value) chordTimelineRef.value.scrollLeft = newScrollLeft
+  applyScrollLeft(Math.min(maxScroll, Math.max(0, targetScroll)))
 })
+
+// Re-anchor on zoom: keep the playhead (or the left edge) where the eye is.
+// Post-flush, so the scroll area has already been re-sized and the browser
+// does not clamp the new offset against the old width.
+watch(barWidth, () => {
+  const containerWidth = canvasWidth.value
+  const maxScroll = Math.max(0, totalWidth.value - containerWidth)
+  const target = tickToX(playheadTick.value) - containerWidth * 0.3
+  applyScrollLeft(Math.min(maxScroll, Math.max(0, target)))
+  draw()
+}, { flush: 'post' })
 
 // Watch isPlaying for animation
 watch(() => props.isPlaying, (playing) => {
@@ -616,6 +773,11 @@ watch(() => props.currentTick, () => {
 watch(canvasColors, () => {
   if (!props.isPlaying) draw()
 })
+
+// Muting dims a track in the roll, so the canvas has to follow the mixer
+watch(() => props.mutedTracks, () => {
+  if (!props.isPlaying) draw()
+}, { deep: true })
 
 // Lifecycle
 onMounted(() => {
@@ -660,6 +822,7 @@ onUnmounted(() => {
         <div
           v-if="activeSection"
           class="section-indicator"
+          :class="{ 'section-indicator--live': isPlaying }"
           :style="{
             '--section-color': getSectionColor(activeSection.type).glow,
             '--section-text': getSectionColor(activeSection.type).text
@@ -669,7 +832,7 @@ onUnmounted(() => {
           <span class="section-label">{{ getSectionDisplayName(activeSection) }}</span>
         </div>
         <div v-else class="section-indicator section-indicator--idle">
-          <span class="section-label">Ready</span>
+          <span class="section-label">{{ t('pianoRoll.ready') }}</span>
         </div>
       </div>
 
@@ -719,53 +882,68 @@ onUnmounted(() => {
     </div>
 
     <!-- Chord Timeline -->
-    <div v-if="chordTimings.length > 0" class="chord-timeline" ref="chordTimelineRef" @scroll="handleScroll">
+    <div
+      v-if="chordTimings.length > 0"
+      class="chord-timeline"
+      ref="chordTimelineRef"
+      aria-hidden="true"
+      @scroll="handleScroll"
+    >
       <div class="chord-track" :style="{ width: `${totalWidth}px` }">
         <div
-          v-for="(timing, index) in chordTimings"
+          v-for="(block, index) in chordBlocks"
           :key="`chord-${index}`"
           class="chord-block"
-          :class="{ 'chord-block--active': activeChord === timing }"
-          :style="{
-            left: `${tickToX(timing.startTick)}px`,
-            width: `${Math.max(20, tickToX(timing.endTick - timing.startTick) - 2)}px`
-          }"
+          :class="{ 'chord-block--active': activeChord === block.timing }"
+          :style="{ left: `${block.left}px`, width: `${block.width}px` }"
         >
-          <span class="chord-block__name">{{ getChordName(musicKey ?? 0, timing.chord) }}</span>
-          <span class="chord-block__degree">{{ timing.chord.displayName }}</span>
+          <span v-if="block.showName" class="chord-block__name">
+            {{ getChordName(musicKey ?? 0, block.timing.chord) }}
+          </span>
+          <span v-if="block.showDegree" class="chord-block__degree">
+            {{ block.timing.chord.displayName }}
+          </span>
         </div>
         <div
-          v-if="currentTick && currentTick > 0"
           class="chord-playhead"
-          :style="{ left: `${tickToX(currentTick)}px` }"
+          :style="{ left: `${tickToX(playheadTick)}px` }"
         />
       </div>
     </div>
 
     <!-- Section Timeline -->
-    <div class="section-timeline" ref="sectionTimelineRef" @scroll="handleScroll">
+    <div
+      class="section-timeline"
+      ref="sectionTimelineRef"
+      :aria-label="t('pianoRoll.sectionTimeline')"
+      @scroll="handleScroll"
+    >
       <div class="section-track" :style="{ width: `${totalWidth}px` }">
         <div
-          v-for="(section, index) in sections"
+          v-for="(block, index) in sectionBlocks"
           :key="index"
           class="section-block"
-          :class="{ 'section-block--active': activeSection === section }"
+          role="button"
+          tabindex="0"
+          :title="`${getSectionDisplayName(block.section)} · ${block.section.bars} bars`"
+          @keydown.enter.prevent="handleSectionClick(block.section)"
+          @keydown.space.prevent="handleSectionClick(block.section)"
+          :class="{ 'section-block--active': activeSection === block.section }"
           :style="{
-            left: `${tickToX(section.start_ticks ?? section.startTick) + 2}px`,
-            width: `${Math.max(0, tickToX((section.end_ticks ?? section.endTick) - (section.start_ticks ?? section.startTick)) - 4)}px`,
-            '--section-bg': getSectionColor(section.type).bg,
-            '--section-glow': getSectionColor(section.type).glow,
-            '--section-text': getSectionColor(section.type).text
+            left: `${block.left}px`,
+            width: `${block.width}px`,
+            '--section-bg': getSectionColor(block.section.type).bg,
+            '--section-glow': getSectionColor(block.section.type).glow,
+            '--section-text': getSectionColor(block.section.type).text
           }"
-          @click="handleSectionClick(section)"
+          @click="handleSectionClick(block.section)"
         >
-          <span class="section-block__name">{{ getSectionDisplayName(section) }}</span>
-          <span class="section-block__bars">{{ section.bars }}bars</span>
+          <span class="section-block__name">{{ getSectionDisplayName(block.section) }}</span>
+          <span v-if="block.showBars" class="section-block__bars">{{ block.section.bars }}bars</span>
         </div>
         <div
-          v-if="currentTick && currentTick > 0"
           class="section-playhead"
-          :style="{ left: `${tickToX(currentTick)}px` }"
+          :style="{ left: `${tickToX(playheadTick)}px` }"
         />
       </div>
     </div>
@@ -773,7 +951,7 @@ onUnmounted(() => {
     <!-- Canvas Piano Roll -->
     <div class="roll-container">
       <!-- Piano Keys -->
-      <div class="piano-keys">
+      <div class="piano-keys" :class="{ 'piano-keys--compact': isCompactGutter }" aria-hidden="true">
         <div
           v-for="row in pianoKeyRows"
           :key="row.pitch"
@@ -804,11 +982,13 @@ onUnmounted(() => {
     <div class="track-mixer">
       <div class="mixer-tracks">
         <button
-          v-for="track in visibleTracks"
+          v-for="track in mixerTracks"
           :key="track.name"
           class="mixer-track"
           :class="{ 'mixer-track--muted': isTrackMuted(track.name) }"
           :style="{ '--track-color': getTrackColor(track.name) }"
+          :aria-pressed="!isTrackMuted(track.name)"
+          :title="isTrackMuted(track.name) ? t('pianoRoll.unmuteTrack') : t('pianoRoll.muteTrack')"
           @click="toggleTrackMute(track.name)"
         >
           <span class="mixer-track__indicator"></span>
@@ -817,6 +997,30 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Horizontal zoom -->
+      <div class="mixer-zoom" role="group" :aria-label="t('pianoRoll.zoom')">
+        <button
+          class="zoom-btn"
+          :disabled="!canZoomOut"
+          :title="t('pianoRoll.zoomOut')"
+          :aria-label="t('pianoRoll.zoomOut')"
+          @click="stepZoom(-1)"
+        >−</button>
+        <button
+          class="zoom-btn zoom-btn--fit"
+          :class="{ 'zoom-btn--on': isFitMode }"
+          :aria-pressed="isFitMode"
+          :title="t('pianoRoll.zoomFit')"
+          @click="toggleFit"
+        >{{ t('pianoRoll.zoomFitShort') }}</button>
+        <button
+          class="zoom-btn"
+          :disabled="!canZoomIn"
+          :title="t('pianoRoll.zoomIn')"
+          :aria-label="t('pianoRoll.zoomIn')"
+          @click="stepZoom(1)"
+        >+</button>
+      </div>
     </div>
   </div>
 </template>
@@ -983,7 +1187,17 @@ onUnmounted(() => {
   height: 6px;
   background: var(--section-color, var(--accent));
   border-radius: 50%;
+}
+
+/* The pulse means "transport running"; idle it would just be decoration. */
+.section-indicator--live .section-dot {
   animation: section-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-indicator--live .section-dot {
+    animation: none;
+  }
 }
 
 @keyframes section-pulse {
@@ -1065,7 +1279,7 @@ onUnmounted(() => {
 .structure-bar {
   flex: 1;
   display: flex;
-  height: 32px;
+  height: 36px;
   background: var(--studio-shadow-mid);
   border-radius: 6px;
   overflow: hidden;
@@ -1097,8 +1311,13 @@ onUnmounted(() => {
 }
 
 .structure-section__name {
+  /* Without an explicit basis the flex column squeezed the label to a few
+     pixels, clipping every section name into an unreadable sliver. */
+  flex: 0 0 auto;
+  max-width: 100%;
   font-size: 0.65rem;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--section-text);
   white-space: nowrap;
   overflow: hidden;
@@ -1106,9 +1325,11 @@ onUnmounted(() => {
 }
 
 .structure-section__bars {
+  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 0.55rem;
-  color: rgba(var(--studio-ink-rgb), 0.3);
+  line-height: 1.2;
+  color: rgba(var(--studio-ink-rgb), 0.45);
 }
 
 .structure-progress {
@@ -1244,11 +1465,17 @@ onUnmounted(() => {
   border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
   border-radius: 8px;
   cursor: pointer;
+  overflow: hidden;
   transition: all 0.2s;
 }
 
 .section-block:hover {
   filter: brightness(1.2);
+}
+
+.section-block:focus-visible {
+  outline: 2px solid var(--section-glow);
+  outline-offset: 1px;
 }
 
 .section-block::before {
@@ -1269,10 +1496,13 @@ onUnmounted(() => {
 }
 
 .section-block__name {
+  min-width: 0;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--section-text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .section-block__bars {
@@ -1307,7 +1537,9 @@ onUnmounted(() => {
 /* Roll Container */
 .roll-container {
   position: relative;
-  height: 180px;
+  /* A pop arrangement spans four-plus octaves; at 180px each semitone lane was
+     under four pixels and every note read as a hairline. */
+  height: 230px;
   display: flex;
 }
 
@@ -1352,6 +1584,32 @@ onUnmounted(() => {
   /* Rows can be shorter than the label text; let sparse octave
      labels render at full size instead of being clipped. */
   white-space: nowrap;
+}
+
+/* Compact gutter: at a few pixels per semitone a literal keyboard reads as a
+   flickering barcode, so it collapses to a quiet pitch scale that only marks
+   the octaves. */
+.piano-keys--compact .piano-key {
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border-bottom: none;
+}
+
+.piano-keys--compact .piano-key--black {
+  background: rgba(var(--studio-ink-rgb), 0.11);
+}
+
+.piano-keys--compact .piano-key--octave {
+  box-shadow: inset 0 -1px 0 rgba(var(--studio-ink-rgb), 0.25);
+}
+
+.piano-keys--compact .piano-key__label {
+  color: rgba(var(--studio-ink-rgb), 0.55);
+  /* Octave labels sit on rows only a few pixels tall; let them overhang. */
+  transform: translateY(-0.3em);
+}
+
+.piano-keys--compact .piano-key--black .piano-key__label {
+  color: rgba(var(--studio-ink-rgb), 0.55);
 }
 
 .canvas-container {
@@ -1464,6 +1722,62 @@ onUnmounted(() => {
   border-color: rgba(var(--studio-red-rgb), 0.2);
 }
 
+/* Horizontal zoom */
+.mixer-zoom {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+  padding: 2px;
+  background: var(--studio-shadow-mid);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.06);
+  border-radius: 6px;
+}
+
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 0.35rem;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(var(--studio-ink-rgb), 0.65);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: rgba(var(--studio-ink-rgb), 0.08);
+  color: var(--studio-text-primary);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.zoom-btn--fit {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+}
+
+.zoom-btn--on {
+  background: rgba(var(--studio-purple-rgb), 0.18);
+  color: var(--studio-purple);
+}
+
+.zoom-btn:focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 1px;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .transport-bar { flex-wrap: wrap; }
@@ -1478,7 +1792,7 @@ onUnmounted(() => {
   .chord-block__name { font-size: 0.65rem; }
   .chord-block__degree { display: none; }
   .section-timeline { height: 36px; margin-left: 36px; }
-  .roll-container { height: 140px; }
+  .roll-container { height: 175px; }
   .piano-keys { width: 36px; }
   .piano-key__label { font-size: 0.45rem; }
   .structure-overview { padding-left: 0; padding-right: 0; }
@@ -1486,7 +1800,7 @@ onUnmounted(() => {
 
   /* Track Mixer Mobile */
   .track-mixer {
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 0.375rem;
     padding: 0.375rem 0.5rem;
   }
@@ -1495,7 +1809,7 @@ onUnmounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
-    width: 100%;
+    flex: 1 1 auto;
   }
 
   .mixer-track {

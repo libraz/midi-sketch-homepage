@@ -746,7 +746,16 @@
       "Interlude": "Interlude",
       "Outro": "Outro",
       "Break": "Break"
-    }
+    },
+    "ready": "Ready",
+    "sectionTimeline": "Song sections",
+    "muteTrack": "Mute this track",
+    "unmuteTrack": "Unmute this track",
+    "zoom": "Horizontal zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit the whole song",
+    "zoomFitShort": "FIT"
   },
   "songImages": {
     "idol-classic": {
@@ -955,7 +964,9 @@
     "apply": {
       "regenerate": "Apply & Regenerate",
       "regenerating": "Regenerating…",
-      "upToDate": "Up to date"
+      "upToDate": "Up to date",
+      "pendingVocal": "Melody and arrangement will be rebuilt",
+      "pendingBgm": "Arrangement will be rebuilt"
     },
     "sheet": {
       "close": "Close"
@@ -975,7 +986,12 @@
       "generatingVocal": "Writing the vocal melody…",
       "generatingAccomp": "Building the arrangement…",
       "regenerateMelody": "New Melody",
-      "regenerateBgm": "New Arrangement"
+      "regenerateBgm": "New Arrangement",
+      "title": "Your track",
+      "play": "Play",
+      "pause": "Pause",
+      "shortcutHint": "Space to play · ← → to move a bar",
+      "retry": "Try again"
     },
     "backToEntry": "Choose another song image",
     "output": {

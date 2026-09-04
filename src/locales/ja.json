@@ -746,7 +746,16 @@
       "Interlude": "間奏",
       "Outro": "アウトロ",
       "Break": "ブレイク"
-    }
+    },
+    "ready": "待機中",
+    "sectionTimeline": "曲のセクション",
+    "muteTrack": "このトラックをミュート",
+    "unmuteTrack": "このトラックのミュートを解除",
+    "zoom": "横方向のズーム",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "zoomFit": "曲全体を表示",
+    "zoomFitShort": "全体"
   },
   "songImages": {
     "idol-classic": {
@@ -955,7 +964,9 @@
     "apply": {
       "regenerate": "反映して再生成",
       "regenerating": "再生成中…",
-      "upToDate": "最新の状態"
+      "upToDate": "最新の状態",
+      "pendingVocal": "メロディとアレンジを作り直します",
+      "pendingBgm": "アレンジを作り直します"
     },
     "sheet": {
       "close": "閉じる"
@@ -975,7 +986,12 @@
       "generatingVocal": "ボーカルメロディを作曲中…",
       "generatingAccomp": "アレンジを構築中…",
       "regenerateMelody": "別のメロディ",
-      "regenerateBgm": "別のアレンジ"
+      "regenerateBgm": "別のアレンジ",
+      "title": "生成されたトラック",
+      "play": "再生",
+      "pause": "一時停止",
+      "shortcutHint": "スペースキーで再生・←→ で1小節移動",
+      "retry": "もう一度試す"
     },
     "backToEntry": "曲のイメージを選び直す",
     "output": {

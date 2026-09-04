@@ -6,6 +6,11 @@ defineProps<{
   isPaused?: boolean
   disabled?: boolean
   showRewind?: boolean
+  /** Loading the sound engine: the transport stays put but cannot be pressed. */
+  busy?: boolean
+  playLabel: string
+  pauseLabel: string
+  rewindLabel: string
 }>()
 
 const emit = defineEmits<{
@@ -36,6 +41,8 @@ function handleRewindClick() {
       v-if="showRewind !== false"
       class="transport-btn transport-btn--rewind"
       :class="{ 'transport-btn--rippling': isRewindRippling }"
+      :aria-label="rewindLabel"
+      :title="rewindLabel"
       @click="handleRewindClick"
       :disabled="disabled"
     >
@@ -52,11 +59,17 @@ function handleRewindClick() {
       :class="{
         'transport-btn--active': isPlaying,
         'transport-btn--paused': isPaused,
+        'transport-btn--busy': busy,
         'transport-btn--rippling': isPlayRippling
       }"
+      :aria-label="isPlaying ? pauseLabel : playLabel"
+      :title="isPlaying ? pauseLabel : playLabel"
       @click="handlePlayClick"
       :disabled="disabled"
     >
+      <!-- Sound engine still loading: the button holds its place and spins -->
+      <span v-if="busy" class="transport-btn__busy" aria-hidden="true"></span>
+
       <!-- Animated rings for playing state -->
       <div class="play-rings" v-if="isPlaying">
         <span class="play-ring play-ring--1"></span>
@@ -349,6 +362,32 @@ function handleRewindClick() {
   box-shadow:
     0 0 28px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.6),
     0 0 50px rgba(var(--studio-pink-rgb), 0.25);
+}
+
+/* Busy (sound engine loading) */
+.transport-btn--busy .icon-wrap {
+  opacity: 0.25;
+}
+
+.transport-btn__busy {
+  position: absolute;
+  inset: 6px;
+  z-index: 3;
+  border: 2px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.25);
+  border-top-color: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
+  border-radius: 50%;
+  animation: transport-busy-spin 0.8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes transport-busy-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transport-btn__busy {
+    animation-duration: 2.4s;
+  }
 }
 
 /* Paused state */

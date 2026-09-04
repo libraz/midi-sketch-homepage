@@ -21,6 +21,9 @@ defineProps<{
   precomputedChordTimings?: ChordTiming[]  // Pre-computed timings (overrides chordProgression)
   playRootNotes?: boolean    // Enable root note playback (default: false)
   disabled?: boolean         // Disable transport controls (e.g. while regenerating)
+  mutedTracks?: Record<string, boolean>  // Mute flags owned by the transport
+  playLabel: string
+  pauseLabel: string
 }>()
 
 // Emits
@@ -53,21 +56,23 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
     <div class="preview-header">
       <h3 class="preview-title">{{ title }}</h3>
       <div class="player-controls">
-        <!-- Soundfont loading indicator -->
-        <div v-if="isSoundfontLoading" class="soundfont-loading">
-          <div class="soundfont-loading__spinner"></div>
-          <span class="soundfont-loading__text">{{ loadingAudioText }}</span>
-        </div>
-        <template v-else>
-          <TransportBar
-            :is-playing="isPlaying"
-            :is-paused="isPaused"
-            :disabled="!isSoundfontReady || disabled"
-            :show-rewind="true"
-            @toggle-play="emit('toggle-play')"
-            @rewind="emit('rewind')"
-          />
-        </template>
+        <!-- The transport keeps its slot while the sound engine loads; only its
+             state changes, so the header never reflows mid-load. -->
+        <span v-if="isSoundfontLoading" class="soundfont-loading__text">
+          {{ loadingAudioText }}
+        </span>
+        <TransportBar
+          :is-playing="isPlaying"
+          :is-paused="isPaused"
+          :busy="isSoundfontLoading"
+          :disabled="!isSoundfontReady || isSoundfontLoading || disabled"
+          :show-rewind="true"
+          :play-label="playLabel"
+          :pause-label="pauseLabel"
+          :rewind-label="rewindTitle || ''"
+          @toggle-play="emit('toggle-play')"
+          @rewind="emit('rewind')"
+        />
       </div>
     </div>
     <PianoRoll
@@ -77,6 +82,7 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
       :chord-progression="chordProgression"
       :music-key="musicKey"
       :precomputed-chord-timings="precomputedChordTimings"
+      :muted-tracks="mutedTracks"
       @seek="handleSeek"
       @track-mute-change="handleTrackMuteChange"
     />
@@ -193,37 +199,14 @@ function handleTrackMuteChange(payload: { track: string; muted: boolean }) {
 .player-controls {
   display: flex;
   align-items: center;
-}
-
-/* Soundfont loading indicator */
-.soundfont-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.1);
-  border: 1px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.2);
-  border-radius: 8px;
-}
-
-.soundfont-loading__spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.3);
-  border-top-color: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  gap: 0.75rem;
 }
 
 .soundfont-loading__text {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(var(--studio-ink-rgb), 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.55);
 }
 
 @media (max-width: 640px) {

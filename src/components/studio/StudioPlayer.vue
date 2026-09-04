@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { useMidiPlayer } from '@/composables/useMidiPlayer'
@@ -21,8 +21,10 @@ const {
   isLoading: isSoundfontLoading,
   isReady: isSoundfontReady,
   currentTick,
+  mutedTracks,
   togglePlay: playerTogglePlay,
   rewind,
+  seek,
   stop,
   play,
   setTrackMuted
@@ -88,11 +90,19 @@ async function togglePlay() {
   await playerTogglePlay(eventData.value, playOptions.value)
 }
 
+/**
+ * Move the playhead. Seeking follows the transport rather than overriding it:
+ * while playing it jumps and keeps going, while stopped it only parks the
+ * position — clicking the roll to read a bar should never start audio.
+ */
 function handleSeek(tick: number) {
-  if (studio.isGenerating.value) return
-  stop()
-  if (eventData.value) {
+  if (studio.isGenerating.value || !eventData.value) return
+
+  if (isPlaying.value) {
+    stop()
     play(eventData.value, tick, playOptions.value)
+  } else {
+    seek(tick)
   }
 }
 
@@ -116,6 +126,55 @@ function handleRewind() {
 function shuffleVocal() {
   studio.shuffleVocal(keepMotifOnRegenerate.value && isRhythmSync.value)
 }
+
+// ============================================
+// Keyboard transport
+// ============================================
+// Space is the universal play/pause in every DAW and audio player; without it
+// the only way to audition a tweak was to reach for the mouse each time.
+const SEEK_BARS = 1
+
+function isTypingTarget(el: EventTarget | null): boolean {
+  const node = el as HTMLElement | null
+  if (!node || !node.tagName) return false
+  if (node.isContentEditable) return true
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName)
+}
+
+function seekBy(bars: number) {
+  if (!eventData.value) return
+  const ppq = eventData.value.ppq || eventData.value.division || 480
+  const target = Math.max(0, currentTick.value + bars * 4 * ppq)
+  handleSeek(target)
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+  if (isTypingTarget(e.target)) return
+  if (!eventData.value || studio.isGenerating.value) return
+
+  switch (e.key) {
+    case ' ':
+      e.preventDefault()
+      togglePlay()
+      break
+    case 'ArrowLeft':
+      e.preventDefault()
+      seekBy(-SEEK_BARS)
+      break
+    case 'ArrowRight':
+      e.preventDefault()
+      seekBy(SEEK_BARS)
+      break
+    case 'Home':
+      e.preventDefault()
+      rewind()
+      break
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 </script>
 
 <template>
@@ -130,6 +189,8 @@ function shuffleVocal() {
       :error="studio.error.value"
       :loading-text="t('studio.player.initializing')"
       :generating-text="generatingText"
+      :retry-text="t('studio.player.retry')"
+      @retry="studio.start()"
     />
 
     <!-- Preview Player (kept mounted during regeneration) -->
@@ -143,10 +204,13 @@ function shuffleVocal() {
         :is-soundfont-ready="isSoundfontReady"
         :disabled="studio.isGenerating.value"
         :just-regenerated="studio.justRegenerated.value"
-        :title="isVocalFirst ? t('finalStep.preview') : t('bgmGenerationStep.preview')"
+        :title="t('studio.player.title')"
         :regenerated-text="t('finalStep.regenerated')"
         :loading-audio-text="t('bgmStep.result.loadingAudio')"
         :rewind-title="t('finalStep.rewind')"
+        :play-label="t('studio.player.play')"
+        :pause-label="t('studio.player.pause')"
+        :muted-tracks="mutedTracks"
         :chord-progression="chordProgressionDisplay"
         :music-key="store.config.key"
         :precomputed-chord-timings="chordTimings"
@@ -156,10 +220,14 @@ function shuffleVocal() {
         @track-mute-change="handleTrackMuteChange"
       />
 
-      <!-- Edited indicator -->
-      <div v-if="store.hasEditedVocalNotes()" class="studio-player__edited">
-        <span>✎</span>
-        <span>{{ t('vocalGenerationStep.edited') }}</span>
+      <!-- Status strip: edit marker on the left, keyboard hint on the right -->
+      <div class="studio-player__status">
+        <span v-if="store.hasEditedVocalNotes()" class="studio-player__edited">
+          <span aria-hidden="true">✎</span>
+          <span>{{ t('vocalGenerationStep.edited') }}</span>
+        </span>
+        <span v-else></span>
+        <span class="studio-player__hint">{{ t('studio.player.shortcutHint') }}</span>
       </div>
 
       <div class="studio-player__actions">
@@ -219,24 +287,53 @@ function shuffleVocal() {
   text-align: center;
 }
 
+.studio-player__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.625rem;
+  min-height: 1.75rem;
+}
+
 .studio-player__edited {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.75rem;
-  padding: 0.4rem 0.8rem;
+  padding: 0.3rem 0.7rem;
   background: rgba(var(--studio-pink-rgb), 0.1);
   border: 1px solid rgba(var(--studio-pink-rgb), 0.2);
   border-radius: 100px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--studio-pink-soft);
 }
 
+.studio-player__hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  color: rgba(var(--studio-ink-rgb), 0.35);
+  text-align: right;
+}
+
+/* Coarse pointers have no keyboard to hint about. */
+@media (pointer: coarse) {
+  .studio-player__hint {
+    display: none;
+  }
+}
+
 .studio-player__actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.625rem;
-  margin-top: 1.25rem;
+  margin-top: 0.625rem;
+}
+
+/* The keep-motif switch qualifies the melody shuffle it sits next to, so it
+   spans the row above rather than competing for a column. */
+.keep-motif-toggle {
+  grid-column: 1 / -1;
 }
 
 /* Keep Motif toggle (RhythmSync only).

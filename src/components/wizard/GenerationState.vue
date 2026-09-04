@@ -6,20 +6,30 @@ defineProps<{
   error?: string | null
   loadingText?: string
   generatingText?: string
+  /** Label for the retry action; omit to hide it. */
+  retryText?: string
+}>()
+
+defineEmits<{
+  (e: 'retry'): void
 }>()
 </script>
 
 <template>
   <!-- Loading / Generating State -->
-  <div v-if="isLoading || isGenerating" class="loading-state">
+  <div v-if="isLoading || isGenerating" class="loading-state" role="status">
     <div class="loading-spinner"></div>
     <p>{{ isLoading ? loadingText : generatingText }}</p>
   </div>
 
-  <!-- Error State -->
-  <div v-else-if="error" class="error-state">
-    <span class="error-state__icon">⚠</span>
+  <!-- Error State. A failed run leaves nothing else on screen, so it has to
+       carry its own way out. -->
+  <div v-else-if="error" class="error-state" role="alert">
+    <span class="error-state__icon" aria-hidden="true">⚠</span>
     <p>{{ error }}</p>
+    <button v-if="retryText" class="error-state__retry" @click="$emit('retry')">
+      {{ retryText }}
+    </button>
   </div>
 </template>
 
@@ -65,5 +75,28 @@ defineProps<{
 .error-state p {
   margin: 0;
   text-align: center;
+}
+
+.error-state__retry {
+  margin-top: 0.25rem;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(var(--studio-red-rgb), 0.45);
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--studio-red);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.error-state__retry:hover {
+  background: rgba(var(--studio-red-rgb), 0.12);
+}
+
+.error-state__retry:focus-visible {
+  outline: 2px solid var(--studio-red);
+  outline-offset: 2px;
 }
 </style>
