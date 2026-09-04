@@ -253,7 +253,9 @@ type ResolvedSiteConfig = {
 
 /** The slice of a Vite dev server the middleware needs, kept structural to avoid a vite import. */
 type DevServerLike = {
-  config: { vitepress?: ResolvedSiteConfig }
+  // Vite's own ResolvedConfig, left opaque: VitePress's `vitepress` field is not part of it,
+  // and declaring it here as the whole shape makes the hook reject Vite's ServerHook signature.
+  config: unknown
   middlewares: {
     use(
       handler: (
@@ -282,7 +284,7 @@ export function llmsDevPlugin(options: Pick<GenerateLlmsTxtOptions, 'siteUrl' | 
         const path = (req.url ?? '').split('?')[0]
         const locale = options.locales.find((entry) => path === `${entry.prefix}/llms.txt`)
         // VitePress attaches its resolved config to the vite config as `vitepress`.
-        const siteConfig = server.config.vitepress
+        const siteConfig = (server.config as { vitepress?: ResolvedSiteConfig }).vitepress
         if (!locale || !siteConfig) return next()
         res.setHeader('content-type', 'text/plain; charset=utf-8')
         res.end(
