@@ -11,6 +11,7 @@ interface PlayerMethods {
   isPaused: Ref<boolean>
   currentTick: Ref<number>
   stop: () => void
+  seek: (tick: number) => void
   play: (eventData: any, startTick?: number, options?: any) => Promise<void>
 }
 
@@ -65,11 +66,16 @@ export function useMidiRegeneration(player: PlayerMethods) {
   }
 
   /**
-   * Restore playback from saved state after regeneration.
+   * Restore the transport from saved state after regeneration.
+   * A held position counts as much as a running one: stop() rewinds to the top,
+   * so a paused (or seeked) playhead would otherwise be thrown away and the
+   * listener sent back to bar 1 just for shuffling a seed.
    */
   async function restorePlayback(state: PlaybackState, eventData: any, playOptions?: any): Promise<void> {
     if (state.wasPlaying && eventData) {
       await player.play(eventData, state.savedTick, playOptions)
+    } else if (state.wasPaused) {
+      player.seek(state.savedTick)
     }
   }
 

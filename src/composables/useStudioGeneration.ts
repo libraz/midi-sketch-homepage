@@ -65,14 +65,19 @@ export function useStudioGeneration() {
 
   const isReady = computed(() => _status.value === 'ready')
 
-  /** Whether the current preview is stale (config changed since last generation). */
-  const isStale = computed(() => {
-    if (_status.value !== 'ready') return false
-    if (store.config.flowType === 'vocal-first') {
-      return !store.vocalGenerated.value || !store.bgmGenerated.value
-    }
-    return !store.bgmGenerated.value
+  /**
+   * Which half of the pipeline the pending changes touch, or null when the
+   * preview is current. Vocal wins when both are dirty: rewriting the melody
+   * regenerates the accompaniment anyway.
+   */
+  const staleScope = computed<'vocal' | 'bgm' | null>(() => {
+    if (_status.value !== 'ready') return null
+    if (store.config.flowType === 'vocal-first' && !store.vocalGenerated.value) return 'vocal'
+    return store.bgmGenerated.value ? null : 'bgm'
   })
+
+  /** Whether the current preview is stale (config changed since last generation). */
+  const isStale = computed(() => staleScope.value !== null)
 
   // ============================================
   // Internal pipeline steps
@@ -228,11 +233,16 @@ export function useStudioGeneration() {
     }
   }
 
-  /** Wrap a pipeline run with playback position/state preservation. */
+  /**
+   * Wrap a pipeline run with playback position/state preservation.
+   * The play options have to be handed back too — resuming without them
+   * dropped the song image's drum kit back to the default on every shuffle.
+   */
   async function regenerateWithPlayback(fn: () => Promise<void>): Promise<void> {
     await regen.withPlaybackPreservation(
       () => runGuarded(fn),
-      () => _eventData.value
+      () => _eventData.value,
+      () => ({ drumKit: store.currentSongImage.value?.drumKit })
     )
     regen.showFeedback()
   }
@@ -314,6 +324,7 @@ export function useStudioGeneration() {
     isGenerating,
     isReady,
     isStale,
+    staleScope,
     justRegenerated: regen.justRegenerated,
 
     // Seed history

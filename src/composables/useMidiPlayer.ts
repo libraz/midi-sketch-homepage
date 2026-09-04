@@ -114,7 +114,18 @@ function cancelScheduledNotes() {
   scheduledNoteStops = []
 }
 
-export function useMidiPlayer() {
+export interface UseMidiPlayerOptions {
+  /**
+   * Stop playback when the calling component unmounts. The transport state is
+   * a module-level singleton shared by every caller, so only the component that
+   * owns the player's lifetime may opt in — otherwise any short-lived consumer
+   * (an overlay, a bar hidden behind `v-if`) would silence audio started
+   * elsewhere as it disappears.
+   */
+  stopOnUnmount?: boolean
+}
+
+export function useMidiPlayer(options: UseMidiPlayerOptions = {}) {
 
   async function init() {
     // Already initialized
@@ -396,11 +407,12 @@ export function useMidiPlayer() {
 
     if (isPlaying.value) {
       pause()
-    } else if (isPaused.value) {
-      await resume()
-    } else {
-      await play(eventData, 0, options)
+      return
     }
+
+    // Start from the pending position: 0 after a stop/rewind, the pause point
+    // after a pause, or the clicked position after a seek made while stopped.
+    await play(eventData, pausedTick, options)
   }
 
   function stop() {
@@ -449,14 +461,24 @@ export function useMidiPlayer() {
     stop()
   }
 
+  /**
+   * Move the transport without starting audio. The position is remembered as
+   * the resume point, so the next play/pause press continues from here instead
+   * of jumping back to the top.
+   */
   function seek(tick: number) {
-    currentTick.value = tick
-    pausedTick = tick
+    const clamped = Math.max(0, tick)
+    currentTick.value = clamped
+    pausedTick = clamped
+    // Anything other than the very top is a held position, not a stopped one.
+    isPaused.value = clamped > 0
   }
 
-  onUnmounted(() => {
-    stop()
-  })
+  if (options.stopOnUnmount) {
+    onUnmounted(() => {
+      stop()
+    })
+  }
 
   return {
     isPlaying,
@@ -465,6 +487,7 @@ export function useMidiPlayer() {
     isReady: globalIsReady,
     currentTick,
     duration,
+    mutedTracks: trackMuted,
     preload,
     play,
     pause,

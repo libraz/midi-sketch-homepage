@@ -47,7 +47,8 @@ let instance: any = null
 const isMobile = ref(false)
 
 // Player
-const player = useMidiPlayer()
+// The preview page is the only player on this route, so it owns its lifetime.
+const player = useMidiPlayer({ stopOnUnmount: true })
 const {
   isPlaying,
   isPaused,

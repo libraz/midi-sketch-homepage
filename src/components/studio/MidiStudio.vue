@@ -12,7 +12,8 @@ import StudioScreen from './StudioScreen.vue'
 const { t } = useI18n()
 const store = useWizardStore()
 const studio = useStudioGeneration()
-const { stop: stopPlayer } = useMidiPlayer()
+// The studio root owns the shared transport's lifetime.
+const { stop: stopPlayer } = useMidiPlayer({ stopOnUnmount: true })
 
 type Phase = 'entry' | 'studio'
 const phase = ref<Phase>('entry')
@@ -34,6 +35,20 @@ function backToEntry() {
   store.invalidateVocal()
   store.invalidateBgm()
   phase.value = 'entry'
+}
+
+/**
+ * In-app back. When entering the studio pushed a history entry, pop it and let
+ * popstate do the work — otherwise the browser's own Back button would have to
+ * be pressed twice to get anywhere. A studio restored from a share URL never
+ * pushed an entry, so it returns directly.
+ */
+function requestBackToEntry() {
+  if (typeof window !== 'undefined' && history.state?.studioPhase === 'studio') {
+    history.back()
+    return
+  }
+  backToEntry()
 }
 
 // Browser back returns from studio to entry
@@ -123,7 +138,7 @@ onUnmounted(() => {
       <div class="midi-studio__panel">
         <Transition name="studio-fade" mode="out-in">
           <EntryScreen v-if="phase === 'entry'" key="entry" @generate="handleGenerate" />
-          <StudioScreen v-else key="studio" @back="backToEntry" />
+          <StudioScreen v-else key="studio" @back="requestBackToEntry" />
         </Transition>
       </div>
     </main>
