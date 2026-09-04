@@ -19,7 +19,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="regen-card" :class="[`regen-card--${color || 'orange'}`]">
+  <div
+    class="regen-card"
+    :class="[`regen-card--${color || 'orange'}`, { 'regen-card--busy': isGenerating }]"
+  >
     <button
       class="history-inline history-inline--undo"
       :disabled="!canUndo || isGenerating"
@@ -54,83 +57,53 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+/* Shuffling a seed is an exploratory move, not the page's primary action. The
+   card therefore reads as a tinted control that carries its accent through the
+   border and the label, leaving the saturated fills to the transport and the
+   apply CTA. */
 .regen-card {
+  --regen-accent: var(--studio-purple);
+  --regen-accent-rgb: var(--studio-purple-rgb);
+
   display: flex;
   align-items: stretch;
+  border: 1px solid rgba(var(--regen-accent-rgb), 0.28);
   border-radius: 12px;
+  background: color-mix(in srgb, var(--regen-accent) 8%, transparent);
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.regen-card:hover {
-  transform: translateY(-2px);
+.regen-card:not(.regen-card--busy):hover {
+  border-color: rgba(var(--regen-accent-rgb), 0.55);
+  background: color-mix(in srgb, var(--regen-accent) 13%, transparent);
+  box-shadow: 0 6px 20px -12px rgba(var(--regen-accent-rgb), 0.7);
 }
 
-/* Color variants. Saturated brand gradients stay literal so the call-to-action
-   reads the same in both themes; only the colored glow uses the accent token. */
+/* Color variants map onto the theme tokens so both appearances stay in step. */
 .regen-card--orange {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  box-shadow:
-    0 4px 16px -4px rgba(var(--studio-orange-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.regen-card--orange:hover {
-  box-shadow:
-    0 8px 24px -4px rgba(var(--studio-orange-rgb), 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --regen-accent: var(--studio-orange);
+  --regen-accent-rgb: var(--studio-orange-rgb);
 }
 
 .regen-card--pink {
-  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
-  box-shadow:
-    0 4px 16px -4px rgba(var(--studio-pink-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.regen-card--pink:hover {
-  box-shadow:
-    0 8px 24px -4px rgba(var(--studio-pink-rgb), 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --regen-accent: var(--studio-pink);
+  --regen-accent-rgb: var(--studio-pink-rgb);
 }
 
 .regen-card--purple {
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-  box-shadow:
-    0 4px 16px -4px rgba(var(--studio-purple-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.regen-card--purple:hover {
-  box-shadow:
-    0 8px 24px -4px rgba(var(--studio-purple-rgb), 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --regen-accent: var(--studio-purple);
+  --regen-accent-rgb: var(--studio-purple-rgb);
 }
 
 .regen-card--green {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  box-shadow:
-    0 4px 16px -4px rgba(var(--studio-green-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.regen-card--green:hover {
-  box-shadow:
-    0 8px 24px -4px rgba(var(--studio-green-rgb), 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --regen-accent: var(--studio-green);
+  --regen-accent-rgb: var(--studio-green-rgb);
 }
 
 .regen-card--blue {
-  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
-  box-shadow:
-    0 4px 16px -4px rgba(var(--studio-blue-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.regen-card--blue:hover {
-  box-shadow:
-    0 8px 24px -4px rgba(var(--studio-blue-rgb), 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --regen-accent: var(--studio-blue);
+  --regen-accent-rgb: var(--studio-blue-rgb);
 }
 
 /* Inline History Buttons */
@@ -138,35 +111,28 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  min-width: 44px;
-  background: rgba(0, 0, 0, 0.15);
+  width: 40px;
+  min-width: 40px;
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--studio-ink-rgb), 0.45);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .history-inline:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--studio-on-accent);
-}
-
-.history-inline:active:not(:disabled) {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(var(--regen-accent-rgb), 0.14);
+  color: var(--regen-accent);
 }
 
 .history-inline:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-.history-inline svg {
-  transition: transform 0.2s ease;
-}
-
-.history-inline:hover:not(:disabled) svg {
-  transform: scale(1.1);
+.history-inline:focus-visible {
+  outline: 2px solid var(--regen-accent);
+  outline-offset: -2px;
 }
 
 /* Main Regenerate Button */
@@ -175,27 +141,32 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
-  padding: 0.875rem 1.5rem;
+  gap: 0.55rem;
+  padding: 0.7rem 1rem;
   background: transparent;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 1px solid rgba(var(--regen-accent-rgb), 0.2);
+  border-right: 1px solid rgba(var(--regen-accent-rgb), 0.2);
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--studio-on-accent);
+  color: var(--regen-accent);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .regen-main:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--regen-accent-rgb), 0.1);
 }
 
 .regen-main:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+}
+
+.regen-main:focus-visible {
+  outline: 2px solid var(--regen-accent);
+  outline-offset: -2px;
 }
 
 .regen-main__icon {
@@ -204,5 +175,15 @@ const emit = defineEmits<{
 
 .regen-main:hover:not(:disabled) .regen-main__icon {
   transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regen-main__icon {
+    transition: none;
+  }
+
+  .regen-main:hover:not(:disabled) .regen-main__icon {
+    transform: none;
+  }
 }
 </style>

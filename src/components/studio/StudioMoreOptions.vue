@@ -35,7 +35,7 @@ const STRUCTURE_KEYS: (keyof WizardConfig)[] = [
 const sections = computed<SectionDef[]>(() => [
   {
     id: 'vocal',
-    icon: '🎤',
+    icon: '♪',
     accent: 'var(--studio-pink)',
     keys: CARD_KEYS.vocal,
     show: isVocalFirst.value

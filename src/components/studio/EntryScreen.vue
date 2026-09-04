@@ -19,9 +19,12 @@ const store = useWizardStore()
 // ============================================
 // Flow type selection (compact segmented toggle)
 // ============================================
+// Glyphs, not emoji: the rest of the studio speaks in the same geometric set
+// (★ ♪ ◈ ♥ ♫ ♯), and emoji render as full-color stickers that outweigh the
+// option titles they sit next to.
 const flowOptions = [
-  { key: 'vocalFirst', value: 'vocal-first' as FlowType, icon: '🎤' },
-  { key: 'bgmOnly', value: 'bgm-only' as FlowType, icon: '🎹' }
+  { key: 'vocalFirst', value: 'vocal-first' as FlowType, icon: '♪' },
+  { key: 'bgmOnly', value: 'bgm-only' as FlowType, icon: '◈' }
 ]
 
 function selectFlowType(flowType: FlowType) {
@@ -82,12 +85,15 @@ function getStyleIcon(category: string): string {
   return icons[category] || '♪'
 }
 
-// Picking a genre selects it (resets the essentials to that genre's
-// recommendations + re-baselines) but does NOT generate. The user tunes
-// Key/BPM/Chord in the setup panel below, then commits via "Generate".
+// Picking a genre resets the essentials to that genre's recommendations and
+// re-baselines. Re-tapping the card that is already selected commits instead:
+// applying the defaults again would wipe the tweaks made in the setup panel,
+// and the card's own affordance reads "Generate" once it is selected.
 function selectGenre(id: string) {
-  // Re-tapping the active genre would wipe in-panel tweaks — keep them.
-  if (store.config.songImageId === id) return
+  if (store.config.songImageId === id) {
+    startGeneration()
+    return
+  }
   store.selectSongImage(id)
 }
 
@@ -151,7 +157,8 @@ function startGeneration() {
           :aria-pressed="store.config.songImageId === image.id"
           tabindex="0"
           @click="selectGenre(image.id)"
-          @keydown.enter="selectGenre(image.id)"
+          @keydown.enter.prevent="selectGenre(image.id)"
+          @keydown.space.prevent="selectGenre(image.id)"
         >
           <div class="entry-card__glow"></div>
           <span class="entry-card__watermark" aria-hidden="true">{{ getStyleIcon(image.category) }}</span>

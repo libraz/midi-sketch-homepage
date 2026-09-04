@@ -116,6 +116,12 @@ function nudge(delta: number) {
   background: color-mix(in srgb, var(--pill-accent) 22%, transparent);
 }
 
+.bpm-compact__step:focus-visible,
+.bpm-compact__body:focus-visible {
+  outline: 2px solid var(--pill-accent);
+  outline-offset: -2px;
+}
+
 .bpm-compact__body {
   flex: 1;
   display: flex;

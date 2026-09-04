@@ -57,7 +57,9 @@ function onClick() {
   gap: 0.5rem;
   width: 100%;
   padding: 0.75rem 1.5rem;
-  border: none;
+  /* A transparent border in the base keeps every state the same height, so the
+     row does not shift when the CTA lights up. */
+  border: 1px solid transparent;
   border-radius: 12px;
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -66,11 +68,16 @@ function onClick() {
   transition: all 0.22s ease;
 }
 
-/* Stale: lit accent gradient, the only actionable state */
+/* Stale: the only actionable state. A single-hue fill with a slight depth
+   shift, rather than a two-hue sweep, so weight comes from contrast. */
 .studio-apply--stale {
   color: var(--studio-on-accent);
-  background: linear-gradient(135deg, var(--studio-purple) 0%, color-mix(in srgb, var(--studio-purple) 60%, var(--studio-pink)) 100%);
-  box-shadow: 0 10px 28px -10px rgba(var(--studio-purple-rgb), 0.6);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--studio-purple) 92%, white) 0%,
+    var(--studio-purple) 100%
+  );
+  box-shadow: 0 10px 28px -12px rgba(var(--studio-purple-rgb), 0.65);
 }
 
 .studio-apply--stale:hover {
@@ -85,16 +92,19 @@ function onClick() {
 /* Generating: muted, disabled with spinner */
 .studio-apply--generating {
   color: var(--studio-on-accent);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--studio-purple) 70%, #888) 0%, color-mix(in srgb, var(--studio-pink) 60%, #888) 100%);
+  background: color-mix(in srgb, var(--studio-purple) 70%, #888);
   cursor: progress;
   opacity: 0.85;
 }
 
-/* Clean: ghost, disabled */
+/* Clean: a quiet status line. It keeps the button's footprint so the row does
+   not jump when a pending change lights the CTA up. */
 .studio-apply--clean {
-  color: rgba(var(--studio-ink-rgb), 0.45);
-  background: rgba(var(--studio-ink-rgb), 0.05);
-  border: 1px solid rgba(var(--studio-ink-rgb), 0.1);
+  color: rgba(var(--studio-ink-rgb), 0.4);
+  background: transparent;
+  border-style: dashed;
+  border-color: rgba(var(--studio-ink-rgb), 0.14);
+  font-weight: 500;
   cursor: default;
 }
 

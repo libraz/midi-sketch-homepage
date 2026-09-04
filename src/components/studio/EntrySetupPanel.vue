@@ -139,12 +139,14 @@ const genreName = computed(() => {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--studio-on-accent);
+  /* Single-hue fill: the two-hue purple-to-pink sweep is the stock generative
+     look, and the CTA already carries enough weight from size and contrast. */
   background: linear-gradient(
-    100deg,
-    var(--studio-purple) 0%,
-    var(--studio-pink) 100%
+    180deg,
+    color-mix(in srgb, var(--studio-purple) 92%, white) 0%,
+    var(--studio-purple) 100%
   );
-  box-shadow: 0 12px 32px -12px color-mix(in srgb, var(--studio-purple) 70%, transparent);
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--studio-purple) 75%, transparent);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, filter 0.2s ease;
 }
 

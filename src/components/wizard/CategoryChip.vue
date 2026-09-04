@@ -78,10 +78,13 @@ watch(() => props.activeId, () => {
 </template>
 
 <style scoped>
+/* Equal-width segments: this is the primary filter for the grid below, and a
+   row whose segment widths track label length (which vary a lot between en and
+   ja) reads as unfinished next to a platform segmented control. */
 .category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
@@ -93,8 +96,8 @@ watch(() => props.activeId, () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-width: 7rem;
-  padding: 0.625rem 1rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem;
   background: color-mix(in srgb, var(--chip-color) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--chip-color) 25%, transparent);
   border-radius: 100px;
@@ -130,10 +133,13 @@ watch(() => props.activeId, () => {
 
 .category-chip__label {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 640px) {
   .category-chips {
+    display: flex;
     flex-wrap: nowrap;
     justify-content: flex-start;
     gap: 0.5rem;
