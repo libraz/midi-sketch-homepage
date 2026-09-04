@@ -424,7 +424,11 @@ export default withMermaid(defineConfig({
       }
     },
     optimizeDeps: {
-      exclude: ['midi-sketch']
+      exclude: ['midi-sketch'],
+      // mermaid pulls in fastdom, which ships as UMD. Without pre-bundling,
+      // the dev server serves it raw and the `default` import throws, taking
+      // the whole app down before it mounts.
+      include: ['fastdom', 'fastdom/extensions/fastdom-promised.js']
     },
     ssr: {
       noExternal: ['midi-sketch']
