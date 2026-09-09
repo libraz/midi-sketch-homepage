@@ -314,10 +314,9 @@ export function useMidiGeneration() {
   /**
    * Build BGM config from WizardConfig.
    *
-   * Note: WizardConfig stores percentages as 0-100 integers (UI friendly,
-   * matching the AccompanimentConfig scale), but SongConfig expects
-   * 0.0-1.0 floats for arpeggio gate, chord extension probabilities,
-   * and humanize amounts. Convert here.
+   * Note: WizardConfig stores percentages as 0-100 integers (UI friendly),
+   * but SongConfig expects 0.0-1.0 floats for arpeggio gate, chord extension
+   * probabilities, and humanize amounts. Convert here.
    */
   function buildBgmConfig(config: WizardConfig, overrideSeed?: number): BgmConfig {
     const seed = overrideSeed || config.seed || Math.floor(Math.random() * 0xFFFFFFFF)
@@ -455,7 +454,11 @@ export function useMidiGeneration() {
   }
 
   /**
-   * Build accompaniment config from WizardConfig
+   * Build accompaniment config from WizardConfig.
+   *
+   * Note: AccompanimentConfig keeps arpeggioGate on the same 0-100 integer scale
+   * as WizardConfig, but the chord extension probabilities and humanize amounts
+   * are 0.0-1.0 floats and are rejected by the engine validator when out of range.
    */
   function buildAccompanimentConfig(config: WizardConfig, overrideSeed?: number): AccompanimentConfig {
     const seed = overrideSeed || config.seed || Math.floor(Math.random() * 0xFFFFFFFF)
@@ -474,13 +477,13 @@ export function useMidiGeneration() {
       chordExt7th: config.chordExt7th,
       chordExt9th: config.chordExt9th,
       chordExtTritoneSub: config.chordExtTritoneSub,
-      chordExtSusProb: config.chordExtSusProb,
-      chordExt7thProb: config.chordExt7thProb,
-      chordExt9thProb: config.chordExt9thProb,
-      chordExtTritoneSubProb: config.chordExtTritoneSubProb,
+      chordExtSusProb: config.chordExtSusProb / 100,
+      chordExt7thProb: config.chordExt7thProb / 100,
+      chordExt9thProb: config.chordExt9thProb / 100,
+      chordExtTritoneSubProb: config.chordExtTritoneSubProb / 100,
       humanize: config.humanize,
-      humanizeTiming: config.humanizeTiming,
-      humanizeVelocity: config.humanizeVelocity,
+      humanizeTiming: config.humanizeTiming / 100,
+      humanizeVelocity: config.humanizeVelocity / 100,
       seEnabled: config.seEnabled,
       callEnabled: config.callEnabled,
       callDensity: config.callDensity,

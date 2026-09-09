@@ -26,7 +26,7 @@ export interface SongImage {
 }
 
 export const songImages: SongImage[] = [
-  // ===== IDOL (IdolStandard=2, YoasobiStyle=5, BalladStandard=4) =====
+  // ===== IDOL (BrightPop=2, IdolEnergy=5, IdolEmotion=4) =====
   {
     id: 'idol-classic',
     name: {
@@ -97,7 +97,8 @@ export const songImages: SongImage[] = [
     drumKit: 'LM-2'
   },
 
-  // ===== POP (MinimalGroovePop=0, CityPopStyle=8, YoasobiStyle=5, AnthemStyle=12, RockStandard=3) =====
+  // ===== POP (MinimalGroovePop=0, PopEmotion=8, IdolEnergy=5, BackgroundMotif=12,
+  //            AnimeOpening=14, IdolStandard=3) =====
   {
     id: 'jpop-standard',
     name: {
@@ -237,7 +238,7 @@ export const songImages: SongImage[] = [
     drumKit: 'LM-2'
   },
 
-  // ===== DANCE (DancePopStandard=1, FutureBassStyle=7, SynthwaveStyle=6, ElectroMotif=11) =====
+  // ===== DANCE (DancePopEmotion=1, RockShout=7, IdolMinimal=6, LiveCallResponse=11) =====
   {
     id: 'dance-pop',
     name: {
@@ -331,7 +332,7 @@ export const songImages: SongImage[] = [
     drumKit: 'MFB-512'
   },
 
-  // ===== BALLAD (BalladStandard=4, CityPopStyle=8, ChillMotif=10, MotifDriven=9) =====
+  // ===== BALLAD (IdolEmotion=4, PopEmotion=8, AcousticPop=10, RawEmotional=9) =====
   {
     id: 'ballad-emotional',
     name: {
