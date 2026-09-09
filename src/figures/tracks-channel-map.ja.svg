@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 332" role="img" aria-labelledby="tcm-ttl tcm-dsc">
+  <title id="tcm-ttl">9 つのトラックと、それぞれが書き込まれる MIDI チャンネル</title>
+  <desc id="tcm-dsc">トラックは 5 つのグループに分かれます。メロディレイヤーはボーカル（Ch 0）と Aux（Ch 5）、ハーモニーはコード（Ch 1）とギター（Ch 6）、リズムセクションはベース（Ch 2）とドラム（Ch 9）、シンセレイヤーはモチーフ（Ch 3）とアルペジオ（Ch 4）、マーカーは SE（Ch 15）です。各ボックスには組み込みのフォールバック GM プログラムと、そのトラックの役割も示しています。プログラムはムードプリセットによって差し替えられます。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="332" rx="12"/>
+
+  <rect class="grp" x="24" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="38" y="54">メロディレイヤー</text>
+  <rect class="card" x="34" y="62" width="158" height="64" rx="6"/>
+  <text class="hb" x="46" y="82">ボーカル</text>
+  <text class="s" x="180" y="82" text-anchor="end">Ch 0</text>
+  <text class="s" x="46" y="100">Piano (0)</text>
+  <text class="s" x="46" y="116">主旋律</text>
+  <rect class="chip" x="34" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="46" y="154">Aux</text>
+  <text class="s" x="180" y="154" text-anchor="end">Ch 5</text>
+  <text class="s" x="46" y="172">Warm Pad (89)</text>
+  <text class="s" x="46" y="188">副旋律サポート</text>
+
+  <rect class="grp" x="214" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="228" y="54">ハーモニー</text>
+  <rect class="chip" x="224" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="236" y="82">コード</text>
+  <text class="s" x="370" y="82" text-anchor="end">Ch 1</text>
+  <text class="s" x="236" y="100">E.Piano (4)</text>
+  <text class="s" x="236" y="116">和声バッキング</text>
+  <rect class="chip" x="224" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="236" y="154">ギター</text>
+  <text class="s" x="370" y="154" text-anchor="end">Ch 6</text>
+  <text class="s" x="236" y="172">E.Guitar clean (27)</text>
+  <text class="s" x="236" y="188">伴奏</text>
+
+  <rect class="grp" x="404" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="418" y="54">リズムセクション</text>
+  <rect class="chip" x="414" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="426" y="82">ベース</text>
+  <text class="s" x="560" y="82" text-anchor="end">Ch 2</text>
+  <text class="s" x="426" y="100">E.Bass (33)</text>
+  <text class="s" x="426" y="116">低音の土台</text>
+  <rect class="chip" x="414" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="426" y="154">ドラム</text>
+  <text class="s" x="560" y="154" text-anchor="end">Ch 9</text>
+  <text class="s" x="426" y="172">GM ドラムキット</text>
+  <text class="s" x="426" y="188">リズム</text>
+
+  <rect class="grp" x="594" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="608" y="54">シンセレイヤー</text>
+  <rect class="chip" x="604" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="616" y="82">モチーフ</text>
+  <text class="s" x="750" y="82" text-anchor="end">Ch 3</text>
+  <text class="s" x="616" y="100">Synth Lead (81)</text>
+  <text class="s" x="616" y="116">BackgroundMotif 用</text>
+  <rect class="chip" x="604" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="616" y="154">アルペジオ</text>
+  <text class="s" x="750" y="154" text-anchor="end">Ch 4</text>
+  <text class="s" x="616" y="172">Synth Lead (81)</text>
+  <text class="s" x="616" y="188">SynthDriven 用</text>
+
+  <rect class="grp" x="784" y="32" width="152" height="186" rx="8"/>
+  <text class="lbl" x="798" y="54">マーカー</text>
+  <rect class="chip" x="794" y="62" width="132" height="64" rx="5"/>
+  <text class="h" x="806" y="82">SE</text>
+  <text class="s" x="914" y="82" text-anchor="end">Ch 15</text>
+  <text class="s" x="806" y="100">テキストイベント</text>
+  <text class="s" x="806" y="116">セクションマーカー</text>
+  <text class="s" x="794" y="154">ノートは書きません。</text>
+  <text class="s" x="794" y="170">各セクション境界に</text>
+  <text class="s" x="794" y="186">名前を書き込むだけの</text>
+  <text class="s" x="794" y="202">テキストトラックです。</text>
+
+  <text class="s" x="480" y="238" text-anchor="middle">トラックとチャンネルの対応は固定です。GM プログラムは組み込みのフォールバックで、ムードプリセットが差し替えることがあります。</text>
+  <text class="s" x="480" y="256" text-anchor="middle">チャンネル 9 は GM のパーカッション専用のため、ドラムトラックはプログラム番号を無視します。</text>
+
+  <path class="seam" d="M 24 286 H 936"/>
+  <text class="s" x="480" y="308" text-anchor="middle">9 トラックが 9 つの固定チャンネルに載るので、DAW 側で音色を総入れ替えしても構成は崩れません。</text>
+</svg>

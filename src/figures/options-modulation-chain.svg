@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 194" role="img" aria-labelledby="omo-ttl omo-dsc">
+  <title id="omo-ttl">Modulation settings and the vocal ceiling they move</title>
+  <desc id="omo-dsc">A left-to-right chain of three boxes. Setting modulationTiming to anything other than None brings modulationSemitones into play, which accepts one to four semitones. That amount is then subtracted from the vocal ceiling internally, so the melody still fits after the key change; the range is never narrowed below an octave.</desc>
+
+  <defs>
+    <marker id="omo-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="194" rx="12"/>
+
+  <rect class="chip" x="24" y="70" width="248" height="56" rx="5"/>
+  <text class="mono" x="148" y="94" text-anchor="middle">modulationTiming</text>
+  <text class="s" x="148" y="112" text-anchor="middle">anything but None</text>
+
+  <path class="ln" d="M 272 98 H 296" marker-end="url(#omo-a)"/>
+
+  <rect class="chip" x="300" y="70" width="248" height="56" rx="5"/>
+  <text class="mono" x="424" y="94" text-anchor="middle">modulationSemitones</text>
+  <text class="s" x="424" y="112" text-anchor="middle">1 to 4 semitones</text>
+
+  <path class="ln" d="M 548 98 H 572" marker-end="url(#omo-a)"/>
+
+  <rect class="card" x="576" y="64" width="360" height="68" rx="6"/>
+  <text class="lbl" x="590" y="84">internal</text>
+  <text class="mono" x="756" y="104" text-anchor="middle">effective_vocal_high = vocal_high − n</text>
+  <text class="s" x="756" y="122" text-anchor="middle">never narrowed below an octave</text>
+
+  <path class="seam" d="M 24 152 H 936"/>
+  <text class="s" x="480" y="172" text-anchor="middle">The amount is only validated once a timing is chosen, and modulation stays effective in the BGM styles too.</text>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 342" role="img" aria-labelledby="cam-ttl cam-dsc">
+  <title id="cam-ttl">メロディ生成のどこでコード情報が効いてくるか</title>
+  <desc id="cam-dsc">左側では 1 つの候補メロディが 4 段階で書かれます。フレーズ計画、1 音ごとのピッチ選択（コードトーンに +16、ルートまたは 5 度にさらに +4、スケールトーンに +12）、装飾、そしてダウンビートの不正な音だけをコードトーンへ寄せ、下行解決するアクセント付きの不協和音を残す制約です。この一連の処理がセクションごとに最大 100 回走ります。右側では各候補をスコア化し、下位半分を捨て、残りから重み付き抽選で 1 つを選びます。</desc>
+
+  <defs>
+    <marker id="cam-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="342" rx="12"/>
+
+  <rect class="grp" x="24" y="52" width="496" height="204" rx="8"/>
+  <text class="lbl" x="38" y="72">1 候補 — セクションごとに最大 100 回書き直します</text>
+
+  <rect class="chip" x="38" y="84" width="468" height="34" rx="5"/>
+  <text class="hb" x="50" y="106">1 · フレーズ計画</text>
+  <text class="s" x="200" y="106">フレーズの開始と終わりを決める</text>
+
+  <rect class="chip" x="38" y="126" width="468" height="34" rx="5"/>
+  <text class="hb" x="50" y="148">2 · 1 音ごと</text>
+  <text class="s" x="200" y="148">コードトーン +16、ルート/5 度 +4、スケールトーン +12</text>
+
+  <rect class="chip" x="38" y="168" width="468" height="34" rx="5"/>
+  <text class="hb" x="50" y="190">3 · 装飾</text>
+  <text class="s" x="200" y="190">経過音と刺繍音</text>
+
+  <rect class="chip" x="38" y="210" width="468" height="34" rx="5"/>
+  <text class="hb" x="50" y="232">4 · ダウンビート確認</text>
+  <text class="s" x="200" y="232">適法なアクセントを残し、他の音を寄せます</text>
+
+  <path class="ln" d="M 522 154 H 564" marker-end="url(#cam-a)"/>
+
+  <rect class="grp" x="568" y="52" width="368" height="204" rx="8"/>
+  <text class="lbl" x="582" y="72">候補の選び方</text>
+
+  <rect class="chip" x="582" y="84" width="340" height="48" rx="5"/>
+  <text class="hb" x="594" y="104">各候補をスコア化</text>
+  <text class="s" x="594" y="122">スタイル 0.4 + カリング 0.4 + バイアス 0.2</text>
+
+  <path class="ln" d="M 752 132 V 146" marker-end="url(#cam-a)"/>
+
+  <rect class="chip" x="582" y="148" width="340" height="34" rx="5"/>
+  <text class="s" x="594" y="170">下位半分を捨てる</text>
+
+  <path class="ln" d="M 752 182 V 196" marker-end="url(#cam-a)"/>
+
+  <rect class="card" x="582" y="198" width="340" height="44" rx="6"/>
+  <text class="hb" x="594" y="218">重み付き抽選で 1 つ</text>
+  <text class="s" x="594" y="234">残った候補から</text>
+
+  <path class="seam" d="M 24 278 H 936"/>
+  <text class="s" x="480" y="300" text-anchor="middle">コードトーン適合を測るのは 1 拍目と 3 拍目だけで、そのうち何割がコードトーンかがスコアになります。</text>
+  <text class="s" x="480" y="318" text-anchor="middle">独立した仕上げ工程はありません。ダウンビート制約と候補の間引きでハーモニーを適用します。</text>
+</svg>

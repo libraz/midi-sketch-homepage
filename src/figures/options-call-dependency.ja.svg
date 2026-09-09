@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 204" role="img" aria-labelledby="ocd-ttl ocd-dsc">
+  <title id="ocd-ttl">callSetting がコール系 4 オプションを制御する</title>
+  <desc id="ocd-dsc">左から右への流れです。callSetting は 0 が Auto、1 が Enabled、2 が Disabled で、コールのオン・オフに解決されます。Auto のときはボーカルスタイルが判断します。コールが非アクティブな間、introChant・mixPattern・callDensity・callNotesEnabled の 4 つは設定しても効果がありません。</desc>
+
+  <defs>
+    <marker id="ocd-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="204" rx="12"/>
+
+  <text class="lbl" x="26" y="70">親オプション</text>
+  <rect class="card" x="24" y="80" width="176" height="56" rx="6"/>
+  <text class="mono" x="112" y="104" text-anchor="middle">callSetting</text>
+  <text class="s" x="112" y="122" text-anchor="middle">0=Auto · 1=On · 2=Off</text>
+
+  <path class="ln" d="M 200 108 H 222" marker-end="url(#ocd-a)"/>
+
+  <rect class="grp" x="228" y="36" width="232" height="144" rx="8"/>
+  <text class="lbl" x="240" y="56">解決結果</text>
+  <rect class="chip" x="238" y="64" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="83" text-anchor="middle">1 = Enabled → コールあり</text>
+  <rect class="chip" x="238" y="98" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="117" text-anchor="middle">2 = Disabled → コールなし</text>
+  <rect class="chip" x="238" y="132" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="151" text-anchor="middle">0 = Auto → スタイル次第</text>
+
+  <path class="ln" d="M 460 108 H 488" marker-end="url(#ocd-a)"/>
+
+  <rect class="grp" x="492" y="36" width="444" height="144" rx="8"/>
+  <text class="lbl" x="504" y="56">コール非アクティブ時は無視</text>
+  <rect class="chip" x="504" y="72" width="202" height="28" rx="5"/>
+  <text class="mono" x="605" y="91" text-anchor="middle">introChant</text>
+  <rect class="chip" x="718" y="72" width="202" height="28" rx="5"/>
+  <text class="mono" x="819" y="91" text-anchor="middle">mixPattern</text>
+  <rect class="chip" x="504" y="106" width="202" height="28" rx="5"/>
+  <text class="mono" x="605" y="125" text-anchor="middle">callDensity</text>
+  <rect class="chip" x="718" y="106" width="202" height="28" rx="5"/>
+  <text class="mono" x="819" y="125" text-anchor="middle">callNotesEnabled</text>
+  <text class="s" x="714" y="158" text-anchor="middle">Auto はスタイルプリセットではなくボーカルスタイルを見ます</text>
+</svg>

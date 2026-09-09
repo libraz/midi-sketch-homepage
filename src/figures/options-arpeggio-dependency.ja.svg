@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 220" role="img" aria-labelledby="oar-ttl oar-dsc">
+  <title id="oar-ttl">arpeggioEnabled がアルペジオ系フィールドすべてを制御する</title>
+  <desc id="oar-dsc">左のスイッチが 6 つの従属フィールドにつながります。arpeggioPattern・arpeggioSpeed・arpeggioOctaveRange・arpeggioGate・arpeggioSyncChord・arpeggioBaseVelocity で、それぞれ取りうる値の範囲を添えています。アルペジオトラックは既定でオフで、スイッチを入れるまでこの 6 つは読まれません。</desc>
+
+  <defs>
+    <marker id="oar-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="220" rx="12"/>
+
+  <text class="lbl" x="26" y="64">スイッチ</text>
+  <rect class="card" x="24" y="72" width="176" height="56" rx="6"/>
+  <text class="mono" x="112" y="96" text-anchor="middle">arpeggioEnabled</text>
+  <text class="s" x="112" y="114" text-anchor="middle">既定は false</text>
+
+  <path class="ln" d="M 200 100 H 222" marker-end="url(#oar-a)"/>
+
+  <rect class="grp" x="228" y="36" width="708" height="160" rx="8"/>
+  <text class="lbl" x="240" y="56">オンのときだけ有効</text>
+
+  <rect class="chip" x="240" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="350" y="82" text-anchor="middle">arpeggioPattern</text>
+  <text class="s" x="350" y="98" text-anchor="middle">0–7、255 で自動</text>
+  <rect class="chip" x="470" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="580" y="82" text-anchor="middle">arpeggioSpeed</text>
+  <text class="s" x="580" y="98" text-anchor="middle">8分・16分・3連符</text>
+  <rect class="chip" x="700" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="810" y="82" text-anchor="middle">arpeggioOctaveRange</text>
+  <text class="s" x="810" y="98" text-anchor="middle">1〜3 オクターブ</text>
+
+  <rect class="chip" x="240" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="350" y="136" text-anchor="middle">arpeggioGate</text>
+  <text class="s" x="350" y="152" text-anchor="middle">0.0–1.0、−1 で既定値</text>
+  <rect class="chip" x="470" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="580" y="136" text-anchor="middle">arpeggioSyncChord</text>
+  <text class="s" x="580" y="152" text-anchor="middle">コード変更に追従</text>
+  <rect class="chip" x="700" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="810" y="136" text-anchor="middle">arpeggioBaseVelocity</text>
+  <text class="s" x="810" y="152" text-anchor="middle">0–127、既定は 90</text>
+
+  <text class="s" x="582" y="182" text-anchor="middle">アルペジオは既定でオフです。オンにするまで、ここの値はどれも読まれません。</text>
+</svg>

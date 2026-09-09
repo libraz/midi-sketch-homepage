@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 256" role="img" aria-labelledby="obm-ttl obm-dsc">
+  <title id="obm-ttl">BackgroundMotif — モチーフを中心に据えた BGM 専用スタイル</title>
+  <desc id="obm-dsc">compositionStyle は 1 です。ボーカルトラックは一切書かれず、Aux トラックはオンでモチーフを支え、転調は有効です。motifRepeatScope・motifFixedProgression・motifMaxChordCount といったモチーフ系がここで有効になります。生成されるのは Aux・モチーフ・ベース・コード・ギター・ドラムで、arpeggioEnabled が true のときだけアルペジオが加わります。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="256" rx="12"/>
+
+  <rect class="card" x="24" y="40" width="250" height="52" rx="6"/>
+  <text class="mono" x="149" y="64" text-anchor="middle">compositionStyle = 1</text>
+  <text class="s" x="149" y="84" text-anchor="middle">BackgroundMotif — BGM 専用</text>
+
+  <rect class="grp" x="298" y="32" width="638" height="122" rx="8"/>
+  <text class="lbl" x="310" y="52">オプション系統</text>
+  <rect class="chip" x="310" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="77" text-anchor="middle">ボーカルトラックなし</text>
+  <rect class="chip" x="520" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="77" text-anchor="middle">Aux — オン、モチーフを支える</text>
+  <rect class="chip" x="730" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="77" text-anchor="middle">転調 — 有効</text>
+
+  <text class="lbl" x="310" y="104">モチーフ系 — ここでは有効</text>
+  <rect class="chip" x="310" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="407" y="129" text-anchor="middle">motifRepeatScope</text>
+  <rect class="chip" x="520" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="617" y="129" text-anchor="middle">motifFixedProgression</text>
+  <rect class="chip" x="730" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="827" y="129" text-anchor="middle">motifMaxChordCount</text>
+
+  <text class="lbl" x="26" y="184">生成トラック</text>
+  <text class="s" x="936" y="184" text-anchor="end">ティール = arpeggioEnabled が true のときだけ</text>
+
+  <rect class="chip" x="24" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="86" y="211" text-anchor="middle">Aux</text>
+  <rect class="chip" x="155" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="217" y="211" text-anchor="middle">モチーフ</text>
+  <rect class="chip" x="286" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="348" y="211" text-anchor="middle">ベース</text>
+  <rect class="chip" x="417" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="479" y="211" text-anchor="middle">コード</text>
+  <rect class="chip" x="548" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="610" y="211" text-anchor="middle">ギター</text>
+  <rect class="chip" x="679" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="741" y="211" text-anchor="middle">ドラム</text>
+  <rect class="alt" x="810" y="192" width="124" height="28" rx="6"/>
+  <text class="s" x="872" y="211" text-anchor="middle">アルペジオ</text>
+
+  <text class="s" x="480" y="238" text-anchor="middle">ここではモチーフが主旋律を担うので、モチーフ系が効き、ボーカル系は効きません。</text>
+</svg>

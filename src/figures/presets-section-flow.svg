@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 322" role="img" aria-labelledby="sfl-ttl sfl-dsc">
+  <title id="sfl-ttl">Section order and the energy profile it produces</title>
+  <desc id="sfl-dsc">Seven sections run left to right — Intro, A, B, Chorus, Bridge, Chorus, Outro — drawn as bars whose height is the section's energy level. Energy climbs from low at the intro through medium-low and medium in the A and B sections to high at each chorus, drops back to medium-low for the bridge, and stays there for the outro. Under each bar is its vocal density: none at the intro and outro, sparse in the A section and the bridge, full through B and the choruses. An Interlude section is also available as an instrumental break with no vocal.</desc>
+
+  <defs>
+    <marker id="sfl-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="322" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="196" rx="8"/>
+  <text class="lbl" x="38" y="60">bar height = section energy</text>
+
+  <path class="rule" d="M 30 186 H 930"/>
+
+  <rect class="chip" x="38" y="158" width="110" height="28" rx="5"/>
+  <text class="s" x="93" y="177" text-anchor="middle">low</text>
+  <text class="h" x="93" y="206" text-anchor="middle">Intro</text>
+  <text class="s" x="93" y="224" text-anchor="middle">none</text>
+
+  <path class="ln" d="M 150 172 H 165" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="167" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="222" y="177" text-anchor="middle">med-low</text>
+  <text class="h" x="222" y="206" text-anchor="middle">A</text>
+  <text class="s" x="222" y="224" text-anchor="middle">sparse</text>
+
+  <path class="ln" d="M 279 172 H 294" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="296" y="126" width="110" height="60" rx="5"/>
+  <text class="s" x="351" y="177" text-anchor="middle">medium</text>
+  <text class="h" x="351" y="206" text-anchor="middle">B</text>
+  <text class="s" x="351" y="224" text-anchor="middle">full</text>
+
+  <path class="ln" d="M 408 172 H 423" marker-end="url(#sfl-a)"/>
+
+  <rect class="card" x="425" y="98" width="110" height="88" rx="6"/>
+  <text class="s" x="480" y="177" text-anchor="middle">high</text>
+  <text class="h" x="480" y="206" text-anchor="middle">Chorus</text>
+  <text class="s" x="480" y="224" text-anchor="middle">full</text>
+
+  <path class="ln" d="M 537 172 H 552" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="554" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="609" y="177" text-anchor="middle">med-low</text>
+  <text class="h" x="609" y="206" text-anchor="middle">Bridge</text>
+  <text class="s" x="609" y="224" text-anchor="middle">sparse</text>
+
+  <path class="ln" d="M 666 172 H 681" marker-end="url(#sfl-a)"/>
+
+  <rect class="card" x="683" y="98" width="110" height="88" rx="6"/>
+  <text class="s" x="738" y="177" text-anchor="middle">high</text>
+  <text class="h" x="738" y="206" text-anchor="middle">Chorus</text>
+  <text class="s" x="738" y="224" text-anchor="middle">full</text>
+
+  <path class="ln" d="M 795 172 H 810" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="812" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="867" y="177" text-anchor="middle">med-low</text>
+  <text class="h" x="867" y="206" text-anchor="middle">Outro</text>
+  <text class="s" x="867" y="224" text-anchor="middle">none</text>
+
+  <rect class="alt" x="290" y="250" width="380" height="28" rx="6"/>
+  <text class="s" x="480" y="269" text-anchor="middle">Interlude — instrumental break, no vocal</text>
+
+  <path class="seam" d="M 24 290 H 936"/>
+  <text class="s" x="480" y="310" text-anchor="middle">Each structure pattern is a different order of these section types; the chorus is always the energy peak.</text>
+</svg>

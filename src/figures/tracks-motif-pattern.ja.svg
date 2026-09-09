@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 424" role="img" aria-labelledby="tmp-ttl tmp-dsc">
+  <title id="tmp-ttl">モチーフパターンの組み立てと、モーションタイプが変えるもの</title>
+  <desc id="tmp-dsc">モチーフは基準音から始まります。高音域なら 67、そうでなければ 60 です。次にリズム位置を決めます。リズム密度とモチーフ長から導くか、ロックされたリズムテンプレートを使います。音数は 3〜8 に収められ、既定は 6 です。そのあとで初めてピッチ列を生成し、1 音ごとに 1 ステップ進めます。歩幅を決めるのがモーションタイプで、Stepwise は 2 度まで、GentleLeap は 3 度、WideLeap は 5 度、NarrowStep はスケール 1 度、Disjunct は不規則な跳躍、Ostinato は同一ピッチクラスの反復です。最後にリピートスコープが、1 パターンを曲全体で使うかセクションごとに作り直すかを決めます。ただしリフポリシーが毎セクション作り直しを強制している場合はそちらが優先されます。</desc>
+
+  <defs>
+    <marker id="tmp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="424" rx="12"/>
+
+  <rect class="chip" x="24" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="36" y="65">基準音</text>
+  <text class="s" x="36" y="83">高音域なら 67、</text>
+  <text class="s" x="36" y="99">それ以外は 60</text>
+
+  <path class="ln" d="M 228 74 H 252" marker-end="url(#tmp-a)"/>
+
+  <rect class="chip" x="260" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="272" y="65">リズム位置</text>
+  <text class="s" x="272" y="83">密度と長さから決定。</text>
+  <text class="s" x="272" y="99">リズムテンプレートも可</text>
+
+  <path class="ln" d="M 464 74 H 488" marker-end="url(#tmp-a)"/>
+
+  <rect class="chip" x="496" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="508" y="65">音数</text>
+  <text class="s" x="508" y="83">1 サイクル 3–8 音、</text>
+  <text class="s" x="508" y="99">既定は 6</text>
+
+  <path class="ln" d="M 700 74 H 724" marker-end="url(#tmp-a)"/>
+
+  <rect class="card" x="732" y="40" width="204" height="68" rx="6"/>
+  <text class="h" x="744" y="65">ピッチ列</text>
+  <text class="s" x="744" y="83">1 音ごとに 1 ステップ、</text>
+  <text class="s" x="744" y="99">幅はモーションが決める</text>
+
+  <path class="ln" d="M 834 108 V 122" marker-end="url(#tmp-a)"/>
+
+  <rect class="grp" x="24" y="132" width="912" height="112" rx="8"/>
+  <text class="lbl" x="38" y="154">MotifMotion</text>
+
+  <rect class="chip" x="36" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="48" y="185">Stepwise</text>
+  <text class="s" x="48" y="203">2 度のみ</text>
+
+  <rect class="chip" x="186" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="198" y="185">GentleLeap</text>
+  <text class="s" x="198" y="203">3 度まで</text>
+
+  <rect class="chip" x="336" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="348" y="185">WideLeap</text>
+  <text class="s" x="348" y="203">5 度まで</text>
+
+  <rect class="chip" x="486" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="498" y="185">NarrowStep</text>
+  <text class="s" x="498" y="203">±1 スケール度</text>
+
+  <rect class="chip" x="636" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="648" y="185">Disjunct</text>
+  <text class="s" x="648" y="203">不規則な跳躍</text>
+
+  <rect class="alt" x="786" y="164" width="138" height="64" rx="6"/>
+  <text class="h" x="798" y="185">Ostinato</text>
+  <text class="s" x="798" y="203">同一ピッチクラス</text>
+  <text class="s" x="798" y="219">Blueprint 専用</text>
+
+  <path class="ln" d="M 480 244 V 254" marker-end="url(#tmp-a)"/>
+
+  <rect class="grp" x="24" y="264" width="912" height="90" rx="8"/>
+  <text class="lbl" x="38" y="286">リピートスコープ</text>
+
+  <rect class="chip" x="36" y="296" width="278" height="46" rx="5"/>
+  <text class="h" x="48" y="317">FullSong</text>
+  <text class="s" x="48" y="333">曲全体で 1 パターン</text>
+
+  <rect class="chip" x="338" y="296" width="278" height="46" rx="5"/>
+  <text class="h" x="350" y="317">Section</text>
+  <text class="s" x="350" y="333">セクションごとに新パターン</text>
+
+  <rect class="warn" x="640" y="296" width="284" height="46" rx="6"/>
+  <text class="h" x="652" y="317">リフポリシーが優先</text>
+  <text class="s" x="652" y="333">Free ポリシーでは毎セクション作り直し</text>
+
+  <path class="seam" d="M 24 378 H 936"/>
+  <text class="s" x="480" y="400" text-anchor="middle">モーションタイプが決めるのは 1 歩の幅だけで、リズムのグリッドはピッチより先に確定します。</text>
+</svg>

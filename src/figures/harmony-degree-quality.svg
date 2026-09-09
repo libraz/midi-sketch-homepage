@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 396" role="img" aria-labelledby="dq-ttl dq-dsc">
+  <title id="dq-ttl">How a degree number becomes a chord quality</title>
+  <desc id="dq-dsc">On the left, getChordQuality takes a single degree number; the key and the mode are never passed in. Three panels on the right show the result. Major covers I, IV and V plus the borrowed bIII, bVI, bVII and bII. Minor covers ii, iii and vi plus the borrowed iv. Diminished covers vii and the borrowed raised-fourth diminished chord. Only three qualities exist; there is no augmented triad.</desc>
+
+  <defs>
+    <marker id="dq-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="396" rx="12"/>
+
+  <text class="lbl" x="268" y="44">diatonic</text>
+  <text class="lbl" x="552" y="44">borrowed from the parallel minor</text>
+
+  <rect class="card" x="24" y="52" width="200" height="274" rx="6"/>
+  <text class="mono" x="124" y="100" text-anchor="middle">getChordQuality</text>
+  <text class="s" x="36" y="140">One argument: the</text>
+  <text class="s" x="36" y="158">degree number. The key</text>
+  <text class="s" x="36" y="176">and the mode are never</text>
+  <text class="s" x="36" y="194">consulted, so quality is</text>
+  <text class="s" x="36" y="212">fixed by the degree alone.</text>
+  <text class="s" x="36" y="240">Only three qualities</text>
+  <text class="s" x="36" y="258">exist — the engine has</text>
+  <text class="s" x="36" y="276">no augmented triad.</text>
+
+  <path class="ln" d="M 236 93 V 285"/>
+  <path class="ln" d="M 224 189 H 248" marker-end="url(#dq-a)"/>
+  <path class="ln" d="M 236 93 H 248" marker-end="url(#dq-a)"/>
+  <path class="ln" d="M 236 285 H 248" marker-end="url(#dq-a)"/>
+
+  <rect class="grp" x="252" y="52" width="684" height="82" rx="8"/>
+  <text class="lbl" x="268" y="72">major triad</text>
+  <rect class="chip" x="268" y="80" width="76" height="34" rx="5"/>
+  <text class="s" x="306" y="102" text-anchor="middle">I · 0</text>
+  <rect class="chip" x="352" y="80" width="76" height="34" rx="5"/>
+  <text class="s" x="390" y="102" text-anchor="middle">IV · 3</text>
+  <rect class="chip" x="436" y="80" width="76" height="34" rx="5"/>
+  <text class="s" x="474" y="102" text-anchor="middle">V · 4</text>
+  <path class="rule" d="M 532 76 V 118"/>
+  <rect class="alt" x="552" y="80" width="84" height="34" rx="6"/>
+  <text class="s" x="594" y="102" text-anchor="middle">bIII · 11</text>
+  <rect class="alt" x="644" y="80" width="84" height="34" rx="6"/>
+  <text class="s" x="686" y="102" text-anchor="middle">bVI · 8</text>
+  <rect class="alt" x="736" y="80" width="84" height="34" rx="6"/>
+  <text class="s" x="778" y="102" text-anchor="middle">bVII · 10</text>
+  <rect class="alt" x="828" y="80" width="84" height="34" rx="6"/>
+  <text class="s" x="870" y="102" text-anchor="middle">bII · 13</text>
+
+  <rect class="grp" x="252" y="148" width="684" height="82" rx="8"/>
+  <text class="lbl" x="268" y="168">minor triad</text>
+  <rect class="chip" x="268" y="176" width="76" height="34" rx="5"/>
+  <text class="s" x="306" y="198" text-anchor="middle">ii · 1</text>
+  <rect class="chip" x="352" y="176" width="76" height="34" rx="5"/>
+  <text class="s" x="390" y="198" text-anchor="middle">iii · 2</text>
+  <rect class="chip" x="436" y="176" width="76" height="34" rx="5"/>
+  <text class="s" x="474" y="198" text-anchor="middle">vi · 5</text>
+  <path class="rule" d="M 532 172 V 214"/>
+  <rect class="alt" x="552" y="176" width="84" height="34" rx="6"/>
+  <text class="s" x="594" y="198" text-anchor="middle">iv · 12</text>
+
+  <rect class="grp" x="252" y="244" width="684" height="82" rx="8"/>
+  <text class="lbl" x="268" y="264">diminished triad</text>
+  <rect class="chip" x="268" y="272" width="76" height="34" rx="5"/>
+  <text class="s" x="306" y="294" text-anchor="middle">vii · 6</text>
+  <path class="rule" d="M 532 268 V 310"/>
+  <rect class="alt" x="552" y="272" width="84" height="34" rx="6"/>
+  <text class="s" x="594" y="294" text-anchor="middle">#IV° · 14</text>
+
+  <path class="seam" d="M 24 350 H 936"/>
+  <text class="s" x="480" y="372" text-anchor="middle">Of the borrowed degrees, only bVI, bVII, iv and bII appear in the shipped progression table — through Rock1, Rock2, AeolianPop and NeapolitanPop.</text>
+</svg>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 398" role="img" aria-labelledby="vfw-ttl vfw-dsc">
+  <title id="vfw-ttl">ボーカル先行ワークフローの 2 ステップ</title>
+  <desc id="vfw-dsc">ステップ 1 はループです。generateVocal がメロディを作り、試聴し、納得するまで regenerateVocal で作り直します。ボーカルが決まったらステップ 2 で generateAccompaniment を呼び、Aux・モチーフ・ベース・コード・ギター・アルペジオ・ドラム・SE の 8 パートを順に書きます。図の順序は Traditional パラダイムのものです。</desc>
+
+  <defs>
+    <marker id="vfw-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="398" rx="12"/>
+
+  <rect class="grp" x="24" y="44" width="912" height="124" rx="8"/>
+  <text class="lbl" x="38" y="64">ステップ 1 · ボーカル</text>
+
+  <rect class="chip" x="38" y="72" width="160" height="30" rx="5"/>
+  <text class="mono" x="118" y="91" text-anchor="middle">generateVocal</text>
+
+  <path class="ln" d="M 198 87 H 216" marker-end="url(#vfw-a)"/>
+
+  <rect class="card" x="220" y="72" width="170" height="30" rx="6"/>
+  <text class="h" x="305" y="91" text-anchor="middle">試聴して確認</text>
+
+  <path class="ln" d="M 360 102 V 114" marker-end="url(#vfw-a)"/>
+  <text class="s" x="368" y="114">まだなら</text>
+
+  <rect class="chip" x="220" y="118" width="170" height="30" rx="5"/>
+  <text class="mono" x="305" y="137" text-anchor="middle">regenerateVocal</text>
+
+  <path class="ln" d="M 250 118 V 106" marker-end="url(#vfw-a)"/>
+
+  <text class="s" x="470" y="86">ボーカルはここで何度でも作り直せます。</text>
+  <text class="s" x="470" y="102">他のパートはまだ書かれていないので、</text>
+  <text class="s" x="470" y="118">捨てても損はありません。</text>
+  <text class="mono" x="470" y="140">regenerateVocal(0)</text>
+  <text class="s" x="596" y="140">は毎回新しいシードを引きます。</text>
+
+  <path class="ln" d="M 480 168 V 194" marker-end="url(#vfw-a)"/>
+  <text class="s" x="490" y="184">満足したら</text>
+
+  <rect class="grp" x="24" y="200" width="912" height="140" rx="8"/>
+  <text class="lbl" x="38" y="220">ステップ 2 · 伴奏</text>
+
+  <rect class="chip" x="38" y="228" width="884" height="30" rx="5"/>
+  <text class="mono" x="480" y="247" text-anchor="middle">generateAccompaniment</text>
+
+  <path class="ln" d="M 480 258 V 272" marker-end="url(#vfw-a)"/>
+
+  <rect class="chip" x="38" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="90" y="295" text-anchor="middle">1 · Aux</text>
+  <rect class="chip" x="148" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="200" y="295" text-anchor="middle">2 · モチーフ</text>
+  <rect class="chip" x="258" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="310" y="295" text-anchor="middle">3 · ベース</text>
+  <rect class="chip" x="368" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="420" y="295" text-anchor="middle">4 · コード</text>
+  <rect class="chip" x="478" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="530" y="295" text-anchor="middle">5 · ギター</text>
+  <rect class="chip" x="588" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="640" y="295" text-anchor="middle">6 · アルペジオ</text>
+  <rect class="chip" x="698" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="750" y="295" text-anchor="middle">7 · ドラム</text>
+  <rect class="chip" x="808" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="860" y="295" text-anchor="middle">8 · SE</text>
+
+  <text class="s" x="480" y="326" text-anchor="middle">Traditional パラダイムの順序です。RhythmSync では既にあるモチーフをそのまま使います</text>
+
+  <path class="seam" d="M 24 364 H 936"/>
+  <text class="s" x="480" y="384" text-anchor="middle">ボーカルが決まるまで他のパートは書かれません。伴奏の生成は毎回、ボーカル以外のすべてを作り直します。</text>
+</svg>

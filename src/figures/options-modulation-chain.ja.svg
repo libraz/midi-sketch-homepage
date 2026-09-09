@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 194" role="img" aria-labelledby="omo-ttl omo-dsc">
+  <title id="omo-ttl">転調の設定と、それが動かすボーカル上限</title>
+  <desc id="omo-dsc">3 つのボックスが左から右につながります。modulationTiming を None 以外にすると modulationSemitones が効くようになり、1〜4 半音を受け付けます。その半音数は内部でボーカルの上限から引かれ、転調後もメロディが音域に収まります。音域が 1 オクターブ未満になることはありません。</desc>
+
+  <defs>
+    <marker id="omo-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="194" rx="12"/>
+
+  <rect class="chip" x="24" y="70" width="248" height="56" rx="5"/>
+  <text class="mono" x="148" y="94" text-anchor="middle">modulationTiming</text>
+  <text class="s" x="148" y="112" text-anchor="middle">None 以外</text>
+
+  <path class="ln" d="M 272 98 H 296" marker-end="url(#omo-a)"/>
+
+  <rect class="chip" x="300" y="70" width="248" height="56" rx="5"/>
+  <text class="mono" x="424" y="94" text-anchor="middle">modulationSemitones</text>
+  <text class="s" x="424" y="112" text-anchor="middle">1〜4 半音</text>
+
+  <path class="ln" d="M 548 98 H 572" marker-end="url(#omo-a)"/>
+
+  <rect class="card" x="576" y="64" width="360" height="68" rx="6"/>
+  <text class="lbl" x="590" y="84">内部処理</text>
+  <text class="mono" x="756" y="104" text-anchor="middle">effective_vocal_high = vocal_high − n</text>
+  <text class="s" x="756" y="122" text-anchor="middle">1 オクターブ未満にはしません</text>
+
+  <path class="seam" d="M 24 152 H 936"/>
+  <text class="s" x="480" y="172" text-anchor="middle">半音数が検証されるのはタイミングを指定したときだけで、BGM 系のスタイルでも転調は効きます。</text>
+</svg>

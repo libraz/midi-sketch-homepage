@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="sg-ttl sg-dsc">
+  <title id="sg-ttl">Standard generation, from parameters to a Standard MIDI File</title>
+  <desc id="sg-dsc">A left-to-right flow. GeneratorParams and SongConfig enter the Generator, which first builds the song structure, then writes the nine parts in a fixed order — vocal, aux, motif, bass, chord, guitar, arpeggio, drums, SE — and finally applies transition dynamics and humanization. The finished Song is handed to MidiWriter, which emits a Type 1 Standard MIDI File with one track per part.</desc>
+
+  <defs>
+    <marker id="sg-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="360" rx="12"/>
+
+  <rect class="grp" x="24" y="116" width="150" height="104" rx="8"/>
+  <text class="lbl" x="36" y="136">input</text>
+  <rect class="chip" x="34" y="146" width="130" height="28" rx="5"/>
+  <text class="mono" x="99" y="164" text-anchor="middle">GeneratorParams</text>
+  <rect class="chip" x="34" y="182" width="130" height="28" rx="5"/>
+  <text class="mono" x="99" y="200" text-anchor="middle">SongConfig</text>
+
+  <path class="ln" d="M 174 168 H 196" marker-end="url(#sg-a)"/>
+
+  <rect class="grp" x="198" y="44" width="520" height="272" rx="8"/>
+  <text class="lbl" x="212" y="66">Generator</text>
+
+  <rect class="chip" x="212" y="78" width="492" height="32" rx="5"/>
+  <text class="h" x="224" y="99">buildStructure</text>
+  <text class="s" x="340" y="99">section order, bar counts and the chord skeleton</text>
+
+  <path class="ln" d="M 458 110 V 124" marker-end="url(#sg-a)"/>
+
+  <rect class="chip" x="212" y="128" width="492" height="94" rx="5"/>
+  <text class="lbl" x="224" y="147">track generation, in order</text>
+  <rect class="chip" x="224" y="154" width="86" height="26" rx="5"/>
+  <text class="s" x="267" y="171" text-anchor="middle">1 · vocal</text>
+  <rect class="chip" x="318" y="154" width="86" height="26" rx="5"/>
+  <text class="s" x="361" y="171" text-anchor="middle">2 · aux</text>
+  <rect class="chip" x="412" y="154" width="86" height="26" rx="5"/>
+  <text class="s" x="455" y="171" text-anchor="middle">3 · motif</text>
+  <rect class="chip" x="506" y="154" width="86" height="26" rx="5"/>
+  <text class="s" x="549" y="171" text-anchor="middle">4 · bass</text>
+  <rect class="chip" x="600" y="154" width="86" height="26" rx="5"/>
+  <text class="s" x="643" y="171" text-anchor="middle">5 · chord</text>
+  <rect class="chip" x="224" y="188" width="86" height="26" rx="5"/>
+  <text class="s" x="267" y="205" text-anchor="middle">6 · guitar</text>
+  <rect class="chip" x="318" y="188" width="86" height="26" rx="5"/>
+  <text class="s" x="361" y="205" text-anchor="middle">7 · arpeggio</text>
+  <rect class="chip" x="412" y="188" width="86" height="26" rx="5"/>
+  <text class="s" x="455" y="205" text-anchor="middle">8 · drums</text>
+  <rect class="chip" x="506" y="188" width="86" height="26" rx="5"/>
+  <text class="s" x="549" y="205" text-anchor="middle">9 · SE</text>
+
+  <path class="ln" d="M 458 222 V 236" marker-end="url(#sg-a)"/>
+
+  <rect class="chip" x="212" y="240" width="238" height="32" rx="5"/>
+  <text class="s" x="331" y="260" text-anchor="middle">applyTransitionDynamics</text>
+  <path class="ln" d="M 450 256 H 462" marker-end="url(#sg-a)"/>
+  <rect class="chip" x="466" y="240" width="238" height="32" rx="5"/>
+  <text class="s" x="585" y="260" text-anchor="middle">applyHumanization</text>
+
+  <text class="s" x="458" y="296" text-anchor="middle">the paradigm decides the order — RhythmSync writes the motif first, then the vocal against it</text>
+
+  <path class="ln" d="M 718 168 H 726 V 130 H 736" marker-end="url(#sg-a)"/>
+
+  <rect class="chip" x="740" y="116" width="196" height="28" rx="5"/>
+  <text class="h" x="838" y="135" text-anchor="middle">Song</text>
+  <path class="ln" d="M 838 144 V 156" marker-end="url(#sg-a)"/>
+  <rect class="card" x="740" y="160" width="196" height="28" rx="6"/>
+  <text class="mono" x="838" y="179" text-anchor="middle">MidiWriter</text>
+  <path class="ln" d="M 838 188 V 200" marker-end="url(#sg-a)"/>
+  <rect class="chip" x="740" y="204" width="196" height="28" rx="5"/>
+  <text class="h" x="838" y="223" text-anchor="middle">SMF Type 1</text>
+  <text class="s" x="838" y="248" text-anchor="middle">one track per part, each on</text>
+  <text class="s" x="838" y="262" text-anchor="middle">its own MIDI channel</text>
+
+  <path class="seam" d="M 24 326 H 936"/>
+  <text class="s" x="480" y="346" text-anchor="middle">Each part is written against the ones already in place, and nothing reaches disk until MidiWriter runs.</text>
+</svg>

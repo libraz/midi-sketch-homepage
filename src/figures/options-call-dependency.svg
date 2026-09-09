@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 204" role="img" aria-labelledby="ocd-ttl ocd-dsc">
+  <title id="ocd-ttl">callSetting gates the four call-related options</title>
+  <desc id="ocd-dsc">A left-to-right chain. callSetting takes 0 for Auto, 1 for Enabled and 2 for Disabled; it resolves to calls being on or off, and under Auto the vocal style makes that decision. While calls are inactive the four dependent fields — introChant, mixPattern, callDensity and callNotesEnabled — are read but have no effect.</desc>
+
+  <defs>
+    <marker id="ocd-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="204" rx="12"/>
+
+  <text class="lbl" x="26" y="70">parent</text>
+  <rect class="card" x="24" y="80" width="176" height="56" rx="6"/>
+  <text class="mono" x="112" y="104" text-anchor="middle">callSetting</text>
+  <text class="s" x="112" y="122" text-anchor="middle">0=Auto · 1=On · 2=Off</text>
+
+  <path class="ln" d="M 200 108 H 222" marker-end="url(#ocd-a)"/>
+
+  <rect class="grp" x="228" y="36" width="232" height="144" rx="8"/>
+  <text class="lbl" x="240" y="56">resolution</text>
+  <rect class="chip" x="238" y="64" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="83" text-anchor="middle">1 = Enabled → calls on</text>
+  <rect class="chip" x="238" y="98" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="117" text-anchor="middle">2 = Disabled → calls off</text>
+  <rect class="chip" x="238" y="132" width="212" height="28" rx="5"/>
+  <text class="s" x="344" y="151" text-anchor="middle">0 = Auto → vocal style decides</text>
+
+  <path class="ln" d="M 460 108 H 488" marker-end="url(#ocd-a)"/>
+
+  <rect class="grp" x="492" y="36" width="444" height="144" rx="8"/>
+  <text class="lbl" x="504" y="56">ignored while calls are inactive</text>
+  <rect class="chip" x="504" y="72" width="202" height="28" rx="5"/>
+  <text class="mono" x="605" y="91" text-anchor="middle">introChant</text>
+  <rect class="chip" x="718" y="72" width="202" height="28" rx="5"/>
+  <text class="mono" x="819" y="91" text-anchor="middle">mixPattern</text>
+  <rect class="chip" x="504" y="106" width="202" height="28" rx="5"/>
+  <text class="mono" x="605" y="125" text-anchor="middle">callDensity</text>
+  <rect class="chip" x="718" y="106" width="202" height="28" rx="5"/>
+  <text class="mono" x="819" y="125" text-anchor="middle">callNotesEnabled</text>
+  <text class="s" x="714" y="158" text-anchor="middle">Auto asks the vocal style, not the style preset</text>
+</svg>

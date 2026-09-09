@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 336" role="img" aria-labelledby="mels-ttl mels-dsc">
+  <title id="mels-ttl">The seven dimensions of the melody score</title>
+  <desc id="mels-dsc">Seven boxes in a row — singability, chord tone ratio, contour shape, surprise element, AAAB pattern, rhythm-interval correlation and catchiness — each producing a value between 0.0 and 1.0. All seven feed a single bus that multiplies each score by its weight from the vocal style profile and sums them into one total melody score.</desc>
+
+  <defs>
+    <marker id="mels-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="336" rx="12"/>
+
+  <text class="lbl" x="37" y="56">melody score — seven dimensions, each 0.0 to 1.0</text>
+
+  <rect class="chip" x="37" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="95" y="96" text-anchor="middle">Singability</text>
+  <rect class="chip" x="165" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="223" y="96" text-anchor="middle">Chord tone ratio</text>
+  <rect class="chip" x="293" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="351" y="96" text-anchor="middle">Contour shape</text>
+  <rect class="chip" x="421" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="479" y="96" text-anchor="middle">Surprise element</text>
+  <rect class="chip" x="549" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="607" y="96" text-anchor="middle">AAAB pattern</text>
+  <rect class="chip" x="677" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="735" y="89" text-anchor="middle">Rhythm–interval</text>
+  <text class="s" x="735" y="103" text-anchor="middle">correlation</text>
+  <rect class="chip" x="805" y="70" width="117" height="42" rx="5"/>
+  <text class="s" x="863" y="96" text-anchor="middle">Catchiness</text>
+
+  <path class="ln" d="M 95 112 V 134"/>
+  <path class="ln" d="M 223 112 V 134"/>
+  <path class="ln" d="M 351 112 V 134"/>
+  <path class="ln" d="M 479 112 V 134"/>
+  <path class="ln" d="M 607 112 V 134"/>
+  <path class="ln" d="M 735 112 V 134"/>
+  <path class="ln" d="M 863 112 V 134"/>
+  <path class="ln" d="M 95 134 H 863"/>
+  <path class="ln" d="M 480 134 V 156" marker-end="url(#mels-a)"/>
+
+  <rect class="chip" x="250" y="160" width="460" height="34" rx="5"/>
+  <text class="s" x="480" y="181" text-anchor="middle">each score multiplied by its weight from the vocal style</text>
+
+  <path class="ln" d="M 480 194 V 214" marker-end="url(#mels-a)"/>
+
+  <rect class="card" x="340" y="218" width="280" height="36" rx="6"/>
+  <text class="h" x="480" y="241" text-anchor="middle">Total melody score</text>
+
+  <text class="s" x="480" y="272" text-anchor="middle">The seven weights sum to 1.0 and shift with the style preset — Idol leans on AAAB and catchiness, Rock on surprise.</text>
+
+  <path class="seam" d="M 24 294 H 936"/>
+  <text class="s" x="480" y="314" text-anchor="middle">No single dimension can carry a melody: the weighted total is what ranks a candidate.</text>
+</svg>

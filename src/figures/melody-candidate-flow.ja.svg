@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 228" role="img" aria-labelledby="melc-ttl melc-dsc">
+  <title id="melc-ttl">メロディ候補選択の 5 段階</title>
+  <desc id="melc-dsc">左から右への 5 段階の流れです。セクションごとに 20〜100 個の候補を生成し、ペナルティ方式のカリングスコアとスタイルスコアの両方で各候補を評価します。両者を 1 つの数値に合成して並べ替え、下位半分を除外したうえで、残った候補からスコアに比例した確率で 1 本を抽選します。</desc>
+
+  <defs>
+    <marker id="melc-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="228" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="124" rx="8"/>
+  <text class="lbl" x="38" y="62">メロディ候補パイプライン</text>
+
+  <rect class="chip" x="38" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="120" y="99" text-anchor="middle">候補を生成</text>
+  <text class="s" x="120" y="134" text-anchor="middle">セクションごとに</text>
+  <text class="s" x="120" y="149" text-anchor="middle">20〜100 候補</text>
+
+  <path class="ln" d="M 202 94 H 216" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="218" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="300" y="99" text-anchor="middle">各候補を評価</text>
+  <text class="s" x="300" y="134" text-anchor="middle">カリングスコアと</text>
+  <text class="s" x="300" y="149" text-anchor="middle">スタイルスコア</text>
+
+  <path class="ln" d="M 382 94 H 396" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="398" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="480" y="99" text-anchor="middle">スコアを合成</text>
+  <text class="s" x="480" y="134" text-anchor="middle">スタイル 40% / カリング 40%</text>
+  <text class="s" x="480" y="149" text-anchor="middle">+ 音程バイアス 20%</text>
+
+  <path class="ln" d="M 562 94 H 576" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="578" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="660" y="99" text-anchor="middle">並べて除外</text>
+  <text class="s" x="660" y="134" text-anchor="middle">スコア順に並べ</text>
+  <text class="s" x="660" y="149" text-anchor="middle">下位半分を除外</text>
+
+  <path class="ln" d="M 742 94 H 756" marker-end="url(#melc-a)"/>
+
+  <rect class="card" x="758" y="72" width="164" height="44" rx="6"/>
+  <text class="h" x="840" y="99" text-anchor="middle">勝者を選ぶ</text>
+  <text class="s" x="840" y="134" text-anchor="middle">上位半分から</text>
+  <text class="s" x="840" y="149" text-anchor="middle">重み付きランダム</text>
+
+  <path class="seam" d="M 24 188 H 936"/>
+  <text class="s" x="480" y="208" text-anchor="middle">多数の候補から残るのは 1 本ですが、選ばれるのは上位半分からの抽選で、単純な最高得点ではありません。</text>
+</svg>

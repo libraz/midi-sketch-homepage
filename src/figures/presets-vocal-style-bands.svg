@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 378" role="img" aria-labelledby="vsb-ttl vsb-dsc">
+  <title id="vsb-ttl">Vocal style presets grouped by how many notes they put in the chorus</title>
+  <desc id="vsb-dsc">Three bands stacked from dense to sparse. The densest choruses come from UltraVocaloid, Idol, Anime, BrightKira and CuteAffected; UltraVocaloid goes further and adds 32nd notes. Vocaloid and KPop sit near the baseline. The sparsest choruses come from Rock, CityPop, CoolSynth, PowerfulShout and Ballad. Auto and Standard apply no settings of their own and keep the style preset's melody defaults. Syncopation is a separate axis, leaned on hardest by UltraVocaloid, Vocaloid, CityPop and KPop.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="378" rx="12"/>
+
+  <text class="lbl" x="36" y="46">chorus note density</text>
+
+  <rect class="grp" x="24" y="56" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="76">denser chorus</text>
+  <rect class="card" x="38" y="86" width="119" height="32" rx="6"/>
+  <text class="s" x="97" y="106" text-anchor="middle">UltraVocaloid</text>
+  <rect class="chip" x="165" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="106" text-anchor="middle">Idol</text>
+  <rect class="chip" x="292" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="106" text-anchor="middle">Anime</text>
+  <rect class="chip" x="419" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="106" text-anchor="middle">BrightKira</text>
+  <rect class="chip" x="546" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="106" text-anchor="middle">CuteAffected</text>
+  <text class="s" x="681" y="106">UltraVocaloid adds 32nd notes</text>
+
+  <rect class="grp" x="24" y="142" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="162">near the baseline</text>
+  <rect class="chip" x="38" y="172" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="192" text-anchor="middle">Vocaloid</text>
+  <rect class="chip" x="165" y="172" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="192" text-anchor="middle">KPop</text>
+
+  <rect class="grp" x="24" y="228" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="248">sparser chorus</text>
+  <rect class="chip" x="38" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="278" text-anchor="middle">Rock</text>
+  <rect class="chip" x="165" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="278" text-anchor="middle">CityPop</text>
+  <rect class="chip" x="292" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="278" text-anchor="middle">CoolSynth</text>
+  <rect class="chip" x="419" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="278" text-anchor="middle">PowerfulShout</text>
+  <rect class="chip" x="546" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="278" text-anchor="middle">Ballad</text>
+  <text class="s" x="681" y="278">fewer notes, not necessarily slower</text>
+
+  <text class="s" x="480" y="324" text-anchor="middle">Auto and Standard apply no settings of their own — they keep the style preset's melody defaults.</text>
+
+  <path class="seam" d="M 24 344 H 936"/>
+  <text class="s" x="480" y="364" text-anchor="middle">Syncopation is a separate axis: UltraVocaloid, Vocaloid, CityPop and KPop lean on it hardest.</text>
+</svg>

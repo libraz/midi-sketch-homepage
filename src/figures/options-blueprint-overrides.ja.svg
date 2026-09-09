@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 370" role="img" aria-labelledby="obo-ttl obo-dsc">
+  <title id="obo-ttl">Blueprint が上書きするものと、それを止めるもの</title>
+  <desc id="obo-dsc">0 以外の Blueprint を選ぶと、独立した 3 つの上書きが働きます。section_flow があれば formId は上書きされ、なければ維持されます。riff_policy が Free なら motifRepeatScope が使われ、それ以外のポリシーでは無視されます。drums_required が true なら drumsEnabled は強制的にオンになり、false なら維持されます。2 つの明示フラグはこの上書きより優先され、formExplicit はフォームを、drumsEnabledExplicit と drumsEnabled = false はドラムのオフを守ります。</desc>
+
+  <defs>
+    <marker id="obo-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="370" rx="12"/>
+
+  <rect class="card" x="24" y="128" width="190" height="52" rx="6"/>
+  <text class="mono" x="119" y="152" text-anchor="middle">blueprintId ≠ 0</text>
+  <text class="s" x="119" y="172" text-anchor="middle">Blueprint が有効</text>
+
+  <path class="ln" d="M 214 154 H 228 V 72 H 244" marker-end="url(#obo-a)"/>
+  <path class="ln" d="M 214 154 H 244" marker-end="url(#obo-a)"/>
+  <path class="ln" d="M 214 154 H 228 V 236 H 244" marker-end="url(#obo-a)"/>
+
+  <rect class="grp" x="248" y="36" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="56">フォーム</text>
+  <rect class="chip" x="260" y="64" width="180" height="32" rx="5"/>
+  <text class="mono" x="350" y="84" text-anchor="middle">section_flow</text>
+  <path class="ln" d="M 440 80 H 464" marker-end="url(#obo-a)"/>
+  <rect class="chip" x="468" y="64" width="232" height="32" rx="5"/>
+  <text class="s" x="480" y="84">あり →</text>
+  <text class="mono" x="536" y="84">formId</text>
+  <text class="s" x="584" y="84">を上書き</text>
+  <rect class="chip" x="708" y="64" width="228" height="32" rx="5"/>
+  <text class="s" x="720" y="84">なし →</text>
+  <text class="mono" x="776" y="84">formId</text>
+  <text class="s" x="824" y="84">は維持</text>
+
+  <rect class="grp" x="248" y="118" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="138">モチーフの反復</text>
+  <rect class="chip" x="260" y="146" width="180" height="32" rx="5"/>
+  <text class="mono" x="350" y="166" text-anchor="middle">riff_policy</text>
+  <path class="ln" d="M 440 162 H 464" marker-end="url(#obo-a)"/>
+  <rect class="chip" x="468" y="146" width="232" height="32" rx="5"/>
+  <text class="s" x="480" y="166">Free →</text>
+  <text class="mono" x="524" y="166">motifRepeatScope</text>
+  <text class="s" x="638" y="166">を使用</text>
+  <rect class="chip" x="708" y="146" width="228" height="32" rx="5"/>
+  <text class="s" x="720" y="166">それ以外のポリシーでは無視</text>
+
+  <rect class="grp" x="248" y="200" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="220">ドラム</text>
+  <rect class="chip" x="260" y="228" width="180" height="32" rx="5"/>
+  <text class="mono" x="350" y="248" text-anchor="middle">drums_required</text>
+  <path class="ln" d="M 440 244 H 464" marker-end="url(#obo-a)"/>
+  <rect class="chip" x="468" y="228" width="232" height="32" rx="5"/>
+  <text class="s" x="480" y="248">true →</text>
+  <text class="mono" x="524" y="248">drumsEnabled</text>
+  <text class="s" x="612" y="248">を強制オン</text>
+  <rect class="chip" x="708" y="228" width="228" height="32" rx="5"/>
+  <text class="s" x="720" y="248">false →</text>
+  <text class="mono" x="768" y="248">drumsEnabled</text>
+  <text class="s" x="856" y="248">は維持</text>
+
+  <rect class="warn" x="24" y="290" width="912" height="56" rx="6"/>
+  <text class="lbl" x="40" y="310">明示フラグが優先</text>
+  <text class="mono" x="40" y="332">formExplicit = true</text>
+  <text class="s" x="175" y="332">ならフォームは維持、</text>
+  <text class="mono" x="300" y="332">drumsEnabledExplicit = true</text>
+  <text class="s" x="488" y="332">と</text>
+  <text class="mono" x="508" y="332">drumsEnabled = false</text>
+  <text class="s" x="650" y="332">ならドラムはオフのまま。</text>
+</svg>

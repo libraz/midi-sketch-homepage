@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 290" role="img" aria-labelledby="vpc-ttl vpc-dsc">
+  <title id="vpc-ttl">How the vocal generator reuses a phrase it has already written</title>
+  <desc id="vpc-dsc">For each section the generator asks whether a phrase is already cached. On a miss it picks a melody template, builds a skeleton of chord tones on the strong beats, fills the gaps in stepwise motion, adds embellishments and stores the result. On a hit it takes the cached phrase back with a variation applied. Both paths then run collision avoidance, the section ceiling and a scale snap with a range clamp.</desc>
+
+  <defs>
+    <marker id="vpc-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="vpc-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="290" rx="12"/>
+
+  <rect class="chip" x="24" y="52" width="112" height="30" rx="5"/>
+  <text class="h" x="80" y="71" text-anchor="middle">a section</text>
+
+  <path class="ln" d="M 136 67 H 154" marker-end="url(#vpc-a)"/>
+
+  <rect class="card" x="158" y="52" width="132" height="30" rx="6"/>
+  <text class="h" x="224" y="71" text-anchor="middle">phrase cached?</text>
+
+  <path class="ln" d="M 290 67 H 322" marker-end="url(#vpc-a)"/>
+  <text class="s" x="298" y="59">no</text>
+
+  <rect class="grp" x="330" y="40" width="606" height="88" rx="8"/>
+  <text class="lbl" x="344" y="60">cache miss — build the phrase</text>
+
+  <rect class="chip" x="344" y="68" width="100" height="44" rx="5"/>
+  <text class="s" x="394" y="86" text-anchor="middle">melody</text>
+  <text class="s" x="394" y="100" text-anchor="middle">template</text>
+  <path class="ln" d="M 444 90 H 456" marker-end="url(#vpc-a)"/>
+
+  <rect class="chip" x="460" y="68" width="100" height="44" rx="5"/>
+  <text class="s" x="510" y="86" text-anchor="middle">chord tones on</text>
+  <text class="s" x="510" y="100" text-anchor="middle">strong beats</text>
+  <path class="ln" d="M 560 90 H 572" marker-end="url(#vpc-a)"/>
+
+  <rect class="chip" x="576" y="68" width="100" height="44" rx="5"/>
+  <text class="s" x="626" y="86" text-anchor="middle">stepwise</text>
+  <text class="s" x="626" y="100" text-anchor="middle">infill</text>
+  <path class="ln" d="M 676 90 H 688" marker-end="url(#vpc-a)"/>
+
+  <rect class="chip" x="692" y="68" width="100" height="44" rx="5"/>
+  <text class="s" x="742" y="93" text-anchor="middle">embellishments</text>
+  <path class="ln" d="M 792 90 H 804" marker-end="url(#vpc-a)"/>
+
+  <rect class="chip" x="808" y="68" width="100" height="44" rx="5"/>
+  <text class="s" x="858" y="86" text-anchor="middle">store in</text>
+  <text class="s" x="858" y="100" text-anchor="middle">the cache</text>
+
+  <path class="ln2" d="M 224 82 V 144 H 322" marker-end="url(#vpc-b)"/>
+  <text class="s" x="232" y="110">yes</text>
+
+  <rect class="alt" x="330" y="130" width="260" height="28" rx="6"/>
+  <text class="s" x="460" y="148" text-anchor="middle">reuse it, with a variation</text>
+
+  <path class="ln" d="M 858 112 V 176 H 460"/>
+  <path class="ln2" d="M 460 158 V 176"/>
+  <path class="ln" d="M 460 176 V 196" marker-end="url(#vpc-a)"/>
+
+  <rect class="chip" x="330" y="200" width="190" height="32" rx="5"/>
+  <text class="s" x="425" y="220" text-anchor="middle">collision avoidance</text>
+  <path class="ln" d="M 520 216 H 536" marker-end="url(#vpc-a)"/>
+  <rect class="chip" x="544" y="200" width="160" height="32" rx="5"/>
+  <text class="s" x="624" y="220" text-anchor="middle">section ceiling</text>
+  <path class="ln" d="M 704 216 H 720" marker-end="url(#vpc-a)"/>
+  <rect class="chip" x="728" y="200" width="192" height="32" rx="5"/>
+  <text class="s" x="824" y="220" text-anchor="middle">scale snap &amp; range clamp</text>
+
+  <text class="s" x="30" y="196">The cache key is the section type, its bar</text>
+  <text class="s" x="30" y="212">count and the chord degree — so a repeated</text>
+  <text class="s" x="30" y="228">chorus hits it, and comes back varied.</text>
+
+  <path class="seam" d="M 24 256 H 936"/>
+  <text class="s" x="480" y="276" text-anchor="middle">The melody template and the vocal attitude are not separate passes — they steer every choice along the way.</text>
+</svg>

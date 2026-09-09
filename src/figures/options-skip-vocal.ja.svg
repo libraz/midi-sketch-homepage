@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 234" role="img" aria-labelledby="osk-ttl osk-dsc">
+  <title id="osk-ttl">skipVocal はボーカル系オプション全体を切り替える</title>
+  <desc id="osk-dsc">skipVocal から 2 つの分岐が出ます。false のときは 7 つのボーカル系フィールドが有効です。vocalLow と vocalHigh の組、vocalAttitude、vocalStyle、melodyTemplate、melodicComplexity、hookIntensity、vocalGroove です。true のときはそのすべてが無視されて BGM だけになり、後からボーカルを足す API はありません。</desc>
+
+  <defs>
+    <marker id="osk-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="osk-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="234" rx="12"/>
+
+  <text class="lbl" x="26" y="96">スイッチ</text>
+  <rect class="card" x="24" y="104" width="170" height="44" rx="6"/>
+  <text class="mono" x="109" y="131" text-anchor="middle">skipVocal</text>
+
+  <path class="ln" d="M 194 126 H 214 V 88 H 244" marker-end="url(#osk-a)"/>
+  <path class="ln2" d="M 194 126 H 214 V 182 H 244" marker-end="url(#osk-b)"/>
+
+  <rect class="grp" x="248" y="36" width="688" height="106" rx="8"/>
+  <text class="lbl" x="260" y="56">skipVocal = false — ボーカル系は有効</text>
+  <rect class="chip" x="260" y="64" width="156" height="28" rx="5"/>
+  <text class="mono" x="338" y="83" text-anchor="middle">vocalLow / vocalHigh</text>
+  <rect class="chip" x="424" y="64" width="156" height="28" rx="5"/>
+  <text class="mono" x="502" y="83" text-anchor="middle">vocalAttitude</text>
+  <rect class="chip" x="588" y="64" width="156" height="28" rx="5"/>
+  <text class="mono" x="666" y="83" text-anchor="middle">vocalStyle</text>
+  <rect class="chip" x="752" y="64" width="156" height="28" rx="5"/>
+  <text class="mono" x="830" y="83" text-anchor="middle">melodyTemplate</text>
+  <rect class="chip" x="260" y="100" width="156" height="28" rx="5"/>
+  <text class="mono" x="338" y="119" text-anchor="middle">melodicComplexity</text>
+  <rect class="chip" x="424" y="100" width="156" height="28" rx="5"/>
+  <text class="mono" x="502" y="119" text-anchor="middle">hookIntensity</text>
+  <rect class="chip" x="588" y="100" width="156" height="28" rx="5"/>
+  <text class="mono" x="666" y="119" text-anchor="middle">vocalGroove</text>
+
+  <rect class="alt" x="248" y="156" width="688" height="54" rx="6"/>
+  <text class="lbl" x="260" y="176">skipVocal = true</text>
+  <text class="s" x="260" y="196">上のフィールドはすべて無視され、BGM のみ。後からボーカルを足す API はありません。</text>
+</svg>

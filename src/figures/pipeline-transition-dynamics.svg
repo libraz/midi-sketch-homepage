@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 314" role="img" aria-labelledby="trd-ttl trd-dsc">
+  <title id="trd-ttl">What transition dynamics does at a section seam</title>
+  <desc id="trd-dsc">Three cases, each drawn as a velocity curve against an unchanged reference line. Going from a B section into a chorus is special: the whole section is held back to about 0.85 through its first half and lifted back to 1.00 across its second. Any other rise in energy is a crescendo confined to the last bar, and a fall is a decrescendo in the last bar. Two sections at the same energy level are left alone.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="314" rx="12"/>
+
+  <rect class="grp" x="24" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="38" y="64">B → Chorus</text>
+  <path class="rule" d="M 44 113 H 290"/>
+  <text class="s" x="290" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 44 147 L 167 131 L 290 113"/>
+  <text class="s" x="167" y="186" text-anchor="middle">the whole section</text>
+  <text class="s" x="44" y="206">held back to ×0.85, then lifted</text>
+  <text class="s" x="44" y="222">back to ×1.00 — over the whole section</text>
+
+  <rect class="grp" x="337" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="351" y="64">energy rises</text>
+  <rect class="fill1" x="521" y="86" width="82" height="84" rx="5"/>
+  <path class="rule" d="M 357 113 H 603"/>
+  <text class="s" x="603" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 357 113 H 521 V 147 L 603 90"/>
+  <text class="s" x="562" y="186" text-anchor="middle">last bar</text>
+  <text class="s" x="357" y="206">only the last bar: ×0.85 up to ×1.10,</text>
+  <text class="s" x="357" y="222">when the next section is bigger</text>
+
+  <rect class="grp" x="650" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="664" y="64">energy falls</text>
+  <rect class="fill1" x="834" y="86" width="82" height="84" rx="5"/>
+  <path class="rule" d="M 670 113 H 916"/>
+  <text class="s" x="916" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 670 113 H 834 L 916 170"/>
+  <text class="s" x="875" y="186" text-anchor="middle">last bar</text>
+  <text class="s" x="670" y="206">only the last bar: ×1.00 down to ×0.75,</text>
+  <text class="s" x="670" y="222">when the next section is smaller</text>
+
+  <text class="s" x="480" y="256" text-anchor="middle">Two sections at the same energy level get nothing at all.</text>
+
+  <path class="seam" d="M 24 280 H 936"/>
+  <text class="s" x="480" y="300" text-anchor="middle">This pass rewrites velocity only — it never adds, moves, or removes a note.</text>
+</svg>

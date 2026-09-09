@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 398" role="img" aria-labelledby="vfw-ttl vfw-dsc">
+  <title id="vfw-ttl">The vocal-first workflow, in two steps</title>
+  <desc id="vfw-dsc">Step one is a loop: generateVocal produces a melody, you preview it, and regenerateVocal replaces it as many times as you like. Once the vocal is settled, step two calls generateAccompaniment, which writes the remaining eight parts in order — aux, motif, bass, chord, guitar, arpeggio, drums and SE. The order shown is the Traditional paradigm.</desc>
+
+  <defs>
+    <marker id="vfw-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="398" rx="12"/>
+
+  <rect class="grp" x="24" y="44" width="912" height="124" rx="8"/>
+  <text class="lbl" x="38" y="64">Step 1 · vocal</text>
+
+  <rect class="chip" x="38" y="72" width="160" height="30" rx="5"/>
+  <text class="mono" x="118" y="91" text-anchor="middle">generateVocal</text>
+
+  <path class="ln" d="M 198 87 H 216" marker-end="url(#vfw-a)"/>
+
+  <rect class="card" x="220" y="72" width="170" height="30" rx="6"/>
+  <text class="h" x="305" y="91" text-anchor="middle">preview &amp; iterate</text>
+
+  <path class="ln" d="M 360 102 V 114" marker-end="url(#vfw-a)"/>
+  <text class="s" x="368" y="114">not yet</text>
+
+  <rect class="chip" x="220" y="118" width="170" height="30" rx="5"/>
+  <text class="mono" x="305" y="137" text-anchor="middle">regenerateVocal</text>
+
+  <path class="ln" d="M 250 118 V 106" marker-end="url(#vfw-a)"/>
+
+  <text class="s" x="470" y="86">Iterate here as long as you like — nothing else</text>
+  <text class="s" x="470" y="102">has been written yet, so a discarded vocal</text>
+  <text class="s" x="470" y="118">costs nothing.</text>
+  <text class="mono" x="470" y="140">regenerateVocal(0)</text>
+  <text class="s" x="596" y="140">draws a fresh seed each time.</text>
+
+  <path class="ln" d="M 480 168 V 194" marker-end="url(#vfw-a)"/>
+  <text class="s" x="490" y="184">satisfied</text>
+
+  <rect class="grp" x="24" y="200" width="912" height="140" rx="8"/>
+  <text class="lbl" x="38" y="220">Step 2 · accompaniment</text>
+
+  <rect class="chip" x="38" y="228" width="884" height="30" rx="5"/>
+  <text class="mono" x="480" y="247" text-anchor="middle">generateAccompaniment</text>
+
+  <path class="ln" d="M 480 258 V 272" marker-end="url(#vfw-a)"/>
+
+  <rect class="chip" x="38" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="90" y="295" text-anchor="middle">1 · Aux</text>
+  <rect class="chip" x="148" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="200" y="295" text-anchor="middle">2 · Motif</text>
+  <rect class="chip" x="258" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="310" y="295" text-anchor="middle">3 · Bass</text>
+  <rect class="chip" x="368" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="420" y="295" text-anchor="middle">4 · Chord</text>
+  <rect class="chip" x="478" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="530" y="295" text-anchor="middle">5 · Guitar</text>
+  <rect class="chip" x="588" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="640" y="295" text-anchor="middle">6 · Arpeggio</text>
+  <rect class="chip" x="698" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="750" y="295" text-anchor="middle">7 · Drums</text>
+  <rect class="chip" x="808" y="276" width="104" height="30" rx="5"/>
+  <text class="s" x="860" y="295" text-anchor="middle">8 · SE</text>
+
+  <text class="s" x="480" y="326" text-anchor="middle">order shown for the Traditional paradigm — RhythmSync keeps the motif already in place</text>
+
+  <path class="seam" d="M 24 364 H 936"/>
+  <text class="s" x="480" y="384" text-anchor="middle">Nothing else is written until the vocal is settled, and each accompaniment pass clears and rebuilds every other part.</text>
+</svg>

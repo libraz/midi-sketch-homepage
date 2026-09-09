@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 286" role="img" aria-labelledby="melg-ttl melg-dsc">
+  <title id="melg-ttl">How a candidate's culling score is built</title>
+  <desc id="melg-dsc">Left to right arithmetic. Every candidate starts from a base score of 1.0. Nine penalties are subtracted — high register, leap after a high note, rapid direction change, isolated notes, breathless runs, non-chord tones, monotony, low phrase cohesion and an excessive gap ratio. Two bonuses are then added back, for a clear melodic peak and for motif repetition, and the result is clamped to the range 0.0 to 1.0.</desc>
+
+  <defs>
+    <marker id="melg-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="286" rx="12"/>
+
+  <text class="lbl" x="24" y="94">start</text>
+  <rect class="chip" x="24" y="103" width="120" height="32" rx="5"/>
+  <text class="h" x="84" y="124" text-anchor="middle">Base score 1.0</text>
+
+  <path class="ln" d="M 144 119 H 162" marker-end="url(#melg-a)"/>
+
+  <rect class="grp" x="164" y="44" width="430" height="150" rx="8"/>
+  <text class="lbl" x="176" y="66">penalties, subtracted</text>
+
+  <rect class="chip" x="176" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="95" text-anchor="middle">High register</text>
+  <rect class="chip" x="315" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="95" text-anchor="middle">Leap after high</text>
+  <rect class="chip" x="454" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="95" text-anchor="middle">Direction change</text>
+
+  <rect class="chip" x="176" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="133" text-anchor="middle">Isolated note</text>
+  <rect class="chip" x="315" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="133" text-anchor="middle">Breathless</text>
+  <rect class="chip" x="454" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="133" text-anchor="middle">Non-chord tone</text>
+
+  <rect class="chip" x="176" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="171" text-anchor="middle">Monotony</text>
+  <rect class="chip" x="315" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="171" text-anchor="middle">Low cohesion</text>
+  <rect class="chip" x="454" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="171" text-anchor="middle">Gap ratio</text>
+
+  <path class="ln" d="M 594 119 H 612" marker-end="url(#melg-a)"/>
+
+  <rect class="grp" x="614" y="44" width="156" height="150" rx="8"/>
+  <text class="lbl" x="626" y="66">bonuses, added</text>
+  <rect class="chip" x="626" y="76" width="132" height="30" rx="5"/>
+  <text class="s" x="692" y="95" text-anchor="middle">Clear peak</text>
+  <rect class="chip" x="626" y="114" width="132" height="30" rx="5"/>
+  <text class="s" x="692" y="133" text-anchor="middle">Motif repeat</text>
+
+  <path class="ln" d="M 770 119 H 788" marker-end="url(#melg-a)"/>
+
+  <rect class="card" x="790" y="92" width="146" height="54" rx="6"/>
+  <text class="h" x="863" y="116" text-anchor="middle">Culling score</text>
+  <text class="s" x="863" y="134" text-anchor="middle">clamped to 0.0–1.0</text>
+
+  <text class="s" x="480" y="222" text-anchor="middle">The breathless penalty is skipped for Vocaloid styles, and the cohesion and gap gates move with the vocal style.</text>
+
+  <path class="seam" d="M 24 244 H 936"/>
+  <text class="s" x="480" y="264" text-anchor="middle">Nothing is discarded here — this score is one of the numbers a candidate carries into the ranking.</text>
+</svg>

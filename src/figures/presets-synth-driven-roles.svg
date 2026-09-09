@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 250" role="img" aria-labelledby="sdr-ttl sdr-dsc">
+  <title id="sdr-ttl">SynthDriven — which tracks are generated and what each one does</title>
+  <desc id="sdr-dsc">Four tracks feed the mix. The arpeggio is the lead, the chord track becomes a pad, and bass and drums supply foundation and rhythm. Neither the vocal nor the aux track is generated, and the arpeggio track is not switched on automatically — it only appears when arpeggioEnabled is set to true.</desc>
+
+  <defs>
+    <marker id="sdr-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="250" rx="12"/>
+
+  <text class="lbl" x="36" y="46">generated tracks</text>
+
+  <rect class="card" x="127" y="56" width="169" height="44" rx="6"/>
+  <text class="h" x="211" y="77" text-anchor="middle">Arpeggio</text>
+  <text class="s" x="211" y="93" text-anchor="middle">lead</text>
+
+  <rect class="chip" x="306" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="390" y="77" text-anchor="middle">Chord</text>
+  <text class="s" x="390" y="93" text-anchor="middle">pad</text>
+
+  <rect class="chip" x="485" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="569" y="77" text-anchor="middle">Bass</text>
+  <text class="s" x="569" y="93" text-anchor="middle">foundation</text>
+
+  <rect class="chip" x="664" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="748" y="77" text-anchor="middle">Drums</text>
+  <text class="s" x="748" y="93" text-anchor="middle">rhythm</text>
+
+  <path class="ln" d="M 211 102 V 122" marker-end="url(#sdr-a)"/>
+  <path class="ln" d="M 390 102 V 122" marker-end="url(#sdr-a)"/>
+  <path class="ln" d="M 569 102 V 122" marker-end="url(#sdr-a)"/>
+  <path class="ln" d="M 748 102 V 122" marker-end="url(#sdr-a)"/>
+
+  <rect class="chip" x="36" y="124" width="888" height="36" rx="5"/>
+  <text class="h" x="480" y="147" text-anchor="middle">Mix</text>
+
+  <rect class="warn" x="36" y="176" width="336" height="28" rx="6"/>
+  <text class="s" x="204" y="195" text-anchor="middle">Vocal and Aux — not generated</text>
+  <text class="s" x="390" y="195">Arpeggio must be enabled by hand:</text>
+  <text class="mono" x="595" y="195">arpeggioEnabled = true</text>
+
+  <path class="seam" d="M 24 214 H 936"/>
+  <text class="s" x="480" y="234" text-anchor="middle">Both singing voices are off, so the arpeggio carries the top line — and it only appears once you turn it on.</text>
+</svg>

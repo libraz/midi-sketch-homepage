@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 242" role="img" aria-labelledby="osd-ttl osd-dsc">
+  <title id="osd-ttl">SynthDriven — アルペジオを中心に据えた BGM 専用スタイル</title>
+  <desc id="osd-dsc">compositionStyle は 2 です。ボーカルトラックも Aux トラックも書かれず、転調は有効です。モチーフは常に書かれます。アルペジオは既定でオフなので手動で有効にする必要があり、有効にすると主役になります。生成されるのはモチーフ・ベース・コード・ギター・アルペジオ・ドラムです。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="242" rx="12"/>
+
+  <rect class="card" x="24" y="40" width="250" height="52" rx="6"/>
+  <text class="mono" x="149" y="64" text-anchor="middle">compositionStyle = 2</text>
+  <text class="s" x="149" y="84" text-anchor="middle">SynthDriven — BGM 専用</text>
+
+  <rect class="grp" x="298" y="32" width="638" height="104" rx="8"/>
+  <text class="lbl" x="310" y="52">オプション系統</text>
+  <rect class="chip" x="310" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="77" text-anchor="middle">ボーカルトラックなし</text>
+  <rect class="chip" x="520" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="77" text-anchor="middle">Aux トラックなし</text>
+  <rect class="chip" x="730" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="77" text-anchor="middle">転調 — 有効</text>
+  <rect class="chip" x="310" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="113" text-anchor="middle">モチーフ — 常に生成</text>
+  <rect class="chip" x="520" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="113" text-anchor="middle">アルペジオ — 既定はオフ</text>
+  <rect class="chip" x="730" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="113" text-anchor="middle">アルペジオが主役</text>
+
+  <text class="lbl" x="26" y="168">生成トラック</text>
+  <text class="s" x="936" y="168" text-anchor="end">ティール = 条件付きスロット</text>
+
+  <rect class="chip" x="24" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="96" y="195" text-anchor="middle">モチーフ</text>
+  <rect class="chip" x="177" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="249" y="195" text-anchor="middle">ベース</text>
+  <rect class="chip" x="330" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="402" y="195" text-anchor="middle">コード</text>
+  <rect class="chip" x="483" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="555" y="195" text-anchor="middle">ギター</text>
+  <rect class="alt" x="636" y="176" width="145" height="28" rx="6"/>
+  <text class="s" x="708" y="195" text-anchor="middle">アルペジオ</text>
+  <rect class="chip" x="789" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="861" y="195" text-anchor="middle">ドラム</text>
+
+  <text class="s" x="480" y="218" text-anchor="middle">条件付きなのはアルペジオだけで、SynthDriven ではモチーフは無条件に生成されます。</text>
+</svg>

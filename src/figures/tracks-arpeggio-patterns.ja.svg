@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 432" role="img" aria-labelledby="tap-ttl tap-dsc">
+  <title id="tap-ttl">8 種類のアルペジオパターン（先頭 3 種は音の並びを明示）</title>
+  <desc id="tap-dsc">1 オクターブの C メジャートライアドを例にすると、Up は C・E・G、Down は同じ並びを逆順にした G・E・C、UpDown は C・E・G と上がってから両端を重ねずに下降し E で終わります。octave_range を上げるとトライアド全体が 1 オクターブ上に重なるため、Up は 2 オクターブにまたがる C・E・G・C・E・G になります。残りの 5 パターンは Random・Pinwheel・PedalRoot・Alberti・BrokenChord です。スピードは 1 音の長さだけを変えます。</desc>
+
+  <defs>
+    <marker id="tap-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="tap-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="432" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="188" rx="8"/>
+  <text class="lbl" x="38" y="62">音の順序 — C メジャートライアド、1 オクターブ</text>
+
+  <text class="h" x="38" y="97">Up</text>
+  <rect class="chip" x="136" y="76" width="64" height="32" rx="5"/>
+  <text class="h" x="168" y="97" text-anchor="middle">C</text>
+  <path class="ln" d="M 200 92 H 212" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="216" y="76" width="64" height="32" rx="5"/>
+  <text class="h" x="248" y="97" text-anchor="middle">E</text>
+  <path class="ln" d="M 280 92 H 292" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="296" y="76" width="64" height="32" rx="5"/>
+  <text class="h" x="328" y="97" text-anchor="middle">G</text>
+  <text class="s" x="624" y="97">音域内のコードトーンを上昇</text>
+
+  <text class="h" x="38" y="145">Down</text>
+  <rect class="chip" x="136" y="124" width="64" height="32" rx="5"/>
+  <text class="h" x="168" y="145" text-anchor="middle">G</text>
+  <path class="ln" d="M 200 140 H 212" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="216" y="124" width="64" height="32" rx="5"/>
+  <text class="h" x="248" y="145" text-anchor="middle">E</text>
+  <path class="ln" d="M 280 140 H 292" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="296" y="124" width="64" height="32" rx="5"/>
+  <text class="h" x="328" y="145" text-anchor="middle">C</text>
+  <text class="s" x="624" y="145">同じ並びを逆順に</text>
+
+  <text class="h" x="38" y="193">UpDown</text>
+  <rect class="chip" x="136" y="172" width="64" height="32" rx="5"/>
+  <text class="h" x="168" y="193" text-anchor="middle">C</text>
+  <path class="ln" d="M 200 188 H 212" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="216" y="172" width="64" height="32" rx="5"/>
+  <text class="h" x="248" y="193" text-anchor="middle">E</text>
+  <path class="ln" d="M 280 188 H 292" marker-end="url(#tap-a)"/>
+  <rect class="chip" x="296" y="172" width="64" height="32" rx="5"/>
+  <text class="h" x="328" y="193" text-anchor="middle">G</text>
+  <path class="ln2" d="M 360 188 H 372" marker-end="url(#tap-b)"/>
+  <rect class="alt" x="376" y="172" width="64" height="32" rx="6"/>
+  <text class="h" x="408" y="193" text-anchor="middle">E</text>
+  <text class="s" x="624" y="193">上昇後、両端を重ねずに下降</text>
+
+  <text class="s" x="480" y="248" text-anchor="middle">octave_range を上げるとトライアド全体が 1 オクターブ上に重なり、Up は 2 オクターブの C E G C E G になります。</text>
+
+  <rect class="grp" x="24" y="266" width="912" height="96" rx="8"/>
+  <text class="lbl" x="38" y="288">残り 5 パターン</text>
+
+  <rect class="chip" x="36" y="298" width="168" height="52" rx="5"/>
+  <text class="h" x="48" y="319">Random</text>
+  <text class="s" x="48" y="335">任意のコードトーン</text>
+
+  <rect class="chip" x="216" y="298" width="168" height="52" rx="5"/>
+  <text class="h" x="228" y="319">Pinwheel</text>
+  <text class="s" x="228" y="335">1-5-3-5 の交互進行</text>
+
+  <rect class="chip" x="396" y="298" width="168" height="52" rx="5"/>
+  <text class="h" x="408" y="319">PedalRoot</text>
+  <text class="s" x="408" y="335">1-3-1-5-1-7</text>
+
+  <rect class="chip" x="576" y="298" width="168" height="52" rx="5"/>
+  <text class="h" x="588" y="319">Alberti</text>
+  <text class="s" x="588" y="335">1-5-3-5（古典的）</text>
+
+  <rect class="chip" x="756" y="298" width="168" height="52" rx="5"/>
+  <text class="h" x="768" y="319">BrokenChord</text>
+  <text class="s" x="768" y="335">1-3-5-8-5-3</text>
+
+  <path class="seam" d="M 24 386 H 936"/>
+  <text class="s" x="480" y="408" text-anchor="middle">スピードが変えるのは 1 音の長さだけです。8 分 240 ティック、16 分 120、三連 160（1 拍 480 ティック）。</text>
+</svg>

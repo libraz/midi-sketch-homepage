@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 332" role="img" aria-labelledby="tcm-ttl tcm-dsc">
+  <title id="tcm-ttl">The nine tracks and the MIDI channel each one is written to</title>
+  <desc id="tcm-dsc">Five groups of tracks. The melody layer holds vocal on channel 0 and aux on channel 5; harmony holds chord on channel 1 and guitar on channel 6; the rhythm section holds bass on channel 2 and drums on channel 9; the synth layer holds motif on channel 3 and arpeggio on channel 4; and a markers group holds the SE track on channel 15. Each box also shows the built-in fallback GM program, which a mood preset may replace, and the role the track plays.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="332" rx="12"/>
+
+  <rect class="grp" x="24" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="38" y="54">Melody Layer</text>
+  <rect class="card" x="34" y="62" width="158" height="64" rx="6"/>
+  <text class="hb" x="46" y="82">Vocal</text>
+  <text class="s" x="180" y="82" text-anchor="end">Ch 0</text>
+  <text class="s" x="46" y="100">Piano (0)</text>
+  <text class="s" x="46" y="116">main melody</text>
+  <rect class="chip" x="34" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="46" y="154">Aux</text>
+  <text class="s" x="180" y="154" text-anchor="end">Ch 5</text>
+  <text class="s" x="46" y="172">Warm Pad (89)</text>
+  <text class="s" x="46" y="188">sub-melody support</text>
+
+  <rect class="grp" x="214" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="228" y="54">Harmony</text>
+  <rect class="chip" x="224" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="236" y="82">Chord</text>
+  <text class="s" x="370" y="82" text-anchor="end">Ch 1</text>
+  <text class="s" x="236" y="100">E.Piano (4)</text>
+  <text class="s" x="236" y="116">harmonic backing</text>
+  <rect class="chip" x="224" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="236" y="154">Guitar</text>
+  <text class="s" x="370" y="154" text-anchor="end">Ch 6</text>
+  <text class="s" x="236" y="172">E.Guitar clean (27)</text>
+  <text class="s" x="236" y="188">accompaniment</text>
+
+  <rect class="grp" x="404" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="418" y="54">Rhythm Section</text>
+  <rect class="chip" x="414" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="426" y="82">Bass</text>
+  <text class="s" x="560" y="82" text-anchor="end">Ch 2</text>
+  <text class="s" x="426" y="100">E.Bass (33)</text>
+  <text class="s" x="426" y="116">harmonic foundation</text>
+  <rect class="chip" x="414" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="426" y="154">Drums</text>
+  <text class="s" x="560" y="154" text-anchor="end">Ch 9</text>
+  <text class="s" x="426" y="172">GM drum kit</text>
+  <text class="s" x="426" y="188">rhythm</text>
+
+  <rect class="grp" x="594" y="32" width="178" height="178" rx="8"/>
+  <text class="lbl" x="608" y="54">Synth Layer</text>
+  <rect class="chip" x="604" y="62" width="158" height="64" rx="5"/>
+  <text class="h" x="616" y="82">Motif</text>
+  <text class="s" x="750" y="82" text-anchor="end">Ch 3</text>
+  <text class="s" x="616" y="100">Synth Lead (81)</text>
+  <text class="s" x="616" y="116">for BackgroundMotif</text>
+  <rect class="chip" x="604" y="134" width="158" height="64" rx="5"/>
+  <text class="h" x="616" y="154">Arpeggio</text>
+  <text class="s" x="750" y="154" text-anchor="end">Ch 4</text>
+  <text class="s" x="616" y="172">Synth Lead (81)</text>
+  <text class="s" x="616" y="188">for SynthDriven</text>
+
+  <rect class="grp" x="784" y="32" width="152" height="186" rx="8"/>
+  <text class="lbl" x="798" y="54">Markers</text>
+  <rect class="chip" x="794" y="62" width="132" height="64" rx="5"/>
+  <text class="h" x="806" y="82">SE</text>
+  <text class="s" x="914" y="82" text-anchor="end">Ch 15</text>
+  <text class="s" x="806" y="100">text events only</text>
+  <text class="s" x="806" y="116">section markers</text>
+  <text class="s" x="794" y="154">No notes are written</text>
+  <text class="s" x="794" y="170">here — the SE track</text>
+  <text class="s" x="794" y="186">just names each</text>
+  <text class="s" x="794" y="202">section boundary.</text>
+
+  <text class="s" x="480" y="238" text-anchor="middle">Track-to-channel assignment is fixed; the GM program shown is only the built-in fallback, and a mood preset may replace it.</text>
+  <text class="s" x="480" y="256" text-anchor="middle">Channel 9 is the GM percussion channel, so the drum track ignores its program number altogether.</text>
+
+  <path class="seam" d="M 24 286 H 936"/>
+  <text class="s" x="480" y="308" text-anchor="middle">Nine tracks on nine fixed channels — a DAW can swap every sound without disturbing the arrangement.</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 398" role="img" aria-labelledby="tcv-ttl tcv-dsc">
+  <title id="tcv-ttl">3 種類のコードボイシング（下が低音）</title>
+  <desc id="tcv-dsc">同じコードトーンを 3 通りに積んだ図です。クローズボイシングはルート・3rd・5th・7th を 1 オクターブに収めます。オープンボイシングはその積みから上から 2 番目の声部を 1 オクターブ下げるため、5th がルートより下に来ます。ほかに Drop 3 と Spread の変種があります。ルートレスボイシングはベースが押さえているルートを省き、3rd・5th・7th を積み、2 声しか残らない場合は 9th を足します。採用されるのは、直前のコードからの移動量が最も小さい候補です。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="398" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="38" y="62">クローズ</text>
+  <rect class="chip" x="95" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="93" text-anchor="middle">7th</text>
+  <rect class="chip" x="95" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="123" text-anchor="middle">5th</text>
+  <rect class="chip" x="95" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="153" text-anchor="middle">3rd</text>
+  <rect class="chip" x="95" y="166" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="183" text-anchor="middle">ルート</text>
+  <text class="s" x="36" y="214">1 オクターブに収めた形です。</text>
+  <text class="s" x="36" y="230">隣り合う長 2 度は、コード自体が</text>
+  <text class="s" x="36" y="246">その音程を持つ場合を除いて除外。</text>
+
+  <rect class="grp" x="334" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="348" y="62">オープン</text>
+  <rect class="chip" x="405" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="93" text-anchor="middle">7th</text>
+  <rect class="chip" x="405" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="123" text-anchor="middle">3rd</text>
+  <rect class="chip" x="405" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="153" text-anchor="middle">ルート</text>
+  <rect class="alt" x="405" y="166" width="150" height="26" rx="6"/>
+  <text class="s" x="480" y="183" text-anchor="middle">5th、1 オクターブ下</text>
+  <text class="s" x="346" y="214">4 声のときは上から 2 番目の声部</text>
+  <text class="s" x="346" y="230">が 1 オクターブ下がります。ほかに</text>
+  <text class="s" x="346" y="246">Drop 3 と Spread があります。</text>
+
+  <rect class="grp" x="644" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="658" y="62">ルートレス</text>
+  <rect class="chip" x="715" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="93" text-anchor="middle">9th（必要なら）</text>
+  <rect class="chip" x="715" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="123" text-anchor="middle">7th</text>
+  <rect class="chip" x="715" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="153" text-anchor="middle">5th</text>
+  <rect class="chip" x="715" y="166" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="183" text-anchor="middle">3rd</text>
+  <text class="s" x="656" y="214">ルートはベースが押さえているため</text>
+  <text class="s" x="656" y="230">省きます。2 声しか残らないときは</text>
+  <text class="s" x="656" y="246">9th（または 11th）で補います。</text>
+
+  <rect class="card" x="24" y="272" width="444" height="52" rx="6"/>
+  <text class="h" x="36" y="293">ボイスリーディングで選ぶ</text>
+  <text class="s" x="36" y="311">直前のコードからの移動量が最小の候補が採用されます</text>
+
+  <rect class="chip" x="492" y="272" width="444" height="52" rx="5"/>
+  <text class="h" x="504" y="293">ベースがルートを担うときはルートレス</text>
+  <text class="s" x="504" y="311">1 拍目と 3 拍目のベース音のピッチクラスマスクで判断します</text>
+
+  <path class="seam" d="M 24 352 H 936"/>
+  <text class="s" x="480" y="374" text-anchor="middle">3 つとも鳴らすコードトーンは同じで、違うのは配置と、ベースが担うぶんの省略だけです。</text>
+</svg>

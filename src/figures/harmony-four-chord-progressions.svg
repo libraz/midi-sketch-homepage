@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 384" role="img" aria-labelledby="p4-ttl p4-dsc">
+  <title id="p4-ttl">Three of the built-in four-chord progressions</title>
+  <desc id="p4-dsc">Three rows, one per progression, each showing four degree chips joined left to right by arrows. Row one is FourChordPop, id 0, I to V to vi to IV, which is C, G, A minor, F in C major. Row two is Axis, id 2, vi to IV to I to V. Row three is Minor2, id 8, vi to IV to V to I. A closing caption notes that the table stores degree numbers rather than pitches, so a pattern transposes to any key unchanged.</desc>
+
+  <defs>
+    <marker id="p4-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="384" rx="12"/>
+
+  <text class="lbl" x="560" y="40">in C major</text>
+
+  <rect class="grp" x="24" y="52" width="912" height="76" rx="8"/>
+  <text class="lbl" x="40" y="72">id 0 · FourChordPop</text>
+  <rect class="card" x="40" y="80" width="100" height="34" rx="6"/>
+  <text class="hb" x="90" y="102" text-anchor="middle">I</text>
+  <path class="ln" d="M 142 97 H 168" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="170" y="80" width="100" height="34" rx="5"/>
+  <text class="hb" x="220" y="102" text-anchor="middle">V</text>
+  <path class="ln" d="M 272 97 H 298" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="300" y="80" width="100" height="34" rx="5"/>
+  <text class="hb" x="350" y="102" text-anchor="middle">vi</text>
+  <path class="ln" d="M 402 97 H 428" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="430" y="80" width="100" height="34" rx="5"/>
+  <text class="hb" x="480" y="102" text-anchor="middle">IV</text>
+  <text class="mono" x="560" y="94">C - G - Am - F</text>
+  <text class="s" x="560" y="112">the plain four-chord loop, and the default</text>
+
+  <rect class="grp" x="24" y="144" width="912" height="76" rx="8"/>
+  <text class="lbl" x="40" y="164">id 2 · Axis</text>
+  <rect class="chip" x="40" y="172" width="100" height="34" rx="5"/>
+  <text class="hb" x="90" y="194" text-anchor="middle">vi</text>
+  <path class="ln" d="M 142 189 H 168" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="170" y="172" width="100" height="34" rx="5"/>
+  <text class="hb" x="220" y="194" text-anchor="middle">IV</text>
+  <path class="ln" d="M 272 189 H 298" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="300" y="172" width="100" height="34" rx="5"/>
+  <text class="hb" x="350" y="194" text-anchor="middle">I</text>
+  <path class="ln" d="M 402 189 H 428" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="430" y="172" width="100" height="34" rx="5"/>
+  <text class="hb" x="480" y="194" text-anchor="middle">V</text>
+  <text class="mono" x="560" y="186">Am - F - C - G</text>
+  <text class="s" x="560" y="204">opens on the relative minor, so it reads dark</text>
+
+  <rect class="grp" x="24" y="236" width="912" height="76" rx="8"/>
+  <text class="lbl" x="40" y="256">id 8 · Minor2</text>
+  <rect class="chip" x="40" y="264" width="100" height="34" rx="5"/>
+  <text class="hb" x="90" y="286" text-anchor="middle">vi</text>
+  <path class="ln" d="M 142 281 H 168" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="170" y="264" width="100" height="34" rx="5"/>
+  <text class="hb" x="220" y="286" text-anchor="middle">IV</text>
+  <path class="ln" d="M 272 281 H 298" marker-end="url(#p4-a)"/>
+  <rect class="chip" x="300" y="264" width="100" height="34" rx="5"/>
+  <text class="hb" x="350" y="286" text-anchor="middle">V</text>
+  <path class="ln" d="M 402 281 H 428" marker-end="url(#p4-a)"/>
+  <rect class="card" x="430" y="264" width="100" height="34" rx="6"/>
+  <text class="hb" x="480" y="286" text-anchor="middle">I</text>
+  <text class="mono" x="560" y="278">Am - F - G - C</text>
+  <text class="s" x="560" y="296">same four chords, rotated to end on V to I</text>
+
+  <path class="seam" d="M 24 338 H 936"/>
+  <text class="s" x="480" y="360" text-anchor="middle">The table stores degree numbers, not pitches, so one pattern transposes to every key unchanged. Twenty four-chord and two five-chord patterns ship.</text>
+</svg>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 418" role="img" aria-labelledby="xt-ttl xt-dsc">
+  <title id="xt-ttl">3 つのエクステンション判定と、その実行順</title>
+  <desc id="xt-dsc">条件・抽選・結果からなる 3 つのレーンを縦に並べています。sus はコードの度数ではなく小節位置で決まり、セクションの最初か最後から 2 番目の小節、かつ短調以外のコードが対象で、通れば 70% が Sus4、30% が Sus2 です。7th は B かサビのセクション、または V のときに対象となり、V では閾値が 2 倍になります。9th はサビならどのコードでも、B セクションでは V のみが対象です。最初に通った判定がその場で返り、どれも通らなければ三和音のままです。サビのコードは事前に書き換えられる点にも注記があります。</desc>
+
+  <defs>
+    <marker id="xt-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="xt-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="418" rx="12"/>
+
+  <text class="lbl" x="24" y="38">3 つの判定はこの順に走り、最初に通ったものが採用されます。ひとつのコードに 2 つの拡張が付くことはありません</text>
+
+  <rect class="grp" x="24" y="48" width="912" height="72" rx="8"/>
+  <text class="lbl" x="38" y="88">1 · sus</text>
+  <rect class="chip" x="92" y="62" width="300" height="44" rx="5"/>
+  <text class="s" x="102" y="82">セクションの最初、または</text>
+  <text class="s" x="102" y="98">最後から 2 番目の小節で、短調以外</text>
+  <path class="ln" d="M 394 84 H 420" marker-end="url(#xt-a)"/>
+  <rect class="chip" x="422" y="62" width="170" height="44" rx="5"/>
+  <text class="mono" x="432" y="82">roll &lt; susProb</text>
+  <text class="s" x="432" y="98">1 コードに 1 回</text>
+  <path class="ln2" d="M 594 84 H 620" marker-end="url(#xt-b)"/>
+  <rect class="alt" x="622" y="62" width="298" height="44" rx="6"/>
+  <text class="s" x="632" y="82">Sus4 — 70% の確率</text>
+  <text class="s" x="632" y="98">Sus2 — 残りの 30%</text>
+
+  <rect class="grp" x="24" y="132" width="912" height="72" rx="8"/>
+  <text class="lbl" x="38" y="172">2 · 7th</text>
+  <rect class="chip" x="92" y="146" width="300" height="44" rx="5"/>
+  <text class="s" x="102" y="166">セクションが B かサビ、</text>
+  <text class="s" x="102" y="182">またはコードが V</text>
+  <path class="ln" d="M 394 168 H 420" marker-end="url(#xt-a)"/>
+  <rect class="chip" x="422" y="146" width="170" height="44" rx="5"/>
+  <text class="mono" x="432" y="166">roll &lt; 7thProb</text>
+  <text class="s" x="432" y="182">V は閾値が 2 倍</text>
+  <path class="ln2" d="M 594 168 H 620" marker-end="url(#xt-b)"/>
+  <rect class="alt" x="622" y="146" width="298" height="44" rx="6"/>
+  <text class="s" x="632" y="166">V → Dom7 · 短調 → Min7</text>
+  <text class="s" x="632" y="182">それ以外 → Maj7</text>
+
+  <rect class="grp" x="24" y="216" width="912" height="72" rx="8"/>
+  <text class="lbl" x="38" y="256">3 · 9th</text>
+  <rect class="chip" x="92" y="230" width="300" height="44" rx="5"/>
+  <text class="s" x="102" y="250">サビならどのコードでも、</text>
+  <text class="s" x="102" y="266">または B セクションの V</text>
+  <path class="ln" d="M 394 252 H 420" marker-end="url(#xt-a)"/>
+  <rect class="chip" x="422" y="230" width="170" height="44" rx="5"/>
+  <text class="mono" x="432" y="250">roll &lt; 9thProb</text>
+  <text class="s" x="432" y="266">独立した抽選</text>
+  <path class="ln2" d="M 594 252 H 620" marker-end="url(#xt-b)"/>
+  <rect class="alt" x="622" y="230" width="298" height="44" rx="6"/>
+  <text class="s" x="632" y="250">V → Dom9 · I → Maj9 · ii/vi → Min9</text>
+  <text class="s" x="632" y="266">iii → Min7 · それ以外 → Add9</text>
+
+  <path class="lnd" d="M 287 288 V 300" marker-end="url(#xt-a)"/>
+
+  <rect class="chip" x="92" y="304" width="390" height="44" rx="5"/>
+  <text class="s" x="102" y="324">どれも通らなければ三和音のままです</text>
+  <text class="s" x="102" y="340">3 つのフラグがすべて off なら判定自体が走りません</text>
+
+  <rect class="warn" x="502" y="304" width="418" height="44" rx="6"/>
+  <text class="mono" x="512" y="324">reharmonizeForSection</text>
+  <text class="s" x="512" y="340">がサビのコードを先に確定させるため、この表はそれ以外に効きます</text>
+
+  <path class="seam" d="M 24 372 H 936"/>
+  <text class="s" x="480" y="394" text-anchor="middle">適用される拡張はつねに 1 つだけです。最初に通った判定がその場で返り、下の判定には進みません。</text>
+</svg>

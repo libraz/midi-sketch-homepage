@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 286" role="img" aria-labelledby="melg-ttl melg-dsc">
+  <title id="melg-ttl">カリングスコアの組み立て方</title>
+  <desc id="melg-dsc">左から右への計算です。どの候補も基準スコア 1.0 から始まります。高音域・高音後の跳躍・急激な方向転換・孤立音・息継ぎなし・非コードトーン・単調さ・結束の低さ・ギャップ率という 9 種のペナルティを引き、明確なピークとモチーフ反復の 2 つのボーナスを加え、最後に 0.0〜1.0 の範囲へクランプします。</desc>
+
+  <defs>
+    <marker id="melg-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="286" rx="12"/>
+
+  <text class="lbl" x="24" y="94">起点</text>
+  <rect class="chip" x="24" y="103" width="120" height="32" rx="5"/>
+  <text class="h" x="84" y="124" text-anchor="middle">基準スコア 1.0</text>
+
+  <path class="ln" d="M 144 119 H 162" marker-end="url(#melg-a)"/>
+
+  <rect class="grp" x="164" y="44" width="430" height="150" rx="8"/>
+  <text class="lbl" x="176" y="66">ペナルティ（減点）</text>
+
+  <rect class="chip" x="176" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="95" text-anchor="middle">高音域</text>
+  <rect class="chip" x="315" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="95" text-anchor="middle">高音後の跳躍</text>
+  <rect class="chip" x="454" y="76" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="95" text-anchor="middle">急激な方向転換</text>
+
+  <rect class="chip" x="176" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="133" text-anchor="middle">孤立音</text>
+  <rect class="chip" x="315" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="133" text-anchor="middle">息継ぎなし</text>
+  <rect class="chip" x="454" y="114" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="133" text-anchor="middle">非コードトーン</text>
+
+  <rect class="chip" x="176" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="240" y="171" text-anchor="middle">単調さ</text>
+  <rect class="chip" x="315" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="379" y="171" text-anchor="middle">結束の低さ</text>
+  <rect class="chip" x="454" y="152" width="128" height="30" rx="5"/>
+  <text class="s" x="518" y="171" text-anchor="middle">ギャップ率</text>
+
+  <path class="ln" d="M 594 119 H 612" marker-end="url(#melg-a)"/>
+
+  <rect class="grp" x="614" y="44" width="156" height="150" rx="8"/>
+  <text class="lbl" x="626" y="66">ボーナス（加点）</text>
+  <rect class="chip" x="626" y="76" width="132" height="30" rx="5"/>
+  <text class="s" x="692" y="95" text-anchor="middle">明確なピーク</text>
+  <rect class="chip" x="626" y="114" width="132" height="30" rx="5"/>
+  <text class="s" x="692" y="133" text-anchor="middle">モチーフ反復</text>
+
+  <path class="ln" d="M 770 119 H 788" marker-end="url(#melg-a)"/>
+
+  <rect class="card" x="790" y="92" width="146" height="54" rx="6"/>
+  <text class="h" x="863" y="116" text-anchor="middle">カリングスコア</text>
+  <text class="s" x="863" y="134" text-anchor="middle">0.0〜1.0 にクランプ</text>
+
+  <text class="s" x="480" y="222" text-anchor="middle">息継ぎペナルティはボカロ系スタイルでは適用されず、結束とギャップの閾値もスタイルごとに変わります。</text>
+
+  <path class="seam" d="M 24 244 H 936"/>
+  <text class="s" x="480" y="264" text-anchor="middle">ここで候補が捨てられるわけではありません。このスコアは候補が順位付けへ持ち込む数値の 1 つです。</text>
+</svg>

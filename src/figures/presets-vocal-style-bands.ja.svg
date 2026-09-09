@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 378" role="img" aria-labelledby="vsb-ttl vsb-dsc">
+  <title id="vsb-ttl">サビの音数で分けたボーカルスタイルプリセット</title>
+  <desc id="vsb-dsc">音数の多い順に 3 つの帯が並びます。サビがもっとも詰まるのは UltraVocaloid・Idol・Anime・BrightKira・CuteAffected で、UltraVocaloid はさらに 32 分音符も使います。Vocaloid と KPop は標準あたりです。音数が少ないのは Rock・CityPop・CoolSynth・PowerfulShout・Ballad です。Auto と Standard は自前の設定を持たず、スタイルプリセットのメロディ既定値をそのまま使います。シンコペーションは別の軸で、UltraVocaloid・Vocaloid・CityPop・KPop がとくに強く使います。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="378" rx="12"/>
+
+  <text class="lbl" x="36" y="46">サビの音数（密度）</text>
+
+  <rect class="grp" x="24" y="56" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="76">サビの音数が多い</text>
+  <rect class="card" x="38" y="86" width="119" height="32" rx="6"/>
+  <text class="s" x="97" y="106" text-anchor="middle">UltraVocaloid</text>
+  <rect class="chip" x="165" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="106" text-anchor="middle">Idol</text>
+  <rect class="chip" x="292" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="106" text-anchor="middle">Anime</text>
+  <rect class="chip" x="419" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="106" text-anchor="middle">BrightKira</text>
+  <rect class="chip" x="546" y="86" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="106" text-anchor="middle">CuteAffected</text>
+  <text class="s" x="681" y="106">UltraVocaloid は 32 分音符も使います</text>
+
+  <rect class="grp" x="24" y="142" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="162">標準あたり</text>
+  <rect class="chip" x="38" y="172" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="192" text-anchor="middle">Vocaloid</text>
+  <rect class="chip" x="165" y="172" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="192" text-anchor="middle">KPop</text>
+
+  <rect class="grp" x="24" y="228" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="248">サビの音数が少ない</text>
+  <rect class="chip" x="38" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="278" text-anchor="middle">Rock</text>
+  <rect class="chip" x="165" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="278" text-anchor="middle">CityPop</text>
+  <rect class="chip" x="292" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="278" text-anchor="middle">CoolSynth</text>
+  <rect class="chip" x="419" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="278" text-anchor="middle">PowerfulShout</text>
+  <rect class="chip" x="546" y="258" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="278" text-anchor="middle">Ballad</text>
+  <text class="s" x="681" y="278">音数が少ないだけで、遅いとは限りません</text>
+
+  <text class="s" x="480" y="324" text-anchor="middle">Auto と Standard は自前の設定を持たず、スタイルプリセットのメロディ既定値をそのまま使います。</text>
+
+  <path class="seam" d="M 24 344 H 936"/>
+  <text class="s" x="480" y="364" text-anchor="middle">シンコペーションは別の軸です。UltraVocaloid・Vocaloid・CityPop・KPop がとくに強く使います。</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 318" role="img" aria-labelledby="mow-ttl mow-dsc">
+  <title id="mow-ttl">How a finished Song becomes a Standard MIDI File</title>
+  <desc id="mow-dsc">MidiWriter writes the header first, then the marker track, which carries the seed and every generation parameter as a text event followed by the tempo and time signature. Each non-empty track is then written in a fixed order: its note events are converted to MIDI events, transposed into the target key, and emitted with variable-length delta times. The result is a Type 1 file with one track per part.</desc>
+
+  <defs>
+    <marker id="mow-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="318" rx="12"/>
+
+  <rect class="chip" x="24" y="128" width="110" height="32" rx="5"/>
+  <text class="h" x="79" y="149" text-anchor="middle">Song</text>
+
+  <path class="ln" d="M 134 144 H 152" marker-end="url(#mow-a)"/>
+
+  <rect class="grp" x="156" y="44" width="580" height="216" rx="8"/>
+  <text class="mono" x="170" y="66">MidiWriter::build</text>
+
+  <rect class="chip" x="170" y="76" width="552" height="32" rx="5"/>
+  <text class="h" x="182" y="96">header</text>
+  <text class="s" x="236" y="96">SMF Type 1, one track per part plus the marker track</text>
+
+  <path class="ln" d="M 446 108 V 120" marker-end="url(#mow-a)"/>
+
+  <rect class="chip" x="170" y="124" width="552" height="46" rx="5"/>
+  <text class="h" x="182" y="144">marker track, written first</text>
+  <text class="s" x="182" y="162">seed and generation parameters as a text event, then tempo and time signature</text>
+
+  <path class="ln" d="M 446 170 V 182" marker-end="url(#mow-a)"/>
+
+  <rect class="grp" x="170" y="186" width="552" height="62" rx="8"/>
+  <text class="lbl" x="182" y="204">then each non-empty track, in a fixed order</text>
+  <rect class="chip" x="182" y="212" width="162" height="28" rx="5"/>
+  <text class="s" x="263" y="231" text-anchor="middle">NoteEvent → MidiEvent</text>
+  <path class="ln" d="M 344 226 H 354" marker-end="url(#mow-a)"/>
+  <rect class="chip" x="358" y="212" width="162" height="28" rx="5"/>
+  <text class="s" x="439" y="231" text-anchor="middle">transposed to the key</text>
+  <path class="ln" d="M 520 226 H 530" marker-end="url(#mow-a)"/>
+  <rect class="chip" x="534" y="212" width="162" height="28" rx="5"/>
+  <text class="s" x="615" y="231" text-anchor="middle">variable-length deltas</text>
+
+  <path class="ln" d="M 736 144 H 754" marker-end="url(#mow-a)"/>
+
+  <rect class="card" x="758" y="128" width="178" height="32" rx="6"/>
+  <text class="h" x="847" y="149" text-anchor="middle">SMF Type 1</text>
+  <text class="s" x="847" y="174" text-anchor="middle">one track per part,</text>
+  <text class="s" x="847" y="190" text-anchor="middle">each on its own channel</text>
+
+  <path class="seam" d="M 24 284 H 936"/>
+  <text class="s" x="480" y="304" text-anchor="middle">Everything is generated in C major — the key is applied here, note by note, and never to the drums.</text>
+</svg>

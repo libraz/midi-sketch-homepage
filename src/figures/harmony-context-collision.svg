@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 342" role="img" aria-labelledby="hc-ttl hc-dsc">
+  <title id="hc-ttl">How a proposed melody pitch is checked against the sounding harmony</title>
+  <desc id="hc-dsc">The melody writer proposes a pitch and a duration. HarmonyContext answers with two parts: a chord tracker that knows which chord sounds at that tick, and a collision detector that knows which notes are already sounding. The seven registered pitched roles are vocal, bass, chord, motif, aux, arpeggio and guitar; the candidate's own role is excluded, and drums and SE are excluded. Generation uses actual semitone distances: minor 2nds at 1 or 13, major 2nds at 2, major 7ths at 11, 23 or 35, and tritones at 6, 18 or 30. A sounding-chord major 2nd, a registered root major seventh on normalized I/IV (degree 0/3) in a Maj7/Maj9 chord, and a tritone in V, vii or a secondary dominant are context exceptions. Brief melodic 1- and 2-semitone overlaps may pass only outside sustained chord/guitar roles, with at most 120 or 240 ticks respectively (halved on beats 1 and 3), when at least one pitch is C4 or above. A bass below C3 blocks a major seventh at 11 semitones; the registered I/IV root–M7 exception applies only at 23 semitones or wider. The analyzer has a base cutoff above 24 semitones, then applies a low-bass override. One boolean comes back as a candidate filter, not a guarantee of a clean final mix.</desc>
+
+  <defs>
+    <marker id="hc-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="hc-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="342" rx="12"/>
+
+  <rect class="card" x="24" y="96" width="170" height="72" rx="6"/>
+  <text class="mono" x="109" y="120" text-anchor="middle">MelodyDesigner</text>
+  <text class="s" x="109" y="140" text-anchor="middle">proposes a pitch</text>
+  <text class="s" x="109" y="156" text-anchor="middle">and a duration</text>
+
+  <path class="ln" d="M 194 132 H 218" marker-end="url(#hc-a)"/>
+
+  <rect class="grp" x="222" y="52" width="380" height="196" rx="8"/>
+  <text class="mono" x="236" y="72">HarmonyContext</text>
+  <rect class="chip" x="236" y="82" width="352" height="52" rx="5"/>
+  <text class="mono" x="248" y="104">ChordProgressionTracker</text>
+  <text class="s" x="248" y="122">which chord is sounding at this tick</text>
+  <rect class="chip" x="236" y="142" width="352" height="52" rx="5"/>
+  <text class="mono" x="248" y="164">TrackCollisionDetector</text>
+  <text class="s" x="248" y="182">which notes are already sounding there</text>
+  <text class="s" x="236" y="214">Seven pitched roles; own role excluded</text>
+  <text class="s" x="236" y="230">Drums and SE are excluded</text>
+
+  <path class="ln" d="M 602 150 H 626" marker-end="url(#hc-a)"/>
+
+  <rect class="grp" x="630" y="52" width="306" height="196" rx="8"/>
+  <text class="lbl" x="644" y="72">what counts as a clash</text>
+
+  <rect class="warn" x="644" y="82" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="99">m2: 1 or 13 semitones</text>
+  <text class="s" x="912" y="99" text-anchor="end">blocked*</text>
+
+  <rect class="warn" x="644" y="112" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="129">M2: 2 semitones</text>
+  <text class="s" x="912" y="129" text-anchor="end">blocked*</text>
+
+  <rect class="warn" x="644" y="142" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="159">M7: 11 / 23 / 35</text>
+  <text class="s" x="912" y="159" text-anchor="end">blocked*</text>
+
+  <rect class="chip" x="644" y="172" width="278" height="24" rx="5"/>
+  <text class="s" x="654" y="189">tritone: 6 / 18 / 30</text>
+  <text class="s" x="912" y="189" text-anchor="end">context*</text>
+
+  <rect class="alt" x="644" y="202" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="219">m7: 10; M9: 14; &gt;=36</text>
+  <text class="s" x="912" y="219" text-anchor="end">base: fine</text>
+
+  <path class="ln2" d="M 783 248 V 268 H 109 V 174" marker-end="url(#hc-b)"/>
+  <text class="s" x="446" y="262" text-anchor="middle">one boolean comes back — a filter, with no ranking or final guarantee</text>
+
+  <path class="seam" d="M 24 296 H 936"/>
+  <text class="s" x="480" y="306" text-anchor="middle">* Brief melodic m2/M2 may pass: 1 ≤120 ticks, 2 ≤240 (half on beats 1/3); at least one pitch C4+.</text>
+  <text class="s" x="480" y="328" text-anchor="middle">V/vii/secondary tritones are context-owned; low bass (&lt; C3) blocks M7 at 11, and registered M7 only passes at ≥23. Analyzer &gt;24 is a base cutoff with a low-bass override.</text>
+</svg>

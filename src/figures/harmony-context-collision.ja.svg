@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 342" role="img" aria-labelledby="hc-ttl hc-dsc">
+  <title id="hc-ttl">提案されたメロディのピッチを鳴っている和声と照合する流れ</title>
+  <desc id="hc-dsc">メロディ側がピッチと長さを提案します。HarmonyContext は 2 つの部品で答えます。その tick で鳴っているコードを知るコードトラッカーと、すでに鳴っているノートを知る衝突検出器です。登録される7つのピッチ役割は Vocal・ベース・コード・モチーフ・Aux・Arpeggio・ギターで、候補自身の役割は除外します。ドラムと SE は除外します。生成側は実際の半音数で判定します。短 2 度は 1 または 13、長 2 度は 2、長 7 度は 11・23・35、トライトーンは 6・18・30 半音です。鳴っているコードに属する長 2 度、正規化度数 I/IV（0/3）の Maj7/Maj9 に登録されたルート–長 7 度、V・vii またはセカンダリードミナントのトライトーンは文脈上の例外です。短いメロディの1・2半音の重なりは、持続するコード／ギター音以外で、1半音は最大 120 tick、2半音は最大 240 tick（1・3拍目では半分）かつ少なくとも一方が C4 以上なら通過することがあります。C3 未満のベースでは11半音の長7度をブロックし、登録された I/IV のルート–長7度も23半音以上でのみ例外になります。アナライザーは24半音超を基本カットオフとしたうえで、低音域の例外を適用します。返るのは最終出力の無衝突を保証しない候補フィルターの真偽値です。</desc>
+
+  <defs>
+    <marker id="hc-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="hc-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="342" rx="12"/>
+
+  <rect class="card" x="24" y="96" width="170" height="72" rx="6"/>
+  <text class="mono" x="109" y="120" text-anchor="middle">MelodyDesigner</text>
+  <text class="s" x="109" y="140" text-anchor="middle">ピッチと長さを</text>
+  <text class="s" x="109" y="156" text-anchor="middle">提案します</text>
+
+  <path class="ln" d="M 194 132 H 218" marker-end="url(#hc-a)"/>
+
+  <rect class="grp" x="222" y="52" width="380" height="196" rx="8"/>
+  <text class="mono" x="236" y="72">HarmonyContext</text>
+  <rect class="chip" x="236" y="82" width="352" height="52" rx="5"/>
+  <text class="mono" x="248" y="104">ChordProgressionTracker</text>
+  <text class="s" x="248" y="122">この tick で鳴っているコード</text>
+  <rect class="chip" x="236" y="142" width="352" height="52" rx="5"/>
+  <text class="mono" x="248" y="164">TrackCollisionDetector</text>
+  <text class="s" x="248" y="182">すでに鳴っているノート</text>
+  <text class="s" x="236" y="214">7つのピッチ役割。自身の役割を除外</text>
+  <text class="s" x="236" y="230">ドラムと SE は対象外</text>
+
+  <path class="ln" d="M 602 150 H 626" marker-end="url(#hc-a)"/>
+
+  <rect class="grp" x="630" y="52" width="306" height="196" rx="8"/>
+  <text class="lbl" x="644" y="72">衝突とみなす音程</text>
+
+  <rect class="warn" x="644" y="82" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="99">短 2 度: 1 / 13 半音</text>
+  <text class="s" x="912" y="99" text-anchor="end">ブロック*</text>
+
+  <rect class="warn" x="644" y="112" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="129">長 2 度: 2 半音</text>
+  <text class="s" x="912" y="129" text-anchor="end">ブロック*</text>
+
+  <rect class="warn" x="644" y="142" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="159">長 7 度: 11 / 23 / 35</text>
+  <text class="s" x="912" y="159" text-anchor="end">ブロック*</text>
+
+  <rect class="chip" x="644" y="172" width="278" height="24" rx="5"/>
+  <text class="s" x="654" y="189">トライトーン: 6 / 18 / 30</text>
+  <text class="s" x="912" y="189" text-anchor="end">文脈*</text>
+
+  <rect class="alt" x="644" y="202" width="278" height="24" rx="6"/>
+  <text class="s" x="654" y="219">短 7 度: 10; 長 9 度: 14; &gt;=36</text>
+  <text class="s" x="912" y="219" text-anchor="end">基本: 可</text>
+
+  <path class="ln2" d="M 783 248 V 268 H 109 V 174" marker-end="url(#hc-b)"/>
+  <text class="s" x="446" y="262" text-anchor="middle">返るのは候補フィルターの真偽値ひとつで、順位付けや最終保証はありません</text>
+
+  <path class="seam" d="M 24 296 H 936"/>
+  <text class="s" x="480" y="306" text-anchor="middle">* 短 2 度は ≤120、長 2 度は ≤240 tick（1・3拍目は半分）。少なくとも一方が C4 以上。</text>
+  <text class="s" x="480" y="328" text-anchor="middle">V/vii/セカンダリーのトライトーンは文脈上可。低音 C3 未満では11半音をブロックし、登録長7度も23半音以上だけ可。アナライザーの&gt;24は基本カットオフで低音域の例外があります。</text>
+</svg>

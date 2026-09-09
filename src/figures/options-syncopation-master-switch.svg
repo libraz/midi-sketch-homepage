@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 262" role="img" aria-labelledby="osy-ttl osy-dsc">
+  <title id="osy-ttl">enableSyncopation is a master switch over three settings</title>
+  <desc id="osy-dsc">Two branches leave enableSyncopation. When true, syncopation_prob and allow_bar_crossing keep their values and the groove's syncopation weighting applies. When false, syncopation_prob is forced to zero, allow_bar_crossing is forced off, and even a Syncopated groove has no effect. Groove timing offsets are applied either way.</desc>
+
+  <defs>
+    <marker id="osy-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="osy-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="262" rx="12"/>
+
+  <text class="lbl" x="26" y="92">master switch</text>
+  <rect class="card" x="24" y="100" width="180" height="44" rx="6"/>
+  <text class="mono" x="114" y="127" text-anchor="middle">enableSyncopation</text>
+
+  <path class="ln" d="M 204 122 H 220 V 76 H 244" marker-end="url(#osy-a)"/>
+  <path class="ln2" d="M 204 122 H 220 V 168 H 244" marker-end="url(#osy-b)"/>
+
+  <rect class="grp" x="248" y="40" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="58">true — syncopation is live</text>
+  <rect class="chip" x="260" y="66" width="212" height="32" rx="5"/>
+  <text class="mono" x="366" y="86" text-anchor="middle">syncopation_prob</text>
+  <rect class="chip" x="484" y="66" width="212" height="32" rx="5"/>
+  <text class="mono" x="590" y="86" text-anchor="middle">allow_bar_crossing</text>
+  <rect class="chip" x="708" y="66" width="212" height="32" rx="5"/>
+  <text class="s" x="814" y="86" text-anchor="middle">groove syncopation weight</text>
+
+  <rect class="grp" x="248" y="132" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="150">false — forced to zero</text>
+  <rect class="chip" x="260" y="158" width="212" height="32" rx="5"/>
+  <text class="mono" x="366" y="178" text-anchor="middle">syncopation_prob = 0.0</text>
+  <rect class="chip" x="484" y="158" width="212" height="32" rx="5"/>
+  <text class="mono" x="590" y="178" text-anchor="middle">allow_bar_crossing = false</text>
+  <rect class="chip" x="708" y="158" width="212" height="32" rx="5"/>
+  <text class="s" x="814" y="178" text-anchor="middle">a Syncopated groove is inert</text>
+
+  <path class="seam" d="M 24 224 H 936"/>
+  <text class="s" x="480" y="244" text-anchor="middle">Groove timing offsets — OffBeat's +30 ticks, for example — still apply; only the syncopation weighting is gated.</text>
+</svg>

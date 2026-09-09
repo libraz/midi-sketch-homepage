@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 250" role="img" aria-labelledby="bmr-ttl bmr-dsc">
+  <title id="bmr-ttl">BackgroundMotif — which tracks are generated and what each one does</title>
+  <desc id="bmr-dsc">Five tracks feed the mix. A repeating motif is the lead, the aux track carries a sub-melody, and chord, bass and drums supply harmonic support, foundation and rhythm. The vocal track is not generated at all, while the aux track stays active so the motif has a melodic companion.</desc>
+
+  <defs>
+    <marker id="bmr-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="250" rx="12"/>
+
+  <text class="lbl" x="36" y="46">generated tracks</text>
+
+  <rect class="card" x="36" y="56" width="169" height="44" rx="6"/>
+  <text class="h" x="120" y="77" text-anchor="middle">Motif</text>
+  <text class="s" x="120" y="93" text-anchor="middle">lead</text>
+
+  <rect class="chip" x="215" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="299" y="77" text-anchor="middle">Aux</text>
+  <text class="s" x="299" y="93" text-anchor="middle">sub-melody</text>
+
+  <rect class="chip" x="394" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="478" y="77" text-anchor="middle">Chord</text>
+  <text class="s" x="478" y="93" text-anchor="middle">harmonic support</text>
+
+  <rect class="chip" x="573" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="657" y="77" text-anchor="middle">Bass</text>
+  <text class="s" x="657" y="93" text-anchor="middle">foundation</text>
+
+  <rect class="chip" x="752" y="56" width="169" height="44" rx="5"/>
+  <text class="h" x="836" y="77" text-anchor="middle">Drums</text>
+  <text class="s" x="836" y="93" text-anchor="middle">rhythm</text>
+
+  <path class="ln" d="M 120 102 V 122" marker-end="url(#bmr-a)"/>
+  <path class="ln" d="M 299 102 V 122" marker-end="url(#bmr-a)"/>
+  <path class="ln" d="M 478 102 V 122" marker-end="url(#bmr-a)"/>
+  <path class="ln" d="M 657 102 V 122" marker-end="url(#bmr-a)"/>
+  <path class="ln" d="M 836 102 V 122" marker-end="url(#bmr-a)"/>
+
+  <rect class="chip" x="36" y="124" width="888" height="36" rx="5"/>
+  <text class="h" x="480" y="147" text-anchor="middle">Mix</text>
+
+  <rect class="warn" x="36" y="176" width="336" height="28" rx="6"/>
+  <text class="s" x="204" y="195" text-anchor="middle">Vocal — not generated</text>
+  <text class="s" x="390" y="195">Aux stays active and carries the sub-melody</text>
+
+  <path class="seam" d="M 24 214 H 936"/>
+  <text class="s" x="480" y="234" text-anchor="middle">A repeating pattern holds the foreground instead of a sung line, which is what makes this style suit BGM.</text>
+</svg>

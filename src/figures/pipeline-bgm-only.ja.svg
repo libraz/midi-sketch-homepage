@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 362" role="img" aria-labelledby="bgm-ttl bgm-dsc">
+  <title id="bgm-ttl">BGM 専用の 2 つの生成順序（構造構築のあと）</title>
+  <desc id="bgm-dsc">BGM 専用のコンポジションスタイルは、どちらも同じ構造構築から始まり、ボーカルをスキップします。BackgroundMotif は Aux を最初に書き、続いてモチーフ・ベース・コード・ギター・アルペジオ・ドラム・SE を書きます。SynthDriven は Aux を除いた同じ並びで、モチーフから始まります。2 つのスタイルの違いは Aux の有無だけです。</desc>
+
+  <defs>
+    <marker id="bgm-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="362" rx="12"/>
+
+  <rect class="chip" x="24" y="44" width="912" height="32" rx="5"/>
+  <text class="mono" x="40" y="64">buildStructure</text>
+  <text class="s" x="160" y="64">セクション順・小節数・コードの骨格。どちらのスタイルでも同じです</text>
+
+  <path class="ln" d="M 40 76 V 253"/>
+  <path class="ln" d="M 40 137 H 56" marker-end="url(#bgm-a)"/>
+  <path class="ln" d="M 40 253 H 56" marker-end="url(#bgm-a)"/>
+
+  <rect class="grp" x="64" y="96" width="872" height="92" rx="8"/>
+  <text class="lbl" x="78" y="116">BackgroundMotif · ボーカルなし</text>
+  <rect class="card" x="78" y="122" width="99" height="30" rx="6"/>
+  <text class="s" x="127" y="141" text-anchor="middle">1 · Aux</text>
+  <rect class="chip" x="183" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="232" y="141" text-anchor="middle">2 · モチーフ</text>
+  <rect class="chip" x="288" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="337" y="141" text-anchor="middle">3 · ベース</text>
+  <rect class="chip" x="393" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="442" y="141" text-anchor="middle">4 · コード</text>
+  <rect class="chip" x="498" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="547" y="141" text-anchor="middle">5 · ギター</text>
+  <rect class="chip" x="603" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="652" y="141" text-anchor="middle">6 · アルペジオ</text>
+  <rect class="chip" x="708" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="757" y="141" text-anchor="middle">7 · ドラム</text>
+  <rect class="chip" x="813" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="862" y="141" text-anchor="middle">8 · SE</text>
+  <text class="s" x="78" y="174">ここでは Aux が先に走り、そのあとメロディを担うモチーフが続きます。</text>
+
+  <rect class="grp" x="64" y="212" width="872" height="92" rx="8"/>
+  <text class="lbl" x="78" y="232">SynthDriven · ボーカルも Aux もなし</text>
+  <rect class="chip" x="78" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="127" y="257" text-anchor="middle">1 · モチーフ</text>
+  <rect class="chip" x="183" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="232" y="257" text-anchor="middle">2 · ベース</text>
+  <rect class="chip" x="288" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="337" y="257" text-anchor="middle">3 · コード</text>
+  <rect class="chip" x="393" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="442" y="257" text-anchor="middle">4 · ギター</text>
+  <rect class="chip" x="498" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="547" y="257" text-anchor="middle">5 · アルペジオ</text>
+  <rect class="chip" x="603" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="652" y="257" text-anchor="middle">6 · ドラム</text>
+  <rect class="chip" x="708" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="757" y="257" text-anchor="middle">7 · SE</text>
+  <text class="s" x="78" y="290">2 つのスタイルで違うのは Aux の有無だけです。</text>
+
+  <path class="seam" d="M 24 328 H 936"/>
+  <text class="s" x="480" y="348" text-anchor="middle">どちらのスタイルもボーカルを書きません。アルペジオは有効にした場合だけ現れます。</text>
+</svg>

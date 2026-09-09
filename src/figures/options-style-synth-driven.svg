@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 242" role="img" aria-labelledby="osd-ttl osd-dsc">
+  <title id="osd-ttl">SynthDriven — a BGM-only style built around the arpeggio</title>
+  <desc id="osd-dsc">compositionStyle 2. No vocal track and no aux track are written, and modulation is live. The motif is always written under this style, and the arpeggio is off by default and must be switched on by hand — once it is, it carries the lead. Tracks written: motif, bass, chord, guitar, arpeggio and drums.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="242" rx="12"/>
+
+  <rect class="card" x="24" y="40" width="250" height="52" rx="6"/>
+  <text class="mono" x="149" y="64" text-anchor="middle">compositionStyle = 2</text>
+  <text class="s" x="149" y="84" text-anchor="middle">SynthDriven — BGM only</text>
+
+  <rect class="grp" x="298" y="32" width="638" height="104" rx="8"/>
+  <text class="lbl" x="310" y="52">option families</text>
+  <rect class="chip" x="310" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="77" text-anchor="middle">no vocal track</text>
+  <rect class="chip" x="520" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="77" text-anchor="middle">no aux track</text>
+  <rect class="chip" x="730" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="77" text-anchor="middle">modulation — live</text>
+  <rect class="chip" x="310" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="113" text-anchor="middle">motif — always written</text>
+  <rect class="chip" x="520" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="113" text-anchor="middle">arpeggio — off by default</text>
+  <rect class="chip" x="730" y="94" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="113" text-anchor="middle">arpeggio carries the lead</text>
+
+  <text class="lbl" x="26" y="168">generated tracks</text>
+  <text class="s" x="936" y="168" text-anchor="end">teal = conditional slots</text>
+
+  <rect class="chip" x="24" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="96" y="195" text-anchor="middle">motif</text>
+  <rect class="chip" x="177" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="249" y="195" text-anchor="middle">bass</text>
+  <rect class="chip" x="330" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="402" y="195" text-anchor="middle">chord</text>
+  <rect class="chip" x="483" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="555" y="195" text-anchor="middle">guitar</text>
+  <rect class="alt" x="636" y="176" width="145" height="28" rx="6"/>
+  <text class="s" x="708" y="195" text-anchor="middle">arpeggio</text>
+  <rect class="chip" x="789" y="176" width="145" height="28" rx="5"/>
+  <text class="s" x="861" y="195" text-anchor="middle">drums</text>
+
+  <text class="s" x="480" y="218" text-anchor="middle">Only the arpeggio is conditional here — the motif is unconditional under SynthDriven.</text>
+</svg>

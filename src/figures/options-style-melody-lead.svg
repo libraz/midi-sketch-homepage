@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 266" role="img" aria-labelledby="oml-ttl oml-dsc">
+  <title id="oml-ttl">MelodyLead — which options are live and which tracks are written</title>
+  <desc id="oml-dsc">compositionStyle 0, the default. All vocal fields are live, the arpeggio is live once it is switched on, and modulation is live. The motif fields do nothing unless the blueprint asks for a motif track. Nine tracks are written in order: vocal, aux, motif, bass, chord, guitar, arpeggio, drums and SE, with the motif and arpeggio slots conditional.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="266" rx="12"/>
+
+  <rect class="card" x="24" y="40" width="250" height="52" rx="6"/>
+  <text class="mono" x="149" y="64" text-anchor="middle">compositionStyle = 0</text>
+  <text class="s" x="149" y="84" text-anchor="middle">MelodyLead — the default</text>
+
+  <rect class="grp" x="298" y="32" width="638" height="68" rx="8"/>
+  <text class="lbl" x="310" y="52">option families</text>
+  <rect class="chip" x="310" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="77" text-anchor="middle">vocal fields — all live</text>
+  <rect class="chip" x="520" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="77" text-anchor="middle">arpeggio — live when on</text>
+  <rect class="chip" x="730" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="77" text-anchor="middle">modulation — live</text>
+
+  <rect class="chip" x="298" y="110" width="638" height="32" rx="5"/>
+  <text class="s" x="310" y="130">the motif fields do nothing unless the blueprint asks for a motif track</text>
+
+  <text class="lbl" x="26" y="176">generated tracks, in order</text>
+  <text class="s" x="936" y="176" text-anchor="end">teal = only when the blueprint or a flag asks for it</text>
+
+  <rect class="chip" x="24" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="72" y="203" text-anchor="middle">1 · vocal</text>
+  <rect class="chip" x="126" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="174" y="203" text-anchor="middle">2 · aux</text>
+  <rect class="alt" x="228" y="184" width="96" height="28" rx="6"/>
+  <text class="s" x="276" y="203" text-anchor="middle">3 · motif</text>
+  <rect class="chip" x="330" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="378" y="203" text-anchor="middle">4 · bass</text>
+  <rect class="chip" x="432" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="480" y="203" text-anchor="middle">5 · chord</text>
+  <rect class="chip" x="534" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="582" y="203" text-anchor="middle">6 · guitar</text>
+  <rect class="alt" x="636" y="184" width="96" height="28" rx="6"/>
+  <text class="s" x="684" y="203" text-anchor="middle">7 · arpeggio</text>
+  <rect class="chip" x="738" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="786" y="203" text-anchor="middle">8 · drums</text>
+  <rect class="chip" x="840" y="184" width="96" height="28" rx="5"/>
+  <text class="s" x="888" y="203" text-anchor="middle">9 · SE</text>
+
+  <path class="seam" d="M 24 232 H 936"/>
+  <text class="s" x="480" y="252" text-anchor="middle">MelodyLead is the only composition style that writes a vocal track.</text>
+</svg>

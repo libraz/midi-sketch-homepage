@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 256" role="img" aria-labelledby="obm-ttl obm-dsc">
+  <title id="obm-ttl">BackgroundMotif — a BGM-only style built around the motif</title>
+  <desc id="obm-dsc">compositionStyle 1. No vocal track is written at all, the aux track is on and backs the motif, and modulation is live. The motif fields motifRepeatScope, motifFixedProgression and motifMaxChordCount become effective here. Tracks written: aux, motif, bass, chord, guitar and drums, plus an arpeggio only when arpeggioEnabled is true.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="256" rx="12"/>
+
+  <rect class="card" x="24" y="40" width="250" height="52" rx="6"/>
+  <text class="mono" x="149" y="64" text-anchor="middle">compositionStyle = 1</text>
+  <text class="s" x="149" y="84" text-anchor="middle">BackgroundMotif — BGM only</text>
+
+  <rect class="grp" x="298" y="32" width="638" height="122" rx="8"/>
+  <text class="lbl" x="310" y="52">option families</text>
+  <rect class="chip" x="310" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="407" y="77" text-anchor="middle">no vocal track at all</text>
+  <rect class="chip" x="520" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="617" y="77" text-anchor="middle">aux — on, backs the motif</text>
+  <rect class="chip" x="730" y="58" width="194" height="28" rx="5"/>
+  <text class="s" x="827" y="77" text-anchor="middle">modulation — live</text>
+
+  <text class="lbl" x="310" y="104">motif fields — now effective</text>
+  <rect class="chip" x="310" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="407" y="129" text-anchor="middle">motifRepeatScope</text>
+  <rect class="chip" x="520" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="617" y="129" text-anchor="middle">motifFixedProgression</text>
+  <rect class="chip" x="730" y="110" width="194" height="28" rx="5"/>
+  <text class="mono" x="827" y="129" text-anchor="middle">motifMaxChordCount</text>
+
+  <text class="lbl" x="26" y="184">generated tracks</text>
+  <text class="s" x="936" y="184" text-anchor="end">teal = only when arpeggioEnabled is true</text>
+
+  <rect class="chip" x="24" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="86" y="211" text-anchor="middle">aux</text>
+  <rect class="chip" x="155" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="217" y="211" text-anchor="middle">motif</text>
+  <rect class="chip" x="286" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="348" y="211" text-anchor="middle">bass</text>
+  <rect class="chip" x="417" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="479" y="211" text-anchor="middle">chord</text>
+  <rect class="chip" x="548" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="610" y="211" text-anchor="middle">guitar</text>
+  <rect class="chip" x="679" y="192" width="124" height="28" rx="5"/>
+  <text class="s" x="741" y="211" text-anchor="middle">drums</text>
+  <rect class="alt" x="810" y="192" width="124" height="28" rx="6"/>
+  <text class="s" x="872" y="211" text-anchor="middle">arpeggio</text>
+
+  <text class="s" x="480" y="238" text-anchor="middle">The motif carries the tune here, so the motif fields matter and the vocal fields do not.</text>
+</svg>

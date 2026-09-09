@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 156" role="img" aria-labelledby="ohu-ttl ohu-dsc">
+  <title id="ohu-ttl">humanize gates the two humanization amounts</title>
+  <desc id="ohu-dsc">The humanize switch, off by default, feeds two amount fields: humanizeTiming with a default of 0.4 and humanizeVelocity with a default of 0.3. A note on the right records that SongConfig and AccompanimentConfig both take these as floats in the 0.0 to 1.0 range.</desc>
+
+  <defs>
+    <marker id="ohu-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="156" rx="12"/>
+
+  <text class="lbl" x="26" y="62">switch</text>
+  <rect class="card" x="24" y="70" width="180" height="48" rx="6"/>
+  <text class="mono" x="114" y="92" text-anchor="middle">humanize</text>
+  <text class="s" x="114" y="110" text-anchor="middle">default false</text>
+
+  <path class="ln" d="M 204 94 H 214 V 76 H 228" marker-end="url(#ohu-a)"/>
+  <path class="ln" d="M 204 94 H 214 V 116 H 228" marker-end="url(#ohu-a)"/>
+
+  <rect class="chip" x="232" y="60" width="340" height="32" rx="5"/>
+  <text class="mono" x="244" y="80">humanizeTiming</text>
+  <text class="s" x="372" y="80">0.0–1.0, default 0.4</text>
+  <rect class="chip" x="232" y="100" width="340" height="32" rx="5"/>
+  <text class="mono" x="244" y="120">humanizeVelocity</text>
+  <text class="s" x="372" y="120">0.0–1.0, default 0.3</text>
+
+  <rect class="chip" x="596" y="60" width="340" height="72" rx="5"/>
+  <text class="lbl" x="610" y="80">one scale</text>
+  <text class="s" x="610" y="100">SongConfig and AccompanimentConfig</text>
+  <text class="s" x="610" y="118">both take these as 0.0–1.0 floats.</text>
+</svg>

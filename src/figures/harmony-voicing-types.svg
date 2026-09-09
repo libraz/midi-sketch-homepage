@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 386" role="img" aria-labelledby="vc-ttl vc-dsc">
+  <title id="vc-ttl">The three voicing types laid out on a pitch axis</title>
+  <desc id="vc-dsc">A shared horizontal pitch axis running from C3 to C5, with three rows below it. Close position places C4, E4, G4 and B4 inside a single octave. Open position, the drop-2 form, moves the voice below the top down an octave, giving G3, C4, E4 and B4. Rootless drops the root entirely and plays E3, G3, B3 and D4, leaving the root to the bass. A closing note lists the conditions the engine requires before it picks a rootless voicing.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="386" rx="12"/>
+
+  <text class="lbl" x="190" y="48" text-anchor="middle">C3</text>
+  <text class="lbl" x="430" y="48" text-anchor="middle">C4</text>
+  <text class="lbl" x="670" y="48" text-anchor="middle">C5</text>
+
+  <rect class="grp" x="24" y="56" width="912" height="76" rx="8"/>
+  <rect class="grp" x="24" y="140" width="912" height="76" rx="8"/>
+  <rect class="grp" x="24" y="224" width="912" height="76" rx="8"/>
+
+  <path class="rule" d="M 190 56 V 300"/>
+  <path class="rule" d="M 430 56 V 300"/>
+  <path class="rule" d="M 670 56 V 300"/>
+
+  <path class="rule" d="M 190 94 H 670"/>
+  <path class="rule" d="M 190 178 H 670"/>
+  <path class="rule" d="M 190 262 H 670"/>
+
+  <text class="hb" x="40" y="88">Close</text>
+  <text class="s" x="40" y="106">all inside one octave</text>
+  <rect class="chip" x="414" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="430" y="99" text-anchor="middle">C4</text>
+  <rect class="chip" x="494" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="510" y="99" text-anchor="middle">E4</text>
+  <rect class="chip" x="554" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="570" y="99" text-anchor="middle">G4</text>
+  <rect class="chip" x="634" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="650" y="99" text-anchor="middle">B4</text>
+  <text class="s" x="700" y="88">all four notes inside one octave</text>
+  <text class="s" x="700" y="106">— compact, direct, the pop default</text>
+
+  <text class="hb" x="40" y="172">Open · Drop2</text>
+  <text class="s" x="40" y="190">the second voice drops</text>
+  <rect class="chip" x="314" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="330" y="183" text-anchor="middle">G3</text>
+  <rect class="chip" x="414" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="430" y="183" text-anchor="middle">C4</text>
+  <rect class="chip" x="494" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="510" y="183" text-anchor="middle">E4</text>
+  <rect class="chip" x="634" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="650" y="183" text-anchor="middle">B4</text>
+  <text class="s" x="700" y="172">the voice below the top drops</text>
+  <text class="s" x="700" y="190">an octave; wide and airy</text>
+
+  <text class="hb" x="40" y="256">Rootless</text>
+  <text class="s" x="40" y="274">the root is left out</text>
+  <rect class="card" x="254" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="270" y="267" text-anchor="middle">E3</text>
+  <rect class="card" x="314" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="330" y="267" text-anchor="middle">G3</text>
+  <rect class="card" x="394" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="410" y="267" text-anchor="middle">B3</text>
+  <rect class="card" x="454" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="470" y="267" text-anchor="middle">D4</text>
+  <text class="s" x="700" y="256">no root — the bass has it, and</text>
+  <text class="s" x="700" y="274">the low register stays clear</text>
+
+  <path class="seam" d="M 24 322 H 936"/>
+  <text class="s" x="480" y="344" text-anchor="middle">Close and Open cover most bars. Rootless also needs the bass to sound the root on beat 1, a B, Chorus or Bridge section,</text>
+  <text class="s" x="480" y="362" text-anchor="middle">a CityPop, Nostalgic, Dramatic or ModernPop mood, and one more roll to pass — and ballads never use it at all.</text>
+</svg>

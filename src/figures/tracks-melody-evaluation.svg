@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" role="img" aria-labelledby="tme-ttl tme-dsc">
+  <title id="tme-ttl">How a batch of candidate melodies is scored and one of them chosen</title>
+  <desc id="tme-dsc">A batch of candidate phrases is generated — a hundred for a chorus, fifty for a B section, thirty for a bridge, twenty elsewhere. Each candidate is scored three ways: a style score worth forty percent, a penalty-based culling score worth forty percent, and an interval bias score worth twenty percent. The three combine into one score, plus a global-motif bonus whose weight depends on the section. The candidates are then sorted, the bottom half is discarded, and one of the survivors is drawn at random with higher scores given higher odds.</desc>
+
+  <defs>
+    <marker id="tme-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="400" rx="12"/>
+
+  <rect class="chip" x="24" y="99" width="176" height="64" rx="5"/>
+  <text class="h" x="36" y="120">candidates</text>
+  <text class="s" x="36" y="138">chorus 100 · B 50</text>
+  <text class="s" x="36" y="154">bridge 30 · rest 20</text>
+
+  <path class="ln" d="M 200 131 H 216 V 69 H 244" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 200 131 H 244" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 200 131 H 216 V 193 H 244" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="248" y="44" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="65">style score</text>
+  <text class="h" x="620" y="65" text-anchor="end">40%</text>
+  <text class="s" x="260" y="83">contour match, pattern consistency, surprise balance</text>
+
+  <rect class="chip" x="248" y="106" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="127">culling score</text>
+  <text class="h" x="620" y="127" text-anchor="end">40%</text>
+  <text class="s" x="260" y="145">penalties for singing difficulty, monotony, awkward gaps</text>
+
+  <rect class="chip" x="248" y="168" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="189">bias score</text>
+  <text class="h" x="620" y="189" text-anchor="end">20%</text>
+  <text class="s" x="260" y="207">interval mix against the style's own preference</text>
+
+  <path class="ln" d="M 632 69 H 656 V 131 H 676" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 632 131 H 676" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 632 193 H 656 V 131 H 676" marker-end="url(#tme-a)"/>
+
+  <rect class="card" x="680" y="99" width="204" height="64" rx="6"/>
+  <text class="h" x="692" y="121">combined score</text>
+  <text class="s" x="692" y="139">40 / 40 / 20, plus a motif</text>
+  <text class="s" x="692" y="155">bonus weighted by section</text>
+
+  <path class="ln" d="M 782 163 V 232" marker-end="url(#tme-a)"/>
+
+  <rect class="grp" x="24" y="236" width="912" height="90" rx="8"/>
+  <text class="lbl" x="38" y="258">selection</text>
+
+  <rect class="chip" x="36" y="268" width="278" height="44" rx="5"/>
+  <text class="h" x="48" y="289">sort, highest first</text>
+  <text class="s" x="48" y="305">stable, so ties break the same way</text>
+
+  <path class="ln" d="M 314 290 H 334" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="338" y="268" width="278" height="44" rx="5"/>
+  <text class="h" x="350" y="289">cull the bottom half</text>
+  <text class="s" x="350" y="305">only the top 50% stay in the draw</text>
+
+  <path class="ln" d="M 616 290 H 636" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="640" y="268" width="284" height="44" rx="5"/>
+  <text class="h" x="652" y="289">weighted random pick</text>
+  <text class="s" x="652" y="305">higher score, higher odds</text>
+
+  <path class="seam" d="M 24 354 H 936"/>
+  <text class="s" x="480" y="376" text-anchor="middle">Scoring narrows the field; the final pick stays random inside it, so equally good phrases stay in rotation.</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 220" role="img" aria-labelledby="oar-ttl oar-dsc">
+  <title id="oar-ttl">arpeggioEnabled gates every other arpeggio field</title>
+  <desc id="oar-dsc">A single switch on the left feeds a panel of six dependent fields: arpeggioPattern, arpeggioSpeed, arpeggioOctaveRange, arpeggioGate, arpeggioSyncChord and arpeggioBaseVelocity, each shown with its accepted range. The arpeggio track is off by default, and none of the six fields is read until the switch is turned on.</desc>
+
+  <defs>
+    <marker id="oar-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="220" rx="12"/>
+
+  <text class="lbl" x="26" y="64">switch</text>
+  <rect class="card" x="24" y="72" width="176" height="56" rx="6"/>
+  <text class="mono" x="112" y="96" text-anchor="middle">arpeggioEnabled</text>
+  <text class="s" x="112" y="114" text-anchor="middle">default false</text>
+
+  <path class="ln" d="M 200 100 H 222" marker-end="url(#oar-a)"/>
+
+  <rect class="grp" x="228" y="36" width="708" height="160" rx="8"/>
+  <text class="lbl" x="240" y="56">effective only while it is on</text>
+
+  <rect class="chip" x="240" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="350" y="82" text-anchor="middle">arpeggioPattern</text>
+  <text class="s" x="350" y="98" text-anchor="middle">0–7, or 255 for auto</text>
+  <rect class="chip" x="470" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="580" y="82" text-anchor="middle">arpeggioSpeed</text>
+  <text class="s" x="580" y="98" text-anchor="middle">8th · 16th · triplet</text>
+  <rect class="chip" x="700" y="64" width="220" height="44" rx="5"/>
+  <text class="mono" x="810" y="82" text-anchor="middle">arpeggioOctaveRange</text>
+  <text class="s" x="810" y="98" text-anchor="middle">1 to 3 octaves</text>
+
+  <rect class="chip" x="240" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="350" y="136" text-anchor="middle">arpeggioGate</text>
+  <text class="s" x="350" y="152" text-anchor="middle">0.0–1.0, −1 = style default</text>
+  <rect class="chip" x="470" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="580" y="136" text-anchor="middle">arpeggioSyncChord</text>
+  <text class="s" x="580" y="152" text-anchor="middle">follow chord changes</text>
+  <rect class="chip" x="700" y="118" width="220" height="44" rx="5"/>
+  <text class="mono" x="810" y="136" text-anchor="middle">arpeggioBaseVelocity</text>
+  <text class="s" x="810" y="152" text-anchor="middle">0–127, default 90</text>
+
+  <text class="s" x="582" y="182" text-anchor="middle">The arpeggio track is off by default — none of these fields is read until it is switched on</text>
+</svg>

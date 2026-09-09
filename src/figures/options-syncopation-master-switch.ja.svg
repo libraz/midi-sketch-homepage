@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 262" role="img" aria-labelledby="osy-ttl osy-dsc">
+  <title id="osy-ttl">enableSyncopation は 3 つの設定を束ねるマスタースイッチ</title>
+  <desc id="osy-dsc">enableSyncopation から 2 つの分岐が出ます。true のときは syncopation_prob と allow_bar_crossing が指定どおりに残り、グルーブのシンコペーション重み付けも効きます。false のときは syncopation_prob が 0.0 に、allow_bar_crossing が false に強制され、Syncopated グルーブを選んでも効きません。タイミングオフセットはどちらでも適用されます。</desc>
+
+  <defs>
+    <marker id="osy-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+    <marker id="osy-b" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah2" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="262" rx="12"/>
+
+  <text class="lbl" x="26" y="92">マスタースイッチ</text>
+  <rect class="card" x="24" y="100" width="180" height="44" rx="6"/>
+  <text class="mono" x="114" y="127" text-anchor="middle">enableSyncopation</text>
+
+  <path class="ln" d="M 204 122 H 220 V 76 H 244" marker-end="url(#osy-a)"/>
+  <path class="ln2" d="M 204 122 H 220 V 168 H 244" marker-end="url(#osy-b)"/>
+
+  <rect class="grp" x="248" y="40" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="58">true — シンコペーションは有効</text>
+  <rect class="chip" x="260" y="66" width="212" height="32" rx="5"/>
+  <text class="mono" x="366" y="86" text-anchor="middle">syncopation_prob</text>
+  <rect class="chip" x="484" y="66" width="212" height="32" rx="5"/>
+  <text class="mono" x="590" y="86" text-anchor="middle">allow_bar_crossing</text>
+  <rect class="chip" x="708" y="66" width="212" height="32" rx="5"/>
+  <text class="s" x="814" y="86" text-anchor="middle">グルーブの重み付け</text>
+
+  <rect class="grp" x="248" y="132" width="688" height="72" rx="8"/>
+  <text class="lbl" x="260" y="150">false — ゼロに固定</text>
+  <rect class="chip" x="260" y="158" width="212" height="32" rx="5"/>
+  <text class="mono" x="366" y="178" text-anchor="middle">syncopation_prob = 0.0</text>
+  <rect class="chip" x="484" y="158" width="212" height="32" rx="5"/>
+  <text class="mono" x="590" y="178" text-anchor="middle">allow_bar_crossing = false</text>
+  <rect class="chip" x="708" y="158" width="212" height="32" rx="5"/>
+  <text class="s" x="814" y="178" text-anchor="middle">Syncopated でも効かない</text>
+
+  <path class="seam" d="M 24 224 H 936"/>
+  <text class="s" x="480" y="244" text-anchor="middle">OffBeat の +30 ticks のようなタイミングオフセットは常に適用され、止まるのは重み付けだけです。</text>
+</svg>

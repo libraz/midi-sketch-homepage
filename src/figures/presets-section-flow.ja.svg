@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 322" role="img" aria-labelledby="sfl-ttl sfl-dsc">
+  <title id="sfl-ttl">セクションの並びと、そこから生まれるエネルギーの起伏</title>
+  <desc id="sfl-dsc">7 つのセクションが左から右へ並びます。Intro・A・B・サビ・ブリッジ・サビ・アウトロで、バーの高さがそのセクションのエネルギーを表します。イントロの「低」から A・B の「中低」「中」を経てサビで「高」に達し、ブリッジで「中低」に戻り、アウトロもそのままです。バーの下はボーカル密度です。イントロとアウトロは「なし」、A とブリッジは「控えめ」、B とサビは「フル」です。ボーカルのない間奏セクションとして Interlude も用意されています。</desc>
+
+  <defs>
+    <marker id="sfl-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="322" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="196" rx="8"/>
+  <text class="lbl" x="38" y="60">バーの高さ = セクションのエネルギー</text>
+
+  <path class="rule" d="M 30 186 H 930"/>
+
+  <rect class="chip" x="38" y="158" width="110" height="28" rx="5"/>
+  <text class="s" x="93" y="177" text-anchor="middle">低</text>
+  <text class="h" x="93" y="206" text-anchor="middle">Intro</text>
+  <text class="s" x="93" y="224" text-anchor="middle">なし</text>
+
+  <path class="ln" d="M 150 172 H 165" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="167" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="222" y="177" text-anchor="middle">中低</text>
+  <text class="h" x="222" y="206" text-anchor="middle">A</text>
+  <text class="s" x="222" y="224" text-anchor="middle">控えめ</text>
+
+  <path class="ln" d="M 279 172 H 294" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="296" y="126" width="110" height="60" rx="5"/>
+  <text class="s" x="351" y="177" text-anchor="middle">中</text>
+  <text class="h" x="351" y="206" text-anchor="middle">B</text>
+  <text class="s" x="351" y="224" text-anchor="middle">フル</text>
+
+  <path class="ln" d="M 408 172 H 423" marker-end="url(#sfl-a)"/>
+
+  <rect class="card" x="425" y="98" width="110" height="88" rx="6"/>
+  <text class="s" x="480" y="177" text-anchor="middle">高</text>
+  <text class="h" x="480" y="206" text-anchor="middle">サビ</text>
+  <text class="s" x="480" y="224" text-anchor="middle">フル</text>
+
+  <path class="ln" d="M 537 172 H 552" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="554" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="609" y="177" text-anchor="middle">中低</text>
+  <text class="h" x="609" y="206" text-anchor="middle">ブリッジ</text>
+  <text class="s" x="609" y="224" text-anchor="middle">控えめ</text>
+
+  <path class="ln" d="M 666 172 H 681" marker-end="url(#sfl-a)"/>
+
+  <rect class="card" x="683" y="98" width="110" height="88" rx="6"/>
+  <text class="s" x="738" y="177" text-anchor="middle">高</text>
+  <text class="h" x="738" y="206" text-anchor="middle">サビ</text>
+  <text class="s" x="738" y="224" text-anchor="middle">フル</text>
+
+  <path class="ln" d="M 795 172 H 810" marker-end="url(#sfl-a)"/>
+
+  <rect class="chip" x="812" y="142" width="110" height="44" rx="5"/>
+  <text class="s" x="867" y="177" text-anchor="middle">中低</text>
+  <text class="h" x="867" y="206" text-anchor="middle">アウトロ</text>
+  <text class="s" x="867" y="224" text-anchor="middle">なし</text>
+
+  <rect class="alt" x="290" y="250" width="380" height="28" rx="6"/>
+  <text class="s" x="480" y="269" text-anchor="middle">Interlude — 間奏、ボーカルなし</text>
+
+  <path class="seam" d="M 24 290 H 936"/>
+  <text class="s" x="480" y="310" text-anchor="middle">構造パターンはこれらのセクションタイプの並べ方の違いです。サビは常にエネルギーの頂点になります。</text>
+</svg>

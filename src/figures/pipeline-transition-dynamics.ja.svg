@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 314" role="img" aria-labelledby="trd-ttl trd-dsc">
+  <title id="trd-ttl">セクションの継ぎ目でトランジション・ダイナミクスが行うこと</title>
+  <desc id="trd-dsc">3 つのケースを、変化しない基準線に対するベロシティ曲線として示します。B メロからサビへ向かう場合だけは特別で、セクション全体を使い、前半は ×0.85 付近まで抑え、後半で ×1.00 へ戻します。それ以外でエネルギーが上がる場合は最後の 1 小節だけのクレシェンド、下がる場合は最後の 1 小節だけのデクレシェンドです。エネルギーレベルが同じセクション同士では何も起きません。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="314" rx="12"/>
+
+  <rect class="grp" x="24" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="38" y="64">B メロ → サビ</text>
+  <path class="rule" d="M 44 113 H 290"/>
+  <text class="s" x="290" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 44 147 L 167 131 L 290 113"/>
+  <text class="s" x="167" y="186" text-anchor="middle">セクション全体</text>
+  <text class="s" x="44" y="206">×0.85 まで抑えてから ×1.00 へ戻し、</text>
+  <text class="s" x="44" y="222">これをセクション全体で行います</text>
+
+  <rect class="grp" x="337" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="351" y="64">エネルギーが上がる時</text>
+  <rect class="fill1" x="521" y="86" width="82" height="84" rx="5"/>
+  <path class="rule" d="M 357 113 H 603"/>
+  <text class="s" x="603" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 357 113 H 521 V 147 L 603 90"/>
+  <text class="s" x="562" y="186" text-anchor="middle">最後の 1 小節</text>
+  <text class="s" x="357" y="206">最後の 1 小節だけ ×0.85 → ×1.10</text>
+  <text class="s" x="357" y="222">次のセクションが大きい時</text>
+
+  <rect class="grp" x="650" y="44" width="286" height="190" rx="8"/>
+  <text class="lbl" x="664" y="64">エネルギーが下がる時</text>
+  <rect class="fill1" x="834" y="86" width="82" height="84" rx="5"/>
+  <path class="rule" d="M 670 113 H 916"/>
+  <text class="s" x="916" y="107" text-anchor="end">×1.00</text>
+  <path class="ln" d="M 670 113 H 834 L 916 170"/>
+  <text class="s" x="875" y="186" text-anchor="middle">最後の 1 小節</text>
+  <text class="s" x="670" y="206">最後の 1 小節だけ ×1.00 → ×0.75</text>
+  <text class="s" x="670" y="222">次のセクションが小さい時</text>
+
+  <text class="s" x="480" y="256" text-anchor="middle">エネルギーレベルが同じセクション同士では、何も適用されません。</text>
+
+  <path class="seam" d="M 24 280 H 936"/>
+  <text class="s" x="480" y="300" text-anchor="middle">この処理が書き換えるのはベロシティだけです。音符を足したり動かしたりはしません。</text>
+</svg>

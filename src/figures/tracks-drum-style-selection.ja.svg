@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 396" role="img" aria-labelledby="tds-ttl tds-dsc">
+  <title id="tds-ttl">ムードプリセットがどのドラムスタイルに対応するか</title>
+  <desc id="tds-dsc">ドラムスタイルは 8 種類あり、ムードプリセットが 1 つを選びます。Blueprint の drum_style_hint で固定することもできます（0 は自動）。Sparse は Ballad・Chill・Lofi・EmotionalPop、Standard は StraightPop・CityPop・Sentimental・Nostalgic・RnBNeoSoul、FourOnFloor は EnergeticDance・ElectroPop・DarkPop、Upbeat は BrightUpbeat・MidPop・ModernPop・IdolPop・Anthem、Rock は LightRock・Dramatic、Synth は AnimeHighEnergy・Synthwave・FutureBass に対応します。Trap と Latin はそれぞれ 1 つのムード専用です。</desc>
+
+  <defs>
+    <marker id="tds-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="396" rx="12"/>
+
+  <rect class="card" x="218" y="40" width="250" height="46" rx="6"/>
+  <text class="h" x="230" y="60">ムードプリセット</text>
+  <text class="s" x="230" y="78">24 プリセット、それぞれ 1 スタイル</text>
+
+  <rect class="alt" x="492" y="40" width="250" height="46" rx="6"/>
+  <text class="mono" x="504" y="60">drum_style_hint</text>
+  <text class="s" x="504" y="78">Blueprint で上書き — 0 = 自動</text>
+
+  <path class="ln" d="M 343 86 V 98" marker-end="url(#tds-a)"/>
+  <path class="ln" d="M 617 86 V 98" marker-end="url(#tds-a)"/>
+
+  <rect class="grp" x="24" y="108" width="912" height="214" rx="8"/>
+  <text class="lbl" x="38" y="130">DrumStyle</text>
+
+  <rect class="chip" x="36" y="140" width="204" height="80" rx="5"/>
+  <text class="h" x="48" y="161">Sparse</text>
+  <text class="s" x="48" y="179">Ballad · Chill · Lofi ·</text>
+  <text class="s" x="48" y="195">EmotionalPop</text>
+
+  <rect class="chip" x="264" y="140" width="204" height="80" rx="5"/>
+  <text class="h" x="276" y="161">Standard</text>
+  <text class="s" x="276" y="179">StraightPop · CityPop ·</text>
+  <text class="s" x="276" y="195">Sentimental · Nostalgic ·</text>
+  <text class="s" x="276" y="211">RnBNeoSoul</text>
+
+  <rect class="chip" x="492" y="140" width="204" height="80" rx="5"/>
+  <text class="h" x="504" y="161">FourOnFloor</text>
+  <text class="s" x="504" y="179">EnergeticDance ·</text>
+  <text class="s" x="504" y="195">ElectroPop · DarkPop</text>
+
+  <rect class="chip" x="720" y="140" width="204" height="80" rx="5"/>
+  <text class="h" x="732" y="161">Upbeat</text>
+  <text class="s" x="732" y="179">BrightUpbeat · MidPop ·</text>
+  <text class="s" x="732" y="195">ModernPop · IdolPop ·</text>
+  <text class="s" x="732" y="211">Anthem</text>
+
+  <rect class="chip" x="36" y="230" width="204" height="80" rx="5"/>
+  <text class="h" x="48" y="251">Rock</text>
+  <text class="s" x="48" y="269">LightRock · Dramatic</text>
+
+  <rect class="chip" x="264" y="230" width="204" height="80" rx="5"/>
+  <text class="h" x="276" y="251">Synth</text>
+  <text class="s" x="276" y="269">AnimeHighEnergy ·</text>
+  <text class="s" x="276" y="285">Synthwave · FutureBass</text>
+
+  <rect class="chip" x="492" y="230" width="204" height="80" rx="5"/>
+  <text class="h" x="504" y="251">Trap</text>
+  <text class="s" x="504" y="269">Trap</text>
+  <text class="s" x="504" y="285">ハーフタイムのスネア</text>
+
+  <rect class="chip" x="720" y="230" width="204" height="80" rx="5"/>
+  <text class="h" x="732" y="251">Latin</text>
+  <text class="s" x="732" y="269">LatinPop</text>
+  <text class="s" x="732" y="285">デンボウのキック＆スネア</text>
+
+  <path class="seam" d="M 24 350 H 936"/>
+  <text class="s" x="480" y="372" text-anchor="middle">スタイルは曲全体で固定され、フィルを書き込む土台となるキック・スネア・ハイハットのグリッドを決めます。</text>
+</svg>

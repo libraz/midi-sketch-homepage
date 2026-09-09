@@ -4,7 +4,9 @@ import { h } from 'vue'
 import { useData } from 'vitepress'
 import './custom.css'
 import '@/styles/demo-theme.css'
+import '@/styles/doc-figure.css'
 import MidiDemo from './MidiDemo.vue'
+import DocFigure from '@/components/DocFigure.vue'
 import MidiStudio from '@/components/studio/MidiStudio.vue'
 import ScoreExample from '@/components/ScoreExample.vue'
 import WasmStat from '@/components/WasmStat.vue'
@@ -25,6 +27,7 @@ export default {
   },
   enhanceApp({ app }) {
     app.component('MidiDemo', MidiDemo)
+    app.component('DocFigure', DocFigure)
     app.component('MidiStudio', MidiStudio)
     app.component('ScoreExample', ScoreExample)
     app.component('WasmStat', WasmStat)

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 362" role="img" aria-labelledby="bgm-ttl bgm-dsc">
+  <title id="bgm-ttl">The two BGM-only orders, after the shared structure step</title>
+  <desc id="bgm-dsc">Both BGM-only composition styles start from the same structure step and then skip the vocal. BackgroundMotif writes aux first, then motif, bass, chord, guitar, arpeggio, drums and SE. SynthDriven writes the same list without aux, starting from the motif. Aux is the only track the two styles disagree on.</desc>
+
+  <defs>
+    <marker id="bgm-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="362" rx="12"/>
+
+  <rect class="chip" x="24" y="44" width="912" height="32" rx="5"/>
+  <text class="mono" x="40" y="64">buildStructure</text>
+  <text class="s" x="160" y="64">section order, bar counts and the chord skeleton — the same for both styles</text>
+
+  <path class="ln" d="M 40 76 V 253"/>
+  <path class="ln" d="M 40 137 H 56" marker-end="url(#bgm-a)"/>
+  <path class="ln" d="M 40 253 H 56" marker-end="url(#bgm-a)"/>
+
+  <rect class="grp" x="64" y="96" width="872" height="92" rx="8"/>
+  <text class="lbl" x="78" y="116">BackgroundMotif · no vocal track</text>
+  <rect class="card" x="78" y="122" width="99" height="30" rx="6"/>
+  <text class="s" x="127" y="141" text-anchor="middle">1 · Aux</text>
+  <rect class="chip" x="183" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="232" y="141" text-anchor="middle">2 · Motif</text>
+  <rect class="chip" x="288" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="337" y="141" text-anchor="middle">3 · Bass</text>
+  <rect class="chip" x="393" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="442" y="141" text-anchor="middle">4 · Chord</text>
+  <rect class="chip" x="498" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="547" y="141" text-anchor="middle">5 · Guitar</text>
+  <rect class="chip" x="603" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="652" y="141" text-anchor="middle">6 · Arpeggio</text>
+  <rect class="chip" x="708" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="757" y="141" text-anchor="middle">7 · Drums</text>
+  <rect class="chip" x="813" y="122" width="99" height="30" rx="5"/>
+  <text class="s" x="862" y="141" text-anchor="middle">8 · SE</text>
+  <text class="s" x="78" y="174">Aux runs first here, before the motif that carries the melody.</text>
+
+  <rect class="grp" x="64" y="212" width="872" height="92" rx="8"/>
+  <text class="lbl" x="78" y="232">SynthDriven · no vocal, no aux</text>
+  <rect class="chip" x="78" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="127" y="257" text-anchor="middle">1 · Motif</text>
+  <rect class="chip" x="183" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="232" y="257" text-anchor="middle">2 · Bass</text>
+  <rect class="chip" x="288" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="337" y="257" text-anchor="middle">3 · Chord</text>
+  <rect class="chip" x="393" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="442" y="257" text-anchor="middle">4 · Guitar</text>
+  <rect class="chip" x="498" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="547" y="257" text-anchor="middle">5 · Arpeggio</text>
+  <rect class="chip" x="603" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="652" y="257" text-anchor="middle">6 · Drums</text>
+  <rect class="chip" x="708" y="238" width="99" height="30" rx="5"/>
+  <text class="s" x="757" y="257" text-anchor="middle">7 · SE</text>
+  <text class="s" x="78" y="290">Aux is the only track the two styles disagree on.</text>
+
+  <path class="seam" d="M 24 328 H 936"/>
+  <text class="s" x="480" y="348" text-anchor="middle">Neither style writes a vocal, and the arpeggio appears only when it has been enabled.</text>
+</svg>

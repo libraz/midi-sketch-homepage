@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 424" role="img" aria-labelledby="tmp-ttl tmp-dsc">
+  <title id="tmp-ttl">How a motif pattern is built, and what the motion type changes</title>
+  <desc id="tmp-dsc">A motif starts from a base note — 67 in the high register, 60 otherwise. Rhythm positions come next, derived from the rhythm density and the motif length, or taken from a locked rhythm template. The note count is clamped to between three and eight, six by default. Only then is the pitch sequence generated, one step per note, with the step size set by the motion type: Stepwise stays on 2nds, GentleLeap reaches a 3rd, WideLeap a 5th, NarrowStep moves one scale degree, Disjunct leaps irregularly, and Ostinato repeats a single pitch class. Repeat scope then decides whether one pattern serves the whole song or each section gets its own — unless the riff policy has already forced a fresh pattern per section.</desc>
+
+  <defs>
+    <marker id="tmp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="424" rx="12"/>
+
+  <rect class="chip" x="24" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="36" y="65">base note</text>
+  <text class="s" x="36" y="83">high register starts at 67,</text>
+  <text class="s" x="36" y="99">otherwise at 60</text>
+
+  <path class="ln" d="M 228 74 H 252" marker-end="url(#tmp-a)"/>
+
+  <rect class="chip" x="260" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="272" y="65">rhythm positions</text>
+  <text class="s" x="272" y="83">from density and length —</text>
+  <text class="s" x="272" y="99">or a locked rhythm template</text>
+
+  <path class="ln" d="M 464 74 H 488" marker-end="url(#tmp-a)"/>
+
+  <rect class="chip" x="496" y="40" width="204" height="68" rx="5"/>
+  <text class="h" x="508" y="65">note count</text>
+  <text class="s" x="508" y="83">3–8 notes per cycle,</text>
+  <text class="s" x="508" y="99">6 by default</text>
+
+  <path class="ln" d="M 700 74 H 724" marker-end="url(#tmp-a)"/>
+
+  <rect class="card" x="732" y="40" width="204" height="68" rx="6"/>
+  <text class="h" x="744" y="65">pitch sequence</text>
+  <text class="s" x="744" y="83">one step per note, its size</text>
+  <text class="s" x="744" y="99">set by the motion type</text>
+
+  <path class="ln" d="M 834 108 V 122" marker-end="url(#tmp-a)"/>
+
+  <rect class="grp" x="24" y="132" width="912" height="112" rx="8"/>
+  <text class="lbl" x="38" y="154">MotifMotion</text>
+
+  <rect class="chip" x="36" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="48" y="185">Stepwise</text>
+  <text class="s" x="48" y="203">2nds only</text>
+
+  <rect class="chip" x="186" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="198" y="185">GentleLeap</text>
+  <text class="s" x="198" y="203">up to 3rds</text>
+
+  <rect class="chip" x="336" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="348" y="185">WideLeap</text>
+  <text class="s" x="348" y="203">up to 5ths</text>
+
+  <rect class="chip" x="486" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="498" y="185">NarrowStep</text>
+  <text class="s" x="498" y="203">±1 scale degree</text>
+
+  <rect class="chip" x="636" y="164" width="138" height="64" rx="5"/>
+  <text class="h" x="648" y="185">Disjunct</text>
+  <text class="s" x="648" y="203">irregular leaps</text>
+
+  <rect class="alt" x="786" y="164" width="138" height="64" rx="6"/>
+  <text class="h" x="798" y="185">Ostinato</text>
+  <text class="s" x="798" y="203">one pitch class,</text>
+  <text class="s" x="798" y="219">Blueprint only</text>
+
+  <path class="ln" d="M 480 244 V 254" marker-end="url(#tmp-a)"/>
+
+  <rect class="grp" x="24" y="264" width="912" height="90" rx="8"/>
+  <text class="lbl" x="38" y="286">repeat scope</text>
+
+  <rect class="chip" x="36" y="296" width="278" height="46" rx="5"/>
+  <text class="h" x="48" y="317">FullSong</text>
+  <text class="s" x="48" y="333">one pattern for the whole song</text>
+
+  <rect class="chip" x="338" y="296" width="278" height="46" rx="5"/>
+  <text class="h" x="350" y="317">Section</text>
+  <text class="s" x="350" y="333">a fresh pattern per section</text>
+
+  <rect class="warn" x="640" y="296" width="284" height="46" rx="6"/>
+  <text class="h" x="652" y="317">the riff policy comes first</text>
+  <text class="s" x="652" y="333">under a free policy every section rebuilds</text>
+
+  <path class="seam" d="M 24 378 H 936"/>
+  <text class="s" x="480" y="400" text-anchor="middle">The motion type only sets how far each step may travel; the rhythm grid is fixed before any pitch is chosen.</text>
+</svg>

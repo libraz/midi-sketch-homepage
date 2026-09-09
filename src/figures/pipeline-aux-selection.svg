@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 312" role="img" aria-labelledby="aux-ttl aux-dsc">
+  <title id="aux-ttl">How the aux part chooses its function, its register and its notes</title>
+  <desc id="aux-dsc">Two things feed the aux generator: the Blueprint's AuxProfile, which names the function to play, and an analysis of the vocal. The section type then decides which of the profile's functions applies and how low and how dense the part sits — intro, verse and chorus each get their own setting. Whatever comes out is finally measured against the vocal: a per-note ceiling from the vocal above it, a clash and isolation pass, and a rule that drops any note whose fix leapt too far or left the chord.</desc>
+
+  <defs>
+    <marker id="aux-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="312" rx="12"/>
+
+  <rect class="card" x="24" y="64" width="176" height="44" rx="6"/>
+  <text class="mono" x="112" y="86" text-anchor="middle">AuxProfile</text>
+  <text class="s" x="112" y="102" text-anchor="middle">from the Blueprint</text>
+
+  <rect class="chip" x="24" y="128" width="176" height="44" rx="5"/>
+  <text class="h" x="112" y="150" text-anchor="middle">vocal analysis</text>
+  <text class="s" x="112" y="166" text-anchor="middle">phrases, pitches, rests</text>
+
+  <path class="ln" d="M 200 86 H 224" marker-end="url(#aux-a)"/>
+  <path class="ln" d="M 200 150 H 224" marker-end="url(#aux-a)"/>
+
+  <rect class="grp" x="232" y="44" width="430" height="210" rx="8"/>
+  <text class="lbl" x="246" y="64">section → function, register, density</text>
+
+  <rect class="chip" x="246" y="76" width="402" height="32" rx="5"/>
+  <text class="h" x="258" y="96">Intro</text>
+  <text class="s" x="306" y="96">the intro function — or a preview of the chorus motif</text>
+
+  <rect class="chip" x="246" y="124" width="402" height="32" rx="5"/>
+  <text class="h" x="258" y="144">A / B / Bridge</text>
+  <text class="s" x="366" y="144">the verse function, an octave under the vocal</text>
+
+  <rect class="chip" x="246" y="172" width="402" height="32" rx="5"/>
+  <text class="h" x="258" y="192">Chorus</text>
+  <text class="s" x="310" y="192">the chorus function, closer in, and denser</text>
+
+  <text class="s" x="246" y="232">the function itself comes from the Blueprint, not from the section</text>
+
+  <path class="ln" d="M 662 150 H 686" marker-end="url(#aux-a)"/>
+
+  <rect class="grp" x="694" y="44" width="242" height="210" rx="8"/>
+  <text class="lbl" x="706" y="64">then, against the vocal</text>
+
+  <rect class="chip" x="706" y="76" width="218" height="44" rx="5"/>
+  <text class="s" x="718" y="94">a ceiling from the vocal</text>
+  <text class="s" x="718" y="108">note above it</text>
+
+  <rect class="chip" x="706" y="132" width="218" height="44" rx="5"/>
+  <text class="s" x="718" y="150">clashes resolved, isolated</text>
+  <text class="s" x="718" y="164">notes filled back in</text>
+
+  <rect class="chip" x="706" y="188" width="218" height="44" rx="5"/>
+  <text class="s" x="718" y="206">a fix that leaps too far, or</text>
+  <text class="s" x="718" y="220">off the chord, is dropped</text>
+
+  <path class="seam" d="M 24 278 H 936"/>
+  <text class="s" x="480" y="298" text-anchor="middle">Aux never picks its own part: the Blueprint names the function, the section sets the register, and the vocal has the last word.</text>
+</svg>

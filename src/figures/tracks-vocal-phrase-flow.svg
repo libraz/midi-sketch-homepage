@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="tvp-ttl tvp-dsc">
+  <title id="tvp-ttl">What happens when a section asks for a vocal phrase</title>
+  <desc id="tvp-dsc">A section begins and the phrase cache is looked up with a key made of section type, bar count and starting chord degree. On a hit the stored phrase is reused, shifted to this section's start and re-fitted to the range. On a miss a MelodyTemplate is chosen, a phrase is generated, scored and cached. Either way one phrase comes out and passes through the same tail: voice leading, HarmonyContext.getSafePitch, an octave fold back into the vocal range, and finally the write to the vocal track.</desc>
+
+  <defs>
+    <marker id="tvp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="390" rx="12"/>
+
+  <rect class="chip" x="24" y="145" width="160" height="52" rx="5"/>
+  <text class="h" x="36" y="166">a section starts</text>
+  <text class="s" x="36" y="184">verse, chorus, bridge…</text>
+
+  <path class="ln" d="M 184 171 H 204" marker-end="url(#tvp-a)"/>
+
+  <rect class="grp" x="208" y="40" width="432" height="262" rx="8"/>
+  <text class="lbl" x="222" y="62">phrase cache</text>
+
+  <rect class="card" x="220" y="72" width="408" height="46" rx="6"/>
+  <text class="h" x="232" y="93">look up the phrase cache</text>
+  <text class="s" x="232" y="111">key = section type + bar count + starting chord degree</text>
+
+  <path class="ln" d="M 424 118 V 130"/>
+  <path class="ln" d="M 317 130 H 531"/>
+  <path class="ln" d="M 317 130 V 142" marker-end="url(#tvp-a)"/>
+  <path class="ln" d="M 531 130 V 142" marker-end="url(#tvp-a)"/>
+
+  <rect class="alt" x="220" y="146" width="194" height="92" rx="6"/>
+  <text class="lbl" x="232" y="166">hit</text>
+  <text class="h" x="232" y="187">reuse the phrase</text>
+  <text class="s" x="232" y="205">shifted to this section</text>
+  <text class="s" x="232" y="221">and re-fitted to its range</text>
+
+  <rect class="chip" x="434" y="146" width="194" height="92" rx="5"/>
+  <text class="lbl" x="446" y="166">miss</text>
+  <text class="h" x="446" y="187">design a new phrase</text>
+  <text class="s" x="446" y="205">pick a MelodyTemplate,</text>
+  <text class="s" x="446" y="221">generate, score, then cache</text>
+
+  <path class="ln" d="M 317 238 V 244"/>
+  <path class="ln" d="M 531 238 V 244"/>
+  <path class="ln" d="M 317 244 H 531"/>
+  <path class="ln" d="M 424 244 V 254" marker-end="url(#tvp-a)"/>
+
+  <rect class="chip" x="220" y="258" width="408" height="32" rx="5"/>
+  <text class="h" x="424" y="279" text-anchor="middle">one phrase for this section</text>
+
+  <path class="ln" d="M 628 274 H 646 V 171 H 660" marker-end="url(#tvp-a)"/>
+
+  <rect class="grp" x="664" y="40" width="272" height="262" rx="8"/>
+  <text class="lbl" x="678" y="62">then, for every phrase</text>
+
+  <rect class="chip" x="676" y="72" width="248" height="48" rx="5"/>
+  <text class="h" x="688" y="93">voice leading</text>
+  <text class="s" x="688" y="111">smooth motion from the last note</text>
+
+  <path class="ln" d="M 800 120 V 130" marker-end="url(#tvp-a)"/>
+
+  <rect class="chip" x="676" y="134" width="248" height="48" rx="5"/>
+  <text class="mono" x="688" y="155">HarmonyContext.getSafePitch</text>
+  <text class="s" x="688" y="173">keeps it consonant with the rest</text>
+
+  <path class="ln" d="M 800 182 V 192" marker-end="url(#tvp-a)"/>
+
+  <rect class="chip" x="676" y="196" width="248" height="48" rx="5"/>
+  <text class="h" x="688" y="217">octave fold</text>
+  <text class="s" x="688" y="235">±12 back into the vocal range</text>
+
+  <path class="ln" d="M 800 244 V 254" marker-end="url(#tvp-a)"/>
+
+  <rect class="chip" x="676" y="258" width="248" height="32" rx="5"/>
+  <text class="h" x="800" y="279" text-anchor="middle">add to the vocal track</text>
+
+  <text class="s" x="480" y="324" text-anchor="middle">A reused phrase is only lightly varied — a shifted or lengthened last note, a breath rest, an accent, an echo.</text>
+
+  <path class="seam" d="M 24 344 H 936"/>
+  <text class="s" x="480" y="366" text-anchor="middle">Only a cache miss runs the full designer; a hit still goes through the same constraint stage.</text>
+</svg>

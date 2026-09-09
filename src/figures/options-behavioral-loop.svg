@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 202" role="img" aria-labelledby="obl-ttl obl-dsc">
+  <title id="obl-ttl">Blueprint 9 turns on addictive mode and two forced settings</title>
+  <desc id="obl-dsc">A left-to-right chain. Choosing blueprintId 9, BehavioralLoop, sets the internal addictive_mode flag, which in turn forces HookIntensity to Maximum, internal level 4, and RiffPolicy to LockedPitch so the riff repeats verbatim. BehavioralLoop carries no selection weight, so a random blueprint pick never lands on it.</desc>
+
+  <defs>
+    <marker id="obl-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="202" rx="12"/>
+
+  <rect class="chip" x="24" y="76" width="200" height="48" rx="5"/>
+  <text class="mono" x="124" y="98" text-anchor="middle">blueprintId = 9</text>
+  <text class="s" x="124" y="116" text-anchor="middle">BehavioralLoop</text>
+
+  <path class="ln" d="M 224 100 H 248" marker-end="url(#obl-a)"/>
+
+  <rect class="card" x="252" y="76" width="224" height="48" rx="6"/>
+  <text class="mono" x="364" y="98" text-anchor="middle">addictive_mode = true</text>
+  <text class="s" x="364" y="116" text-anchor="middle">set internally</text>
+
+  <path class="ln" d="M 476 100 H 488 V 86 H 496" marker-end="url(#obl-a)"/>
+  <path class="ln" d="M 476 100 H 488 V 126 H 496" marker-end="url(#obl-a)"/>
+
+  <rect class="chip" x="500" y="70" width="436" height="32" rx="5"/>
+  <text class="mono" x="512" y="90">HookIntensity = Maximum</text>
+  <text class="s" x="680" y="90">internal level 4</text>
+  <rect class="chip" x="500" y="110" width="436" height="32" rx="5"/>
+  <text class="mono" x="512" y="130">RiffPolicy = LockedPitch</text>
+  <text class="s" x="690" y="130">the riff repeats verbatim</text>
+
+  <path class="seam" d="M 24 162 H 936"/>
+  <text class="s" x="480" y="182" text-anchor="middle">BehavioralLoop carries no selection weight — a random blueprint pick never lands on it.</text>
+</svg>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 392" role="img" aria-labelledby="tbg-ttl tbg-dsc">
+  <title id="tbg-ttl">ベース 1 小節分の組み立て方</title>
+  <desc id="tbg-dsc">その小節のコードからルートと和声機能を取り出します。続いてパターンを決めます。ムードとセクションタイプから 17 種類の中で自動選択されるか、Blueprint の bass_style_hint でセクションごとに固定されます（0 は自動）。ルートのオクターブは、E1 から G3 のベース音域に収めるために必要なときだけ動かします。小節内では 1 拍目にルートが置かれ、中間の拍はパターン次第、4 拍目の後半に次の小節のルートへ向かうアプローチノートが入ります。多くは 5 度下で、半音の入りはウォーキングラインが中心です。</desc>
+
+  <defs>
+    <marker id="tbg-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="392" rx="12"/>
+
+  <rect class="chip" x="24" y="68" width="160" height="60" rx="5"/>
+  <text class="h" x="36" y="92">この小節のコード</text>
+  <text class="s" x="36" y="110">ルートと和声機能</text>
+
+  <path class="ln" d="M 184 98 H 204" marker-end="url(#tbg-a)"/>
+
+  <rect class="grp" x="208" y="44" width="340" height="140" rx="8"/>
+  <text class="lbl" x="222" y="66">パターン選択</text>
+  <rect class="chip" x="220" y="76" width="316" height="44" rx="5"/>
+  <text class="h" x="232" y="97">自動：ムードとセクションタイプ</text>
+  <text class="s" x="232" y="113">全音符から 16 分音符まで 17 パターン</text>
+  <rect class="alt" x="220" y="128" width="316" height="44" rx="6"/>
+  <text class="mono" x="232" y="149">bass_style_hint</text>
+  <text class="s" x="232" y="165">セクション単位 — 0 = 自動、1–17 で固定</text>
+
+  <path class="ln" d="M 548 114 H 568" marker-end="url(#tbg-a)"/>
+
+  <rect class="chip" x="572" y="68" width="184" height="76" rx="5"/>
+  <text class="h" x="584" y="90">オクターブは音域用</text>
+  <text class="s" x="584" y="108">E1–G3 に収めるため</text>
+  <text class="s" x="584" y="124">だけに上下します</text>
+
+  <text class="s" x="772" y="90">コードの機能が、</text>
+  <text class="s" x="772" y="106">次の小節のルートへの</text>
+  <text class="s" x="772" y="122">入り方を決めます。</text>
+
+  <path class="ln" d="M 664 144 V 194" marker-end="url(#tbg-a)"/>
+
+  <rect class="grp" x="24" y="204" width="912" height="114" rx="8"/>
+  <text class="lbl" x="38" y="226">1 小節 = 4 拍</text>
+
+  <rect class="chip" x="36" y="236" width="165" height="70" rx="5"/>
+  <text class="h" x="48" y="257">1 拍目</text>
+  <text class="s" x="48" y="275">ルートが置かれる</text>
+
+  <rect class="chip" x="213" y="236" width="165" height="70" rx="5"/>
+  <text class="h" x="225" y="257">2 拍目</text>
+  <text class="s" x="225" y="275">パターン次第</text>
+
+  <rect class="chip" x="390" y="236" width="165" height="70" rx="5"/>
+  <text class="h" x="402" y="257">3 拍目</text>
+  <text class="s" x="402" y="275">パターン次第</text>
+
+  <rect class="card" x="567" y="236" width="357" height="70" rx="6"/>
+  <text class="h" x="579" y="257">4 拍目の後半</text>
+  <text class="s" x="579" y="275">次の小節のルートへ入るアプローチノート。</text>
+  <text class="s" x="579" y="291">多くは 5 度下、ウォーキングでは半音下から</text>
+
+  <path class="seam" d="M 24 346 H 936"/>
+  <text class="s" x="480" y="368" text-anchor="middle">どのパターンを使うかはセクションタイプが左右しますが、オクターブは音域に収めるためだけに動きます。</text>
+</svg>

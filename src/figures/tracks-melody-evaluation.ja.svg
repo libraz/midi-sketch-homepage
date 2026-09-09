@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" role="img" aria-labelledby="tme-ttl tme-dsc">
+  <title id="tme-ttl">候補メロディを採点して 1 本を選ぶ流れ</title>
+  <desc id="tme-dsc">まず候補フレーズをまとめて生成します。サビは 100、B セクションは 50、ブリッジは 30、それ以外は 20 本です。各候補は 3 つの観点で採点されます。スタイルスコアが 40%、ペナルティ方式のカリングスコアが 40%、音程バイアススコアが 20% です。これらを合成し、さらにセクションごとに重みの異なるグローバルモチーフ加点を加えます。その後、スコア順にソートして下位半分を切り捨て、残った候補からスコアの高いものほど当たりやすい抽選で 1 本を選びます。</desc>
+
+  <defs>
+    <marker id="tme-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="400" rx="12"/>
+
+  <rect class="chip" x="24" y="99" width="176" height="64" rx="5"/>
+  <text class="h" x="36" y="120">候補メロディ</text>
+  <text class="s" x="36" y="138">サビ 100 · B 50</text>
+  <text class="s" x="36" y="154">ブリッジ 30 · その他 20</text>
+
+  <path class="ln" d="M 200 131 H 216 V 69 H 244" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 200 131 H 244" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 200 131 H 216 V 193 H 244" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="248" y="44" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="65">スタイルスコア</text>
+  <text class="h" x="620" y="65" text-anchor="end">40%</text>
+  <text class="s" x="260" y="83">輪郭の一致・パターンの一貫性・意外性のバランス</text>
+
+  <rect class="chip" x="248" y="106" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="127">カリングスコア</text>
+  <text class="h" x="620" y="127" text-anchor="end">40%</text>
+  <text class="s" x="260" y="145">歌いにくさ・単調さ・不自然な間へのペナルティ</text>
+
+  <rect class="chip" x="248" y="168" width="384" height="50" rx="5"/>
+  <text class="h" x="260" y="189">バイアススコア</text>
+  <text class="h" x="620" y="189" text-anchor="end">20%</text>
+  <text class="s" x="260" y="207">スタイルが好む音程分布とのずれ</text>
+
+  <path class="ln" d="M 632 69 H 656 V 131 H 676" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 632 131 H 676" marker-end="url(#tme-a)"/>
+  <path class="ln" d="M 632 193 H 656 V 131 H 676" marker-end="url(#tme-a)"/>
+
+  <rect class="card" x="680" y="99" width="204" height="64" rx="6"/>
+  <text class="h" x="692" y="121">総合スコア</text>
+  <text class="s" x="692" y="139">40 / 40 / 20 に、セクション</text>
+  <text class="s" x="692" y="155">別重みのモチーフ加点</text>
+
+  <path class="ln" d="M 782 163 V 232" marker-end="url(#tme-a)"/>
+
+  <rect class="grp" x="24" y="236" width="912" height="90" rx="8"/>
+  <text class="lbl" x="38" y="258">選択</text>
+
+  <rect class="chip" x="36" y="268" width="278" height="44" rx="5"/>
+  <text class="h" x="48" y="289">スコア降順にソート</text>
+  <text class="s" x="48" y="305">安定ソートで同点の順序も一定</text>
+
+  <path class="ln" d="M 314 290 H 334" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="338" y="268" width="278" height="44" rx="5"/>
+  <text class="h" x="350" y="289">下位半分を切り捨て</text>
+  <text class="s" x="350" y="305">抽選に残るのは上位 50% だけ</text>
+
+  <path class="ln" d="M 616 290 H 636" marker-end="url(#tme-a)"/>
+
+  <rect class="chip" x="640" y="268" width="284" height="44" rx="5"/>
+  <text class="h" x="652" y="289">重み付きランダム抽選</text>
+  <text class="s" x="652" y="305">スコアが高いほど当たりやすい</text>
+
+  <path class="seam" d="M 24 354 H 936"/>
+  <text class="s" x="480" y="376" text-anchor="middle">採点は候補を絞り込むだけで、最後の 1 本は絞った中からの抽選です。同程度に良いフレーズが回り続けます。</text>
+</svg>

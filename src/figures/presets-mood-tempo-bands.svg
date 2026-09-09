@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 366" role="img" aria-labelledby="mtb-ttl mtb-dsc">
+  <title id="mtb-ttl">Mood presets grouped by the tempo they default to</title>
+  <desc id="mtb-dsc">Three tempo bands stacked from slow to fast. The slow band, 70 to 100 BPM, holds Ballad, Sentimental, Chill, RnBNeoSoul, LatinPop, Trap and Lofi. The mid band, 100 to 125 BPM, holds StraightPop, MidPop, CityPop and Synthwave. The fast band, 125 to 150 BPM, holds BrightUpbeat, ElectroPop, IdolPop, AnimeHighEnergy and FutureBass. Choosing a mood sets a default tempo and drum style, but a style preset already carries its own mood, so an explicit mood only applies when moodExplicit is also set.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="366" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="60">slow · 70–100 BPM</text>
+  <rect class="chip" x="38" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="90" text-anchor="middle">Ballad</text>
+  <rect class="chip" x="165" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="90" text-anchor="middle">Sentimental</text>
+  <rect class="chip" x="292" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="90" text-anchor="middle">Chill</text>
+  <rect class="chip" x="419" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="90" text-anchor="middle">RnBNeoSoul</text>
+  <rect class="chip" x="546" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="90" text-anchor="middle">LatinPop</text>
+  <rect class="chip" x="673" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="732" y="90" text-anchor="middle">Trap</text>
+  <rect class="chip" x="800" y="70" width="119" height="32" rx="5"/>
+  <text class="s" x="859" y="90" text-anchor="middle">Lofi</text>
+
+  <rect class="grp" x="24" y="126" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="146">mid · 100–125 BPM</text>
+  <rect class="chip" x="38" y="156" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="176" text-anchor="middle">StraightPop</text>
+  <rect class="chip" x="165" y="156" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="176" text-anchor="middle">MidPop</text>
+  <rect class="chip" x="292" y="156" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="176" text-anchor="middle">CityPop</text>
+  <rect class="chip" x="419" y="156" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="176" text-anchor="middle">Synthwave</text>
+
+  <rect class="grp" x="24" y="212" width="912" height="74" rx="8"/>
+  <text class="lbl" x="38" y="232">fast · 125–150 BPM</text>
+  <rect class="chip" x="38" y="242" width="119" height="32" rx="5"/>
+  <text class="s" x="97" y="262" text-anchor="middle">BrightUpbeat</text>
+  <rect class="chip" x="165" y="242" width="119" height="32" rx="5"/>
+  <text class="s" x="224" y="262" text-anchor="middle">ElectroPop</text>
+  <rect class="chip" x="292" y="242" width="119" height="32" rx="5"/>
+  <text class="s" x="351" y="262" text-anchor="middle">IdolPop</text>
+  <rect class="chip" x="419" y="242" width="119" height="32" rx="5"/>
+  <text class="s" x="478" y="262" text-anchor="middle">AnimeHighEnergy</text>
+  <rect class="chip" x="546" y="242" width="119" height="32" rx="5"/>
+  <text class="s" x="605" y="262" text-anchor="middle">FutureBass</text>
+
+  <path class="seam" d="M 24 306 H 936"/>
+  <text class="s" x="480" y="326" text-anchor="middle">A mood fixes the default tempo and drum style. A style preset brings its own, so choosing one explicitly needs</text>
+  <text class="mono" x="480" y="346" text-anchor="middle">config.mood = &lt;id&gt; together with config.moodExplicit = true</text>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 228" role="img" aria-labelledby="melc-ttl melc-dsc">
+  <title id="melc-ttl">The five stages of melody candidate selection</title>
+  <desc id="melc-dsc">A left-to-right band of five stages. The generator produces twenty to a hundred candidates for the section, evaluates each one with both a penalty-based culling score and a style score, combines them into a single number, sorts the candidates and drops the bottom half, then draws the winner from the surviving half with a probability proportional to its score.</desc>
+
+  <defs>
+    <marker id="melc-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="228" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="912" height="124" rx="8"/>
+  <text class="lbl" x="38" y="62">melody candidate pipeline</text>
+
+  <rect class="chip" x="38" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="120" y="99" text-anchor="middle">Generate</text>
+  <text class="s" x="120" y="134" text-anchor="middle">20–100 per section,</text>
+  <text class="s" x="120" y="149" text-anchor="middle">chorus gets the most</text>
+
+  <path class="ln" d="M 202 94 H 216" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="218" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="300" y="99" text-anchor="middle">Evaluate each</text>
+  <text class="s" x="300" y="134" text-anchor="middle">culling score and</text>
+  <text class="s" x="300" y="149" text-anchor="middle">style score together</text>
+
+  <path class="ln" d="M 382 94 H 396" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="398" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="480" y="99" text-anchor="middle">Combine scores</text>
+  <text class="s" x="480" y="134" text-anchor="middle">40% style + 40% culling</text>
+  <text class="s" x="480" y="149" text-anchor="middle">+ 20% interval bias</text>
+
+  <path class="ln" d="M 562 94 H 576" marker-end="url(#melc-a)"/>
+
+  <rect class="chip" x="578" y="72" width="164" height="44" rx="5"/>
+  <text class="h" x="660" y="99" text-anchor="middle">Rank and cull</text>
+  <text class="s" x="660" y="134" text-anchor="middle">sort, then drop</text>
+  <text class="s" x="660" y="149" text-anchor="middle">the bottom half</text>
+
+  <path class="ln" d="M 742 94 H 756" marker-end="url(#melc-a)"/>
+
+  <rect class="card" x="758" y="72" width="164" height="44" rx="6"/>
+  <text class="h" x="840" y="99" text-anchor="middle">Pick the winner</text>
+  <text class="s" x="840" y="134" text-anchor="middle">weighted random from</text>
+  <text class="s" x="840" y="149" text-anchor="middle">the surviving half</text>
+
+  <path class="seam" d="M 24 188 H 936"/>
+  <text class="s" x="480" y="208" text-anchor="middle">Many candidates go in and one melody comes out, but the winner is drawn from the top half rather than simply taken from the top.</text>
+</svg>

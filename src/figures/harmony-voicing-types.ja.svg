@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 404" role="img" aria-labelledby="vc-ttl vc-dsc">
+  <title id="vc-ttl">音高軸の上に並べた 3 つのボイシングタイプ</title>
+  <desc id="vc-dsc">C3 から C5 までの共通の水平音高軸の下に 3 行を並べています。クローズは C4・E4・G4・B4 を 1 オクターブ内に収めます。オープン（ドロップ 2）は最上声部のひとつ下を 1 オクターブ下げ、G3・C4・E4・B4 になります。ルートレスはルートを省き、E3・G3・B3・D4 を鳴らしてルートはベースに任せます。下部の注記は、エンジンがルートレスを選ぶために必要な条件を挙げています。</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="404" rx="12"/>
+
+  <text class="lbl" x="190" y="48" text-anchor="middle">C3</text>
+  <text class="lbl" x="430" y="48" text-anchor="middle">C4</text>
+  <text class="lbl" x="670" y="48" text-anchor="middle">C5</text>
+
+  <rect class="grp" x="24" y="56" width="912" height="76" rx="8"/>
+  <rect class="grp" x="24" y="140" width="912" height="76" rx="8"/>
+  <rect class="grp" x="24" y="224" width="912" height="76" rx="8"/>
+
+  <path class="rule" d="M 190 56 V 300"/>
+  <path class="rule" d="M 430 56 V 300"/>
+  <path class="rule" d="M 670 56 V 300"/>
+
+  <path class="rule" d="M 190 94 H 670"/>
+  <path class="rule" d="M 190 178 H 670"/>
+  <path class="rule" d="M 190 262 H 670"/>
+
+  <text class="hb" x="40" y="88">Close</text>
+  <text class="s" x="40" y="106">1 オクターブ内に収まる</text>
+  <rect class="chip" x="414" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="430" y="99" text-anchor="middle">C4</text>
+  <rect class="chip" x="494" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="510" y="99" text-anchor="middle">E4</text>
+  <rect class="chip" x="554" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="570" y="99" text-anchor="middle">G4</text>
+  <rect class="chip" x="634" y="82" width="32" height="24" rx="5"/>
+  <text class="s" x="650" y="99" text-anchor="middle">B4</text>
+  <text class="s" x="700" y="88">4 音すべてが 1 オクターブ内</text>
+  <text class="s" x="700" y="106">コンパクトで直接的な響き</text>
+
+  <text class="hb" x="40" y="172">Open · Drop2</text>
+  <text class="s" x="40" y="190">上から 2 番目を下げる</text>
+  <rect class="chip" x="314" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="330" y="183" text-anchor="middle">G3</text>
+  <rect class="chip" x="414" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="430" y="183" text-anchor="middle">C4</text>
+  <rect class="chip" x="494" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="510" y="183" text-anchor="middle">E4</text>
+  <rect class="chip" x="634" y="166" width="32" height="24" rx="5"/>
+  <text class="s" x="650" y="183" text-anchor="middle">B4</text>
+  <text class="s" x="700" y="172">最上声部のひとつ下を</text>
+  <text class="s" x="700" y="190">1 オクターブ下げた形</text>
+
+  <text class="hb" x="40" y="256">Rootless</text>
+  <text class="s" x="40" y="274">ルートを省く</text>
+  <rect class="card" x="254" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="270" y="267" text-anchor="middle">E3</text>
+  <rect class="card" x="314" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="330" y="267" text-anchor="middle">G3</text>
+  <rect class="card" x="394" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="410" y="267" text-anchor="middle">B3</text>
+  <rect class="card" x="454" y="250" width="32" height="24" rx="6"/>
+  <text class="s" x="470" y="267" text-anchor="middle">D4</text>
+  <text class="s" x="700" y="256">ルートはベースに任せ、</text>
+  <text class="s" x="700" y="274">低域が濁りません</text>
+
+  <path class="seam" d="M 24 322 H 936"/>
+  <text class="s" x="480" y="344" text-anchor="middle">大半の小節は Close か Open です。Rootless にはさらに、ベースが 1 拍目でルートを鳴らしていること、</text>
+  <text class="s" x="480" y="362" text-anchor="middle">セクションが B・サビ・ブリッジであること、ムードが CityPop / Nostalgic / Dramatic / ModernPop のいずれかであること、</text>
+  <text class="s" x="480" y="380" text-anchor="middle">そのうえでもう一度の抽選に通ることが必要で、バラードでは使われません。</text>
+</svg>

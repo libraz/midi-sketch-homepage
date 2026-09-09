@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 404" role="img" aria-labelledby="vfg-ttl vfg-dsc">
+  <title id="vfg-ttl">Vocal-first generation, where the melody is written and settled before any backing</title>
+  <desc id="vfg-dsc">A top-to-bottom flow inside the vocal-first workflow. SongConfig enters generateVocal, which lays out the structure and the planned chord timeline and then writes the vocal track alone; regenerateVocal can be called repeatedly to try another take. Once the melody is kept, generateAccompaniment writes the eight remaining parts — aux, motif, bass, chord, guitar, arpeggio, drums, SE — skipping the vocal, then applies the post-processing pipeline and a final refinement pass that nudges vocal notes clashing with the finished backing. The completed Song goes to MidiWriter and out as a Type 1 Standard MIDI File.</desc>
+
+  <defs>
+    <marker id="vfg-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="404" rx="12"/>
+
+  <rect class="grp" x="24" y="150" width="150" height="68" rx="8"/>
+  <text class="lbl" x="36" y="170">input</text>
+  <rect class="chip" x="34" y="180" width="130" height="28" rx="5"/>
+  <text class="mono" x="99" y="198" text-anchor="middle">SongConfig</text>
+
+  <path class="ln" d="M 174 194 H 196" marker-end="url(#vfg-a)"/>
+
+  <rect class="grp" x="198" y="44" width="520" height="308" rx="8"/>
+  <text class="lbl" x="212" y="66">Vocal-First workflow</text>
+
+  <rect class="chip" x="212" y="78" width="492" height="32" rx="5"/>
+  <text class="h" x="224" y="99">generateVocal</text>
+  <text class="s" x="330" y="99">structure and the chord timeline first, then the melody alone</text>
+
+  <path class="ln" d="M 338 110 V 124" marker-end="url(#vfg-a)"/>
+
+  <rect class="card" x="212" y="128" width="252" height="44" rx="6"/>
+  <text class="h" x="338" y="148" text-anchor="middle">Vocal track</text>
+  <text class="s" x="338" y="164" text-anchor="middle">the melody is now fixed</text>
+
+  <path class="ln" d="M 464 142 H 486" marker-end="url(#vfg-a)"/>
+  <path class="lnd" d="M 486 158 H 466" marker-end="url(#vfg-a)"/>
+
+  <rect class="chip" x="488" y="128" width="216" height="44" rx="5"/>
+  <text class="mono" x="596" y="148" text-anchor="middle">regenerateVocal</text>
+  <text class="s" x="596" y="164" text-anchor="middle">another take, same structure</text>
+
+  <path class="ln" d="M 338 172 V 184" marker-end="url(#vfg-a)"/>
+
+  <rect class="chip" x="212" y="188" width="492" height="94" rx="5"/>
+  <text class="mono" x="224" y="207">generateAccompaniment</text>
+  <text class="s" x="372" y="207">vocal is skipped; the paradigm still decides the order</text>
+  <rect class="chip" x="224" y="214" width="111" height="26" rx="5"/>
+  <text class="s" x="280" y="231" text-anchor="middle">1 · aux</text>
+  <rect class="chip" x="343" y="214" width="111" height="26" rx="5"/>
+  <text class="s" x="399" y="231" text-anchor="middle">2 · motif</text>
+  <rect class="chip" x="462" y="214" width="111" height="26" rx="5"/>
+  <text class="s" x="518" y="231" text-anchor="middle">3 · bass</text>
+  <rect class="chip" x="581" y="214" width="111" height="26" rx="5"/>
+  <text class="s" x="637" y="231" text-anchor="middle">4 · chord</text>
+  <rect class="chip" x="224" y="248" width="111" height="26" rx="5"/>
+  <text class="s" x="280" y="265" text-anchor="middle">5 · guitar</text>
+  <rect class="chip" x="343" y="248" width="111" height="26" rx="5"/>
+  <text class="s" x="399" y="265" text-anchor="middle">6 · arpeggio</text>
+  <rect class="chip" x="462" y="248" width="111" height="26" rx="5"/>
+  <text class="s" x="518" y="265" text-anchor="middle">7 · drums</text>
+  <rect class="chip" x="581" y="248" width="111" height="26" rx="5"/>
+  <text class="s" x="637" y="265" text-anchor="middle">8 · SE</text>
+
+  <path class="ln" d="M 458 282 V 294" marker-end="url(#vfg-a)"/>
+
+  <rect class="chip" x="212" y="298" width="246" height="32" rx="5"/>
+  <text class="s" x="335" y="318" text-anchor="middle">layer schedule, transitions, humanize</text>
+  <path class="ln" d="M 458 314 H 466" marker-end="url(#vfg-a)"/>
+  <rect class="alt" x="470" y="298" width="234" height="32" rx="6"/>
+  <text class="mono" x="587" y="318" text-anchor="middle">refineVocalForAccompaniment</text>
+
+  <text class="s" x="458" y="344" text-anchor="middle">the final pass nudges vocal notes that clash with the backing, up to twice</text>
+
+  <path class="ln" d="M 718 235 H 726 V 150 H 736" marker-end="url(#vfg-a)"/>
+
+  <rect class="chip" x="740" y="136" width="196" height="28" rx="5"/>
+  <text class="h" x="838" y="155" text-anchor="middle">Song</text>
+  <path class="ln" d="M 838 164 V 176" marker-end="url(#vfg-a)"/>
+  <rect class="chip" x="740" y="180" width="196" height="28" rx="5"/>
+  <text class="mono" x="838" y="199" text-anchor="middle">MidiWriter</text>
+  <path class="ln" d="M 838 208 V 220" marker-end="url(#vfg-a)"/>
+  <rect class="chip" x="740" y="224" width="196" height="28" rx="5"/>
+  <text class="h" x="838" y="243" text-anchor="middle">SMF Type 1</text>
+  <text class="s" x="838" y="268" text-anchor="middle">vocal on Ch 0, backing tracks</text>
+  <text class="s" x="838" y="282" text-anchor="middle">on their own channels</text>
+
+  <path class="seam" d="M 24 368 H 936"/>
+  <text class="s" x="480" y="388" text-anchor="middle">The melody is settled before any backing is written, and only the final refinement touches it again.</text>
+</svg>

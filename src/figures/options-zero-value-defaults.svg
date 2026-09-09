@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 208" role="img" aria-labelledby="ozd-ttl ozd-dsc">
+  <title id="ozd-ttl">Two fields where zero means "decide for me"</title>
+  <desc id="ozd-dsc">Two independent decisions side by side. A bpm of 0 falls back to the style preset's default tempo; any other value is used as given, within 40 to 240. A targetDurationSeconds of 0 uses the structure pattern named by formId; a positive value makes the structure fit that length instead, with the bar count derived from seconds times BPM divided by 240.</desc>
+
+  <defs>
+    <marker id="ozd-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path class="ah" d="M0,0 L9,4.5 L0,9 z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="208" rx="12"/>
+
+  <rect class="grp" x="24" y="36" width="444" height="148" rx="8"/>
+  <text class="lbl" x="36" y="56">bpm</text>
+  <rect class="chip" x="36" y="64" width="420" height="30" rx="5"/>
+  <text class="s" x="246" y="84" text-anchor="middle">is a tempo given?</text>
+  <path class="ln" d="M 136 94 V 110" marker-end="url(#ozd-a)"/>
+  <path class="ln" d="M 356 94 V 110" marker-end="url(#ozd-a)"/>
+  <rect class="chip" x="36" y="114" width="200" height="48" rx="5"/>
+  <text class="lbl" x="48" y="134">bpm = 0</text>
+  <text class="mono" x="48" y="154">stylePreset.tempo_default</text>
+  <rect class="chip" x="256" y="114" width="200" height="48" rx="5"/>
+  <text class="lbl" x="268" y="134">bpm &gt; 0</text>
+  <text class="s" x="268" y="154">used as given, 40–240</text>
+  <text class="s" x="246" y="176" text-anchor="middle">0 means auto, never 0 BPM</text>
+
+  <rect class="grp" x="492" y="36" width="444" height="148" rx="8"/>
+  <text class="lbl" x="504" y="56">targetDurationSeconds</text>
+  <rect class="chip" x="504" y="64" width="420" height="30" rx="5"/>
+  <text class="s" x="714" y="84" text-anchor="middle">is a length requested?</text>
+  <path class="ln" d="M 604 94 V 110" marker-end="url(#ozd-a)"/>
+  <path class="ln" d="M 824 94 V 110" marker-end="url(#ozd-a)"/>
+  <rect class="chip" x="504" y="114" width="200" height="48" rx="5"/>
+  <text class="lbl" x="516" y="134">value = 0</text>
+  <text class="mono" x="516" y="154">formId</text>
+  <text class="s" x="564" y="154">structure pattern</text>
+  <rect class="chip" x="724" y="114" width="200" height="48" rx="5"/>
+  <text class="lbl" x="736" y="134">value &gt; 0</text>
+  <text class="s" x="736" y="154">structure fitted to it</text>
+  <text class="mono" x="714" y="176" text-anchor="middle">bars = ceil(seconds × bpm ÷ 240)</text>
+</svg>

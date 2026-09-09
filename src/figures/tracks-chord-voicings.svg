@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 398" role="img" aria-labelledby="tcv-ttl tcv-dsc">
+  <title id="tcv-ttl">The three chord voicing shapes, read low note at the bottom</title>
+  <desc id="tcv-dsc">Three stacks of the same chord tones. A close voicing packs root, third, fifth and seventh into a single octave. An open voicing takes that stack and drops the second voice from the top an octave, so the fifth ends up below the root; Drop 3 and Spread are its other variants. A rootless voicing leaves out the root the bass is already holding and stacks third, fifth, seventh and, when only two voices would remain, a ninth. Whichever candidate moves least from the previous chord is the one that gets used.</desc>
+
+  <rect class="bg" x="0" y="0" width="960" height="398" rx="12"/>
+
+  <rect class="grp" x="24" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="38" y="62">close</text>
+  <rect class="chip" x="95" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="93" text-anchor="middle">7th</text>
+  <rect class="chip" x="95" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="123" text-anchor="middle">5th</text>
+  <rect class="chip" x="95" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="153" text-anchor="middle">3rd</text>
+  <rect class="chip" x="95" y="166" width="150" height="26" rx="5"/>
+  <text class="s" x="170" y="183" text-anchor="middle">root</text>
+  <text class="s" x="36" y="214">Packed into a single octave.</text>
+  <text class="s" x="36" y="230">An adjacent major 2nd is rejected</text>
+  <text class="s" x="36" y="246">unless the chord is built on one.</text>
+
+  <rect class="grp" x="334" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="348" y="62">open</text>
+  <rect class="chip" x="405" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="93" text-anchor="middle">7th</text>
+  <rect class="chip" x="405" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="123" text-anchor="middle">3rd</text>
+  <rect class="chip" x="405" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="480" y="153" text-anchor="middle">root</text>
+  <rect class="alt" x="405" y="166" width="150" height="26" rx="6"/>
+  <text class="s" x="480" y="183" text-anchor="middle">5th, an octave down</text>
+  <text class="s" x="346" y="214">With four voices the second from</text>
+  <text class="s" x="346" y="230">the top drops an octave. Drop 3</text>
+  <text class="s" x="346" y="246">and Spread are the other variants.</text>
+
+  <rect class="grp" x="644" y="40" width="292" height="216" rx="8"/>
+  <text class="lbl" x="658" y="62">rootless</text>
+  <rect class="chip" x="715" y="76" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="93" text-anchor="middle">9th, if needed</text>
+  <rect class="chip" x="715" y="106" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="123" text-anchor="middle">7th</text>
+  <rect class="chip" x="715" y="136" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="153" text-anchor="middle">5th</text>
+  <rect class="chip" x="715" y="166" width="150" height="26" rx="5"/>
+  <text class="s" x="790" y="183" text-anchor="middle">3rd</text>
+  <text class="s" x="656" y="214">The bass already holds the root,</text>
+  <text class="s" x="656" y="230">so it is left out; a 9th (or 11th)</text>
+  <text class="s" x="656" y="246">fills the gap when two would remain.</text>
+
+  <rect class="card" x="24" y="272" width="444" height="52" rx="6"/>
+  <text class="h" x="36" y="293">chosen by voice leading</text>
+  <text class="s" x="36" y="311">the candidate that moves least from the previous chord wins</text>
+
+  <rect class="chip" x="492" y="272" width="444" height="52" rx="5"/>
+  <text class="h" x="504" y="293">rootless when the bass covers the root</text>
+  <text class="s" x="504" y="311">a pitch-class mask of the bass on beats 1 and 3 decides it</text>
+
+  <path class="seam" d="M 24 352 H 936"/>
+  <text class="s" x="480" y="374" text-anchor="middle">All three hold the same chord tones — only the spacing, and what the bass makes redundant, differ.</text>
+</svg>
