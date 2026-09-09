@@ -27,7 +27,7 @@ export const chordsExamples: Record<string, ScoreExampleDef> = {
 
   majMinDim: {
     tags: ['major', 'minor', 'diminished'],
-    badge: { en: 'Chord quality', ja: 'コードの性格' },
+    badge: { en: 'Chord quality', ja: 'コードの性質' },
     title: { en: 'Major, minor, diminished: same root, different color', ja: 'メジャー・マイナー・ディミニッシュ：同じルート、違う色' },
     diagnosis: {
       en: 'Moving the middle/top notes by one semitone flips the emotional color.',
@@ -35,7 +35,7 @@ export const chordsExamples: Record<string, ScoreExampleDef> = {
     },
     caption: {
       en: 'C major (C-E-G) sounds bright. Lower the third by a semitone and C minor (C-E♭-G) sounds sad. Lower the fifth too and C diminished (C-E♭-G♭) sounds tense and unstable. Quality = the exact semitone spacing inside the stack.',
-      ja: 'Cメジャー（C-E-G）は明るく響きます。3度を半音下げたCマイナー（C-E♭-G）は悲しく、さらに5度も下げたCディミニッシュ（C-E♭-G♭）は緊張して不安定に響きます。コードの性格＝積み重ねの中の正確な半音間隔です。',
+      ja: 'Cメジャー（C-E-G）は明るく響きます。3度を半音下げたCマイナー（C-E♭-G）は悲しく、さらに5度も下げたCディミニッシュ（C-E♭-G♭）は緊張して不安定に響きます。コードの性質＝積み重ねの中の正確な半音間隔です。',
     },
     time: '3/4',
     width: 520,

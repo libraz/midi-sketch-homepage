@@ -56,14 +56,14 @@ export const progressionsExamples: Record<string, ScoreExampleDef> = {
   borrowedFlatVII: {
     tags: ['chordProgressionId', 'I-bVII-IV-I'],
     badge: { en: 'Borrowed ♭VII', ja: '借用 ♭VII' },
-    title: { en: 'The ♭VII rock cadence: I - ♭VII - IV - I', ja: '♭VIIのロックケーデンス：I - ♭VII - IV - I' },
+    title: { en: 'The ♭VII rock cadence: I - ♭VII - IV - I', ja: '♭VIIのロックカデンツ：I - ♭VII - IV - I' },
     diagnosis: {
       en: 'B♭ is borrowed from outside C major — a whole step below the tonic — for an anthemic, mixolydian lift.',
       ja: 'B♭はCメジャーの外（トニックの全音下）から借りてきた音で、高揚感のあるミクソリディアンの「持ち上げ」を生みます。',
     },
     caption: {
       en: 'C → B♭ → F → C trades the leading-tone pull of a diatonic cadence for a bright, plagal brightness. The ♭VII chord (B♭ major) is borrowed from the parallel minor; its root sits a whole step below the tonic instead of the diatonic vii°. This is the signature sound of countless rock and anime choruses. MidiSketch ships two such Rock presets, selectable via chordProgressionId like any other progression.',
-      ja: 'C → B♭ → F → C は、ダイアトニックなケーデンスの導音による引力を、明るいプラガルな響きに置き換えます。♭VIIコード（B♭メジャー）は平行短調から借りた和音で、その根音はダイアトニックのvii°ではなくトニックの全音下にあります。無数のロックやアニメのサビを象徴する響きです。MidiSketchはこうしたRockプリセットを2つ収録し、他の進行と同じく chordProgressionId で選択できます。',
+      ja: 'C → B♭ → F → C は、ダイアトニックなカデンツの導音による引力を、明るいプラガルな響きに置き換えます。♭VIIコード（B♭メジャー）は同主短調から借りた和音で、その根音はダイアトニックのvii°ではなくトニックの全音下にあります。無数のロックやアニメのサビを象徴する響きです。MidiSketchはこうしたRockプリセットを2つ収録し、他の進行と同じく chordProgressionId で選択できます。',
     },
     time: '4/4',
     bars: 2,
@@ -130,7 +130,7 @@ export const progressionsExamples: Record<string, ScoreExampleDef> = {
 
   loopVamp: {
     tags: ['loop', 'vamp'],
-    badge: { en: 'Two-chord vamp', ja: '2コードバンプ' },
+    badge: { en: 'Two-chord vamp', ja: '2コードのヴァンプ' },
     title: { en: 'Progressions can be tiny: Am-F loop', ja: '進行は短くてもいい：Am-Fループ' },
     diagnosis: {
       en: 'Two alternating chords already make a mood — modern pop loves short loops.',
@@ -138,7 +138,7 @@ export const progressionsExamples: Record<string, ScoreExampleDef> = {
     },
     caption: {
       en: 'Not every song needs a long chord journey. A two-chord vamp (here Am ↔ F) creates a hypnotic, lo-fi atmosphere. Loop length is a stylistic choice: blueprints like BehavioralLoop intentionally exploit very short, repetitive loops.',
-      ja: 'すべての曲に長いコードの旅が必要なわけではありません。2コードのバンプ（ここではAm↔F）は催眠的でローファイな空気を作ります。ループの長さはスタイルの選択であり、BehavioralLoopのようなブループリントは意図的に非常に短い反復ループを活用します。',
+      ja: 'すべての曲に長いコードの旅が必要なわけではありません。2コードのヴァンプ（ここではAm↔F）は催眠的でローファイな空気を作ります。ループの長さはスタイルの選択であり、BehavioralLoopのようなブループリントは意図的に非常に短い反復ループを活用します。',
     },
     time: '4/4',
     bars: 2,

@@ -58,8 +58,8 @@ export const harmonyColorExamples: Record<string, ScoreExampleDef> = {
       ja: '加えられた9度（D）がコードを厚くし、明るいきらめきを足します。',
     },
     caption: {
-      en: 'Add the second-octave degree 2 (the "9th") to a triad and the chord gets denser and more modern-sounding. Compare plain C with Cadd9 (C-E-G-D). chordExt9th controls this color (default probability 0.25).',
-      ja: 'トライアドに1オクターブ上の第2音（9th）を加えると、コードはより厚く、現代的な響きになります。素のCとCadd9（C-E-G-D）を聴き比べてください。chordExt9th がこの色付けを制御します（デフォルト確率0.25）。',
+      en: 'Add the note a ninth above the root (the "9th") to a triad and the chord gets denser and more modern-sounding. Compare plain C with Cadd9 (C-E-G-D). chordExt9th controls this color (default probability 0.25).',
+      ja: 'トライアドに根音から9度上の音（9th）を加えると、コードはより厚く、現代的な響きになります。素のCとCadd9（C-E-G-D）を聴き比べてください。chordExt9th がこの色付けを制御します（デフォルト確率0.25）。',
     },
     time: '4/4',
     width: 460,
@@ -184,7 +184,7 @@ export const harmonyColorExamples: Record<string, ScoreExampleDef> = {
       { key: 'e/4', keys: ['e/4', 'g/4', 'c/5'], duration: 'h', chordSymbol: 'C', color: GREEN },
     ],
     lower: [
-      { key: 'db/4', keys: ['db/4', 'f/4', 'ab/4', 'b/4'], accidentals: ['b', null, 'b', null], duration: 'h', chordSymbol: 'D♭7', color: AMBER },
+      { key: 'db/4', keys: ['db/4', 'f/4', 'ab/4', 'cb/5'], accidentals: ['b', null, 'b', 'b'], duration: 'h', chordSymbol: 'D♭7', color: AMBER },
       { key: 'e/4', keys: ['e/4', 'g/4', 'c/5'], duration: 'h', chordSymbol: 'C', color: GREEN },
     ],
     playback: 'sequential',
