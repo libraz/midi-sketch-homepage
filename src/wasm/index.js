@@ -1,6 +1,7 @@
 // js/src/internal.ts
 var moduleInstance = null;
 var api = null;
+var initialization = null;
 function getModule() {
   if (!moduleInstance) {
     throw new Error("Module not initialized. Call init() first.");
@@ -13,28 +14,47 @@ function getApi() {
   }
   return api;
 }
-async function init(options) {
+function init(options) {
   if (moduleInstance) {
-    return;
+    return Promise.resolve();
   }
+  if (!initialization) {
+    initialization = initialize(options).catch((error) => {
+      moduleInstance = null;
+      api = null;
+      initialization = null;
+      throw error;
+    });
+  }
+  return initialization;
+}
+async function initialize(options) {
   const createModule = await import("./midisketch.js");
   moduleInstance = await createModule.default({
-    locateFile: (path) => {
+    // `scriptDirectory` is the directory of the shipped glue module, which is
+    // where the .wasm binary sits next to it. Resolving against it keeps
+    // initialization independent of the process CWD and of bundler layout.
+    // A bare relative path would be resolved against the CWD instead.
+    locateFile: (path, scriptDirectory) => {
       if (path.endsWith(".wasm") && options?.wasmPath) {
         return options.wasmPath;
       }
-      return path;
+      return scriptDirectory + path;
     }
   });
   const m = moduleInstance;
   api = {
     create: m.cwrap("midisketch_create", "number", []),
     destroy: m.cwrap("midisketch_destroy", null, ["number"]),
+    setMidiFormat: m.cwrap("midisketch_set_midi_format", "number", ["number", "number"]),
+    getMidiFormat: m.cwrap("midisketch_get_midi_format", "number", ["number"]),
     getMidi: m.cwrap("midisketch_get_midi", "number", ["number"]),
     getVocalPreviewMidi: m.cwrap("midisketch_get_vocal_preview_midi", "number", ["number"]),
     freeMidi: m.cwrap("midisketch_free_midi", null, ["number"]),
     getEvents: m.cwrap("midisketch_get_events", "number", ["number"]),
     freeEvents: m.cwrap("midisketch_free_events", null, ["number"]),
+    getDissonance: m.cwrap("midisketch_get_dissonance", "number", ["number"]),
+    freeDissonance: m.cwrap("midisketch_free_dissonance", null, ["number"]),
     structureCount: m.cwrap("midisketch_structure_count", "number", []),
     moodCount: m.cwrap("midisketch_mood_count", "number", []),
     chordCount: m.cwrap("midisketch_chord_count", "number", []),
@@ -62,6 +82,7 @@ async function init(options) {
       "number"
     ]),
     getFormsByStylePtr: m.cwrap("midisketch_get_forms_by_style_ptr", "number", ["number"]),
+    errorString: m.cwrap("midisketch_error_string", "string", ["number"]),
     configErrorString: m.cwrap("midisketch_config_error_string", "string", ["number"]),
     getLastConfigError: m.cwrap("midisketch_get_last_config_error", "number", ["number"]),
     // Vocal-first generation APIs (no-config versions)
@@ -87,7 +108,12 @@ async function init(options) {
       ["number", "number", "number"]
     ),
     freePianoRollData: m.cwrap("midisketch_free_piano_roll_data", null, ["number"]),
+    getPianoRollDataCount: m.cwrap("midisketch_piano_roll_data_count", "number", ["number"]),
+    pianoRollDataWasTruncated: m.cwrap("midisketch_piano_roll_data_was_truncated", "number", [
+      "number"
+    ]),
     reasonToString: m.cwrap("midisketch_reason_to_string", "string", ["number"]),
+    collisionToString: m.cwrap("midisketch_collision_to_string", "string", ["number"]),
     // JSON Config API
     generateFromJson: m.cwrap("midisketch_generate_from_json", "number", [
       "number",
@@ -131,6 +157,12 @@ async function init(options) {
       "string",
       "number"
     ]),
+    getMelodyJson: m.cwrap("midisketch_get_melody_json", "string", ["number"]),
+    setMelodyFromJson: m.cwrap("midisketch_set_melody_from_json", "number", [
+      "number",
+      "string",
+      "number"
+    ]),
     // Production Blueprint API
     blueprintCount: m.cwrap("midisketch_blueprint_count", "number", []),
     blueprintName: m.cwrap("midisketch_blueprint_name", "string", ["number"]),
@@ -140,9 +172,13 @@ async function init(options) {
     blueprintDrumsRequired: m.cwrap("midisketch_blueprint_drums_required", "number", [
       "number"
     ]),
+    vocalStyleCallEnabled: m.cwrap("midisketch_vocal_style_call_enabled", "number", ["number"]),
+    blueprintTempoMin: m.cwrap("midisketch_blueprint_tempo_min", "number", ["number"]),
+    blueprintTempoMax: m.cwrap("midisketch_blueprint_tempo_max", "number", ["number"]),
     getResolvedBlueprintId: m.cwrap("midisketch_get_resolved_blueprint_id", "number", [
       "number"
-    ])
+    ]),
+    getWarningsJson: m.cwrap("midisketch_get_warnings_json", "string", ["number"])
   };
 }
 
@@ -187,6 +223,10 @@ function getBlueprintWeight(id) {
 function getBlueprintDrumsRequired(id) {
   return getApi().blueprintDrumsRequired(id) !== 0;
 }
+function getBlueprintTempoRange(id) {
+  const a = getApi();
+  return { min: a.blueprintTempoMin(id), max: a.blueprintTempoMax(id) };
+}
 function getBlueprints() {
   const a = getApi();
   const count = a.blueprintCount();
@@ -197,7 +237,9 @@ function getBlueprints() {
       name: a.blueprintName(i),
       paradigm: a.blueprintParadigm(i),
       riffPolicy: a.blueprintRiffPolicy(i),
-      weight: a.blueprintWeight(i)
+      weight: a.blueprintWeight(i),
+      tempoMin: a.blueprintTempoMin(i),
+      tempoMax: a.blueprintTempoMax(i)
     });
   }
   return result;
@@ -212,7 +254,7 @@ var CONFIG_FIELDS = [
   { js: "key", cpp: "key", default: 0, type: "number" },
   { js: "bpm", cpp: "bpm", default: 0, type: "number" },
   { js: "seed", cpp: "seed", default: 0, type: "number" },
-  { js: "chordProgressionId", cpp: "chord_progression_id", default: 0, type: "number" },
+  { js: "chordProgressionId", cpp: "chord_progression_id", default: 255, type: "number" },
   { js: "formId", cpp: "form", default: 0, type: "number" },
   { js: "formExplicit", cpp: "form_explicit", default: false, type: "boolean" },
   { js: "targetDurationSeconds", cpp: "target_duration_seconds", default: 0, type: "number" },
@@ -227,6 +269,12 @@ var CONFIG_FIELDS = [
   { js: "vocalLow", cpp: "vocal_low", default: 60, type: "number" },
   { js: "vocalHigh", cpp: "vocal_high", default: 79, type: "number" },
   { js: "compositionStyle", cpp: "composition_style", default: 0, type: "number" },
+  {
+    js: "compositionStyleExplicit",
+    cpp: "composition_style_explicit",
+    default: false,
+    type: "boolean"
+  },
   { js: "motifRepeatScope", cpp: "motif_repeat_scope", default: 0, type: "number" },
   { js: "arrangementGrowth", cpp: "arrangement_growth", default: 0, type: "number" },
   { js: "humanize", cpp: "humanize", default: false, type: "boolean" },
@@ -272,15 +320,15 @@ var CONFIG_FIELDS = [
   { js: "chordExtProbExplicit", cpp: "chord_ext_prob_explicit", default: false, type: "boolean" }
 ];
 var ARPEGGIO_FIELDS = [
-  { js: "arpeggioPattern", cpp: "pattern", default: 0, type: "number" },
-  { js: "arpeggioSpeed", cpp: "speed", default: 1, type: "number" },
+  { js: "arpeggioPattern", cpp: "pattern", default: 255, type: "number" },
+  { js: "arpeggioSpeed", cpp: "speed", default: 255, type: "number" },
   {
     js: "arpeggioOctaveRange",
     cpp: "octave_range",
     default: 2,
     type: "number"
   },
-  { js: "arpeggioGate", cpp: "gate", default: 0.8, type: "number" },
+  { js: "arpeggioGate", cpp: "gate", default: -1, type: "number" },
   {
     js: "arpeggioSyncChord",
     cpp: "sync_chord",
@@ -331,12 +379,6 @@ var CHORD_EXT_FIELDS = [
 ];
 var MOTIF_CHORD_FIELDS = [
   {
-    js: "motifFixedProgression",
-    cpp: "fixed_progression",
-    default: true,
-    type: "boolean"
-  },
-  {
     js: "motifMaxChordCount",
     cpp: "max_chord_count",
     default: 4,
@@ -365,7 +407,7 @@ var ACCOMPANIMENT_FIELDS = [
   { js: "seed", cpp: "seed", default: 0, type: "number" },
   { js: "drumsEnabled", cpp: "drums_enabled", default: true, type: "boolean" },
   { js: "arpeggioEnabled", cpp: "arpeggio_enabled", default: false, type: "boolean" },
-  { js: "guitarEnabled", cpp: "guitar_enabled", default: false, type: "boolean" },
+  { js: "guitarEnabled", cpp: "guitar_enabled", default: true, type: "boolean" },
   { js: "arpeggioPattern", cpp: "arpeggio_pattern", default: 0, type: "number" },
   { js: "arpeggioSpeed", cpp: "arpeggio_speed", default: 1, type: "number" },
   { js: "arpeggioOctaveRange", cpp: "arpeggio_octave_range", default: 2, type: "number" },
@@ -375,13 +417,13 @@ var ACCOMPANIMENT_FIELDS = [
   { js: "chordExt7th", cpp: "chord_ext_7th", default: false, type: "boolean" },
   { js: "chordExt9th", cpp: "chord_ext_9th", default: false, type: "boolean" },
   { js: "chordExtTritoneSub", cpp: "chord_ext_tritone_sub", default: false, type: "boolean" },
-  { js: "chordExtSusProb", cpp: "chord_ext_sus_prob", default: 20, type: "number" },
-  { js: "chordExt7thProb", cpp: "chord_ext_7th_prob", default: 30, type: "number" },
-  { js: "chordExt9thProb", cpp: "chord_ext_9th_prob", default: 25, type: "number" },
-  { js: "chordExtTritoneSubProb", cpp: "chord_ext_tritone_sub_prob", default: 50, type: "number" },
+  { js: "chordExtSusProb", cpp: "chord_ext_sus_prob", default: 0.2, type: "number" },
+  { js: "chordExt7thProb", cpp: "chord_ext_7th_prob", default: 0.15, type: "number" },
+  { js: "chordExt9thProb", cpp: "chord_ext_9th_prob", default: 0.25, type: "number" },
+  { js: "chordExtTritoneSubProb", cpp: "chord_ext_tritone_sub_prob", default: 0.5, type: "number" },
   { js: "humanize", cpp: "humanize", default: false, type: "boolean" },
-  { js: "humanizeTiming", cpp: "humanize_timing", default: 50, type: "number" },
-  { js: "humanizeVelocity", cpp: "humanize_velocity", default: 50, type: "number" },
+  { js: "humanizeTiming", cpp: "humanize_timing", default: 0.4, type: "number" },
+  { js: "humanizeVelocity", cpp: "humanize_velocity", default: 0.3, type: "number" },
   { js: "seEnabled", cpp: "se_enabled", default: true, type: "boolean" },
   { js: "callEnabled", cpp: "call_enabled", default: false, type: "boolean" },
   { js: "callDensity", cpp: "call_density", default: 2, type: "number" },
@@ -447,10 +489,8 @@ function deserializeConfig(json) {
   }
   for (const { cpp: nestedKey, fields } of NESTED_STRUCTS) {
     const nested = obj[nestedKey];
-    if (nested) {
-      for (const { js, cpp, default: def } of fields) {
-        config[js] = nested[cpp] ?? def;
-      }
+    for (const { js, cpp, default: def } of fields) {
+      config[js] = nested?.[cpp] ?? def;
     }
   }
   return config;
@@ -506,7 +546,10 @@ var ConfigError = {
   InvalidProbability: 29,
   InvalidArpeggioRange: 30,
   InvalidMelodyOverride: 31,
-  InvalidMotifOverride: 32
+  InvalidMotifOverride: 32,
+  InvalidJson: 33,
+  InvalidMood: 34,
+  InvalidTargetDuration: 35
 };
 var MidiSketchConfigError = class extends Error {
   constructor(code, nativeMessage) {
@@ -522,6 +565,10 @@ var MidiSketchGenerationError = class extends Error {
     this.name = "MidiSketchGenerationError";
     this.code = code;
   }
+};
+var MidiFormat = {
+  SMF1: 1,
+  SMF2: 2
 };
 var VocalAttitude = {
   Clean: 0,
@@ -540,6 +587,7 @@ var ModulationTiming = {
   None: 0,
   LastChorus: 1,
   AfterBridge: 2,
+  /** Falls back to a single final-chorus modulation. */
   EachChorus: 3,
   Random: 4
 };
@@ -559,6 +607,26 @@ var CallDensity = {
   Standard: 2,
   Intense: 3
 };
+var ArpeggioPattern = {
+  Up: 0,
+  Down: 1,
+  UpDown: 2,
+  Random: 3,
+  Pinwheel: 4,
+  PedalRoot: 5,
+  Alberti: 6,
+  BrokenChord: 7,
+  /** Let the mood/blueprint style pick the pattern. This is the SongConfig default. */
+  Auto: 255
+};
+var ArpeggioSpeed = {
+  Eighth: 0,
+  Sixteenth: 1,
+  Triplet: 2,
+  /** Let the mood/blueprint style pick the speed. This is the SongConfig default. */
+  Auto: 255
+};
+var ARPEGGIO_GATE_AUTO = -1;
 var ArrangementGrowth = {
   LayerAdd: 0,
   RegisterAdd: 1
@@ -608,7 +676,88 @@ var VocalStylePreset = {
   // K-POP style (syncopation, hooks, rap-like passages)
 };
 
+// js/src/presets.ts
+function getStructures() {
+  const a = getApi();
+  const count = a.structureCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({ name: a.structureName(i) });
+  }
+  return result;
+}
+function getMoods() {
+  const a = getApi();
+  const count = a.moodCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      name: a.moodName(i),
+      defaultBpm: a.moodDefaultBpm(i)
+    });
+  }
+  return result;
+}
+function getChords() {
+  const a = getApi();
+  const count = a.chordCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      name: a.chordName(i),
+      display: a.chordDisplay(i)
+    });
+  }
+  return result;
+}
+function getStylePresets() {
+  const a = getApi();
+  const count = a.stylePresetCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      id: i,
+      name: a.stylePresetName(i),
+      displayName: a.stylePresetDisplayName(i),
+      description: a.stylePresetDescription(i),
+      tempoDefault: a.stylePresetTempoDefault(i),
+      allowedAttitudes: a.stylePresetAllowedAttitudes(i)
+    });
+  }
+  return result;
+}
+function getProgressionsByStyle(styleId) {
+  const a = getApi();
+  const m = getModule();
+  const retPtr = a.getProgressionsByStylePtr(styleId);
+  const view = new DataView(m.HEAPU8.buffer);
+  const count = view.getUint8(retPtr);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(view.getUint8(retPtr + 1 + i));
+  }
+  return result;
+}
+function getFormsByStyle(styleId) {
+  const a = getApi();
+  const m = getModule();
+  const retPtr = a.getFormsByStylePtr(styleId);
+  const view = new DataView(m.HEAPU8.buffer);
+  const count = view.getUint8(retPtr);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(view.getUint8(retPtr + 1 + i));
+  }
+  return result;
+}
+function isCallOrientedVocalStyle(style) {
+  return getApi().vocalStyleCallEnabled(style) !== 0;
+}
+
 // js/src/builder.ts
+function clampUnitInterval(value) {
+  return Math.max(0, Math.min(1, value));
+}
 var ChangeTracker = class {
   constructor() {
     this.changes = [];
@@ -725,10 +874,11 @@ var SongConfigBuilder = class {
   }
   /**
    * Set form/structure pattern
-   * @param id Form ID
+   * @param id Form ID. Marks the form as explicit, preventing automatic form selection.
    */
   setForm(id) {
     this.setField("formId", id, "basic");
+    this.setField("formExplicit", true, "basic");
     return this;
   }
   /**
@@ -746,8 +896,8 @@ var SongConfigBuilder = class {
   /**
    * Set vocal style preset with cascade detection
    *
-   * Idol-style vocalStyles (4=Idol, 9=BrightKira, 11=CuteAffected) will
-   * auto-enable call system if callSetting/callEnabled is not explicitly set.
+   * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) auto-enable the
+   * call system if callSetting/callEnabled is not explicitly set.
    *
    * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
    */
@@ -757,8 +907,7 @@ var SongConfigBuilder = class {
     this.config.vocalStyle = style;
     this.explicitFields.add("vocalStyle");
     tracker.addChange("vocal", "vocalStyle", oldStyle, style, "User set vocal style");
-    const idolStyles = [4, 9, 11];
-    if (idolStyles.includes(style) && !this.explicitFields.has("callSetting") && !this.explicitFields.has("callEnabled")) {
+    if (isCallOrientedVocalStyle(style) && !this.explicitFields.has("callSetting") && !this.explicitFields.has("callEnabled")) {
       if (!this.config.callEnabled) {
         const oldCall = this.config.callEnabled;
         this.config.callEnabled = true;
@@ -768,7 +917,7 @@ var SongConfigBuilder = class {
           "callEnabled",
           oldCall,
           true,
-          `Idol-style vocalStyle (${style}) auto-enables call system`
+          `Call-oriented vocalStyle (${style}) auto-enables call system`
         );
       }
     }
@@ -786,16 +935,16 @@ var SongConfigBuilder = class {
   /**
    * Set humanization settings
    * @param enabled Enable humanization
-   * @param timing Timing variation (0-100)
-   * @param velocity Velocity variation (0-100)
+   * @param timing Timing variation (0.0-1.0; values outside the range are clamped)
+   * @param velocity Velocity variation (0.0-1.0; values outside the range are clamped)
    */
   setHumanize(enabled, timing, velocity) {
     this.setField("humanize", enabled, "basic");
     if (timing !== void 0) {
-      this.setField("humanizeTiming", timing, "basic");
+      this.setField("humanizeTiming", clampUnitInterval(timing), "basic");
     }
     if (velocity !== void 0) {
-      this.setField("humanizeVelocity", velocity, "basic");
+      this.setField("humanizeVelocity", clampUnitInterval(velocity), "basic");
     }
     return this;
   }
@@ -900,6 +1049,9 @@ var SongConfigBuilder = class {
       if (opts.syncChord !== void 0) {
         this.setField("arpeggioSyncChord", opts.syncChord, "arpeggio");
       }
+      if (opts.baseVelocity !== void 0) {
+        this.setField("arpeggioBaseVelocity", opts.baseVelocity, "arpeggio");
+      }
     }
     return this;
   }
@@ -911,11 +1063,23 @@ var SongConfigBuilder = class {
     if (opts.repeatScope !== void 0) {
       this.setField("motifRepeatScope", opts.repeatScope, "motif");
     }
-    if (opts.fixedProgression !== void 0) {
-      this.setField("motifFixedProgression", opts.fixedProgression, "motif");
-    }
     if (opts.maxChordCount !== void 0) {
       this.setField("motifMaxChordCount", opts.maxChordCount, "motif");
+    }
+    if (opts.length !== void 0) {
+      this.setField("motifLength", opts.length, "motif");
+    }
+    if (opts.noteCount !== void 0) {
+      this.setField("motifNoteCount", opts.noteCount, "motif");
+    }
+    if (opts.motion !== void 0) {
+      this.setField("motifMotion", opts.motion, "motif");
+    }
+    if (opts.registerHigh !== void 0) {
+      this.setField("motifRegisterHigh", opts.registerHigh, "motif");
+    }
+    if (opts.rhythmDensity !== void 0) {
+      this.setField("motifRhythmDensity", opts.rhythmDensity, "motif");
     }
     return this;
   }
@@ -961,7 +1125,7 @@ var SongConfigBuilder = class {
   }
   /**
    * Set hook intensity
-   * @param intensity 0=Off, 1=Light, 2=Normal, 3=Strong
+   * @param intensity 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum
    */
   setHookIntensity(intensity) {
     this.setField("hookIntensity", intensity, "hook");
@@ -992,7 +1156,13 @@ var SongConfigBuilder = class {
     return this;
   }
   /**
-   * Set target duration
+   * Set target duration.
+   *
+   * The duration has to reach between 12 and 144 bars at the resolved tempo, so the
+   * accepted range in seconds depends on the BPM. A value outside it is rejected when
+   * the config is validated rather than being shortened to fit, which is the same
+   * answer the native CLI gives for the same config.
+   *
    * @param seconds Target duration in seconds (0 = use formId)
    */
   setTargetDuration(seconds) {
@@ -1029,6 +1199,51 @@ var SongConfigBuilder = class {
    */
   setMoraRhythmMode(mode) {
     this.setField("moraRhythmMode", mode, "vocal");
+    return this;
+  }
+  /** Set the syllabic subdivision rate (0 = style default, 1-100 = override). */
+  setSyllabicSubdivisionRate(rate) {
+    this.setField("syllabicSubRate", rate, "vocal");
+    return this;
+  }
+  /** Enable or disable melodic syncopation. */
+  setSyncopation(enabled) {
+    this.setField("enableSyncopation", enabled, "vocal");
+    return this;
+  }
+  /** Set the section energy curve (0=GradualBuild through 3=SteadyState). */
+  setEnergyCurve(curve) {
+    this.setField("energyCurve", curve, "basic");
+    return this;
+  }
+  /** Set the optional per-song melody overrides. */
+  setMelodyOverrides(opts) {
+    if (opts.maxLeap !== void 0) {
+      this.setField("melodyMaxLeap", opts.maxLeap, "vocal");
+    }
+    if (opts.syncopationProb !== void 0) {
+      this.setField("melodySyncopationProb", opts.syncopationProb, "vocal");
+    }
+    if (opts.phraseLength !== void 0) {
+      this.setField("melodyPhraseLength", opts.phraseLength, "vocal");
+    }
+    if (opts.longNoteRatio !== void 0) {
+      this.setField("melodyLongNoteRatio", opts.longNoteRatio, "vocal");
+    }
+    if (opts.chorusRegisterShift !== void 0) {
+      this.setField("melodyChorusRegisterShift", opts.chorusRegisterShift, "vocal");
+    }
+    if (opts.hookRepetition !== void 0) {
+      this.setField("melodyHookRepetition", opts.hookRepetition, "vocal");
+    }
+    if (opts.useLeadingTone !== void 0) {
+      this.setField("melodyUseLeadingTone", opts.useLeadingTone, "vocal");
+    }
+    return this;
+  }
+  /** Enable or disable the guitar accompaniment track. */
+  setGuitar(enabled) {
+    this.setField("guitarEnabled", enabled, "trackEnable");
     return this;
   }
   /**
@@ -1104,20 +1319,23 @@ var SongConfigBuilder = class {
           tracker.addWarning("RhythmSync blueprint works best with drums enabled");
         }
       }
-      if (paradigm === GenerationParadigm.RhythmSync) {
-        if (this.config.bpm > 0 && (this.config.bpm < 160 || this.config.bpm > 175) && !this.explicitFields.has("bpm")) {
+      const tempoRange = getBlueprintTempoRange(id);
+      if (tempoRange.min > 0 && tempoRange.max > 0) {
+        if (this.config.bpm > 0 && (this.config.bpm < tempoRange.min || this.config.bpm > tempoRange.max) && !this.explicitFields.has("bpm")) {
           const oldBpm = this.config.bpm;
-          const newBpm = Math.max(160, Math.min(175, this.config.bpm));
+          const newBpm = Math.max(tempoRange.min, Math.min(tempoRange.max, this.config.bpm));
           this.config.bpm = newBpm;
           tracker.addChange(
             "bpm",
             "bpm",
             oldBpm,
             newBpm,
-            "RhythmSync blueprint prefers BPM 160-175"
+            `${getBlueprintName(id)} blueprint prefers BPM ${tempoRange.min}-${tempoRange.max}`
           );
-        } else if (this.config.bpm > 0 && (this.config.bpm < 160 || this.config.bpm > 175)) {
-          tracker.addWarning("RhythmSync blueprint works best with BPM 160-175");
+        } else if (this.config.bpm > 0 && (this.config.bpm < tempoRange.min || this.config.bpm > tempoRange.max)) {
+          tracker.addWarning(
+            `${getBlueprintName(id)} blueprint works best with BPM ${tempoRange.min}-${tempoRange.max}`
+          );
         }
       }
       if (id === 9) {
@@ -1152,7 +1370,7 @@ var SongConfigBuilder = class {
   /**
    * Set BPM with cascade detection
    *
-   * For RhythmSync blueprints, warns if BPM is outside 160-175 range.
+   * Warns if BPM is outside the selected blueprint's declared tempo range.
    * C++ respects explicit BPM and skips clamping.
    *
    * @param bpm BPM value (0 = use style default)
@@ -1161,9 +1379,11 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldBpm = this.config.bpm;
     if (this.config.blueprintId !== 255 && bpm > 0) {
-      const paradigm = getBlueprintParadigm(this.config.blueprintId);
-      if (paradigm === GenerationParadigm.RhythmSync && (bpm < 160 || bpm > 175)) {
-        tracker.addWarning(`RhythmSync blueprint works best with BPM 160-175 (set: ${bpm})`);
+      const tempoRange = getBlueprintTempoRange(this.config.blueprintId);
+      if (tempoRange.min > 0 && tempoRange.max > 0 && (bpm < tempoRange.min || bpm > tempoRange.max)) {
+        tracker.addWarning(
+          `${getBlueprintName(this.config.blueprintId)} blueprint works best with BPM ${tempoRange.min}-${tempoRange.max} (set: ${bpm})`
+        );
       }
     }
     this.config.bpm = bpm;
@@ -1185,6 +1405,7 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldStyle = this.config.compositionStyle;
     this.config.compositionStyle = style;
+    this.config.compositionStyleExplicit = true;
     this.explicitFields.add("compositionStyle");
     tracker.addChange("basic", "compositionStyle", oldStyle, style, "User set composition style");
     if ((style === CompositionStyle.BackgroundMotif || style === CompositionStyle.SynthDriven) && !this.explicitFields.has("skipVocal")) {
@@ -1298,6 +1519,13 @@ var SongConfigBuilder = class {
 
 // js/src/midi-sketch.ts
 var PIANO_ROLL_INFO_SIZE = 784;
+var COLLISION_INFO_SIZE = 3;
+var MAX_PIANO_ROLL_SAMPLES = 1e5;
+var NO_COLLISION = Object.freeze({
+  trackRole: 0,
+  collidingPitch: 0,
+  intervalSemitones: 0
+});
 var MidiSketch = class {
   constructor() {
     const a = getApi();
@@ -1308,21 +1536,21 @@ var MidiSketch = class {
   }
   /**
    * Handle a generation result code, throwing appropriate errors.
-   * For methods that accept a full config JSON (result===1 triggers validation).
+   * For config-backed calls, result===1 is resolved through the handle's last config error.
    */
-  handleGenerationResult(result, json, operation) {
+  handleGenerationResult(result, operation) {
     if (result === 0) {
       return;
     }
     const a = getApi();
     if (result === 1) {
-      const validationResult = a.validateConfigJson(json, json.length);
-      if (validationResult !== 0) {
-        const msg = a.configErrorString(validationResult);
-        throw new MidiSketchConfigError(validationResult, msg);
+      const configError = a.getLastConfigError(this.handle);
+      if (configError !== 0) {
+        const message = a.configErrorString(configError);
+        throw new MidiSketchConfigError(configError, message);
       }
     }
-    const errorMessage = a.configErrorString(result);
+    const errorMessage = a.errorString(result);
     throw new MidiSketchGenerationError(result, `${operation} failed: ${errorMessage}`);
   }
   /**
@@ -1331,7 +1559,7 @@ var MidiSketch = class {
    */
   throwGenerationError(result, operation) {
     const a = getApi();
-    const errorMessage = a.configErrorString(result);
+    const errorMessage = a.errorString(result);
     throw new MidiSketchGenerationError(result, `${operation} failed: ${errorMessage}`);
   }
   /**
@@ -1343,7 +1571,7 @@ var MidiSketch = class {
     const a = getApi();
     const json = serializeConfig(config);
     const result = a.generateFromJson(this.handle, json, json.length);
-    this.handleGenerationResult(result, json, "Generation");
+    this.handleGenerationResult(result, "Generation");
   }
   /**
    * Generate MIDI from a SongConfigBuilder
@@ -1366,6 +1594,22 @@ var MidiSketch = class {
     this.generateFromConfig(builder.build());
   }
   /**
+   * Select the MIDI format used by subsequent generation calls.
+   *
+   * The WebAssembly build currently supports SMF1 only. Selecting SMF2 throws
+   * MidiSketchGenerationError instead of silently producing SMF1.
+   */
+  setMidiFormat(format) {
+    const result = getApi().setMidiFormat(this.handle, format);
+    if (result !== 0) {
+      this.throwGenerationError(result, "Set MIDI format");
+    }
+  }
+  /** Get the selected MIDI output format. */
+  getMidiFormat() {
+    return getApi().getMidiFormat(this.handle);
+  }
+  /**
    * Generate only the vocal track without accompaniment.
    * Use for trial-and-error workflow: generate vocal, listen, regenerate if needed.
    * Call generateAccompaniment() when satisfied with the vocal.
@@ -1376,7 +1620,7 @@ var MidiSketch = class {
     const a = getApi();
     const json = serializeConfig(config);
     const result = a.generateVocalFromJson(this.handle, json, json.length);
-    this.handleGenerationResult(result, json, "Vocal generation");
+    this.handleGenerationResult(result, "Vocal generation");
   }
   /**
    * Regenerate vocal track with new configuration or seed.
@@ -1386,6 +1630,13 @@ var MidiSketch = class {
    */
   regenerateVocal(configOrSeed = 0) {
     const a = getApi();
+    if (typeof configOrSeed === "number" && configOrSeed === 0) {
+      const result2 = a.regenerateVocalFromJson(this.handle, "", 0);
+      if (result2 !== 0) {
+        this.throwGenerationError(result2, "Vocal regeneration");
+      }
+      return;
+    }
     const vocalConfig = typeof configOrSeed === "number" ? { seed: configOrSeed } : configOrSeed;
     const json = serializeVocalConfig(vocalConfig);
     const result = a.regenerateVocalFromJson(this.handle, json, json.length);
@@ -1449,7 +1700,49 @@ var MidiSketch = class {
     const a = getApi();
     const json = serializeConfig(config);
     const result = a.generateWithVocalFromJson(this.handle, json, json.length);
-    this.handleGenerationResult(result, json, "Generation");
+    this.handleGenerationResult(result, "Generation");
+  }
+  /**
+   * Get the current vocal melody for saving or comparing candidates.
+   *
+   * The returned value can be restored later with setMelody().
+   */
+  getMelody() {
+    const json = getApi().getMelodyJson(this.handle);
+    if (!json) {
+      throw new Error("No melody data available");
+    }
+    let melody;
+    try {
+      melody = JSON.parse(json);
+    } catch (error) {
+      throw new Error(`Malformed melody data: ${error.message}`);
+    }
+    return {
+      seed: melody.seed,
+      notes: melody.notes.map((note) => ({
+        startTick: note.start_tick,
+        duration: note.duration,
+        pitch: note.pitch,
+        velocity: note.velocity
+      }))
+    };
+  }
+  /**
+   * Restore a vocal melody previously returned by getMelody().
+   */
+  setMelody(melody) {
+    const json = JSON.stringify({
+      seed: melody.seed,
+      notes: melody.notes.map((note) => ({
+        start_tick: note.startTick,
+        duration: note.duration,
+        pitch: note.pitch,
+        velocity: note.velocity
+      }))
+    });
+    const result = getApi().setMelodyFromJson(this.handle, json, json.length);
+    this.handleGenerationResult(result, "Set melody");
   }
   /**
    * Set custom vocal notes for accompaniment generation.
@@ -1490,17 +1783,14 @@ var MidiSketch = class {
     }));
     const combined = `{"config":${configJson},"notes":${JSON.stringify(notesArray)}}`;
     const result = a.setVocalNotesFromJson(this.handle, combined, combined.length);
-    this.handleGenerationResult(result, configJson, "Set vocal notes");
+    this.handleGenerationResult(result, "Set vocal notes");
   }
-  /**
-   * Get the generated MIDI data
-   */
-  getMidi() {
+  readMidi(getMidiData, unavailableMessage) {
     const a = getApi();
     const m = getModule();
-    const midiDataPtr = a.getMidi(this.handle);
+    const midiDataPtr = getMidiData();
     if (!midiDataPtr) {
-      throw new Error("No MIDI data available");
+      throw new Error(unavailableMessage);
     }
     try {
       const dataPtr = m.HEAPU32[midiDataPtr >> 2];
@@ -1511,6 +1801,22 @@ var MidiSketch = class {
     } finally {
       a.freeMidi(midiDataPtr);
     }
+  }
+  /** Get the generated MIDI data. */
+  getMidi() {
+    const a = getApi();
+    return this.readMidi(() => a.getMidi(this.handle), "No MIDI data available");
+  }
+  /**
+   * Get a compact vocal-practice preview containing the vocal melody and chord-root bass.
+   * Generate a vocal or full song before calling this method.
+   */
+  getVocalPreviewMidi() {
+    const a = getApi();
+    return this.readMidi(
+      () => a.getVocalPreviewMidi(this.handle),
+      "No vocal preview MIDI data available"
+    );
   }
   /**
    * Get the event data as a parsed object
@@ -1528,6 +1834,23 @@ var MidiSketch = class {
       return JSON.parse(json);
     } finally {
       a.freeEvents(eventDataPtr);
+    }
+  }
+  /**
+   * Analyze the generated song for harmonic dissonance.
+   */
+  getDissonanceReport() {
+    const a = getApi();
+    const m = getModule();
+    const reportPtr = a.getDissonance(this.handle);
+    if (!reportPtr) {
+      throw new Error("No dissonance report available");
+    }
+    try {
+      const jsonPtr = m.HEAPU32[reportPtr >> 2];
+      return JSON.parse(m.UTF8ToString(jsonPtr));
+    } finally {
+      a.freeDissonance(reportPtr);
     }
   }
   // ============================================================================
@@ -1571,10 +1894,16 @@ var MidiSketch = class {
    *
    * Useful for visualizing safe notes over time in a piano roll editor.
    *
+   * At most {@link MAX_PIANO_ROLL_SAMPLES} samples may be requested. The limit is
+   * checked against the requested range before any work happens, so an oversized
+   * request costs nothing.
+   *
    * @param startTick Start tick
-   * @param endTick End tick
+   * @param endTick End tick (must be >= startTick)
    * @param step Step size in ticks (e.g., 120 for 16th notes, 480 for quarter notes)
    * @returns Array of piano roll safety info for each step
+   * @throws {RangeError} If step is not positive, the range is inverted, or the
+   *   request would exceed the sample limit
    *
    * @example
    * ```typescript
@@ -1590,13 +1919,32 @@ var MidiSketch = class {
   getPianoRollSafety(startTick, endTick, step) {
     const a = getApi();
     const m = getModule();
+    if (!Number.isInteger(step) || step <= 0) {
+      throw new RangeError(`Piano roll safety step must be a positive integer, got ${step}`);
+    }
+    if (endTick < startTick) {
+      throw new RangeError(
+        `Piano roll safety range is inverted: startTick ${startTick} is after endTick ${endTick}`
+      );
+    }
+    const requestedSamples = Math.floor((endTick - startTick) / step) + 1;
+    if (requestedSamples > MAX_PIANO_ROLL_SAMPLES) {
+      throw new RangeError(
+        `Piano roll safety requests are limited to ${MAX_PIANO_ROLL_SAMPLES} samples, got ${requestedSamples}; increase the step size or narrow the range.`
+      );
+    }
     const dataPtr = a.getPianoRollSafety(this.handle, startTick, endTick, step);
     if (!dataPtr) {
       throw new Error("Failed to get piano roll safety data. Generate MIDI first.");
     }
     try {
       const infoArrayPtr = m.HEAPU32[dataPtr >> 2];
-      const count = m.HEAPU32[dataPtr + 4 >> 2];
+      const count = a.getPianoRollDataCount(dataPtr);
+      if (a.pianoRollDataWasTruncated(dataPtr) !== 0) {
+        throw new RangeError(
+          `Piano roll safety data was truncated to ${MAX_PIANO_ROLL_SAMPLES} samples.`
+        );
+      }
       const results = [];
       for (let idx = 0; idx < count; idx++) {
         const infoPtr = infoArrayPtr + idx * PIANO_ROLL_INFO_SIZE;
@@ -1618,6 +1966,29 @@ var MidiSketch = class {
     return a.reasonToString(reason);
   }
   /**
+   * Convert collision info to human-readable string.
+   *
+   * @param collision Collision entry from PianoRollInfo.collision
+   * @returns Human-readable string like "Bass F3 minor 2nd", or an empty
+   *   string when the entry records no collision
+   */
+  collisionToString(collision) {
+    const a = getApi();
+    const m = getModule();
+    const ptr = m._malloc(COLLISION_INFO_SIZE);
+    if (!ptr) {
+      throw new Error("Failed to allocate memory for collision info");
+    }
+    try {
+      m.HEAPU8[ptr] = collision.trackRole;
+      m.HEAPU8[ptr + 1] = collision.collidingPitch;
+      m.HEAPU8[ptr + 2] = collision.intervalSemitones;
+      return a.collisionToString(ptr);
+    } finally {
+      m._free(ptr);
+    }
+  }
+  /**
    * Parse MidiSketchPianoRollInfo from WASM memory.
    * @internal
    */
@@ -1634,14 +2005,17 @@ var MidiSketch = class {
     for (let idx = 0; idx < 128; idx++) {
       reason.push(view.getUint16(ptr + 134 + idx * 2, true));
     }
-    const collision = [];
+    const collision = Array(128).fill(NO_COLLISION);
     for (let idx = 0; idx < 128; idx++) {
       const collisionOffset = ptr + 390 + idx * 3;
-      collision.push({
-        trackRole: view.getUint8(collisionOffset),
-        collidingPitch: view.getUint8(collisionOffset + 1),
-        intervalSemitones: view.getUint8(collisionOffset + 2)
-      });
+      const intervalSemitones = view.getUint8(collisionOffset + 2);
+      if (intervalSemitones !== 0) {
+        collision[idx] = {
+          trackRole: view.getUint8(collisionOffset),
+          collidingPitch: view.getUint8(collisionOffset + 1),
+          intervalSemitones
+        };
+      }
     }
     const recommendedCount = view.getUint8(ptr + 782);
     const recommended = [];
@@ -1670,6 +2044,11 @@ var MidiSketch = class {
     const a = getApi();
     return a.getResolvedBlueprintId(this.handle);
   }
+  /** Get non-fatal warnings produced by the latest generation operation. */
+  getWarnings() {
+    const a = getApi();
+    return JSON.parse(a.getWarningsJson(this.handle));
+  }
   /**
    * Destroy the instance and free resources
    */
@@ -1682,81 +2061,6 @@ var MidiSketch = class {
   }
 };
 var midi_sketch_default = MidiSketch;
-
-// js/src/presets.ts
-function getStructures() {
-  const a = getApi();
-  const count = a.structureCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({ name: a.structureName(i) });
-  }
-  return result;
-}
-function getMoods() {
-  const a = getApi();
-  const count = a.moodCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      name: a.moodName(i),
-      defaultBpm: a.moodDefaultBpm(i)
-    });
-  }
-  return result;
-}
-function getChords() {
-  const a = getApi();
-  const count = a.chordCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      name: a.chordName(i),
-      display: a.chordDisplay(i)
-    });
-  }
-  return result;
-}
-function getStylePresets() {
-  const a = getApi();
-  const count = a.stylePresetCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      id: i,
-      name: a.stylePresetName(i),
-      displayName: a.stylePresetDisplayName(i),
-      description: a.stylePresetDescription(i),
-      tempoDefault: a.stylePresetTempoDefault(i),
-      allowedAttitudes: a.stylePresetAllowedAttitudes(i)
-    });
-  }
-  return result;
-}
-function getProgressionsByStyle(styleId) {
-  const a = getApi();
-  const m = getModule();
-  const retPtr = a.getProgressionsByStylePtr(styleId);
-  const view = new DataView(m.HEAPU8.buffer);
-  const count = view.getUint8(retPtr);
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push(view.getUint8(retPtr + 1 + i));
-  }
-  return result;
-}
-function getFormsByStyle(styleId) {
-  const a = getApi();
-  const m = getModule();
-  const retPtr = a.getFormsByStylePtr(styleId);
-  const view = new DataView(m.HEAPU8.buffer);
-  const count = view.getUint8(retPtr);
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push(view.getUint8(retPtr + 1 + i));
-  }
-  return result;
-}
 
 // js/src/types.ts
 var NoteSafety = {
@@ -1806,6 +2110,12 @@ function getVersion() {
   return getApi().version();
 }
 function downloadMidi(midiData, filename = "output.mid") {
+  if (typeof document === "undefined") {
+    throw new Error("downloadMidi is only available in a browser environment.");
+  }
+  if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
+    throw new Error("downloadMidi requires URL.createObjectURL support.");
+  }
   const buffer = new ArrayBuffer(midiData.length);
   new Uint8Array(buffer).set(midiData);
   const blob = new Blob([buffer], { type: "audio/midi" });
@@ -1814,12 +2124,15 @@ function downloadMidi(midiData, filename = "output.mid") {
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 export {
+  ARPEGGIO_GATE_AUTO,
   ATTITUDE_CLEAN,
   ATTITUDE_EXPRESSIVE,
   ATTITUDE_RAW,
+  ArpeggioPattern,
+  ArpeggioSpeed,
   ArrangementGrowth,
   CallDensity,
   CompositionStyle,
@@ -1827,7 +2140,9 @@ export {
   GenerationParadigm,
   HookIntensity,
   IntroChant,
+  MAX_PIANO_ROLL_SAMPLES,
   MelodicComplexity,
+  MidiFormat,
   MidiSketch,
   MidiSketchConfigError,
   MidiSketchGenerationError,
@@ -1850,6 +2165,7 @@ export {
   getBlueprintName,
   getBlueprintParadigm,
   getBlueprintRiffPolicy,
+  getBlueprintTempoRange,
   getBlueprintWeight,
   getBlueprints,
   getChords,
@@ -1861,6 +2177,7 @@ export {
   getStylePresets,
   getVersion,
   init,
+  isCallOrientedVocalStyle,
   serializeAccompanimentConfig,
   serializeConfig,
   serializeVocalConfig,

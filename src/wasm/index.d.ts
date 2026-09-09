@@ -10,7 +10,7 @@
 /**
  * Song configuration for style-based generation
  */
-export interface SongConfig {
+interface SongConfig {
     /** Style preset ID */
     stylePresetId: number;
     /** Key (0-11) */
@@ -35,13 +35,13 @@ export interface SongConfig {
     arpeggioEnabled: boolean;
     /** Enable guitar track */
     guitarEnabled: boolean;
-    /** Arpeggio pattern: 0=Up, 1=Down, 2=UpDown, 3=Random */
+    /** Arpeggio pattern: 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord, 255=Auto (default) */
     arpeggioPattern: number;
-    /** Arpeggio speed: 0=Eighth, 1=Sixteenth, 2=Triplet */
+    /** Arpeggio speed: 0=Eighth, 1=Sixteenth, 2=Triplet, 255=Auto (default) */
     arpeggioSpeed: number;
     /** Arpeggio octave range (1-3) */
     arpeggioOctaveRange: number;
-    /** Arpeggio gate length (0.0-1.0) */
+    /** Arpeggio gate length (0.0-1.0), or -1 for the style default (default) */
     arpeggioGate: number;
     /** Vocal range lower bound (MIDI note) */
     vocalLow: number;
@@ -73,6 +73,8 @@ export interface SongConfig {
     chordExtTritoneSubProb: number;
     /** Composition style: 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven */
     compositionStyle: number;
+    /** True when compositionStyle should override the style preset. */
+    compositionStyleExplicit: boolean;
     /** Target duration in seconds (0 = use formId) */
     targetDurationSeconds: number;
     /** Modulation timing: 0=None, 1=LastChorus, 2=AfterBridge, 3=EachChorus, 4=Random */
@@ -109,13 +111,11 @@ export interface SongConfig {
     arpeggioBaseVelocity: number;
     /** Motif repeat scope: 0=FullSong, 1=Section */
     motifRepeatScope: number;
-    /** Same progression for all sections (default=true) */
-    motifFixedProgression: boolean;
     /** Max chord count (0=no limit, 2-8) */
     motifMaxChordCount: number;
     /** Melodic complexity: 0=Simple, 1=Standard, 2=Complex */
     melodicComplexity: number;
-    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong */
+    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum */
     hookIntensity: number;
     /** Vocal groove feel: 0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th */
     vocalGroove: number;
@@ -151,11 +151,11 @@ export interface SongConfig {
     melodyHookRepetition: number;
     /** Leading tone: 0=preset, 1=off, 2=on */
     melodyUseLeadingTone: number;
-    /** Motif length: 0=auto, 1/2/4 beats */
+    /** Motif length: 0=auto, 1/2/4 bars */
     motifLength: number;
     /** Motif note count: 0=auto, 3-8 */
     motifNoteCount: number;
-    /** Motif motion: 0xFF=preset, 0-4=override (0=Stepwise..4=Disjunct) */
+    /** Motif motion: 0xFF=preset, 0-5=override (0=Stepwise..5=Ostinato) */
     motifMotion: number;
     /** Motif register: 0=auto, 1=low, 2=high */
     motifRegisterHigh: number;
@@ -167,7 +167,7 @@ export interface SongConfig {
 /**
  * Note input for custom vocal track
  */
-export interface NoteInput {
+interface NoteInput {
     /** Note start time in ticks */
     startTick: number;
     /** Note duration in ticks */
@@ -178,9 +178,18 @@ export interface NoteInput {
     velocity: number;
 }
 /**
+ * Serializable vocal melody returned by MidiSketch.getMelody().
+ */
+interface MelodyData {
+    /** Random seed used to generate the melody */
+    seed: number;
+    /** Vocal notes in playback order */
+    notes: NoteInput[];
+}
+/**
  * Vocal regeneration configuration
  */
-export interface VocalConfig {
+interface VocalConfig {
     /** Random seed (0 = new random) */
     seed?: number;
     /** Vocal range lower bound (MIDI note, 36-96) */
@@ -195,7 +204,7 @@ export interface VocalConfig {
     melodyTemplate?: number;
     /** Melodic complexity: 0=Simple, 1=Standard, 2=Complex */
     melodicComplexity?: number;
-    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong */
+    /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum */
     hookIntensity?: number;
     /** Vocal groove feel: 0=Straight, 1=OffBeat, 2=Swing, etc. */
     vocalGroove?: number;
@@ -207,7 +216,7 @@ export interface VocalConfig {
 /**
  * Configuration for accompaniment generation/regeneration.
  */
-export interface AccompanimentConfig {
+interface AccompanimentConfig {
     /** Random seed for BGM (0 = auto-generate) */
     seed?: number;
     /** Enable drums */
@@ -216,7 +225,7 @@ export interface AccompanimentConfig {
     arpeggioEnabled?: boolean;
     /** Enable guitar track */
     guitarEnabled?: boolean;
-    /** Arpeggio pattern: 0=Up, 1=Down, 2=UpDown, 3=Random */
+    /** Arpeggio pattern: 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord */
     arpeggioPattern?: number;
     /** Arpeggio speed: 0=Eighth, 1=Sixteenth, 2=Triplet */
     arpeggioSpeed?: number;
@@ -234,27 +243,27 @@ export interface AccompanimentConfig {
     chordExt9th?: boolean;
     /** Enable tritone substitution (V7 -> bII7) */
     chordExtTritoneSub?: boolean;
-    /** Sus probability: 0-100 */
+    /** Sus probability: 0.0-1.0 */
     chordExtSusProb?: number;
-    /** 7th probability: 0-100 */
+    /** 7th probability: 0.0-1.0 */
     chordExt7thProb?: number;
-    /** 9th probability: 0-100 */
+    /** 9th probability: 0.0-1.0 */
     chordExt9thProb?: number;
-    /** Tritone substitution probability: 0-100 */
+    /** Tritone substitution probability: 0.0-1.0 */
     chordExtTritoneSubProb?: number;
     /** Enable humanization */
     humanize?: boolean;
-    /** Timing variation: 0-100 */
+    /** Timing variation: 0.0-1.0 */
     humanizeTiming?: number;
-    /** Velocity variation: 0-100 */
+    /** Velocity variation: 0.0-1.0 */
     humanizeVelocity?: number;
     /** Enable SE track */
     seEnabled?: boolean;
     /** Enable call system */
     callEnabled?: boolean;
-    /** Call density: 0=Sparse, 1=Light, 2=Standard, 3=Dense */
+    /** Call density: 0=None, 1=Minimal, 2=Standard, 3=Intense. None emits no calls. */
     callDensity?: number;
-    /** Intro chant: 0=None, 1=Gachikoi, 2=Mix */
+    /** Intro chant: 0=None, 1=Gachikoi, 2=Shouting */
     introChant?: number;
     /** Mix pattern: 0=None, 1=Standard, 2=Tiger */
     mixPattern?: number;
@@ -264,7 +273,7 @@ export interface AccompanimentConfig {
 /**
  * Note safety level for piano roll visualization
  */
-export declare const NoteSafety: {
+declare const NoteSafety: {
     /** Green: chord tone, safe to use */
     readonly Safe: 0;
     /** Yellow: tension, low register, or passing tone */
@@ -272,11 +281,11 @@ export declare const NoteSafety: {
     /** Red: dissonant or out of range */
     readonly Dissonant: 2;
 };
-export type NoteSafetyLevel = (typeof NoteSafety)[keyof typeof NoteSafety];
+type NoteSafetyLevel = (typeof NoteSafety)[keyof typeof NoteSafety];
 /**
  * Reason flags for note safety (bitfield, can be combined)
  */
-export declare const NoteReason: {
+declare const NoteReason: {
     readonly None: 0;
     readonly ChordTone: 1;
     readonly Tension: 2;
@@ -292,11 +301,11 @@ export declare const NoteReason: {
     readonly TooHigh: 2048;
     readonly TooLow: 4096;
 };
-export type NoteReasonFlags = number;
+type NoteReasonFlags = number;
 /**
  * Collision info for a note that collides with BGM
  */
-export interface CollisionInfo {
+interface CollisionInfo {
     /** Track role of colliding track */
     trackRole: number;
     /** MIDI pitch of colliding note */
@@ -307,7 +316,7 @@ export interface CollisionInfo {
 /**
  * Piano roll safety info for a single tick
  */
-export interface PianoRollInfo {
+interface PianoRollInfo {
     /** Tick position */
     tick: number;
     /** Current chord degree (0=I, 1=ii, etc.) */
@@ -326,7 +335,7 @@ export interface PianoRollInfo {
 /**
  * Preset information
  */
-export interface PresetInfo {
+interface PresetInfo {
     /** Preset name */
     name: string;
     /** Display string (for chords) */
@@ -337,7 +346,7 @@ export interface PresetInfo {
 /**
  * Style preset information
  */
-export interface StylePresetInfo {
+interface StylePresetInfo {
     /** Style preset ID */
     id: number;
     /** Internal name */
@@ -354,7 +363,7 @@ export interface StylePresetInfo {
 /**
  * Chord event from generation (includes secondary dominants)
  */
-export interface ChordEvent {
+interface ChordEvent {
     /** Start tick */
     tick: number;
     /** End tick */
@@ -367,11 +376,56 @@ export interface ChordEvent {
 /**
  * Event data from generation
  */
-export interface EventData {
+/**
+ * Dissonance analysis result returned by MidiSketch.getDissonanceReport().
+ *
+ * Pitches are the ones the generator reasoned about, which is a key of C. The
+ * summary states the offset to the key the song sounds in:
+ * `sounding = pitch + key + (modulation_tick > 0 && tick >= modulation_tick ?
+ * modulation_amount : 0)`.
+ */
+interface DissonanceReport {
+    summary: {
+        total_issues: number;
+        simultaneous_clashes: number;
+        non_chord_tones: number;
+        sustained_over_chord_change: number;
+        non_diatonic_notes: number;
+        high_severity: number;
+        medium_severity: number;
+        low_severity: number;
+        /** Key the song sounds in, as a semitone offset from the reported pitches. */
+        key: number;
+        /** Name of that key, e.g. "E major". */
+        key_name: string;
+        modulation_tick: number;
+        modulation_amount: number;
+        pre_modulation_issues: number;
+        post_modulation_issues: number;
+    };
+    issues: Array<{
+        type: string;
+        severity: 'low' | 'medium' | 'high';
+        tick: number;
+        bar: number;
+        beat: number;
+        [key: string]: unknown;
+    }>;
+}
+interface EventData {
     bpm: number;
     division: number;
     duration_ticks: number;
     duration_seconds: number;
+    /** Resolved vocal style preset ID. */
+    vocal_style: number;
+    /** Generation inputs resolved by the core. */
+    metadata: {
+        blueprint: number;
+        style: number;
+        mood: number;
+        seed: number;
+    };
     tracks: Array<{
         name: string;
         channel: number;
@@ -383,6 +437,12 @@ export interface EventData {
             duration_ticks: number;
             start_seconds: number;
             duration_seconds: number;
+        }>;
+        /** Text/chant events, emitted for the SE track. */
+        textEvents?: Array<{
+            tick: number;
+            time_seconds: number;
+            text: string;
         }>;
     }>;
     sections: Array<{
@@ -397,6 +457,12 @@ export interface EventData {
     }>;
     /** Chord timeline with secondary dominant info */
     chords?: ChordEvent[];
+    /** Tempo changes, including the initial tempo event when present. */
+    tempo_map: Array<{
+        tick: number;
+        bpm: number;
+        seconds: number;
+    }>;
 }
 //# sourceMappingURL=types.d.ts.map
 // From constants.ts
@@ -406,7 +472,7 @@ export interface EventData {
 /**
  * Config validation error codes
  */
-export declare const ConfigError: {
+declare const ConfigError: {
     readonly OK: 0;
     readonly InvalidStyle: 1;
     readonly InvalidChord: 2;
@@ -440,12 +506,15 @@ export declare const ConfigError: {
     readonly InvalidArpeggioRange: 30;
     readonly InvalidMelodyOverride: 31;
     readonly InvalidMotifOverride: 32;
+    readonly InvalidJson: 33;
+    readonly InvalidMood: 34;
+    readonly InvalidTargetDuration: 35;
 };
-export type ConfigErrorCode = (typeof ConfigError)[keyof typeof ConfigError];
+type ConfigErrorCode = (typeof ConfigError)[keyof typeof ConfigError];
 /**
  * Custom error class for MidiSketch configuration errors
  */
-export declare class MidiSketchConfigError extends Error {
+declare class MidiSketchConfigError extends Error {
     /** Numeric error code */
     readonly code: ConfigErrorCode;
     /** Human-readable error message from native library */
@@ -455,68 +524,98 @@ export declare class MidiSketchConfigError extends Error {
 /**
  * Custom error class for MidiSketch generation errors
  */
-export declare class MidiSketchGenerationError extends Error {
+declare class MidiSketchGenerationError extends Error {
     /** Numeric error code */
     readonly code: number;
     constructor(code: number, message: string);
 }
-export declare const VocalAttitude: {
+/** MIDI file formats accepted by MidiSketch.setMidiFormat(). */
+declare const MidiFormat: {
+    readonly SMF1: 1;
+    readonly SMF2: 2;
+};
+type MidiFormatType = (typeof MidiFormat)[keyof typeof MidiFormat];
+declare const VocalAttitude: {
     readonly Clean: 0;
     readonly Expressive: 1;
     readonly Raw: 2;
 };
-export declare const CompositionStyle: {
+declare const CompositionStyle: {
     readonly MelodyLead: 0;
     readonly BackgroundMotif: 1;
     readonly SynthDriven: 2;
 };
-export declare const ATTITUDE_CLEAN: number;
-export declare const ATTITUDE_EXPRESSIVE: number;
-export declare const ATTITUDE_RAW: number;
-export declare const ModulationTiming: {
+declare const ATTITUDE_CLEAN: number;
+declare const ATTITUDE_EXPRESSIVE: number;
+declare const ATTITUDE_RAW: number;
+declare const ModulationTiming: {
     readonly None: 0;
     readonly LastChorus: 1;
     readonly AfterBridge: 2;
+    /** Falls back to a single final-chorus modulation. */
     readonly EachChorus: 3;
     readonly Random: 4;
 };
-export declare const IntroChant: {
+declare const IntroChant: {
     readonly None: 0;
     readonly Gachikoi: 1;
     readonly Shouting: 2;
 };
-export declare const MixPattern: {
+declare const MixPattern: {
     readonly None: 0;
     readonly Standard: 1;
     readonly Tiger: 2;
 };
-export declare const CallDensity: {
+declare const CallDensity: {
     readonly None: 0;
     readonly Minimal: 1;
     readonly Standard: 2;
     readonly Intense: 3;
 };
-export declare const ArrangementGrowth: {
+/** Arpeggio pattern IDs accepted by SongConfig and AccompanimentConfig. */
+declare const ArpeggioPattern: {
+    readonly Up: 0;
+    readonly Down: 1;
+    readonly UpDown: 2;
+    readonly Random: 3;
+    readonly Pinwheel: 4;
+    readonly PedalRoot: 5;
+    readonly Alberti: 6;
+    readonly BrokenChord: 7;
+    /** Let the mood/blueprint style pick the pattern. This is the SongConfig default. */
+    readonly Auto: 255;
+};
+/** Arpeggio note speeds accepted by SongConfig and AccompanimentConfig. */
+declare const ArpeggioSpeed: {
+    readonly Eighth: 0;
+    readonly Sixteenth: 1;
+    readonly Triplet: 2;
+    /** Let the mood/blueprint style pick the speed. This is the SongConfig default. */
+    readonly Auto: 255;
+};
+/** Sentinel for SongConfig.arpeggioGate meaning "use the style default gate". */
+declare const ARPEGGIO_GATE_AUTO = -1;
+declare const ArrangementGrowth: {
     readonly LayerAdd: 0;
     readonly RegisterAdd: 1;
 };
-export declare const MotifRepeatScope: {
+declare const MotifRepeatScope: {
     readonly FullSong: 0;
     readonly Section: 1;
 };
-export declare const MelodicComplexity: {
+declare const MelodicComplexity: {
     readonly Simple: 0;
     readonly Standard: 1;
     readonly Complex: 2;
 };
-export declare const HookIntensity: {
+declare const HookIntensity: {
     readonly Off: 0;
     readonly Light: 1;
     readonly Normal: 2;
     readonly Strong: 3;
     readonly Maximum: 4;
 };
-export declare const VocalGrooveFeel: {
+declare const VocalGrooveFeel: {
     readonly Straight: 0;
     readonly OffBeat: 1;
     readonly Swing: 2;
@@ -524,7 +623,7 @@ export declare const VocalGrooveFeel: {
     readonly Driving16th: 4;
     readonly Bouncy8th: 5;
 };
-export declare const VocalStylePreset: {
+declare const VocalStylePreset: {
     readonly Auto: 0;
     readonly Standard: 1;
     readonly Vocaloid: 2;
@@ -548,7 +647,7 @@ export declare const VocalStylePreset: {
 /**
  * Generation paradigm for blueprint
  */
-export declare const GenerationParadigm: {
+declare const GenerationParadigm: {
     /** Existing behavior */
     readonly Traditional: 0;
     /** Rhythm-synced lead style */
@@ -556,11 +655,11 @@ export declare const GenerationParadigm: {
     /** Melody-driven story pop style */
     readonly MelodyDriven: 2;
 };
-export type GenerationParadigmType = (typeof GenerationParadigm)[keyof typeof GenerationParadigm];
+type GenerationParadigmType = (typeof GenerationParadigm)[keyof typeof GenerationParadigm];
 /**
  * Riff policy for blueprint
  */
-export declare const RiffPolicy: {
+declare const RiffPolicy: {
     /** Free variation per section */
     readonly Free: 0;
     /** Pitch contour fixed, expression variable (recommended) */
@@ -574,11 +673,11 @@ export declare const RiffPolicy: {
     /** Alias for LockedContour (backward compatibility) */
     readonly Locked: 1;
 };
-export type RiffPolicyType = (typeof RiffPolicy)[keyof typeof RiffPolicy];
+type RiffPolicyType = (typeof RiffPolicy)[keyof typeof RiffPolicy];
 /**
  * Blueprint information
  */
-export interface BlueprintInfo {
+interface BlueprintInfo {
     /** Blueprint ID (0-9) */
     id: number;
     /** Blueprint name */
@@ -589,31 +688,35 @@ export interface BlueprintInfo {
     riffPolicy: RiffPolicyType;
     /** Selection weight (0-100) */
     weight: number;
+    /** Recommended minimum BPM */
+    tempoMin: number;
+    /** Recommended maximum BPM */
+    tempoMax: number;
 }
 /**
  * Get number of available blueprints
  */
-export declare function getBlueprintCount(): number;
+declare function getBlueprintCount(): number;
 /**
  * Get blueprint name by ID
  * @param id Blueprint ID (0-9)
  */
-export declare function getBlueprintName(id: number): string;
+declare function getBlueprintName(id: number): string;
 /**
  * Get blueprint paradigm by ID
  * @param id Blueprint ID (0-9)
  */
-export declare function getBlueprintParadigm(id: number): GenerationParadigmType;
+declare function getBlueprintParadigm(id: number): GenerationParadigmType;
 /**
  * Get blueprint riff policy by ID
  * @param id Blueprint ID (0-9)
  */
-export declare function getBlueprintRiffPolicy(id: number): RiffPolicyType;
+declare function getBlueprintRiffPolicy(id: number): RiffPolicyType;
 /**
  * Get blueprint weight by ID
  * @param id Blueprint ID (0-9)
  */
-export declare function getBlueprintWeight(id: number): number;
+declare function getBlueprintWeight(id: number): number;
 /**
  * Whether the blueprint requires drums (drums_required constraint).
  *
@@ -622,11 +725,16 @@ export declare function getBlueprintWeight(id: number): number;
  *
  * @param id Blueprint ID (0-9)
  */
-export declare function getBlueprintDrumsRequired(id: number): boolean;
+declare function getBlueprintDrumsRequired(id: number): boolean;
+/** Get the recommended BPM range for a blueprint. */
+declare function getBlueprintTempoRange(id: number): Readonly<{
+    min: number;
+    max: number;
+}>;
 /**
  * Get all blueprints as an array
  */
-export declare function getBlueprints(): BlueprintInfo[];
+declare function getBlueprints(): BlueprintInfo[];
 //# sourceMappingURL=blueprint.d.ts.map
 // From presets.ts
 /**
@@ -635,47 +743,64 @@ export declare function getBlueprints(): BlueprintInfo[];
 /**
  * Get structure presets
  */
-export declare function getStructures(): PresetInfo[];
+declare function getStructures(): PresetInfo[];
 /**
  * Get mood presets
  */
-export declare function getMoods(): PresetInfo[];
+declare function getMoods(): PresetInfo[];
 /**
  * Get chord progression presets
  */
-export declare function getChords(): PresetInfo[];
+declare function getChords(): PresetInfo[];
 /**
  * Get style presets
  */
-export declare function getStylePresets(): StylePresetInfo[];
+declare function getStylePresets(): StylePresetInfo[];
 /**
  * Get chord progressions compatible with a style
  */
-export declare function getProgressionsByStyle(styleId: number): number[];
+declare function getProgressionsByStyle(styleId: number): number[];
 /**
  * Get forms compatible with a style
  */
-export declare function getFormsByStyle(styleId: number): number[];
+declare function getFormsByStyle(styleId: number): number[];
+/**
+ * Whether a vocal style's arrangement expects an audience call track.
+ *
+ * Source of truth is `isCallEnabled` in the core (src/track/generators/se.cpp),
+ * which is also what resolves `CallSetting::Auto` during generation. Exposed
+ * via midisketch_vocal_style_call_enabled so a caller does not have to keep a
+ * copy of the list in step with it.
+ *
+ * @param style Vocal style preset ID
+ */
+declare function isCallOrientedVocalStyle(style: number): boolean;
 //# sourceMappingURL=presets.d.ts.map
 // From internal.ts
 /**
  * Internal WASM module bindings and initialization
  * @internal
  */
-export interface EmscriptenModule {
+interface EmscriptenModule {
     cwrap: (name: string, returnType: string | null, argTypes: string[]) => (...args: unknown[]) => unknown;
     UTF8ToString: (ptr: number) => string;
+    _malloc: (size: number) => number;
+    _free: (ptr: number) => void;
     HEAPU8: Uint8Array;
     HEAPU32: Uint32Array;
 }
-export interface Api {
+interface Api {
     create: () => number;
     destroy: (handle: number) => void;
+    setMidiFormat: (handle: number, format: number) => number;
+    getMidiFormat: (handle: number) => number;
     getMidi: (handle: number) => number;
     getVocalPreviewMidi: (handle: number) => number;
     freeMidi: (ptr: number) => void;
     getEvents: (handle: number) => number;
     freeEvents: (ptr: number) => void;
+    getDissonance: (handle: number) => number;
+    freeDissonance: (ptr: number) => void;
     structureCount: () => number;
     moodCount: () => number;
     chordCount: () => number;
@@ -693,6 +818,7 @@ export interface Api {
     stylePresetAllowedAttitudes: (id: number) => number;
     getProgressionsByStylePtr: (styleId: number) => number;
     getFormsByStylePtr: (styleId: number) => number;
+    errorString: (error: number) => string;
     configErrorString: (error: number) => string;
     getLastConfigError: (handle: number) => number;
     generateAccompaniment: (handle: number) => number;
@@ -701,7 +827,10 @@ export interface Api {
     getPianoRollSafetyAt: (handle: number, tick: number) => number;
     getPianoRollSafetyWithContext: (handle: number, tick: number, prevPitch: number) => number;
     freePianoRollData: (ptr: number) => void;
+    getPianoRollDataCount: (ptr: number) => number;
+    pianoRollDataWasTruncated: (ptr: number) => number;
     reasonToString: (reason: number) => string;
+    collisionToString: (collisionPtr: number) => string;
     generateFromJson: (handle: number, json: string, length: number) => number;
     createDefaultConfigJson: (styleId: number) => string;
     validateConfigJson: (json: string, length: number) => number;
@@ -711,30 +840,36 @@ export interface Api {
     generateAccompanimentFromJson: (handle: number, json: string, length: number) => number;
     regenerateAccompanimentFromJson: (handle: number, json: string, length: number) => number;
     setVocalNotesFromJson: (handle: number, json: string, length: number) => number;
+    getMelodyJson: (handle: number) => string;
+    setMelodyFromJson: (handle: number, json: string, length: number) => number;
     blueprintCount: () => number;
     blueprintName: (id: number) => string;
     blueprintParadigm: (id: number) => number;
     blueprintRiffPolicy: (id: number) => number;
     blueprintWeight: (id: number) => number;
     blueprintDrumsRequired: (id: number) => number;
+    vocalStyleCallEnabled: (style: number) => number;
+    blueprintTempoMin: (id: number) => number;
+    blueprintTempoMax: (id: number) => number;
     getResolvedBlueprintId: (handle: number) => number;
+    getWarningsJson: (handle: number) => string;
 }
 /**
  * Get the WASM module instance
  * @throws Error if module not initialized
  * @internal
  */
-export declare function getModule(): EmscriptenModule;
+declare function getModule(): EmscriptenModule;
 /**
  * Get the API bindings
  * @throws Error if module not initialized
  * @internal
  */
-export declare function getApi(): Api;
+declare function getApi(): Api;
 /**
  * Initialize the WASM module
  */
-export declare function init(options?: {
+declare function init(options?: {
     wasmPath?: string;
 }): Promise<void>;
 //# sourceMappingURL=internal.d.ts.map
@@ -745,18 +880,74 @@ export declare function init(options?: {
 /**
  * Create a default song config for a style (JSON API)
  */
-export declare function createDefaultConfig(styleId: number): SongConfig;
+declare function createDefaultConfig(styleId: number): SongConfig;
 /**
  * Validate a song config before generation (JSON API).
  * Returns the error code (0 = OK, non-zero = error).
  * Use getConfigErrorMessage() to get human-readable error message.
  */
-export declare function validateConfig(config: SongConfig): ConfigErrorCode;
+declare function validateConfig(config: SongConfig): ConfigErrorCode;
 /**
  * Get human-readable error message for a config error code.
  */
-export declare function getConfigErrorMessage(errorCode: ConfigErrorCode): string;
+declare function getConfigErrorMessage(errorCode: ConfigErrorCode): string;
 //# sourceMappingURL=config.d.ts.map
+// From config-fields.ts
+/**
+ * Field mapping table for SongConfig JSON serialization.
+ *
+ * Single source of truth for JS camelCase <-> C++ snake_case mapping.
+ * When adding a new field: add one entry here + update SongConfig type in types.ts.
+ */
+interface ConfigField {
+    js: keyof SongConfig;
+    cpp: string;
+    default: number | boolean;
+    type: 'number' | 'boolean';
+}
+interface NestedField {
+    cpp: string;
+    fields: readonly ConfigField[];
+}
+declare const CONFIG_FIELDS: readonly ConfigField[];
+/**
+ * Nested SongConfig structs, by their C++ object key.
+ *
+ * Exported so a test can ask whether every key the core writes is one the
+ * table knows about: a nested group is a key in the JSON without being a field
+ * in CONFIG_FIELDS, so a check that only knows the flat list reads three of
+ * them as unmapped.
+ */
+declare const NESTED_STRUCTS: readonly NestedField[];
+declare const VOCAL_FIELDS: readonly {
+    js: string;
+    cpp: string;
+    default: number | boolean;
+    type: 'number' | 'boolean';
+}[];
+declare const ACCOMPANIMENT_FIELDS: readonly {
+    js: string;
+    cpp: string;
+    default: number | boolean;
+    type: 'number' | 'boolean';
+}[];
+/**
+ * Serialize a JS VocalConfig to a C++ snake_case JSON string.
+ */
+declare function serializeVocalConfig(config: VocalConfig): string;
+/**
+ * Serialize a JS AccompanimentConfig to a C++ snake_case JSON string.
+ */
+declare function serializeAccompanimentConfig(config: AccompanimentConfig): string;
+/**
+ * Serialize a JS SongConfig to a C++ snake_case JSON string.
+ */
+declare function serializeConfig(config: SongConfig): string;
+/**
+ * Deserialize a C++ snake_case JSON string to a JS SongConfig.
+ */
+declare function deserializeConfig(json: string): SongConfig;
+//# sourceMappingURL=config-fields.d.ts.map
 // From builder.ts
 /**
  * SongConfigBuilder - Fluent API for building SongConfig with cascade detection
@@ -764,11 +955,11 @@ export declare function getConfigErrorMessage(errorCode: ConfigErrorCode): strin
 /**
  * Category of parameter changes
  */
-export type ParameterCategory = 'paradigm' | 'riffPolicy' | 'drums' | 'motif' | 'bpm' | 'hook' | 'vocal' | 'trackEnable' | 'arpeggio' | 'chord' | 'modulation' | 'call' | 'basic';
+type ParameterCategory = 'paradigm' | 'riffPolicy' | 'drums' | 'motif' | 'bpm' | 'hook' | 'vocal' | 'trackEnable' | 'arpeggio' | 'chord' | 'modulation' | 'call' | 'basic';
 /**
  * Information about a single parameter change
  */
-export interface ParameterChange {
+interface ParameterChange {
     /** Category of the change */
     category: ParameterCategory;
     /** Field name that was changed */
@@ -783,7 +974,7 @@ export interface ParameterChange {
 /**
  * Result of a configuration change
  */
-export interface ParameterChangeResult {
+interface ParameterChangeResult {
     /** Number of fields that changed */
     changedCount: number;
     /** Categories of changes */
@@ -813,7 +1004,7 @@ export interface ParameterChangeResult {
  * sketch.generateFromBuilder(builder);
  * ```
  */
-export declare class SongConfigBuilder {
+declare class SongConfigBuilder {
     private config;
     private explicitFields;
     private lastChangeResult;
@@ -865,7 +1056,7 @@ export declare class SongConfigBuilder {
     setChordProgression(id: number): this;
     /**
      * Set form/structure pattern
-     * @param id Form ID
+     * @param id Form ID. Marks the form as explicit, preventing automatic form selection.
      */
     setForm(id: number): this;
     /**
@@ -877,8 +1068,8 @@ export declare class SongConfigBuilder {
     /**
      * Set vocal style preset with cascade detection
      *
-     * Idol-style vocalStyles (4=Idol, 9=BrightKira, 11=CuteAffected) will
-     * auto-enable call system if callSetting/callEnabled is not explicitly set.
+     * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) auto-enable the
+     * call system if callSetting/callEnabled is not explicitly set.
      *
      * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
      */
@@ -891,8 +1082,8 @@ export declare class SongConfigBuilder {
     /**
      * Set humanization settings
      * @param enabled Enable humanization
-     * @param timing Timing variation (0-100)
-     * @param velocity Velocity variation (0-100)
+     * @param timing Timing variation (0.0-1.0; values outside the range are clamped)
+     * @param velocity Velocity variation (0.0-1.0; values outside the range are clamped)
      */
     setHumanize(enabled: boolean, timing?: number, velocity?: number): this;
     /**
@@ -930,6 +1121,7 @@ export declare class SongConfigBuilder {
         octaveRange?: number;
         gate?: number;
         syncChord?: boolean;
+        baseVelocity?: number;
     }): this;
     /**
      * Set motif settings
@@ -937,8 +1129,12 @@ export declare class SongConfigBuilder {
      */
     setMotif(opts: {
         repeatScope?: number;
-        fixedProgression?: boolean;
         maxChordCount?: number;
+        length?: number;
+        noteCount?: number;
+        motion?: number;
+        registerHigh?: number;
+        rhythmDensity?: number;
     }): this;
     /**
      * Set call/SE settings
@@ -960,7 +1156,7 @@ export declare class SongConfigBuilder {
     setMelodicComplexity(complexity: number): this;
     /**
      * Set hook intensity
-     * @param intensity 0=Off, 1=Light, 2=Normal, 3=Strong
+     * @param intensity 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum
      */
     setHookIntensity(intensity: number): this;
     /**
@@ -979,7 +1175,13 @@ export declare class SongConfigBuilder {
      */
     setArrangementGrowth(growth: number): this;
     /**
-     * Set target duration
+     * Set target duration.
+     *
+     * The duration has to reach between 12 and 144 bars at the resolved tempo, so the
+     * accepted range in seconds depends on the BPM. A value outside it is rejected when
+     * the config is validated rather than being shortened to fit, which is the same
+     * answer the native CLI gives for the same config.
+     *
      * @param seconds Target duration in seconds (0 = use formId)
      */
     setTargetDuration(seconds: number): this;
@@ -1003,6 +1205,24 @@ export declare class SongConfigBuilder {
      * @param mode 0=Standard, 1=MoraTimed, 2=Auto
      */
     setMoraRhythmMode(mode: number): this;
+    /** Set the syllabic subdivision rate (0 = style default, 1-100 = override). */
+    setSyllabicSubdivisionRate(rate: number): this;
+    /** Enable or disable melodic syncopation. */
+    setSyncopation(enabled: boolean): this;
+    /** Set the section energy curve (0=GradualBuild through 3=SteadyState). */
+    setEnergyCurve(curve: number): this;
+    /** Set the optional per-song melody overrides. */
+    setMelodyOverrides(opts: {
+        maxLeap?: number;
+        syncopationProb?: number;
+        phraseLength?: number;
+        longNoteRatio?: number;
+        chorusRegisterShift?: number;
+        hookRepetition?: number;
+        useLeadingTone?: number;
+    }): this;
+    /** Enable or disable the guitar accompaniment track. */
+    setGuitar(enabled: boolean): this;
     /**
      * Set mood override
      * @param mood Mood preset ID (0-23)
@@ -1030,7 +1250,7 @@ export declare class SongConfigBuilder {
     /**
      * Set BPM with cascade detection
      *
-     * For RhythmSync blueprints, warns if BPM is outside 160-175 range.
+     * Warns if BPM is outside the selected blueprint's declared tempo range.
      * C++ respects explicit BPM and skips clamping.
      *
      * @param bpm BPM value (0 = use style default)
@@ -1071,14 +1291,19 @@ export declare class SongConfigBuilder {
  * MidiSketch class for MIDI generation
  */
 /**
+ * Largest number of ticks a single getPianoRollSafety() call may sample.
+ * Mirrors the batch cap the C API enforces.
+ */
+declare const MAX_PIANO_ROLL_SAMPLES = 100000;
+/**
  * MidiSketch instance for MIDI generation
  */
-export declare class MidiSketch {
+declare class MidiSketch {
     private handle;
     constructor();
     /**
      * Handle a generation result code, throwing appropriate errors.
-     * For methods that accept a full config JSON (result===1 triggers validation).
+     * For config-backed calls, result===1 is resolved through the handle's last config error.
      */
     private handleGenerationResult;
     /**
@@ -1110,6 +1335,15 @@ export declare class MidiSketch {
      * ```
      */
     generateFromBuilder(builder: SongConfigBuilder): void;
+    /**
+     * Select the MIDI format used by subsequent generation calls.
+     *
+     * The WebAssembly build currently supports SMF1 only. Selecting SMF2 throws
+     * MidiSketchGenerationError instead of silently producing SMF1.
+     */
+    setMidiFormat(format: MidiFormatType): void;
+    /** Get the selected MIDI output format. */
+    getMidiFormat(): MidiFormatType;
     /**
      * Generate only the vocal track without accompaniment.
      * Use for trial-and-error workflow: generate vocal, listen, regenerate if needed.
@@ -1151,6 +1385,16 @@ export declare class MidiSketch {
      */
     generateWithVocal(config: SongConfig): void;
     /**
+     * Get the current vocal melody for saving or comparing candidates.
+     *
+     * The returned value can be restored later with setMelody().
+     */
+    getMelody(): MelodyData;
+    /**
+     * Restore a vocal melody previously returned by getMelody().
+     */
+    setMelody(melody: MelodyData): void;
+    /**
      * Set custom vocal notes for accompaniment generation.
      *
      * Initializes the song structure and chord progression from config,
@@ -1179,14 +1423,22 @@ export declare class MidiSketch {
      * ```
      */
     setVocalNotes(config: SongConfig, notes: NoteInput[]): void;
-    /**
-     * Get the generated MIDI data
-     */
+    private readMidi;
+    /** Get the generated MIDI data. */
     getMidi(): Uint8Array;
+    /**
+     * Get a compact vocal-practice preview containing the vocal melody and chord-root bass.
+     * Generate a vocal or full song before calling this method.
+     */
+    getVocalPreviewMidi(): Uint8Array;
     /**
      * Get the event data as a parsed object
      */
     getEvents(): EventData;
+    /**
+     * Analyze the generated song for harmonic dissonance.
+     */
+    getDissonanceReport(): DissonanceReport;
     /**
      * Get piano roll safety info for a single tick.
      *
@@ -1217,10 +1469,16 @@ export declare class MidiSketch {
      *
      * Useful for visualizing safe notes over time in a piano roll editor.
      *
+     * At most {@link MAX_PIANO_ROLL_SAMPLES} samples may be requested. The limit is
+     * checked against the requested range before any work happens, so an oversized
+     * request costs nothing.
+     *
      * @param startTick Start tick
-     * @param endTick End tick
+     * @param endTick End tick (must be >= startTick)
      * @param step Step size in ticks (e.g., 120 for 16th notes, 480 for quarter notes)
      * @returns Array of piano roll safety info for each step
+     * @throws {RangeError} If step is not positive, the range is inverted, or the
+     *   request would exceed the sample limit
      *
      * @example
      * ```typescript
@@ -1242,6 +1500,14 @@ export declare class MidiSketch {
      */
     reasonToString(reason: NoteReasonFlags): string;
     /**
+     * Convert collision info to human-readable string.
+     *
+     * @param collision Collision entry from PianoRollInfo.collision
+     * @returns Human-readable string like "Bass F3 minor 2nd", or an empty
+     *   string when the entry records no collision
+     */
+    collisionToString(collision: CollisionInfo): string;
+    /**
      * Parse MidiSketchPianoRollInfo from WASM memory.
      * @internal
      */
@@ -1255,12 +1521,13 @@ export declare class MidiSketch {
      * @returns Resolved blueprint ID (0-9), or 255 if not generated
      */
     getResolvedBlueprintId(): number;
+    /** Get non-fatal warnings produced by the latest generation operation. */
+    getWarnings(): string[];
     /**
      * Destroy the instance and free resources
      */
     destroy(): void;
 }
-export default MidiSketch;
 //# sourceMappingURL=midi-sketch.d.ts.map
 // From utils.ts
 /**
@@ -1269,9 +1536,89 @@ export default MidiSketch;
 /**
  * Get library version
  */
-export declare function getVersion(): string;
+declare function getVersion(): string;
 /**
  * Download MIDI data as a file (browser only)
  */
-export declare function downloadMidi(midiData: Uint8Array, filename?: string): void;
+declare function downloadMidi(midiData: Uint8Array, filename?: string): void;
 //# sourceMappingURL=utils.d.ts.map
+// Public surface, mirroring the re-exports of index.ts
+export {
+  type BlueprintInfo,
+  GenerationParadigm,
+  type GenerationParadigmType,
+  getBlueprintCount,
+  getBlueprintDrumsRequired,
+  getBlueprintName,
+  getBlueprintParadigm,
+  getBlueprintRiffPolicy,
+  getBlueprints,
+  getBlueprintTempoRange,
+  getBlueprintWeight,
+  RiffPolicy,
+  type RiffPolicyType,
+  type ParameterCategory,
+  type ParameterChange,
+  type ParameterChangeResult,
+  SongConfigBuilder,
+  createDefaultConfig,
+  getConfigErrorMessage,
+  validateConfig,
+  deserializeConfig,
+  serializeAccompanimentConfig,
+  serializeConfig,
+  serializeVocalConfig,
+  ARPEGGIO_GATE_AUTO,
+  ArpeggioPattern,
+  ArpeggioSpeed,
+  ArrangementGrowth,
+  ATTITUDE_CLEAN,
+  ATTITUDE_EXPRESSIVE,
+  ATTITUDE_RAW,
+  CallDensity,
+  CompositionStyle,
+  ConfigError,
+  type ConfigErrorCode,
+  HookIntensity,
+  IntroChant,
+  MelodicComplexity,
+  MidiFormat,
+  type MidiFormatType,
+  MidiSketchConfigError,
+  MidiSketchGenerationError,
+  MixPattern,
+  ModulationTiming,
+  MotifRepeatScope,
+  VocalAttitude,
+  VocalGrooveFeel,
+  VocalStylePreset,
+  init,
+  MAX_PIANO_ROLL_SAMPLES,
+  MidiSketch,
+  getChords,
+  getFormsByStyle,
+  getMoods,
+  getProgressionsByStyle,
+  getStructures,
+  getStylePresets,
+  isCallOrientedVocalStyle,
+  type AccompanimentConfig,
+  type ChordEvent,
+  type CollisionInfo,
+  type DissonanceReport,
+  type EventData,
+  type MelodyData,
+  type NoteInput,
+  type NoteReasonFlags,
+  type NoteSafetyLevel,
+  type PianoRollInfo,
+  type PresetInfo,
+  type SongConfig,
+  type StylePresetInfo,
+  type VocalConfig,
+  NoteReason,
+  NoteSafety,
+  downloadMidi,
+  getVersion,
+};
+export default MidiSketch;
