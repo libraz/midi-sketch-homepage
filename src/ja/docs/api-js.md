@@ -2,12 +2,15 @@
 
 ## モジュール関数
 
-### `init()`
+### `init(options?)`
 
-WASM モジュールを初期化します。他の関数を使用する前に呼び出す必要があります。
+WASM モジュールを初期化します。他の関数を使用する前に呼び出す必要があります。WASM ファイルを別の URL から配信する場合は `wasmPath` を指定します。
 
 ```javascript
 await midisketch.init()
+
+// カスタム WASM URL
+await midisketch.init({ wasmPath: '/assets/midisketch.wasm' })
 ```
 
 ::: warning 最初に呼び出し必須
@@ -73,7 +76,8 @@ const progressions = midisketch.getProgressionsByStyle(0)
 
 ```javascript
 const blueprints = midisketch.getBlueprints()
-// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42 }, ...]
+// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42,
+//    tempoMin: 96, tempoMax: 150 }, ...]
 ```
 
 ### `getBlueprintCount()`
@@ -130,6 +134,15 @@ const required = midisketch.getBlueprintDrumsRequired(1)
 // true
 ```
 
+### `getBlueprintTempoRange(id)`
+
+Blueprint の推奨 BPM 範囲を返します。
+
+```javascript
+const range = midisketch.getBlueprintTempoRange(1)
+// { min: 160, max: 175 }
+```
+
 ### `getFormsByStyle(styleId)`
 
 指定したスタイルと互換性のあるフォーム/構成 ID を返します。
@@ -145,7 +158,7 @@ const forms = midisketch.getFormsByStyle(0)
 
 ```javascript
 const config = midisketch.createDefaultConfig(0)
-// { stylePresetId: 0, key: 0, bpm: 120, ... }
+// { stylePresetId: 0, key: 0, bpm: 0, chordProgressionId: 255, ... }
 ```
 
 ### `validateConfig(config)`
@@ -166,6 +179,26 @@ if (code !== midisketch.ConfigError.OK) {
 ```javascript
 const message = midisketch.getConfigErrorMessage(6)
 // 例: "Invalid BPM"
+```
+
+### `isCallOrientedVocalStyle(style)`
+
+コアがコール向けとして扱うボーカルスタイルかどうかを返します。判定は実行時にコアから取得します。
+
+```javascript
+const usesCalls = midisketch.isCallOrientedVocalStyle(4)
+```
+
+### 設定のシリアライズヘルパー
+
+公開 API の camelCase オブジェクトとコアが使用する snake_case JSON を相互変換します。`deserializeConfig()` は省略されたフィールドを既定値で補います。`callEnabled` は `callSetting` の後方互換ビューです。
+
+```javascript
+const config = midisketch.createDefaultConfig(0)
+const json = midisketch.serializeConfig(config)
+const restored = midisketch.deserializeConfig(json)
+const vocalJson = midisketch.serializeVocalConfig({ vocalLow: 60 })
+const accompanimentJson = midisketch.serializeAccompanimentConfig({ arpeggioGate: 80 })
 ```
 
 ### `downloadMidi(midiData, filename)`
@@ -193,19 +226,19 @@ sketch.generateFromConfig({
   // 基本設定
   stylePresetId: 0,           // スタイルプリセット ID (0-16)
   key: 0,                     // キー (0-11: C から B)
-  bpm: 120,                   // テンポ (0=スタイルのデフォルト)
+  bpm: 0,                     // テンポ (0=スタイルのデフォルト)
   seed: 12345,                // ランダムシード (0=ランダム)
-  chordProgressionId: 0,      // コード進行 ID (0-21)
+  chordProgressionId: 255,    // コード進行 ID (255=スタイルのデフォルト)
   formId: 0,                  // フォーム/構成 ID (0-17)
   vocalAttitude: 0,           // 0=Clean, 1=Expressive, 2=Raw
   drumsEnabled: true,         // ドラムトラック有効化
 
   // アルペジオ設定
   arpeggioEnabled: false,     // アルペジオトラック有効化
-  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
-  arpeggioSpeed: 1,           // 0=8分音符, 1=16分音符, 2=3連符
+  arpeggioPattern: 255,       // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord, 255=Auto
+  arpeggioSpeed: 255,         // 0=8分音符, 1=16分音符, 2=3連符, 255=Auto
   arpeggioOctaveRange: 2,     // 1-3 オクターブ
-  arpeggioGate: 0.8,          // ゲート長 (0.0-1.0)
+  arpeggioGate: -1,           // ゲート長 (0.0-1.0, -1=スタイルのデフォルト)
   arpeggioSyncChord: true,    // コードチェンジに同期
   arpeggioBaseVelocity: 90,   // アルペジオノートの基準ベロシティ (0-127)
 
@@ -222,7 +255,7 @@ sketch.generateFromConfig({
   vocalGroove: 0,             // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング, 3=シンコペ, 4=16分ドライブ, 5=バウンス8分)
 
   // ヒューマナイズ
-  humanize: true,             // ヒューマナイズ有効化
+  humanize: false,            // ヒューマナイズ有効化
   humanizeTiming: 0.4,        // タイミング変動 (0.0-1.0)
   humanizeVelocity: 0.3,      // ベロシティ変動 (0.0-1.0)
 
@@ -238,6 +271,7 @@ sketch.generateFromConfig({
 
   // 作曲スタイル
   compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+  compositionStyleExplicit: false, // スタイルより MelodyLead (0) を優先するとき true。1/2 はこのフラグ不要
 
   // 尺
   targetDurationSeconds: 0,   // 目標尺 (0=formIdに従う)
@@ -259,7 +293,6 @@ sketch.generateFromConfig({
 
   // モチーフ設定
   motifRepeatScope: 0,        // 0=FullSong (同一モチーフ), 1=Section (セクション別)
-  motifFixedProgression: true, // 全セクションで同じコード進行を使用
   motifMaxChordCount: 4,      // 最大コード数 (デフォルト 4)
 
   // Blueprint 設定
@@ -286,6 +319,7 @@ sketch.generateFromConfig({
 
   // モーラリズム
   moraRhythmMode: 2,          // モーラリズムモード: 0=Standard, 1=MoraTimed, 2=Auto
+  syllabicSubRate: 0,          // 音節分割率: 0=スタイルのデフォルト, 1-100=%オーバーライド
 
   // シンコペーション
   enableSyncopation: false,   // VocalGroove のシンコペーション効果有効化
@@ -306,9 +340,9 @@ sketch.generateFromConfig({
   melodyUseLeadingTone: 0,    // 導音挿入: 0=プリセット, 1=オフ, 2=オン (三状態)
 
   // モチーフ詳細制御
-  motifLength: 0,             // モチーフ長: 0=自動, 1/2/4=拍
+  motifLength: 0,             // モチーフ長: 0=自動, 1/2/4小節
   motifNoteCount: 0,          // モチーフ音数: 0=自動, 3-8
-  motifMotion: 0xFF,          // モチーフモーション: 0xFF=プリセット, 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
+  motifMotion: 0xFF,          // モチーフモーション: 0xFF=プリセット, 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 5=Ostinato
   motifRegisterHigh: 0,       // モチーフ音域: 0=自動, 1=低, 2=高
   motifRhythmDensity: 0xFF,   // モチーフリズム密度: 0xFF=プリセット, 0=Sparse, 1=Medium, 2=Driving
 })
@@ -321,6 +355,19 @@ sketch.generateFromConfig({
 ::: warning callEnabled はレガシー
 コール機能の正は `callSetting`（0=Auto, 1=Enabled, 2=Disabled）です。boolean の `callEnabled` は後方互換のためにのみ残されています: シリアライズ時は `callEnabled: true`→`callSetting: 1`、`false`→`callSetting: 2` に変換され、読み戻し時は `callSetting` から導出されます（Auto の場合は `undefined`）。新規コードでは `callSetting` を使用してください。
 :::
+
+`compositionStyleExplicit` のデフォルトは `false` です。`BackgroundMotif` (1) と `SynthDriven` (2) はこのフラグなしでもスタイルの設定を上書きします。スタイルプリセットに対して `MelodyLead` (0) を強制するときは `true` にします。`syllabicSubRate` は `0` がスタイルのデフォルト、`1-100` がパーセント指定です。`SongConfig` のヒューマナイズ量とコード拡張確率は正規化した `0.0-1.0` を使います。`arpeggioPattern` と `arpeggioSpeed` は `255` が Auto、`arpeggioGate` は `-1` がスタイルのデフォルトです。
+
+`motifFixedProgression` は現在の `SongConfig` 型とシリアライザーに含まれません。モチーフモーションは `0xFF`（プリセット）または `0-5`（`Stepwise`、`GentleLeap`、`WideLeap`、`NarrowStep`、`Disjunct`、`Ostinato`）を受け取ります。
+
+### `setMidiFormat(format)` / `getMidiFormat()`
+
+後続の生成で使用する MIDI 出力形式を設定・取得します。`MidiFormat.SMF1` は `1`、`MidiFormat.SMF2` は `2` です。WebAssembly ビルドは現在 SMF1 のみをサポートするため、SMF2 を選ぶと `MidiSketchGenerationError` が発生します。
+
+```javascript
+sketch.setMidiFormat(midisketch.MidiFormat.SMF1)
+const format = sketch.getMidiFormat()
+```
 
 ### `regenerateVocal(configOrSeed)`
 
@@ -340,7 +387,7 @@ sketch.regenerateVocal({
   vocalStyle: 0,               // ボーカルスタイルプリセット (0=自動, 1-13=特定プリセット)
   melodyTemplate: 0,           // メロディテンプレート (0=自動, 1-7=特定テンプレート)
   melodicComplexity: 1,        // メロディ複雑さ (0=シンプル, 1=標準, 2=複雑)
-  hookIntensity: 2,            // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング)
+  hookIntensity: 2,            // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング, 4=Maximum)
   vocalGroove: 0,              // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング等)
   compositionStyle: 0,         // 作曲スタイル (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
   keepMotif: false,            // RhythmSync限定: 既存のMotifをリズムの軸として保持 (false=両方再生成)
@@ -358,13 +405,40 @@ sketch.regenerateVocal(12345)
 const midiData = sketch.getMidi()
 ```
 
+### `getVocalPreviewMidi()`
+
+生成済みのボーカルメロディとコードルートのベースを含む、ボーカル練習用のコンパクトな `Uint8Array` を返します。先にボーカルまたは曲全体を生成してください。
+
+```javascript
+const preview = sketch.getVocalPreviewMidi()
+```
+
+### `getMelody()` / `setMelody(melody)`
+
+現在のボーカルメロディを `MelodyData` として保存し、後で復元します。復元したメロディに伴奏を合わせる場合は、その後に `generateAccompaniment()` を呼び出します。
+
+```javascript
+const melody = sketch.getMelody()
+sketch.setMelody(melody)
+```
+
 ### `getEvents()`
 
 可視化/再生用のイベントデータを返します。
 
 ```javascript
 const events = sketch.getEvents()
-// { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
+// { bpm, division, duration_ticks, duration_seconds, vocal_style,
+//   metadata, tracks, sections, chords, tempo_map }
+```
+
+### `getDissonanceReport()`
+
+生成済みの曲を調べ、和声上の不協和音分析結果を `DissonanceReport` として返します。
+
+```javascript
+const report = sketch.getDissonanceReport()
+console.log(report.summary.total_issues)
 ```
 
 ### `generateVocal(config)`
@@ -372,23 +446,18 @@ const events = sketch.getEvents()
 伴奏なしでボーカルトラックのみを生成します。試行錯誤ワークフロー用：ボーカル生成→プレビュー→必要に応じて再生成。ボーカルに満足したら `generateAccompaniment()` を呼び出します。
 
 ```javascript
-sketch.generateVocal({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 0,
-  chordProgressionId: 0,
-  formId: 0,
+const vocalConfig = {
+  ...midisketch.createDefaultConfig(0),
   vocalLow: 60,
   vocalHigh: 79,
   vocalAttitude: 1,
-  // ... その他のSongConfigオプション
-})
+}
+sketch.generateVocal(vocalConfig)
 ```
 
 ### `generateAccompaniment(config?)`
 
-既存のボーカルに対して伴奏トラックを生成します。`generateVocal()` または `setVocalNotes()` の後に呼び出す必要があります。生成順序：Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE（ボーカルに適応）
+既存のボーカルに対して伴奏トラックを生成します。`generateVocal()`、`generateWithVocal()`、または `setVocalNotes()` の後に呼び出す必要があります。生成順序：Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE（ボーカルに適応）
 
 ```javascript
 // シンプル：デフォルト設定を使用
@@ -403,19 +472,19 @@ sketch.generateAccompaniment({
   arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed: 1,           // 0=8分, 1=16分, 2=3連符
   arpeggioOctaveRange: 2,
-  arpeggioGate: 80,           // 0-100
+  arpeggioGate: 80,           // 0-100（255=スタイルのデフォルト）
   arpeggioSyncChord: true,
   chordExtSus: false,
   chordExt7th: false,
   chordExt9th: false,
   chordExtTritoneSub: false,  // トライトーン代理 (V7 -> bII7)
-  chordExtSusProb: 20,        // 0-100
-  chordExt7thProb: 30,        // 0-100
-  chordExt9thProb: 25,        // 0-100
-  chordExtTritoneSubProb: 50, // 0-100
+  chordExtSusProb: 0.2,       // 0.0-1.0
+  chordExt7thProb: 0.15,      // 0.0-1.0
+  chordExt9thProb: 0.25,      // 0.0-1.0
+  chordExtTritoneSubProb: 0.5, // 0.0-1.0
   humanize: false,
-  humanizeTiming: 50,         // 0-100
-  humanizeVelocity: 50,       // 0-100
+  humanizeTiming: 0.4,        // 0.0-1.0
+  humanizeVelocity: 0.3,      // 0.0-1.0
   seEnabled: true,
   callEnabled: false,
   callDensity: 2,             // 0=なし, 1=控えめ, 2=標準, 3=高密度
@@ -447,13 +516,8 @@ sketch.regenerateAccompaniment({
 ボーカル優先で全トラックを生成します。生成順序：Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE。伴奏がボーカルメロディに適応します。
 
 ```javascript
-sketch.generateWithVocal({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 0,
-  // ... その他のSongConfigオプション
-})
+const config = midisketch.createDefaultConfig(0)
+sketch.generateWithVocal(config)
 ```
 
 ### `setVocalNotes(config, notes)`
@@ -461,6 +525,8 @@ sketch.generateWithVocal({
 伴奏生成用にカスタムボーカルノートを設定します。configから曲構成とコード進行を初期化し、提供されたノートでボーカルトラックを置き換えます。この後に `generateAccompaniment()` を呼び出します。
 
 ```javascript
+const config = midisketch.createDefaultConfig(0)
+
 // カスタムボーカルノートを設定
 sketch.setVocalNotes(config, [
   { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
@@ -493,7 +559,7 @@ console.log('推奨:', info.recommended)
 
 ### `getPianoRollSafety(startTick, endTick, step)`
 
-ティック範囲のピアノロール安全性情報を取得します。ピアノロールエディタで時間経過に伴う安全なノートを可視化するのに便利です。
+ティック範囲のピアノロール安全性情報を取得します。ピアノロールエディタで時間経過に伴う安全なノートを可視化するのに便利です。`step` は正の整数、`endTick` は `startTick` 以上でなければなりません。1 回の要求は `MAX_PIANO_ROLL_SAMPLES`（`100000`）サンプル以下に制限され、条件を満たさない場合は `RangeError` が発生します。
 
 ```javascript
 // 最初の4小節、16分音符解像度でサンプリング
@@ -515,6 +581,15 @@ const reasonText = sketch.reasonToString(info.reason[60])
 // "ChordTone" または "LowRegister, Tritone"
 ```
 
+### `collisionToString(collision)`
+
+`CollisionInfo` を人間が読める文字列に変換します。衝突がないエントリでは空文字列を返します。
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+const collisionText = sketch.collisionToString(info.collision[60])
+```
+
 ### `generateFromBuilder(builder)`
 
 SongConfigBuilder インスタンスから MIDI を生成します。ビルダーはパラメータ変更のカスケード検出機能付きの fluent API を提供します。
@@ -530,12 +605,24 @@ sketch.generateFromBuilder(builder)
 
 ### `getResolvedBlueprintId()`
 
-生成後に実際に使用された Blueprint ID を返します。`blueprintId=255`（自動）の場合、ランダムに選択された Blueprint が返されます。
+生成後に解決された Blueprint ID（`0-9`）を返します。`blueprintId=255`（自動）の場合、ランダムに選択された Blueprint が返されます。
 
 ```javascript
-sketch.generateFromConfig({ blueprintId: 255 })  // 自動選択
+const config = midisketch.createDefaultConfig(0)
+config.blueprintId = 255 // 自動選択
+sketch.generateFromConfig(config)
 const actualId = sketch.getResolvedBlueprintId()
 console.log(`使用された Blueprint: ${midisketch.getBlueprintName(actualId)}`)
+```
+
+### `getWarnings()`
+
+直近の生成処理で発生した非致命的な警告を返します。
+
+```javascript
+for (const warning of sketch.getWarnings()) {
+  console.warn(warning)
+}
 ```
 
 ### `destroy()`
@@ -595,7 +682,7 @@ const config = midisketch.createDefaultConfig(0)
 sketch.generateVocal(config)
 
 // プレビューして満足するまで反復...
-sketch.regenerateVocal({ seed: 12345, vocalAttitude: 2 })
+sketch.regenerateVocal({ seed: 12345, vocalAttitude: 1 })
 
 // ステップ2: ボーカル用の伴奏を生成
 sketch.generateAccompaniment()
@@ -725,20 +812,22 @@ const builder = new midisketch.SongConfigBuilder(styleId)
 |--------|------------|-------------|
 | `setSeed(seed)` | number | ランダムシード設定 (0=ランダム) |
 | `setKey(key)` | number | キー設定 (0-11, 0=C) |
-| `setBpm(bpm)` | number | BPM 設定 (0=スタイルデフォルト)。RhythmSync Blueprint で 160-175 範囲外の場合警告 |
+| `setChordProgression(id)` | number | コード進行 ID 設定 |
+| `setForm(id)` | number | フォーム ID を設定し `formExplicit=true` にする |
+| `setVocalRange(low, high)` | number, number | MIDI ボーカル音域を設定し、上下を正規化する |
+| `setBpm(bpm)` | number | BPM 設定 (0=スタイルデフォルト)。選択した Blueprint の宣言済み範囲外で警告 |
 | `setBlueprint(id)` | number | Blueprint 設定 (0-9, 255=ランダム)。カスケード: drums, hookIntensity |
-| `setStylePreset(id)` | number | スタイルプリセット設定。mood, chord, form, BPM をスタイルデフォルトにリセット |
+| `setStylePreset(id)` | number | スタイルプリセット設定。未明示の chord, form, BPM, vocal attitude をスタイルデフォルトにリセット |
 | `setVocalStyle(style)` | number | ボーカルスタイル設定 (0=自動, 1-13)。アイドル系スタイルは call を自動有効化 |
 | `setVocalAttitude(attitude)` | number | ボーカルアティチュード設定 (0=Clean, 1=Expressive, 2=Raw) |
-| `setVocalRange(low, high)` | number, number | ボーカル音域設定 (MIDI ノート範囲) |
 | `setCompositionStyle(style)` | number | 作曲スタイル設定 (0-2)。カスケード: skipVocal, arpeggioEnabled |
 | `setModulation(timing, semitones?)` | number, number | 転調設定 (timing 0-4, semitones 1-4) |
-| `setChordExtensions(opts)` | object | コード拡張設定 ({sus, seventh, ninth, susProb, seventhProb, ninthProb}) |
-| `setArpeggio(enabled, opts?)` | boolean, object | アルペジオ設定 ({pattern, speed, octaveRange, gate, syncChord}) |
-| `setMotif(opts)` | object | モチーフ設定 ({repeatScope, fixedProgression, maxChordCount}) |
+| `setChordExtensions(opts)` | object | 拡張と正規化確率を設定 (`sus`, `seventh`, `ninth`, `tritone`, `susProb`, `seventhProb`, `ninthProb`, `tritoneProb`; 確率は 0.0-1.0) |
+| `setArpeggio(enabled, opts?)` | boolean, object | アルペジオ設定 (`pattern`, `speed`, `octaveRange`, `gate`, `syncChord`, `baseVelocity`)。SongConfig の `gate` は 0.0-1.0 または -1 |
+| `setMotif(opts)` | object | モチーフ設定 (`repeatScope`, `maxChordCount`, `length`, `noteCount`, `motion`, `registerHigh`, `rhythmDensity`) |
 | `setCall(opts)` | object | コール/SE 設定 ({setting (0=Auto/1=Enabled/2=Disabled), enabled (レガシーboolean), notesEnabled, density, introChant, mixPattern, seEnabled}) |
 | `setMelodicComplexity(complexity)` | number | メロディ複雑さ設定 (0-2) |
-| `setHookIntensity(intensity)` | number | フック強度設定 (0-3; 4=Maximum は通常 Behavioral Loop が自動設定) |
+| `setHookIntensity(intensity)` | number | フック強度設定 (0-4) |
 | `setVocalGroove(groove)` | number | ボーカルグルーブ感設定 (0-5) |
 | `setMelodyTemplate(template)` | number | メロディテンプレート設定 (0-7) |
 | `setArrangementGrowth(growth)` | number | アレンジメント成長設定 (0-1) |
@@ -747,9 +836,14 @@ const builder = new midisketch.SongConfigBuilder(styleId)
 | `setDriveFeel(feel)` | number | ドライブ感設定 (0=レイドバック, 50=ニュートラル, 100=アグレッシブ) |
 | `setAddictiveMode(enabled)` | boolean | Behavioral Loop モード有効化 |
 | `setMoraRhythmMode(mode)` | number | モーラリズムモード設定 (0=Standard, 1=MoraTimed, 2=Auto) |
+| `setSyllabicSubdivisionRate(rate)` | number | 音節分割率設定 (0=スタイルデフォルト, 1-100=%オーバーライド) |
+| `setSyncopation(enabled)` | boolean | メロディのシンコペーション有効化 |
+| `setEnergyCurve(curve)` | number | エナジーカーブ設定 (0-3) |
+| `setMelodyOverrides(opts)` | object | メロディ詳細設定 (`maxLeap`, `syncopationProb`, `phraseLength`, `longNoteRatio`, `chorusRegisterShift`, `hookRepetition`, `useLeadingTone`) |
+| `setGuitar(enabled)` | boolean | ギタートラックを有効または無効化 |
 | `setMood(mood)` | number | ムードプリセットオーバーライド設定 (0-23, moodExplicit=true に設定) |
 | `setFormExplicit(explicit)` | boolean | formId を厳密に使用 (ランダム化なし) |
-| `setHumanize(enabled, timing?, velocity?)` | boolean, number, number | ヒューマナイズ設定 |
+| `setHumanize(enabled, timing?, velocity?)` | boolean, number, number | ヒューマナイズ設定。timing と velocity は 0.0-1.0 にクランプ |
 | `setDrums(enabled)` | boolean | ドラム有効化設定。ドラム必須 Blueprint で無効化すると警告 |
 
 ### クエリメソッド
@@ -775,10 +869,10 @@ const derived = builder.getDerivedFields()
 
 ```javascript
 // 全設定をデフォルトにリセット
-builder.reset(styleId?)
+builder.reset()       // style ID を渡す場合は builder.reset(1)
 
 // デフォルトにリセットするが、明示的に設定した値は保持
-builder.resetKeepExplicit(styleId?)
+builder.resetKeepExplicit() // style ID を渡す場合は builder.resetKeepExplicit(1)
 ```
 
 ### カスケード検出
@@ -788,7 +882,7 @@ builder.resetKeepExplicit(styleId?)
 - **Blueprint 変更**: `drumsEnabled` を自動調整する場合あり (Blueprint 1, 5, 7 はドラム必須)、`hookIntensity` (BehavioralLoop は Maximum を強制)
 - **作曲スタイル変更**: `skipVocal`, `arpeggioEnabled` を自動調整する場合あり (SynthDriven はアルペジオ有効化)
 - **ボーカルスタイル変更**: アイドル系プリセット (4=Idol, 9=BrightKira, 11=CuteAffected) は明示的に設定されていなければ call を自動有効化
-- **BPM 変更**: RhythmSync Blueprint で 160-175 範囲外の場合に警告
+- **BPM 変更**: 選択した Blueprint の宣言済みテンポ範囲外の場合に警告
 - **ドラム変更**: ドラム必須 Blueprint でドラムを無効化する場合に警告
 
 ```javascript
@@ -824,6 +918,25 @@ interface ParameterChange {
 ```
 
 ## 定数
+
+### `MidiFormat`
+
+```javascript
+MidiFormat.SMF1 // 1 - Standard MIDI File format 1
+MidiFormat.SMF2 // 2 - MIDI 2.0 Container File（WebAssembly では未サポート）
+```
+
+`MidiFormatType` はこの定数が表す数値ユニオン（`1 | 2`）です。
+
+### アティチュードのビットフラグ
+
+`getStylePresets()` の `allowedAttitudes` は次のビットフラグを使います。
+
+```javascript
+ATTITUDE_CLEAN      // 1
+ATTITUDE_EXPRESSIVE // 2
+ATTITUDE_RAW        // 4
+```
 
 ### `VocalAttitude`
 
@@ -909,18 +1022,18 @@ VocalStylePreset.PowerfulShout // 12 - パワフルシャウト (激しい)
 VocalStylePreset.KPop          // 13 - K-Popスタイル
 ```
 
-### `MelodyTemplate`
+### メロディテンプレートの値（`SongConfig.melodyTemplate`）
 
-```javascript
-MelodyTemplate.Auto         // 0 - VocalStylePresetに基づいて自動選択
-MelodyTemplate.PlateauTalk  // 1 - 同音保持率が高い (NewJeans、Billie Eilish)
-MelodyTemplate.RunUpTarget  // 2 - ターゲットに向かって上昇 (アニメ系ハイエナジー、ドラマチックポップ)
-MelodyTemplate.DownResolve  // 3 - 下降解決 (Bセクション)
-MelodyTemplate.HookRepeat   // 4 - 短いフック反復 (TikTok、K-POP)
-MelodyTemplate.SparseAnchor // 5 - 疎なアンカー音 (バラード)
-MelodyTemplate.CallResponse // 6 - デュエット風コールアンドレスポンス
-MelodyTemplate.JumpAccent   // 7 - 感情的ピークの跳躍
-```
+| 値 | 意味 |
+|-------|---------|
+| 0 | スタイルとセクションから自動選択 |
+| 1 | PlateauTalk |
+| 2 | RunUpTarget |
+| 3 | DownResolve |
+| 4 | HookRepeat |
+| 5 | SparseAnchor |
+| 6 | CallResponse |
+| 7 | JumpAccent |
 
 ### `MelodicComplexity`
 
@@ -962,26 +1075,58 @@ ArpeggioPattern.Pinwheel    // 4 - ピンホイールパターン
 ArpeggioPattern.PedalRoot   // 5 - ペダルルートパターン
 ArpeggioPattern.Alberti     // 6 - アルベルティバスパターン
 ArpeggioPattern.BrokenChord // 7 - 分散和音パターン
+ArpeggioPattern.Auto         // 255 - スタイルに任せる（SongConfig のデフォルト）
 ```
 
-### `EnergyCurve`
+### `ArpeggioSpeed`
 
 ```javascript
-EnergyCurve.GradualBuild // 0 - 徐々にエネルギー増加
-EnergyCurve.FrontLoaded  // 1 - 最初から高エネルギー
-EnergyCurve.WavePattern  // 2 - エネルギーレベルの交互変化
-EnergyCurve.SteadyState  // 3 - 全体を通して一定のエネルギー
+ArpeggioSpeed.Eighth    // 0
+ArpeggioSpeed.Sixteenth // 1
+ArpeggioSpeed.Triplet   // 2
+ArpeggioSpeed.Auto      // 255 - スタイルに任せる（SongConfig のデフォルト）
 ```
 
-### `MoraRhythmMode`
+`ARPEGGIO_GATE_AUTO` は `-1` です。`SongConfig.arpeggioGate` に指定するとスタイルのデフォルトを使います。
 
-```javascript
-MoraRhythmMode.Standard  // 0 - 標準リズムタイミング
-MoraRhythmMode.MoraTimed // 1 - モーラベースタイミング（日本語音節リズム）
-MoraRhythmMode.Auto      // 2 - 自動選択（デフォルト）
-```
+### モチーフモーションの値（`SongConfig.motifMotion`）
 
-### `DriveFeel`
+| 値 | 意味 |
+|-------|---------|
+| `0xFF` | プリセットを使う |
+| 0 | Stepwise |
+| 1 | GentleLeap |
+| 2 | WideLeap |
+| 3 | NarrowStep |
+| 4 | Disjunct |
+| 5 | Ostinato |
+
+### モチーフリズム密度の値（`SongConfig.motifRhythmDensity`）
+
+| 値 | 意味 |
+|-------|---------|
+| `0xFF` | プリセットを使う |
+| 0 | Sparse |
+| 1 | Medium |
+| 2 | Driving |
+
+### エナジーカーブの値（`SongConfig.energyCurve`）
+
+| 値 | 意味 |
+|-------|---------|
+| 0 | GradualBuild |
+| 1 | FrontLoaded |
+| 2 | WavePattern |
+| 3 | SteadyState |
+
+### モーラリズムの値（`SongConfig.moraRhythmMode`）
+
+| 値 | 意味 |
+|-------|---------|
+| 0 | Standard |
+| 1 | MoraTimed |
+| 2 | Auto |
+### `driveFeel` の値（`SongConfig.driveFeel`）
 
 0〜100の連続値でリズムの激しさを制御：
 
@@ -1006,7 +1151,7 @@ RiffPolicy.Free          // 0 - セクションごとに独立して変化
 RiffPolicy.LockedContour // 1 - ピッチ輪郭固定、表現は変化
 RiffPolicy.LockedPitch   // 2 - ピッチ完全固定、ベロシティは変化
 RiffPolicy.LockedAll     // 3 - 完全固定（単調、非推奨）
-RiffPolicy.Evolving      // 4 - 2セクションごとに30%の確率で変化
+RiffPolicy.Evolving      // 4 - セクションをまたいで徐々に変化
 RiffPolicy.Locked        // LockedContour (1) のエイリアス
 ```
 
@@ -1048,9 +1193,30 @@ ConfigError.InvalidProbability      // 29
 ConfigError.InvalidArpeggioRange    // 30
 ConfigError.InvalidMelodyOverride   // 31
 ConfigError.InvalidMotifOverride    // 32
+ConfigError.InvalidJson             // 33
+ConfigError.InvalidMood             // 34
+ConfigError.InvalidTargetDuration   // 35
+```
+
+`ConfigErrorCode` は `ConfigError` の値からなる数値ユニオンです。
+
+### エラークラス
+
+`MidiSketchConfigError` は `Error` を継承し、`code: ConfigErrorCode` と `nativeMessage` を持ちます。`MidiSketchGenerationError` は `Error` を継承し、コアが返した数値 `code` を持ちます。設定を使う生成メソッドは検証失敗時に設定エラー、それ以外の失敗時に生成エラーを送出します。
+
+```javascript
+try {
+  sketch.generateFromConfig(config)
+} catch (error) {
+  if (error instanceof midisketch.MidiSketchConfigError) {
+    console.error(error.code, error.nativeMessage)
+  }
+}
 ```
 
 ### `NoteSafety`
+
+`MAX_PIANO_ROLL_SAMPLES` は `100000` です。`getPianoRollSafety()` 1 回あたりの最大サンプル数を示します。
 
 ```javascript
 NoteSafety.Safe      // 0 - 緑：コードトーン、使用安全
@@ -1071,7 +1237,7 @@ NoteReason.ScaleTone    // 4 - スケールトーン（コード外だがスケ�
 // 警告理由（黄）
 NoteReason.LowRegister  // 8 - 低音域（C4以下）、濁りの可能性
 NoteReason.Tritone      // 16 - トライトーン音程（V7以外では不安定）
-NoteReason.LargeLeap    // 32 - 大きな跳躍（前のノートから9半音以上）
+NoteReason.LargeLeap    // 32 - 大きな跳躍（前のノートから6半音以上）
 // 不協和理由（赤）
 NoteReason.Minor2nd     // 64 - 短2度（1半音）の衝突
 NoteReason.Major7th     // 128 - 長7度（11半音）の衝突
@@ -1084,6 +1250,102 @@ NoteReason.TooLow       // 4096 - 低すぎて歌えない
 ```
 
 ## 型定義
+
+### `SongConfig`
+
+`generateFromConfig()`、`generateVocal()`、`generateWithVocal()`、`setVocalNotes()` で使用する完全な設定オブジェクトです。
+
+```typescript
+interface SongConfig {
+  stylePresetId: number
+  key: number
+  bpm: number
+  seed: number
+  chordProgressionId: number
+  formId: number
+  vocalAttitude: number
+  drumsEnabled: boolean
+  drumsEnabledExplicit: boolean
+  blueprintId: number
+  arpeggioEnabled: boolean
+  guitarEnabled: boolean
+  arpeggioPattern: number
+  arpeggioSpeed: number
+  arpeggioOctaveRange: number
+  arpeggioGate: number
+  vocalLow: number
+  vocalHigh: number
+  skipVocal: boolean
+  humanize: boolean
+  humanizeTiming: number
+  humanizeVelocity: number
+  chordExtSus: boolean
+  chordExt7th: boolean
+  chordExt9th: boolean
+  chordExtTritoneSub: boolean
+  chordExtSusProb: number
+  chordExt7thProb: number
+  chordExt9thProb: number
+  chordExtTritoneSubProb: number
+  compositionStyle: number
+  compositionStyleExplicit: boolean
+  targetDurationSeconds: number
+  modulationTiming: number
+  modulationSemitones: number
+  seEnabled: boolean
+  callSetting?: number
+  callEnabled?: boolean
+  callNotesEnabled: boolean
+  introChant: number
+  mixPattern: number
+  callDensity: number
+  vocalStyle: number
+  melodyTemplate: number
+  arrangementGrowth: number
+  arpeggioSyncChord: boolean
+  arpeggioBaseVelocity: number
+  motifRepeatScope: number
+  motifMaxChordCount: number
+  melodicComplexity: number
+  hookIntensity: number
+  vocalGroove: number
+  mood: number
+  moodExplicit: boolean
+  formExplicit: boolean
+  driveFeel: number
+  addictiveMode: boolean
+  moraRhythmMode: number
+  syllabicSubRate?: number
+  enableSyncopation: boolean
+  energyCurve: number
+  melodyMaxLeap: number
+  melodySyncopationProb: number
+  melodyPhraseLength: number
+  melodyLongNoteRatio: number
+  melodyChorusRegisterShift: number
+  melodyHookRepetition: number
+  melodyUseLeadingTone: number
+  motifLength: number
+  motifNoteCount: number
+  motifMotion: number
+  motifRegisterHigh: number
+  motifRhythmDensity: number
+  chordExtProbExplicit: boolean
+}
+```
+
+`createDefaultConfig(styleId)` は必須フィールドをすべて設定します。主なデフォルトは `bpm: 0`、`chordProgressionId: 255`、`arpeggioPattern: 255`、`arpeggioSpeed: 255`、`arpeggioGate: -1`、`humanize: false`、`compositionStyleExplicit: false`、`syllabicSubRate: 0` です。
+
+### `MelodyData`
+
+`getMelody()` が返し、`setMelody()` が受け取る保存可能な値です。
+
+```typescript
+interface MelodyData {
+  seed: number
+  notes: NoteInput[]
+}
+```
 
 ### `VocalConfig`
 
@@ -1098,7 +1360,7 @@ interface VocalConfig {
   vocalStyle?: number        // ボーカルスタイルプリセット (0=自動)
   melodyTemplate?: number    // メロディテンプレート (0=自動)
   melodicComplexity?: number // 0=シンプル, 1=標準, 2=複雑
-  hookIntensity?: number     // 0=オフ, 1=ライト, 2=ノーマル, 3=ストロング
+  hookIntensity?: number     // 0=オフ, 1=ライト, 2=ノーマル, 3=ストロング, 4=Maximum
   vocalGroove?: number       // 0=ストレート, 1=オフビート等
   compositionStyle?: number  // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
   keepMotif?: boolean        // RhythmSync限定: 既存のMotifをリズムの軸として保持 (デフォルト: false)
@@ -1121,21 +1383,21 @@ interface AccompanimentConfig {
   arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed?: number      // 0=8分, 1=16分, 2=3連符
   arpeggioOctaveRange?: number // 1-3
-  arpeggioGate?: number       // 0-100
+  arpeggioGate?: number       // 0-100、または 255（スタイルのデフォルト）
   arpeggioSyncChord?: boolean
   // コード拡張
   chordExtSus?: boolean
   chordExt7th?: boolean
   chordExt9th?: boolean
-  chordExtSusProb?: number    // 0-100
-  chordExt7thProb?: number    // 0-100
-  chordExt9thProb?: number    // 0-100
+  chordExtSusProb?: number    // 0.0-1.0
+  chordExt7thProb?: number    // 0.0-1.0
+  chordExt9thProb?: number    // 0.0-1.0
   chordExtTritoneSub?: boolean   // トライトーン代理有効化 (V7 → bII7)
-  chordExtTritoneSubProb?: number // トライトーン代理確率 (0-100)
+  chordExtTritoneSubProb?: number // トライトーン代理確率 (0.0-1.0)
   // ヒューマナイズ
   humanize?: boolean
-  humanizeTiming?: number     // 0-100
-  humanizeVelocity?: number   // 0-100
+  humanizeTiming?: number     // 0.0-1.0
+  humanizeVelocity?: number   // 0.0-1.0
   // SE/コール
   seEnabled?: boolean
   callEnabled?: boolean       // こちらは単純なboolean（callSetting は SongConfig のみ）
@@ -1146,9 +1408,36 @@ interface AccompanimentConfig {
 }
 ```
 
-::: warning AccompanimentConfig は 0-100 レンジ
-`SongConfig`（正規化された `0.0-1.0`）と異なり、`AccompanimentConfig` は整数の `0-100` レンジを維持しています: `arpeggioGate`（デフォルト 80）、`chordExtSusProb`（20）、`chordExt7thProb`（30）、`chordExt9thProb`（25）、`chordExtTritoneSubProb`（50）、`humanizeTiming`（50）、`humanizeVelocity`（50）。また、省略時の `guitarEnabled` は `true` です。
+::: warning スケールが違うのは arpeggioGate だけ
+`arpeggioGate` はここでは整数 `0-100`（デフォルト 80）で、`255` もスタイルのデフォルトとして受け付けます。`SongConfig` では同じ設定を `0.0-1.0` の float（`-1` はスタイル既定）で受け取ります。それ以外のパーセンテージ系フィールドは `SongConfig` と同じで、コード拡張の確率（`chordExtSusProb` 0.2、`chordExt7thProb` 0.15、`chordExt9thProb` 0.25、`chordExtTritoneSubProb` 0.5）とヒューマナイズ量（`humanizeTiming` 0.4、`humanizeVelocity` 0.3）は `0.0-1.0` の float です。範囲外の値を渡すと生成が `Invalid parameter` で失敗します。また、省略時の `guitarEnabled` は `true` です。
 :::
+
+### `PresetInfo`
+
+`getStructures()`、`getMoods()`、`getChords()` が使うプリセット情報です。
+
+```typescript
+interface PresetInfo {
+  name: string
+  display?: string
+  defaultBpm?: number
+}
+```
+
+### `StylePresetInfo`
+
+`getStylePresets()` が返すスタイルプリセット情報です。
+
+```typescript
+interface StylePresetInfo {
+  id: number
+  name: string
+  displayName: string
+  description: string
+  tempoDefault: number
+  allowedAttitudes: number
+}
+```
 
 ### `NoteInput`
 
@@ -1205,6 +1494,8 @@ interface CollisionInfo {
 }
 ```
 
+`NoteSafetyLevel` は `NoteSafety.Safe`、`NoteSafety.Warning`、`NoteSafety.Dissonant` に対応する `0 | 1 | 2` のユニオンです。`NoteReasonFlags` は `NoteReason` の値を組み合わせられる数値ビットフィールドです。
+
 ### `ChordEvent`
 
 生成タイムラインのコードイベント（セカンダリードミナント情報含む）：
@@ -1218,6 +1509,39 @@ interface ChordEvent {
 }
 ```
 
+### `DissonanceReport`
+
+`getDissonanceReport()` が返す和声分析結果です。
+
+```typescript
+interface DissonanceReport {
+  summary: {
+    total_issues: number
+    simultaneous_clashes: number
+    non_chord_tones: number
+    sustained_over_chord_change: number
+    non_diatonic_notes: number
+    high_severity: number
+    medium_severity: number
+    low_severity: number
+    key: number
+    key_name: string
+    modulation_tick: number
+    modulation_amount: number
+    pre_modulation_issues: number
+    post_modulation_issues: number
+  }
+  issues: Array<{
+    type: string
+    severity: 'low' | 'medium' | 'high'
+    tick: number
+    bar: number
+    beat: number
+    [key: string]: unknown
+  }>
+}
+```
+
 ### `EventData`
 
 生成のイベントデータ：
@@ -1228,6 +1552,13 @@ interface EventData {
   division: number
   duration_ticks: number
   duration_seconds: number
+  vocal_style: number
+  metadata: {
+    blueprint: number
+    style: number
+    mood: number
+    seed: number
+  }
   tracks: Array<{
     name: string
     channel: number
@@ -1239,6 +1570,11 @@ interface EventData {
       duration_ticks: number
       start_seconds: number
       duration_seconds: number
+    }>
+    textEvents?: Array<{
+      tick: number
+      time_seconds: number
+      text: string
     }>
   }>
   sections: Array<{
@@ -1252,6 +1588,11 @@ interface EventData {
     end_seconds: number
   }>
   chords?: ChordEvent[]    // セカンダリードミナント情報付きコードタイムライン
+  tempo_map: Array<{
+    tick: number
+    bpm: number
+    seconds: number
+  }>
 }
 ```
 
@@ -1263,8 +1604,12 @@ Production Blueprint の情報：
 interface BlueprintInfo {
   id: number                // Blueprint ID (0-9)
   name: string              // Blueprint 名
-  paradigm: number          // 生成パラダイム (0-2)
-  riffPolicy: number        // RiffPolicy (0-4)
+  paradigm: GenerationParadigmType // 生成パラダイム (0-2)
+  riffPolicy: RiffPolicyType        // RiffPolicy (0-4)
   weight: number            // 選択重みパーセンテージ
+  tempoMin: number          // 推奨最小 BPM
+  tempoMax: number          // 推奨最大 BPM
 }
 ```
+
+`GenerationParadigmType` は `GenerationParadigm` の値のユニオン、`RiffPolicyType` は `RiffPolicy` の値のユニオンです。

@@ -11,7 +11,7 @@ A **scale** is an ordered subset of the 12 pitch classes, defined by an interval
 :::
 
 ::: info Major / minor
-**Major** and **minor** are the two dominant scale flavors (modes) in pop. Major uses the step pattern 2-2-1-2-2-2-1 semitones and reads as bright/happy; minor rearranges the gaps and reads as dark/sad. They are not different note sets so much as different *gap orderings* from a chosen home.
+**Major** and **minor** are the two prevailing scale flavors (modes) in pop. Major uses the step pattern 2-2-1-2-2-2-1 semitones and reads as bright/happy; minor rearranges the gaps and reads as dark/sad. They are not different note sets so much as different *gap orderings* from a chosen home.
 :::
 
 <ScoreExample example="majorScaleC" locale="en" />
@@ -23,7 +23,7 @@ The do-re-mi syllables are positional labels, not pitches. "Do" is wherever the 
 A striking consequence of the subset model: two scales can contain the identical 7 pitch classes yet feel completely different, purely because a different note is treated as home.
 
 ::: info Relative minor
-The **relative minor** of a major scale is the minor scale built from the same 7 notes, starting on the 6th degree. C major and A minor share all white keys; only the *tonal center* differs. They are the same set with a different distinguished element.
+The **relative minor** of a major scale is the *natural* minor scale built from the same 7 notes, starting on the 6th degree. C major and A minor share all white keys; only the *tonal center* differs. They are the same set with a different distinguished element. In practice minor-key music raises the 7th degree (G♯ in A minor) whenever it wants a dominant chord — that raised note is the **leading tone**, the semitone below the tonic, and it is why minor-key songs still resolve with a major `V`.
 :::
 
 <ScoreExample example="minorScaleA" locale="en" />

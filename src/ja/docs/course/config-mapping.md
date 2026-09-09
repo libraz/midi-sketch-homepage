@@ -10,6 +10,8 @@
 
 ::: info ブループリント
 **ブループリント**とは、生成戦略と適切なデフォルト（パラダイム、ドラム方針、フックの挙動、編曲の重み）をひとまとめにした高レベルのレシピです。`blueprintId` を選ぶことが、まとまりのある楽曲を最短で得る方法で、その後に個々のフィールドを上書きします。MidiSketchには10種類のブループリント（`blueprintId` 0〜9）があり、`255` を指定すると重みに従ってランダムに選びます。
+
+`BackgroundMotif` と `SynthDriven` はMotif生成を有効にします。`MelodyLead` は、解決されたパラダイム、RiffPolicy、addictive mode、またはBlueprintのsection flowが要求した場合だけMotifを有効にします。セクションマスクとレイヤースケジュールによってノートが残る場所が決まります。詳しくは[モチーフ生成フロー](/ja/docs/option-relationships#_17-5-モチーフ生成フロー)を参照してください。
 :::
 
 ::: info 生成パラダイム
@@ -48,8 +50,8 @@
 
 | 概念 | 設定フィールド | 範囲・備考 |
 | --- | --- | --- |
-| 分散和音の質感 | `arpeggioEnabled` / `arpeggioPattern` | 真偽値；パターン `0`〜`7`（Up 〜 BrokenChord） |
-| スタイルプリセット（コード・メロディの既定値をまとめて設定） | `stylePresetId` | `0`〜`16`（例：3 = Idol Standard、12 = Background Motif、14 = Anime Opening） |
+| 分散和音の質感 | `arpeggioEnabled` / `arpeggioPattern` / `arpeggioSpeed` / `arpeggioGate` | 真偽値；パターン `0`〜`7` または `255`=Auto、速度 `0`〜`2` または `255`=Auto、ゲート `0.0`〜`1.0` または `-1`=スタイル既定 |
+| スタイルプリセット（コード・メロディの既定値をまとめて設定） | `stylePresetId` | `0`〜`16`（例：3 = Idol Standard、12 = MelodyLeadを使うBackground Motif、14 = Anime Opening） |
 
 ### 第3章 — コード進行
 
@@ -73,6 +75,8 @@
 | フックの強さ | `hookIntensity` | `0`〜`4`（`4` = Maximum、BehavioralLoop で設定） |
 | ボーカルの歌い回し | `vocalStyle` | `0`〜`13`（`0` = Auto、`13` = KPop） |
 | メロディテンプレート | `melodyTemplate` | `0` = Auto、`1`〜`7` |
+| モチーフの動き | `motifMotion` | `0xFF` = プリセット、`0`〜`5` = 上書き |
+| 音節分割 | `syllabicSubRate` | `0` = スタイル既定（オフではない）、`1`〜`100` = パーセント上書き |
 | コール＆レスポンス | `callSetting` | `0` = Auto、`1` = 有効、`2` = 無効 |
 
 ### 第6章 — 楽曲構成
@@ -98,7 +102,7 @@
 | 6 | IdolKawaii | MelodyDriven | いいえ | 5% |
 | 7 | IdolCoolPop | RhythmSync | はい | 5% |
 | 8 | IdolEmo | MelodyDriven | いいえ | 4% |
-| 9 | BehavioralLoop | Traditional | いいえ | 0%（明示指定のみ） |
+| 9 | BehavioralLoop | RhythmSync | いいえ | 0%（明示指定のみ） |
 
 ドラム必須のブループリント（`1`、`5`、`7`）はドラムトラックを強制します。実行時には `getBlueprintDrumsRequired(id)` で問い合わせられます。BehavioralLoop（`9`）はアディクティブモードを強制し、`hookIntensity` を Maximum にし、リフをロックします。
 
@@ -108,10 +112,10 @@
 
 ```javascript
 const config = createDefaultConfig(0)
-config.key = 7                 // G major (ch1)
-config.chordProgressionId = 0  // preset progression (ch3)
-config.chordExt7th = true      // mellow color (ch4)
-config.hookIntensity = 3       // strong hook (ch5)
+config.key = 7                 // G major (Ch. 1)
+config.chordProgressionId = 0  // preset progression (Ch. 3)
+config.chordExt7th = true      // mellow color (Ch. 4)
+config.hookIntensity = 3       // strong hook (Ch. 5)
 config.seed = 42               // reproducible
 sketch.generateFromConfig(config)
 ```

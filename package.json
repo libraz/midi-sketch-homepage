@@ -20,10 +20,8 @@
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
-    "mermaid": "^11.17.2",
     "smplr": "^1.0.0",
     "tone": "15.1.22",
-    "vexflow": "^5.0.0",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "vexflow": "^5.0.0"
   }
 }

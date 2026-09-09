@@ -48,8 +48,8 @@ MIDI Sketch は以下のマルチトラック MIDI ファイルを生成しま�
 | **Vocal** | 0 | メインメロディ（ピアノロールセーフ） |
 | **Chord** | 1 | ボイスリーディング付きハーモニーバッキング |
 | **Bass** | 2 | アプローチノート付きベースライン |
-| **Motif** | 3 | バックグラウンドパターン（BackgroundMotifスタイル） |
-| **Arpeggio** | 4 | シンセアルペジオ（SynthDrivenスタイル） |
+| **Motif** | 3 | バックグラウンドパターン（BackgroundMotifとSynthDrivenで生成対象） |
+| **Arpeggio** | 4 | シンセアルペジオ（`arpeggioEnabled: true` の場合） |
 | **Aux** | 5 | 副旋律サポート（パルスループ、グルーブアクセント） |
 | **Guitar** | 6 | 伴奏ギター（デフォルトで有効） |
 | **Drums** | 9 | フィル付きリズムパターン（GMドラム） |
@@ -57,10 +57,12 @@ MIDI Sketch は以下のマルチトラック MIDI ファイルを生成しま�
 
 ::: info トラックの生成条件
 すべてのトラックがすべてのスタイルで生成されるわけではありません：
-- **Motif** トラック: `BackgroundMotif` コンポジションスタイルのみ
+- **Motif** トラック: `BackgroundMotif` と `SynthDriven` で生成対象。`MelodyLead` では、解決されたパラダイム、RiffPolicy、addictive mode、またはBlueprintのsection flowが要求した場合のみ有効になります。セクションマスクとレイヤースケジュールによってノートが残る場所が決まります
 - **Arpeggio** トラック: `arpeggioEnabled: true` の場合のみ（`SynthDriven` スタイルでも手動で有効化が必要）
 - **Guitar** トラック: デフォルトで有効（`guitarEnabled: true`）。無効にするには `guitarEnabled: false`
-- **Vocal/Aux**: `skipVocal: true` でBGMのみ生成可能
+- **Vocal**: `skipVocal: true` でスキップできます。`skipVocal` は **Aux** をスキップしません。`SynthDriven` ではVocalとAuxの両方が無効になります
+
+完全な生成条件は[モチーフ生成フロー](/ja/docs/option-relationships#_17-5-モチーフ生成フロー)を参照してください。
 :::
 
 ## 次のステップ

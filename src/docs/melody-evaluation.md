@@ -10,13 +10,7 @@ This page assumes the melodic vocabulary — chord tones, passing tones, motifs,
 
 MIDI Sketch generates multiple melody candidates and selects one through an evaluation system.
 
-```mermaid
-flowchart LR
-    A[Generate N Candidates] --> B[Evaluate Each]
-    B --> C[Cull Bad Ones]
-    C --> D[Score Survivors]
-    D --> E[Select Best]
-```
+<DocFigure name="melody-candidate-flow" />
 
 ## Candidate Generation
 
@@ -29,7 +23,7 @@ Different sections use different candidate counts:
 | **Chorus** | 100 | Hook section |
 | **B (Pre-chorus)** | 50 | Transition section |
 | **Bridge / Chant** | 30 | Contrast section |
-| **A (Verse) / Intro / Outro** | 20 | Stable sections |
+| **A (Verse) / Intro / Outro** | 20 | Stable sections; also Interlude, MixBreak and Drop |
 
 ### Generation Process
 
@@ -40,44 +34,47 @@ For each candidate:
 3. **Constraint Application** - Apply singability and range limits
 4. **Embellishment** - Add passing tones, neighbor tones
 
-## Two-Stage Evaluation
+::: info Articulation gate
+Articulation gating applies only to interior notes shorter than a quarter note. Phrase starts and ends, and notes at least a quarter note long, keep their full duration; stepwise motion stays legato while skips and leaps receive only a small gap. The minimum duration is one sixteenth note, so the floor can lengthen an input shorter than a sixteenth.
+:::
 
-Evaluation occurs in two stages: **Culling** (filter candidates) and **Scoring** (rank candidates).
+::: info Rhythm-locked sections
+When a section reuses a locked rhythm pattern, a separate path takes over: it always generates 20 candidates regardless of section, totals the seven quality dimensions with equal weight instead of style weights, and blends 35 % style + 40 % penalty + 25 % global motif rather than the 40/40/20 mix described below. The rank cut and the weighted-random pick are the same.
+:::
 
-### Stage 1: Culling
+## Evaluation and Selection
 
-Candidates are filtered using penalty-based evaluation:
+Every candidate is scored once, on three axes computed together rather than in sequence:
 
-```mermaid
-flowchart TD
-    A[Start: Score 1.0] --> B[Apply Penalties]
-    B --> C{Score > Threshold?}
-    C -->|Yes| D[Pass to Scoring]
-    C -->|No| E[Discard]
-```
+- **Style score (40 %)** — the seven weighted quality dimensions below.
+- **Penalty score (40 %)** — starts at 1.0 and subtracts singing-difficulty and musical-fault penalties.
+- **Interval-bias score (20 %)** — how well the candidate's mix of steps, skips, leaps and repeated pitches matches the vocal style's preferences.
+
+A global-motif bonus is added on top when a motif is in play, weighted by section (Chorus 0.35 down to Bridge 0.05) so important sections preserve motif identity.
+
+The candidates are then sorted and the **bottom half is discarded** — a fixed rank cut, not an absolute threshold. The winner is drawn from the surviving half by **score-weighted random selection**, so a strong candidate is likely but not guaranteed to win. This keeps repeated sections from converging on the same melody.
+
+### Penalty Score
+
+The penalty score starts at 1.0, subtracts nine penalties, adds two bonuses, and is clamped to 0.0-1.0. Nothing is discarded at this point — the result is one of the three numbers a candidate carries into the ranking:
+
+<DocFigure name="melody-culling-score" />
 
 #### Penalties
 
-| Penalty | Range | Detection Target |
-|---------|-------|------------------|
-| **High Register** | 0.0-1.0 | Consecutive high notes (above D5) |
-| **Leap After High** | 0.0-1.0 | Large jump followed by high note |
-| **Rapid Direction Change** | 0.0-1.0 | Zigzag patterns |
-| **Monotony** | 0.0-1.0 | Repeated notes without variation |
-| **Breathless** | 0.0-0.3 | Consecutive short notes without breaks |
-| **Gap Ratio** | 0.0-1.0 | Scattered notes with silence between |
+| Penalty | Max | Detection Target |
+|---------|-----|------------------|
+| **High Register** | 0.5 | Consecutive or sustained notes at D5 (74) or above |
+| **Leap After High** | 0.4 | Leap of a 5th or more landing at D5 or above |
+| **Rapid Direction Change** | 0.3 | More than three direction reversals at eighth-note spacing or faster |
+| **Isolated Note** | 0.3 | Notes with a 5th or wider on both sides |
+| **Breathless** | 0.25 | More than five consecutive short notes with no breathing gap |
+| **Strong-Beat Non-Chord Tone** | 0.2 | Fewer than half the strong-beat notes are chord tones |
+| **Monotony** | 0.2 | Fewer than half the notes are distinct pitches |
+| **Low Cohesion** | ~0.18 | Cohesion below the style threshold — scattered notes with no stepwise runs, rhythmic consistency or repeated cells |
+| **Gap Ratio** | ~0.375 | Silence relative to the phrase, above the style threshold |
 
-::: info Gap Ratio
-The Gap Ratio penalty targets scattered, disconnected note patterns. Higher gap ratio indicates more silence between notes.
-:::
-
-#### Bonuses
-
-| Bonus | Range | Detection Target |
-|-------|-------|------------------|
-| **Clear Peak** | 0.0-0.2 | Single high point in the phrase |
-| **Motif Repeat** | 0.0-0.2 | AAAB repetition pattern |
-| **Phrase Cohesion** | 0.0-1.0 | Notes forming coherent groups |
+The Breathless penalty is skipped for the Vocaloid styles, and the cohesion and gap thresholds move with the vocal style.
 
 ::: details Phrase Cohesion Criteria
 - Stepwise motion runs (connected notes)
@@ -85,28 +82,18 @@ The Gap Ratio penalty targets scattered, disconnected note patterns. Higher gap 
 - 3-gram cell repetition (interval + duration motifs)
 :::
 
-### Stage 2: Scoring
+#### Bonuses
 
-Candidates that pass culling are scored on 6 dimensions:
+| Bonus | Range | Detection Target |
+|-------|-------|------------------|
+| **Clear Peak** | 0.0-0.15 | A single highest note, landing between 25% and 85% of the way through the phrase |
+| **Motif Repeat** | 0.0-0.2 | AAAB repetition pattern |
 
-```mermaid
-flowchart TB
-    subgraph Scoring ["Melody Score (6 Dimensions)"]
-        S1[Singability]
-        S2[Chord Tone Ratio]
-        S3[Contour Shape]
-        S4[Surprise Element]
-        S5[AAAB Pattern]
-        S6[Rhythm-Interval Correlation]
-    end
+### Style Score
 
-    S1 --> T[Total Score]
-    S2 --> T
-    S3 --> T
-    S4 --> T
-    S5 --> T
-    S6 --> T
-```
+Every candidate is scored on 7 dimensions, each weighted by the vocal style:
+
+<DocFigure name="melody-score-dimensions" />
 
 #### Singability Score
 
@@ -153,18 +140,26 @@ Measures how well note durations match interval sizes:
 
 Based on pop vocal theory: singers need preparation time for large pitch changes. This scoring rewards melodies that are naturally singable.
 
+#### Catchiness
+
+Measures hook memorability from four factors: repetition of 2- and 3-note interval patterns (30 %), consistency of note durations (25 %), the proportion of intervals no larger than a major 3rd (25 %), and recognisable hook contours (20 %). Two to four consecutive same-pitch notes earn a bonus; five or more are penalised as monotonous. This is the heaviest single weight for the Idol and K-Pop profiles.
+
 ## Style-Specific Weights
 
 Different vocal styles use different evaluation weights:
 
 | Style | Singability | Surprise | Plateau Bias | High Register |
 |-------|-------------|----------|--------------|---------------|
-| **Standard** | 0.25 | 0.15 | 1.0 | 1.0 |
-| **Idol** | 0.30 | 0.12 | 1.2 | 1.0 |
-| **Rock** | 0.20 | 0.20 | 0.8 | 1.2 |
-| **Ballad** | 0.40 | 0.10 | 1.1 | 0.9 |
-| **Anime** | 0.25 | 0.25 | 0.9 | 1.3 |
-| **Vocaloid** | 0.10 | 0.25 | 0.6 | 1.1 |
+| **Standard** | 0.15 | 0.15 | 1.0 | 0.8 |
+| **Idol** | 0.18 | 0.05 | 1.25 | 0.85 |
+| **Rock** | 0.15 | 0.20 | 0.8 | 1.2 |
+| **Ballad** | 0.30 | 0.05 | 1.0 | 0.5 |
+| **Anime** | 0.10 | 0.15 | 1.3 | 1.3 |
+| **Vocaloid** | 0.10 | 0.20 | 0.9 | 1.2 |
+| **CityPop** | 0.15 | 0.15 | 0.9 | 0.9 |
+| **KPop** | 0.12 | 0.18 | 1.4 | 1.1 |
+
+Singability and Surprise are scoring weights that sum to 1.0 across all seven dimensions. Plateau Bias and High Register are generation biases applied while candidates are built, so they are multipliers around 1.0 rather than weights.
 
 ::: details Parameter Definitions
 - **Singability**: Weight for interval-based scoring
@@ -177,21 +172,24 @@ Different vocal styles use different evaluation weights:
 
 Different styles require different levels of melodic cohesion:
 
-| Style | Cohesion Threshold | Notes |
-|-------|-------------------|-------|
-| Ballad | Higher | Needs smooth, connected lines |
-| CityPop | Higher | Legato phrases preferred |
-| Vocaloid | Lower | Tolerates angular melodies |
-| Rock | Lower | Accepts disconnected patterns |
+| Style | Cohesion threshold |
+|-------|-------------------|
+| Ballad, CityPop | 0.50 |
+| Standard and others | 0.45 |
+| Vocaloid, UltraVocaloid, Rock, PowerfulShout | 0.35 |
 
-Melodies below the cohesion threshold receive penalties during culling.
+Melodies below the cohesion threshold are penalised.
 
 ### Style-Specific Gap Thresholds
 
-| Style | Gap Threshold | Notes |
-|-------|--------------|-------|
-| Ballad | Higher | More silence tolerated |
-| Idol/Rock | Lower | Higher note density expected |
+| Style | Gap threshold |
+|-------|--------------|
+| Ballad | 0.50 |
+| CityPop | 0.45 |
+| Standard and others | 0.40 |
+| Anime | 0.35 |
+| Idol, BrightKira, CuteAffected, Rock, PowerfulShout | 0.30 |
+| Vocaloid, UltraVocaloid | 0.25 |
 
 ## Post-Generation Analysis
 
@@ -210,66 +208,32 @@ The Dissonance Analyzer checks harmonic issues after generation.
 
 | Severity | Intervals | Notes |
 |----------|-----------|-------|
-| **High** | Minor 2nd (1), Major 7th (11) | Strong dissonance |
-| **Medium** | Tritone (6), Strong beat non-chord | Context-dependent |
-| **Low** | Weak beat non-chord (passing tone) | Often acceptable |
+| **High** | Minor 2nd (1), Major 2nd (2) in close range, minor 9th (13), Major 7th (11) over any chord other than I or IV | Strong dissonance |
+| **Medium** | Tritone (6) in close range, Major 7th over I or IV (may be an intended maj7), strong-beat non-chord tone | Context-dependent |
+| **Low** | Weak-beat non-chord tone (passing tone), compound minor 2nd or Major 7th, compound tritone | Often acceptable |
+
+Any issue landing on beat 1 of a section start is raised one level, because a clash at that position is the most exposed.
 
 ### CLI Usage
 
 ```bash
 # Generate and analyze
-./midisketch_cli --seed 42 --analyze
+./build/bin/midisketch_cli --seed 42 --analyze
 
 # Analyze existing MIDI
-./midisketch_cli --input song.mid --analyze
+./build/bin/midisketch_cli --input song.mid --analyze
 ```
 
-Output example:
-```
-=== Dissonance Analysis ===
-Total issues: 3
-  Simultaneous clashes: 1 (high: 1, medium: 0)
-  Non-chord tones: 2 (medium: 1, low: 1)
-```
+See the [CLI dissonance analysis reference](/docs/cli#dissonance-analysis) for the current report fields and output example.
 
 ## Pipeline Summary
 
-```mermaid
-flowchart TD
-    subgraph Generation ["1. Generation"]
-        G1[Generate 20-100 Candidates]
-    end
-
-    subgraph Culling ["2. Culling"]
-        C1[Apply Penalties]
-        C2[Add Bonuses]
-        C3[Filter Below Threshold]
-    end
-
-    subgraph Scoring ["3. Scoring"]
-        S1[Calculate 5 Dimension Scores]
-        S2[Apply Style Weights]
-        S3[Select Highest Score]
-    end
-
-    subgraph Analysis ["4. Post-Analysis"]
-        A1[Dissonance Detection]
-        A2[Report Issues]
-    end
-
-    G1 --> C1
-    C1 --> C2
-    C2 --> C3
-    C3 --> S1
-    S1 --> S2
-    S2 --> S3
-    S3 --> A1
-    A1 --> A2
-```
+<DocFigure name="melody-evaluation-pipeline" />
 
 ## Summary
 
 - Multiple candidates are generated per section (20-100)
-- Two-stage evaluation: culling then scoring
-- Style-specific weights adjust evaluation criteria
+- Each candidate carries one combined score: 40 % style, 40 % penalty, 20 % interval bias
+- The bottom half is cut by rank, and the winner is a score-weighted random draw from the rest
+- Style-specific weights and thresholds adjust evaluation criteria
 - Post-generation dissonance analysis available

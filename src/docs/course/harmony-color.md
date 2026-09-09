@@ -2,8 +2,8 @@
 
 A plain triad is a chord at its lowest resolution. Adding extra notes is like turning up the bit depth: the chord gains nuance, mood, and "color" without changing its underlying function. This chapter covers the extension notes MidiSketch can sprinkle on top of any progression — and the probability dials that control how often it does so.
 
-::: info Chord extension (tension)
-A **chord extension** (often called a *tension* in jazz and pop theory) is a note added on top of a basic triad to enrich its color. Common extensions are the 7th, the 9th, and suspended tones. They rarely change the chord's harmonic function — a `V` chord with a 7th is still a dominant — but they add sophistication, density, or emotional shading. Think of them as optional decorators on a core chord type.
+::: info Chord extension
+A **chord extension** is a note added on top of a basic triad to enrich its color. Common extensions are the 7th, the 9th, and suspended tones. They rarely change the chord's harmonic function — a `V` chord with a 7th is still a dominant — but they add sophistication, density, or emotional shading. Jazz and pop theory reserves the narrower word *tension* for the notes above the seventh (the 9th, 11th and 13th), so every tension is an extension but a 7th is not a tension. Think of them as optional decorators on a core chord type.
 :::
 
 ## Suspended chords: the note that hangs
@@ -35,12 +35,12 @@ Each seventh carries a distinct emotional fingerprint, so swapping a triad for i
 Go one third higher again and you reach the ninth — the most common "modern pop" color note.
 
 ::: info Ninth (add9)
-A **ninth** is the second scale degree raised an octave (the "9th"). An **add9** chord simply adds this note to a triad without the seventh — Cadd9 is C-E-G-D. The ninth thickens the chord and adds a bright, glassy shimmer that sounds contemporary and lush. It is one of the most reliable ways to make a plain major chord sound polished.
+A **ninth** is the note a ninth above the chord's root — the root's second degree, raised an octave. Over a C chord that is D; over an Am chord it is B. An **add9** chord simply adds this note to a triad without the seventh — Cadd9 is C-E-G-D. The ninth thickens the chord and adds a bright, glassy shimmer that sounds contemporary and lush. It is one of the most reliable ways to make a plain major chord sound polished.
 :::
 
 <ScoreExample example="ninthChord" locale="en" />
 
-The added ninth is purely a coloring; the chord's function and root are unchanged. `chordExt9th` governs it at probability `chordExt9thProb` (default 0.25), the highest default of the four extension types.
+The added ninth is purely a coloring; the chord's function and root are unchanged. `chordExt9th` governs it at probability `chordExt9thProb` (default 0.25) — the highest of the three colour extensions, though the tritone-substitution default is higher still at 0.5. In MidiSketch `chordExt9th` yields a bare add9 only on ordinary major chords: the tonic gets a maj9, minor chords a m9, and the dominant a dom9 — all of which carry the seventh as well. (`iii` is the exception: its diatonic ninth is a flat ninth above its root, so the engine falls back to m7.)
 
 ## Secondary dominants: aiming the pull elsewhere
 
@@ -58,7 +58,7 @@ The same device aimed at the relative-minor chord — `V/vi`, or E7 resolving to
 
 <ScoreExample example="secondaryDominantVi" locale="en" />
 
-MidiSketch inserts secondary dominants automatically — there is no flag to set. It builds the dominant of an upcoming diatonic chord (commonly `ii`, `IV`, or `vi`), favors high-tension sections such as the pre-chorus and especially the approach into the chorus, and caps roughly one per eight bars with a cooldown so each one stays an event rather than a habit.
+MidiSketch inserts secondary dominants automatically — there is no flag to set. It builds the dominant of an upcoming diatonic chord — the eligible targets are `ii`, `IV`, `V` and `vi` — favors high-tension sections such as the pre-chorus and especially the approach into the chorus, and caps roughly one per eight bars with a cooldown so each one stays an event rather than a habit.
 
 ## The tritone: the engine of tension
 
@@ -82,7 +82,7 @@ A **tritone substitution** replaces a dominant 7th chord (`V7`) with the dominan
 
 <ScoreExample example="tritoneSub" locale="en" />
 
-In MidiSketch, `chordExtTritoneSub` performs exactly this `V7` → `♭II7` swap, firing at probability `chordExtTritoneSubProb` (0.5 when enabled).
+In MidiSketch, `chordExtTritoneSub` performs this swap on any dominant-function chord: on the key's own `V7` it produces `♭II7`, and on an inserted secondary dominant it produces that chord's own tritone substitute. It fires at probability `chordExtTritoneSubProb` (0.5 when enabled).
 
 ## Putting it together: color is a probability dial
 
@@ -90,7 +90,7 @@ None of these extensions are all-or-nothing. MidiSketch applies each one stochas
 
 <ScoreExample example="extensionProb" locale="en" />
 
-Each extension type has its own independent probability (sus 0.2, 7th 0.15, 9th 0.25, tritone sub 0.5 when enabled). By default, the selected mood auto-adjusts these probabilities; set `chordExtProbExplicit: true` to lock your own values and override mood-based tuning. If you want the engine to flag which added notes are safe color versus genuine dissonance, the piano-roll safety API marks chord tones green, tensions yellow, and dissonances red (see [/docs/api-js](/docs/api-js)).
+Each extension type has its own independent probability (sus 0.2, 7th 0.15, 9th 0.25, tritone sub 0.5 when enabled). The probability is not the whole story — each family also has a context gate. Sus chords are tried only on major-quality chords, and only in the first bar of a section or the second-to-last; sevenths only in B sections and choruses, or on `V`, where the probability is doubled; ninths only in choruses, or on `V` in a B section. Raising `chordExt9thProb` will not put a ninth in a verse. By default, the selected mood auto-adjusts these probabilities; set `chordExtProbExplicit: true` to lock your own values and override mood-based tuning. If you want the engine to flag which added notes are safe color versus genuine dissonance, the piano-roll safety API marks chord tones green, tensions yellow, and dissonances red (see [/docs/api-js](/docs/api-js)).
 
 ::: warning Common pitfall — your probabilities are overridden unless you lock them
 By default the selected `mood` auto-tunes every `chordExt*Prob`, so a value you set by hand can be silently replaced. Set `chordExtProbExplicit: true` to lock your own probabilities and stop mood from overriding them. The enable flags (`chordExt7th` etc.) are always honoured; only the probabilities are auto-tuned.
@@ -102,7 +102,7 @@ By default the selected `mood` auto-tunes every `chordExt*Prob`, so a value you 
 | --- | --- | --- | --- |
 | Suspended (sus2/sus4) | `chordExtSus` | `chordExtSusProb` | 0.2 |
 | Seventh (maj7/dom7/m7) | `chordExt7th` | `chordExt7thProb` | 0.15 |
-| Ninth (add9) | `chordExt9th` | `chordExt9thProb` | 0.25 |
+| Ninth (add9 / maj9 / m9 / dom9) | `chordExt9th` | `chordExt9thProb` | 0.25 |
 | Tritone substitution | `chordExtTritoneSub` | `chordExtTritoneSubProb` | 0.5 (when enabled) |
 | Secondary dominant (`V/x`) | — (automatic) | — | inserted by section type & style; no flag |
 | Lock probabilities | `chordExtProbExplicit` | — | `false` (moods auto-adjust unless set `true`) |

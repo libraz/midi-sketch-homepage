@@ -25,13 +25,7 @@
 
 ### 1.1 Call System
 
-```mermaid
-graph TD
-    callSetting["callSetting<br/>(0=Auto, 1=Enabled, 2=Disabled)"] --> introChant["introChant<br/>(コール非アクティブ時は無視)"]
-    callSetting --> mixPattern["mixPattern<br/>(コール非アクティブ時は無視)"]
-    callSetting --> callDensity["callDensity<br/>(コール非アクティブ時は無視)"]
-    callSetting --> callNotesEnabled["callNotesEnabled<br/>(コール非アクティブ時は無視)"]
-```
+<DocFigure name="options-call-dependency" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
@@ -41,51 +35,36 @@ graph TD
 | コールがアクティブ | `callNotesEnabled` | コールをMIDIノートとして出力 |
 
 ::: warning callEnabled はレガシー
-`SongConfig` では boolean の `callEnabled` に代わって `callSetting`（0=Auto, 1=Enabled, 2=Disabled）が正となりました。`0`（Auto）の場合はスタイル/ボーカルスタイルがコール生成を決定します。`callEnabled` は後方互換のために引き続き受理されます（`true`→1、`false`→2）が、新規コードでは使用しないでください。`AccompanimentConfig` は引き続き単純な `callEnabled` boolean を使います。
+`SongConfig` では boolean の `callEnabled` に代わって `callSetting`（0=Auto, 1=Enabled, 2=Disabled）が正となりました。`0`（Auto）の場合はボーカルスタイルだけがコール生成を決定します（スタイルプリセットは参照されません）。`callEnabled` は後方互換のために引き続き受理されます（`true`→1、`false`→2）が、新規コードでは使用しないでください。`AccompanimentConfig` は引き続き単純な `callEnabled` boolean を使います。
 :::
 
 ### 1.2 Arpeggio
 
-```mermaid
-graph TD
-    arpeggioEnabled --> arpeggioPattern
-    arpeggioEnabled --> arpeggioSpeed
-    arpeggioEnabled --> arpeggioOctaveRange
-    arpeggioEnabled --> arpeggioGate
-    arpeggioEnabled --> arpeggioSyncChord
-```
+<DocFigure name="options-arpeggio-dependency" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord (0-7) |
-| `arpeggioEnabled=true` | `arpeggioSpeed` | 8分/16分/3連符 |
+| `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord（0-7）、または 255（デフォルト）でムード既定のパターン |
+| `arpeggioEnabled=true` | `arpeggioSpeed` | 8分/16分/3連符（0-2）、または 255（デフォルト）でムード既定の速度 |
 | `arpeggioEnabled=true` | `arpeggioOctaveRange` | 1-3オクターブ |
-| `arpeggioEnabled=true` | `arpeggioGate` | ゲート長(0.0-1.0、デフォルト 0.8。AccompanimentConfigは0-100) |
+| `arpeggioEnabled=true` | `arpeggioGate` | ゲート長 0.0-1.0、または -1（デフォルト）でムードのゲート値（0.6-0.98）を使用 |
 | `arpeggioEnabled=true` | `arpeggioSyncChord` | コード変更と同期 |
 | `arpeggioEnabled=true` | `arpeggioBaseVelocity` | アルペジオノートの基準ベロシティ(0-127、デフォルト 90) |
 
 ### 1.3 Humanization
 
-```mermaid
-graph TD
-    humanize --> humanizeTiming
-    humanize --> humanizeVelocity
-```
+<DocFigure name="options-humanize-dependency" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
-| `humanize=true` | `humanizeTiming` | タイミング揺れ(0.0-1.0、デフォルト 0.4。AccompanimentConfigは0-100) |
-| `humanize=true` | `humanizeVelocity` | ベロシティ揺れ(0.0-1.0、デフォルト 0.3。AccompanimentConfigは0-100) |
+| `humanize=true` | `humanizeTiming` | タイミング揺れ（0.0-1.0、デフォルト 0.4） |
+| `humanize=true` | `humanizeVelocity` | ベロシティ揺れ（0.0-1.0、デフォルト 0.3） |
+
+`humanizeTiming` は `humanize=true` のときに*量を与える*だけです。マイクロタイミング自体は `humanize` に連動しません — `humanize=false` でも `driveFeel` が 50 以外ならグルーブタイミングが発生し、量は `|driveFeel - 50| / 50` でスケールされます。対象はドラムとベースのみです。
 
 ### 1.4 Chord Extensions
 
-```mermaid
-graph LR
-    chordExtSus --> chordExtSusProb
-    chordExt7th --> chordExt7thProb
-    chordExt9th --> chordExt9thProb
-    chordExtTritoneSub --> chordExtTritoneSubProb
-```
+<DocFigure name="options-chord-extension-pairs" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
@@ -94,17 +73,13 @@ graph LR
 | `chordExt9th=true` | `chordExt9thProb` | 9th確率(0.0-1.0、デフォルト 0.25) |
 | `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | トライトーン代理確率(0.0-1.0、デフォルト 0.5) |
 
-::: info AccompanimentConfig は 0-100
-上記の確率は `SongConfig` の値（0.0-1.0）です。再生成用の `AccompanimentConfig` では同じフィールドが整数 0-100 のレンジを維持しています（sus 20、7th 30、9th 25、tritone 50）。
+::: info 2つの設定の値域の違い
+`SongConfig` と `AccompanimentConfig` は、コード拡張確率と `humanizeTiming` / `humanizeVelocity` について同じ 0.0-1.0 の float と同じデフォルト値を使います。値域が異なる唯一のフィールドは `arpeggioGate` で、`AccompanimentConfig` では整数 0-100（デフォルト 80、255 = スタイル既定）、`SongConfig` では 0.0-1.0（または -1 でスタイル既定）です。
 :::
 
 ### 1.5 Modulation
 
-```mermaid
-graph TD
-    modulationTiming["modulationTiming (!=None)"] --> modulationSemitones
-    modulationSemitones --> vocalHighAdjust["(内部) vocalHigh自動調整"]
-```
+<DocFigure name="options-modulation-chain" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
@@ -113,26 +88,19 @@ graph TD
 
 **注意**:
 - `modulationTiming=None`の場合、`modulationSemitones`はバリデーションされない
-- **ボーカル音域の自動調整**: 転調が有効な場合、`effective_vocal_high = vocal_high - modulation_semitones`で計算され、転調後もボーカルが音域内に収まる
+- **ボーカル音域の自動調整**: 上限はまず Blueprint の `max_pitch` 制約でクランプされ、次に確定した転調量ぶん下げられ、最後に `vocalLow + 12` を下限として保たれます（音域が1オクターブを下回らないように）
 - **全CompositionStyleで有効**: BGMモード（BackgroundMotif, SynthDriven）でも転調が機能する
 
 ### 1.6 Vocal (skipVocalによる排他)
 
-```mermaid
-graph TD
-    skipVocal["skipVocal=false"] --> vocalLow["vocalLow / vocalHigh"]
-    skipVocal --> vocalAttitude
-    skipVocal --> vocalStyle
-    skipVocal --> melodyTemplate
-    skipVocal --> melodicComplexity
-    skipVocal --> hookIntensity
-    skipVocal --> vocalGroove
-```
+<DocFigure name="options-skip-vocal" />
 
 | 条件 | 有効なオプション | 用途 |
 |------|------------------|------|
 | `skipVocal=false` | すべてのvocal関連オプション | 通常の楽曲生成 |
-| `skipVocal=true` | vocal関連オプションは全て無視 | **BGMのみ生成（Vocalなし）** |
+| `skipVocal=true` | ボーカル生成をスキップ。既にボーカルがあればそれを保持し、他のトラックがそれに追従する | **ボーカル先行ワークフロー** — `generateAccompaniment()` が内部で設定する値です。ボーカルを一切持たない BGM には `compositionStyle=1` または `2` と `compositionStyleExplicit=true` を設定してください。 |
+
+`skipVocal` が制御するのはVocalトラックだけです。Auxはスキップされず、`compositionStyle=SynthDriven` の場合だけスタイルによって無効になります。
 
 ::: danger ボーカルの復元不可
 BGM専用生成後にボーカルを追加するAPIは存在しません。ボーカルが必要な場合は、`compositionStyle=MelodyLead`または**Vocal-Firstワークフロー**を使用してください（[JavaScript API](/ja/docs/api-js)参照）。
@@ -140,12 +108,7 @@ BGM専用生成後にボーカルを追加するAPIは存在しません。ボ�
 
 ### 1.7 シンコペーション
 
-```mermaid
-graph TD
-    enableSyncopation["enableSyncopation=true"] --> vocalGrooveSync["vocalGrooveのシンコペーション効果"]
-    enableSyncopation --> syncProb["syncopation_prob > 0"]
-    enableSyncopation --> barCross["allow_bar_crossing"]
-```
+<DocFigure name="options-syncopation-master-switch" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
@@ -153,7 +116,7 @@ graph TD
 | `enableSyncopation=false` | `syncopation_prob=0.0` | シンコペーション確率がゼロに強制 |
 | `enableSyncopation=false` | `allow_bar_crossing=false` | 小節線跨ぎが強制無効 |
 
-**注意**: タイミングオフセット（OffBeatの+30 ticks等）は`enableSyncopation`に関係なく適用されます。シンコペーション固有の重み付けのみが影響を受けます。
+**注意**: タイミングオフセット（OffBeatの+60 ticks等）は`enableSyncopation`に関係なく適用されます。シンコペーション固有の重み付けのみが影響を受けます。
 
 ### 1.8 明示フラグ
 
@@ -166,12 +129,7 @@ graph TD
 
 ### 1.9 Blueprint ID 9 (BehavioralLoop)
 
-```mermaid
-graph TD
-    BP9["blueprintId=9"] --> addictive["内部 addictive_mode=true"]
-    addictive --> hookMax["HookIntensity=Maximum (強制)"]
-    addictive --> riffLock["RiffPolicy=LockedPitch (強制)"]
-```
+<DocFigure name="options-behavioral-loop" />
 
 | 親オプション | 子オプション | 説明 |
 |--------------|--------------|------|
@@ -187,51 +145,29 @@ graph TD
 
 ### 2.1 MelodyLead (0) - デフォルト
 
-```mermaid
-graph TD
-    ML["compositionStyle=0 (MelodyLead)"]
-    ML --> ML1["全vocalオプション有効"]
-    ML --> ML2["arpeggioEnabled → 有効"]
-    ML --> ML3["motifオプション → 無視"]
-    ML --> ML4["modulation → 有効"]
-```
+<DocFigure name="options-style-melody-lead" />
 
-**生成トラック**: Vocal → Aux → Motif (Blueprint依存) → Bass → Chord → Guitar → Arpeggio (有効時) → Drums → SE
+**生成トラック**: Vocal → Aux → Motif（生成が要求されたときのみ、§17.5 参照）→ Bass → Chord → Guitar → Arpeggio (有効時) → Drums → SE
+
+モチーフにゲートがかかるのは MelodyLead だけです。モチーフ系フィールドは、モチーフトラックが実際に生成される場合にのみ読まれます。
 
 ### 2.2 BackgroundMotif (1) - BGM専用モード
 
-```mermaid
-graph TD
-    BM["compositionStyle=1 (BackgroundMotif)"]
-    BM --> BM1["vocalオプション → 無効（Vocalトラック生成されない）"]
-    BM --> BM2["Auxトラック → 有効（モチーフをサポート）"]
-    BM --> BM3["arpeggioEnabled → 有効（Motif + Arpeggio両方生成）"]
-    BM --> BM4["motifRepeatScope ← 有効"]
-    BM --> BM5["motifFixedProgression ← 有効"]
-    BM --> BM6["motifMaxChordCount ← 有効"]
-    BM --> BM7["modulation → 有効"]
-```
+<DocFigure name="options-style-background-motif" />
 
-**生成トラック構成**:
-| arpeggioEnabled | 生成されるトラック |
+**このスタイルで有効になるトラック**:
+| arpeggioEnabled | 有効になるトラック |
 |-----------------|-------------------|
 | `false` | Aux + Motif + Bass + Chord + Guitar + Drums |
 | `true` | Aux + Motif + Bass + Chord + Guitar + Drums + **Arpeggio** |
 
+BackgroundMotifはMotif生成を有効にします。セクションマスクとレイヤースケジュールによってMotifノートが残るセクションが決まります。
+
 ### 2.3 SynthDriven (2) - BGM専用モード
 
-```mermaid
-graph TD
-    SD["compositionStyle=2 (SynthDriven)"]
-    SD --> SD1["vocalオプション → 無効（Vocalトラック生成されない）"]
-    SD --> SD2["Auxトラック → 無効"]
-    SD --> SD3["arpeggioEnabled → 手動有効化が必要"]
-    SD --> SD4["Arpeggio中心のアレンジ"]
-    SD --> SD5["Motif → Blueprint依存"]
-    SD --> SD6["modulation → 有効"]
-```
+<DocFigure name="options-style-synth-driven" />
 
-**生成トラック**: Motif (Blueprint依存) + Bass + Chord + Guitar + Arpeggio (有効時) + Drums
+**このスタイルで有効になるトラック**: Motif + Bass + Chord + Guitar + Arpeggio (有効時) + Drums。SynthDrivenはMotif生成を有効にし、セクションマスクとレイヤースケジュールによってMotifノートが残るセクションが決まります。
 
 ::: tip CompositionStyleの選び方
 - **MelodyLead**: ボーカル付きの楽曲（ポップ、ロック、バラード）
@@ -250,8 +186,12 @@ graph TD
 | `targetDurationSeconds` | `0` | `formId`で指定した構造パターンを使用 |
 | `vocalStyle` | `0` (Auto) | スタイルに応じたランダム選択 |
 | `melodyTemplate` | `0` (Auto) | スタイルに応じたデフォルト選択 |
+| `arpeggioPattern` | `255` (Auto) | ムード既定のパターンを使用 |
+| `arpeggioSpeed` | `255` (Auto) | ムード既定の速度を使用 |
+| `arpeggioGate` | `-1` | ムード既定のゲート値（0.6-0.98）を使用 |
 | `driveFeel` | `50` | ニュートラル（0=レイドバック、100=アグレッシブ） |
 | `moraRhythmMode` | `2` (Auto) | VocalStylePresetから自動選択 |
+| `syllabicSubRate` | `0` | スタイル既定値を使用。`1`〜`100` はスタイル比率を上書き（%） |
 
 ### driveFeelの詳細
 
@@ -276,14 +216,7 @@ graph TD
 
 ### フローチャート
 
-```mermaid
-flowchart TD
-    A{bpm指定?} -->|bpm=0| B["stylePreset.tempo_defaultを使用"]
-    A -->|bpm>0| C["指定値を使用(40-240)"]
-
-    D{targetDurationSeconds?} -->|=0| E["formIdのStructurePatternを使用"]
-    D -->|>0| F["指定秒数に合わせて構造を自動生成"]
-```
+<DocFigure name="options-zero-value-defaults" />
 
 ---
 
@@ -324,17 +257,18 @@ flowchart TD
 
 ## 5. モチーフオーバーライド
 
-モチーフオーバーライドは、BackgroundMotifモードおよびBlueprintベースのモチーフセクションでのメロディモチーフ生成パラメータを制御します。
+モチーフオーバーライドは、BackgroundMotifとSynthDriven、およびBlueprintベースのMelodyLeadモチーフセクションでのメロディモチーフ生成パラメータを制御します。
 
 ### 5.1 モチーフオーバーライドパラメータ
 
 | パラメータ | 範囲 | デフォルト | 説明 |
 |-----------|------|----------|------|
-| `motifLength` | 0=auto, 1/2/4 | 0 | モチーフ長（拍数） |
+| `motifLength` | 0=auto, 1/2/4 | 0 | モチーフ長（小節単位） |
 | `motifNoteCount` | 0=auto, 3-8 | 0 | モチーフ内の音数 |
-| `motifMotion` | 0xFF=preset, 0-4 | 0xFF | 音の動き |
+| `motifMotion` | 0xFF=preset, 0-5 | 0xFF | 音の動き |
 | `motifRegisterHigh` | 0=auto, 1=low, 2=high | 0 | 音域（0=中音域） |
 | `motifRhythmDensity` | 0xFF=preset, 0-2 | 0xFF | リズム密度 |
+| `motifMaxChordCount` | 0=制限なし, 2-8 | 4 | モチーフセクションが巡回する和音数の上限 |
 
 ### 5.2 MotifMotionの値
 
@@ -345,10 +279,10 @@ flowchart TD
 | 2 | WideLeap | 5度まで |
 | 3 | NarrowStep | 狭いスケール度（ジャジー） |
 | 4 | Disjunct | 不規則な跳躍（実験的） |
-| 5 | Ostinato | 同一ピッチクラス反復（**内部Blueprint用のみ**、APIでは使用不可） |
+| 5 | Ostinato | 全音をルートのピッチクラスに置き、ルート/5度で変化 |
 
-::: warning Ostinatoモーション
-`motifMotion=5`（Ostinato）は内部Blueprint定義専用です。APIでは値0-4のみ公開されています。4を超える値は`min(val, 4)`でクランプされます。
+::: tip Ostinatoモーション
+`motifMotion=5`（Ostinato）はモチーフの全音をルートのピッチクラスに置き、ルート/5度で変化させます。中毒ループ系のブループリントが使うモーションですが、APIからも指定できます。バリデータは0-5または`0xFF`（プリセット）を受理し、それ以外の5を超える値は `INVALID_MOTIF_OVERRIDE` エラーで拒否します。クランプは行いません。意図的に単調なリフになります。
 :::
 
 ### 5.3 MotifRhythmDensityの値
@@ -382,8 +316,8 @@ flowchart TD
 | `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
 | `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
 | `modulationSemitones` | 1-4 (timing≠0時) | `INVALID_MODULATION` |
-| `arpeggioPattern` | 0-7 | `INVALID_ARPEGGIO_PATTERN` |
-| `arpeggioSpeed` | 0-2 | `INVALID_ARPEGGIO_SPEED` |
+| `arpeggioPattern` | 0-7, 255 | `INVALID_ARPEGGIO_PATTERN` |
+| `arpeggioSpeed` | 0-2, 255 | `INVALID_ARPEGGIO_SPEED` |
 | `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
 | `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
 | `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
@@ -391,28 +325,36 @@ flowchart TD
 | `arrangementGrowth` | 0-1 | `INVALID_ARRANGEMENT_GROWTH` |
 | `blueprintId` | 0-9, 255 | (255=自動ランダム) |
 
-### 6.2 validateSongConfigでバリデーションされないパラメータ
+### 6.2 追加でバリデーションされる範囲
 
-以下のパラメータは`validateSongConfig()`でチェック**されません**。不正な値はconfig converter内部でクランプまたは無視されます：
+上の表には載っていませんが、以下も同様にバリデーションされます：
 
-| パラメータ | 有効範囲 | 備考 |
-|-----------|---------|------|
-| `enableSyncopation` | boolean | バリデーション不要 |
-| `energyCurve` | 0-3 | enum範囲内で使用 |
-| `driveFeel` | 0-100 | 0=レイドバック、50=ニュートラル、100=アグレッシブ |
-| `moraRhythmMode` | 0-2 | 0=Standard, 1=MoraTimed, 2=Auto |
-| `melodyMaxLeap` | 0=preset, 1-12 | そのまま使用 |
-| `melodySyncopationProb` | 0-100, 0xFF=preset | 0-1.0fに変換 |
-| `melodyPhraseLength` | 0=preset, 1-8 | そのまま使用 |
-| `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0-1.0fに変換 |
-| `melodyChorusRegisterShift` | -128=preset, -12〜+12 | そのまま使用 |
-| `melodyHookRepetition` | 0-2 | 三値 |
-| `melodyUseLeadingTone` | 0-2 | 三値 |
-| `motifLength` | 0=auto, 1/2/4 | switch文で処理、不正値は無視 |
-| `motifNoteCount` | 0=auto, 3-8 | clampで3-8に制限 |
-| `motifMotion` | 0xFF=preset, 0-4 | min(val, 4)でクランプ。Ostinato(5)は内部のみ |
-| `motifRegisterHigh` | 0=auto, 1=low, 2=high | そのまま使用 |
-| `motifRhythmDensity` | 0xFF=preset, 0-2 | min(val, 2)でクランプ |
+| パラメータ | 有効範囲 | エラーコード |
+|-----------|---------|--------------|
+| `energyCurve` | 0-3 | `INVALID_ENERGY_CURVE` |
+| `driveFeel` | 0-100 | `INVALID_DRIVE_FEEL` |
+| `moraRhythmMode` | 0-2 | `INVALID_MORA_RHYTHM_MODE` |
+| `syllabicSubRate` | 0（スタイル既定）、1-100（%上書き） | `INVALID_MELODY_OVERRIDE` |
+| `callSetting` | 0-2 | `INVALID_CALL_SETTING` |
+| `humanizeTiming`, `humanizeVelocity` | 0.0-1.0 | `INVALID_PROBABILITY` |
+| `chordExt*Prob` | 0.0-1.0 | `INVALID_PROBABILITY` |
+| `arpeggioOctaveRange` | 1-3 | `INVALID_ARPEGGIO_RANGE` |
+| `arpeggioGate` | 0.0-1.0、または -1 でスタイル既定 | `INVALID_ARPEGGIO_RANGE` |
+| `arpeggioBaseVelocity` | 0-127 | `INVALID_ARPEGGIO_RANGE` |
+| `melodyMaxLeap` | 0=preset, 1-12 | `INVALID_MELODY_OVERRIDE` |
+| `melodySyncopationProb` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyPhraseLength` | 0=preset, 1-8 | `INVALID_MELODY_OVERRIDE` |
+| `melodyLongNoteRatio` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyChorusRegisterShift` | -12〜+12, -128=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyHookRepetition`, `melodyUseLeadingTone` | 0-2 | `INVALID_MELODY_OVERRIDE` |
+| `motifLength` | 0, 1, 2, 4（小節単位） | `INVALID_MOTIF_OVERRIDE` |
+| `motifNoteCount` | 0=auto, 3-8 | `INVALID_MOTIF_OVERRIDE` |
+| `motifMotion` | 0-5, 0xFF=preset | `INVALID_MOTIF_OVERRIDE` |
+| `motifRegisterHigh` | 0-2 | `INVALID_MOTIF_OVERRIDE` |
+| `motifRhythmDensity` | 0-2, 0xFF=preset | `INVALID_MOTIF_OVERRIDE` |
+| `motifMaxChordCount` | 0=制限なし, 2-8 | `INVALID_MOTIF_OVERRIDE` |
+
+範囲外の値はクランプされず、エラーになります。ここでの boolean は `enableSyncopation` のみで、範囲チェックは不要です。
 
 ### 6.3 スタイル x vocalAttitude の組み合わせ
 
@@ -439,9 +381,11 @@ vocalAttitude = 2 (Raw) → INVALID_ATTITUDE エラー
 ### 6.5 コール x targetDurationSeconds x bpm の干渉
 
 ```
-IF コールがアクティブ (callSetting=1、または0がオンに解決) AND targetDurationSeconds > 0
+IF callSetting != 2（Disabled）AND targetDurationSeconds > 0
 THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
+
+このチェックは Auto を解決しません — `callSetting=0` は、実際にはコールが生成されないボーカルスタイルでも最小秒数の制約を発動させます。
 
 最小時間の計算式:
 ```
@@ -499,7 +443,7 @@ min_seconds = min_bars * 240 / bpm
 | プロパティ | 説明 |
 |----------|------|
 | `chordExtTritoneSub` | トライトーン代理の有効/無効（デフォルト `false`） |
-| `chordExtTritoneSubProb` | トライトーン代理の確率（`SongConfig`: 0.0-1.0、デフォルト 0.5 / `AccompanimentConfig`: 0-100、デフォルト 50） |
+| `chordExtTritoneSubProb` | トライトーン代理の確率（`SongConfig`・`AccompanimentConfig` ともに 0.0-1.0、デフォルト 0.5） |
 
 ::: info 利用可能範囲
 トライトーン代理は JS `SongConfig`（全曲生成）と `AccompanimentConfig`（伴奏再生成）の両方、および C++ の `chord_extension` 構造体で利用できます。音楽的な背景は[ハーモニー](/ja/docs/harmony#トライトーン代理)を参照してください。
@@ -574,7 +518,7 @@ min_seconds = min_bars * 240 / bpm
   vocalStyle: 4,      // Idol
   callSetting: 1,     // Enabled
   introChant: 1,      // ガチ恋
-  mixPattern: 2,      // 虎火
+  mixPattern: 2,      // タイガー
   callDensity: 2,     // Standard
   callNotesEnabled: true,
   targetDurationSeconds: 180  // 3分以上必要
@@ -586,10 +530,10 @@ min_seconds = min_bars * 240 / bpm
 ```javascript
 {
   compositionStyle: 1,  // BackgroundMotif (BGM専用)
+  compositionStyleExplicit: true,
   // skipVocalの指定は不要（BackgroundMotifでは自動的にVocal無効）
 
   // Motif設定
-  motifFixedProgression: true,
   motifMaxChordCount: 4,
 
   // Arpeggio設定（BackgroundMotifでも使用可能）
@@ -597,13 +541,14 @@ min_seconds = min_bars * 240 / bpm
   arpeggioPattern: 2,         // UpDown
   arpeggioSpeed: 1,           // 16分
   arpeggioOctaveRange: 2,
-  arpeggioGate: 80,
+  arpeggioGate: 0.8,        // SongConfigのゲート（0.0-1.0）
 
   // 転調設定（BGMモードでも有効）
   modulationTiming: 1,        // LastChorus
   modulationSemitones: 2      // +2半音
 }
-// 出力: Motif + Bass + Chord + Drums + Arpeggio（最後のサビで+2半音転調）
+// 出力: Aux + Motif + Bass + Chord + Drums + Arpeggio（最後のサビで+2半音転調）
+// Motifノートの配置はセクションマスクとレイヤースケジュールに従います。
 ```
 
 ### 11.5 BGMモード（Arpeggio中心）
@@ -611,6 +556,7 @@ min_seconds = min_bars * 240 / bpm
 ```javascript
 {
   compositionStyle: 2,  // SynthDriven (BGM専用)
+  compositionStyleExplicit: true,
   arpeggioEnabled: true,      // 手動で有効化が必要（自動有効ではない）
   arpeggioPattern: 0,         // Up
   arpeggioSpeed: 2,           // 3連符
@@ -620,7 +566,8 @@ min_seconds = min_bars * 240 / bpm
   modulationTiming: 2,        // AfterBridge
   modulationSemitones: 3      // +3半音
 }
-// 出力: Bass + Chord + Drums + Arpeggio (Motifなし、ブリッジ後に+3半音転調)
+// 出力: Motif + Bass + Chord + Drums + Arpeggio（Vocal/Auxなし、ブリッジ後に+3半音転調）
+// Motifノートの配置はセクションマスクとレイヤースケジュールに従います。
 ```
 
 ### 11.6 シンコペーテッドフィール
@@ -675,7 +622,8 @@ min_seconds = min_bars * 240 / bpm
   guitarEnabled: true,
   moodExplicit: true,
   mood: 23,            // Lofi
-  compositionStyle: 1  // BackgroundMotif
+  compositionStyle: 1,  // BackgroundMotif
+  compositionStyleExplicit: true
 }
 // 80 BPM、強スウィング、ベロシティ上限90、ギタートラック有効
 ```
@@ -738,8 +686,8 @@ min_seconds = min_bars * 240 / bpm
 
 | compositionStyle | 暗黙的に発生する動作 |
 |------------------|---------------------|
-| `BackgroundMotif (1)` | **Vocal無効化**（生成されない）、**Aux有効**（モチーフをサポート）、Motifトラック生成、**modulation有効** |
-| `SynthDriven (2)` | **Vocal/Aux完全無効化**、Motif Blueprint依存、**arpeggioは手動で`arpeggioEnabled=true`が必要**、**modulation有効** |
+| `BackgroundMotif (1)` | **Vocal無効化**（生成されない）、**Aux有効**（モチーフをサポート）、Motif生成を有効化、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
+| `SynthDriven (2)` | **Vocal/Aux完全無効化**、Motif生成を有効化、**arpeggioは手動で`arpeggioEnabled=true`が必要**、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
 
 ### 12.5 自動Call有効化
 
@@ -757,6 +705,7 @@ min_seconds = min_bars * 240 / bpm
 // 例: SynthDrivenではアルペジオの手動有効化が必要
 {
   compositionStyle: 2,  // SynthDriven (BGM専用)
+  compositionStyleExplicit: true,
   arpeggioEnabled: true,   // 手動で有効化が必要
   modulationTiming: 1,     // BGMモードでも有効
   modulationSemitones: 2
@@ -769,13 +718,13 @@ min_seconds = min_bars * 240 / bpm
 | vocalGroove | 効果 |
 |-------------|------|
 | `Straight (0)` | 変更なし |
-| `OffBeat (1)` | オンビートを遅らせる（+30 ticks） |
-| `Swing (2)` | 8分音符の2拍目を遅らせる |
-| `Syncopated (3)` | ビート2,4を先取り（-30 ticks） |
-| `Driving16th (4)` | 16分音符を強調 |
-| `Bouncy8th (5)` | 8分音符にバウンス感 |
+| `OffBeat (1)` | オンビートの音を60ティック（1拍の1/8）後ろへ |
+| `Swing (2)` | 各拍の裏8分を60ティック遅らせる |
+| `Syncopated (3)` | 2・4拍目付近の音を60ティック先取り |
+| `Driving16th (4)` | 16分音符のオンセットを30ティック前へ |
+| `Bouncy8th (5)` | 裏8分を40ティック遅らせ、表8分を短くする |
 
-**シンコペーション依存**: `enableSyncopation=false`の場合、全グルーブフィールでシンコペーション重みは0.0、さらに`syncopation_prob=0.0` / `allow_bar_crossing=false`が強制されます。タイミングオフセット（+30 ticks等）は`enableSyncopation`に関係なく適用されます。
+**シンコペーション依存**: `enableSyncopation=false`の場合、全グルーブフィールでシンコペーション重みは0.0、さらに`syncopation_prob=0.0` / `allow_bar_crossing=false`が強制されます。タイミングオフセットは`enableSyncopation`に関係なく適用されます。
 
 ### 12.7 hookIntensity → フレーズ生成変更
 
@@ -888,7 +837,7 @@ SongConfig
 │   ├── energyCurve ─────────────▶ 0-3 エネルギー推移
 │   └── driveFeel ───────────────▶ 0-100 タイミング/ベロシティフィール
 │
-├── モチーフオーバーライド (BackgroundMotif / Blueprintモチーフセクション)
+├── モチーフオーバーライド (BackgroundMotif / SynthDriven / Blueprintモチーフセクション)
 │   ├── motifLength
 │   ├── motifNoteCount
 │   ├── motifMotion
@@ -899,7 +848,6 @@ SongConfig
     ├── compositionStyle=0 (MelodyLead): Vocal/Aux有効・標準
     ├── compositionStyle=1 (BackgroundMotif): BGM専用(Vocal無効、Aux有効)
     │   ├── motifRepeatScope
-    │   ├── motifFixedProgression
     │   └── motifMaxChordCount
     └── compositionStyle=2 (SynthDriven): BGM専用(Vocal/Aux無効、arpeggioは手動有効化が必要)
 ```
@@ -1014,10 +962,10 @@ Production Blueprintは、スタイル/ムード設定とは独立して、音�
 | 3 | Ballad | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
 | 5 | IdolHyper | RhythmSync | Locked | **必須** | 6% |
-| 6 | IdolKawaii | MelodyDriven | Locked | **必須** | 5% |
+| 6 | IdolKawaii | MelodyDriven | Locked | - | 5% |
 | 7 | IdolCoolPop | RhythmSync | Locked | **必須** | 5% |
 | 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
-| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+| 9 | BehavioralLoop | RhythmSync | LockedPitch | - | 0%* |
 | 255 | (Random) | - | - | - | - |
 
 \* BehavioralLoopはウェイト0%のため、ランダム選択では選ばれません。明示的に選択する必要があります。選択すると`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch`が強制されます。
@@ -1032,48 +980,44 @@ Production Blueprintは、スタイル/ムード設定とは独立して、音�
 
 ### 17.3 RiffPolicy の種類
 
-| ポリシー | 説明 | motifRepeatScope への影響 |
-|---------|------|--------------------------|
-| Free | セクションごとに変化 | `motifRepeatScope` 設定を使用 |
-| Locked | ピッチ輪郭は固定、表現は変化 | `motifRepeatScope` を**無視** |
-| Evolving | 2セクションごとに30%確率で変化 | `motifRepeatScope` を**無視** |
+| ポリシー | 値 | 説明 | motifRepeatScope への影響 |
+|---------|:--:|------|--------------------------|
+| Free | 0 | セクションごとに変化 | `motifRepeatScope` 設定を使用 |
+| LockedContour | 1 | ピッチ輪郭は固定、リズムと表現は変化 | `motifRepeatScope` を**無視** |
+| LockedPitch | 2 | ピッチ完全固定、ベロシティは変化 | `motifRepeatScope` を**無視** |
+| LockedAll | 3 | 全要素固定 | `motifRepeatScope` を**無視** |
+| Evolving | 4 | キャッシュされたリフをセクションごとに1回変異させ、同一性を保ったまま少しずつ変化 | `motifRepeatScope` を**無視** |
+
+`Locked` は `LockedContour`（1）のエイリアスです。`motifRepeatScope` は `Free` の分岐でのみ読まれ、それ以外のポリシーでは無視されます。
 
 ### 17.4 Blueprint によるオーバーライドルール
 
 Blueprint が選択されると（Traditional/ID 0 以外）、いくつかの設定が自動的にオーバーライドされます：
 
-```mermaid
-flowchart TD
-    BP[blueprintId ≠ 0] --> SF{section_flowあり?}
-    SF -->|Yes| FO["formId がオーバーライドされる"]
-    SF -->|No| FK["formId は維持"]
-
-    BP --> RP{riffPolicy}
-    RP -->|Free| MRS["motifRepeatScope が使用される"]
-    RP -->|Locked/Evolving| MRI["motifRepeatScope は無視"]
-
-    BP --> DR{requiresDrums?}
-    DR -->|Yes| DE["drumsEnabled が強制 true"]
-    DR -->|No| DK["drumsEnabled は維持"]
-```
+<DocFigure name="options-blueprint-overrides" />
 
 | Blueprint 設定 | オーバーライド対象 | 条件 |
 |----------------|-------------------|------|
 | `section_flow` | `formId` | section_flowが存在し`formExplicit=false`の場合。`formExplicit=true`が優先 |
-| `riff_policy` | `motifRepeatScope` | Free=設定使用、Locked/Evolving=無視 |
+| `riff_policy` | `motifRepeatScope` | Free=設定使用。それ以外のポリシーは無視 |
 | `drums_sync_vocal` | 内部同期設定 | Blueprint 定義が優先 |
 | `drums_required` | `drumsEnabled` | trueの場合、`drumsEnabled=true`を強制（`drumsEnabledExplicit=true` + `drumsEnabled=false`の場合は尊重） |
-| `TrackMask::Motif` | モチーフ生成 | セクションごとに制御 |
+| `TrackMask::Motif` | モチーフ生成 | MelodyLeadではセクションごとに制御。BGMスタイルではMotif生成を有効にし、マスク/レイヤー設定で生成ノートを決定 |
 
 ### 17.5 モチーフ生成フロー
 
 ```
-CompositionStyle == BackgroundMotif? → Yes: モチーフ生成
-└─ No → MelodyLead?
-        ├─ RhythmSync パラダイム? → Yes: モチーフ生成（リズム軸）
-        └─ section_flow 存在 & TrackMask::Motif? → Yes: モチーフ生成
-           └─ No: モチーフなし
+CompositionStyle が BackgroundMotif または SynthDriven → モチーフ生成を有効化
+└─ MelodyLead: 以下のいずれかが成立するとき生成を有効化
+   ├─ パラダイムが RhythmSync                       （モチーフが座標軸）
+   ├─ addictiveMode / blueprintId 9                 （ループそのものがリフ）
+   ├─ riffPolicy が LockedContour / LockedPitch / LockedAll
+   │                                                （固定されたリフもリフ）
+   └─ Blueprint の section_flow がいずれかのセクションで TrackMask::Motif を立てている
+   それ以外：モチーフなし
 ```
+
+これは生成器を有効にする条件です。Blueprintのトラックマスクとレイヤースケジュールによって、個々のセクションにMotifノートが残らない場合があります。
 
 ::: warning ドラム必須
 `requiresDrums=true` の Blueprint（ID: 1, 5, 7）は自動的にドラムを有効化します。この動作を明示的にオーバーライドするには、`drumsEnabledExplicit: true`と`drumsEnabled: false`を同時に設定してください。

@@ -47,7 +47,7 @@ A **bar** (or **measure**) groups a fixed number of beats into a repeating cell,
 :::
 
 ::: info Time signature
-A **time signature** like `4/4` declares the grid: the top number is beats per bar, the bottom names the beat unit (4 = quarter note). `4/4` ("four-four") means four quarter-note beats per bar and is the default for almost all pop music.
+A **time signature** like `4/4` declares the grid: in a simple metre the top number is beats per bar and the bottom names the beat unit (4 = quarter note). `4/4` ("four-four") means four quarter-note beats per bar and is the default for almost all pop music; this course stays in `4/4` throughout.
 :::
 
 <ScoreExample example="beatGrid" locale="en" />
@@ -79,7 +79,7 @@ The defaults `vocalLow: 60` (C4) and `vocalHigh: 79` (G5) define a closed interv
 Every interactive example here is drawn on a **staff** with a **clef**.
 
 ::: info Staff & clef
-A **staff** is the five horizontal lines notes are placed on; higher on the staff means higher pitch. A **clef** at the left fixes the reference: the **treble clef** used throughout this course pins the second line to `G4`. You do not need to sight-read — treat the staff as a vertical pitch axis and the clef as its origin marker.
+A **staff** is the five horizontal lines notes are placed on; higher on the staff means higher pitch. A **clef** at the left fixes the reference: the **treble clef** used throughout this course pins the second line from the bottom to `G4`. You do not need to sight-read — treat the staff as a vertical pitch axis and the clef as its origin marker.
 :::
 
 ::: warning Common pitfall — `bpm: 0` is not silence

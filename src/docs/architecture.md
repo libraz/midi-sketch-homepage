@@ -7,39 +7,17 @@ This document explains the internal architecture of [MIDI Sketch](https://github
 ```
 midi-sketch/
 ├── src/
-│   ├── core/              # Core engine (~16000 lines, 46 headers)
-│   │   ├── generator.h/cpp        # Central orchestrator
-│   │   ├── harmony_context.h      # Inter-track collision detection facade
-│   │   ├── chord_progression_tracker.h/cpp
-│   │   ├── track_collision_detector.h/cpp
-│   │   ├── safe_pitch_resolver.h/cpp
-│   │   ├── melody_evaluator.h/cpp # Candidate scoring system
-│   │   ├── melody_templates.h/cpp # 7 melody template definitions
-│   │   ├── melody_embellishment.h/cpp # NCT insertion system
-│   │   ├── pitch_utils.h/cpp      # Pitch operations
-│   │   ├── chord_utils.h/cpp      # Chord operations
-│   │   ├── piano_roll_safety.h/cpp
-│   │   ├── modulation_calculator.h/cpp
-│   │   ├── preset_data.h/cpp      # Style presets
-│   │   └── ...                    # Types, utilities, etc.
-│   ├── track/             # Track generators (~13000 lines, 14 headers)
-│   │   ├── melody_designer.h/cpp  # Template-driven melody
-│   │   ├── vocal.h/cpp            # Vocal coordination
-│   │   ├── aux_track.h/cpp        # Aux sub-melody
-│   │   ├── chord_track.h/cpp      # Chord voicing
-│   │   ├── bass.h/cpp             # Bass patterns
-│   │   ├── drums.h/cpp            # Drum patterns
-│   │   ├── motif.h/cpp            # Background motif
-│   │   ├── guitar.h/cpp           # Accompaniment guitar
-│   │   ├── arpeggio.h/cpp         # Arpeggio patterns
-│   │   └── se.h/cpp               # Section markers
-│   ├── midi/              # MIDI output (8 headers)
-│   ├── analysis/          # Dissonance analysis
-│   ├── midisketch.h       # Public C++ API
-│   └── midisketch_c.h     # C API (WASM interface)
-├── tests/                 # Google Test suite (127 test files)
-├── dist/                  # WASM distribution
-└── demo/                  # Browser demo
+│   ├── core/          # Generator, Coordinator, harmony context, presets, blueprints
+│   ├── track/         # Per-track generators (track/generators/) + shared melody,
+│   │                  #   vocal, chord and drum helpers in sibling subdirectories
+│   ├── instrument/    # Physical instrument models (fretted, keyboard, drums)
+│   ├── midi/          # MIDI output and channel/program assignment
+│   ├── analysis/      # Dissonance analysis
+│   ├── midisketch.h   # Public C++ API
+│   └── midisketch_c.h # C API (WASM interface)
+├── tests/
+├── dist/
+└── demo/
 ```
 
 ## Core Components
@@ -49,7 +27,7 @@ midi-sketch/
 The main entry point providing a high-level API:
 
 ::: tip Two Generation Workflows
-- **Vocal-First**: Use `generateVocal()` → iterate with `regenerateVocal()` → finalize with `generateAccompaniment()`
+- **Vocal-First**: Use `generateVocal()` → iterate with `regenerateVocal()` → finalize with `generateAccompanimentForVocal()` (the JS/WASM wrapper names it `generateAccompaniment()`)
 - **Standard**: Use `generate()` or `generateFromConfig()` for one-shot generation
 
 Configurations can be constructed using the **SongConfigBuilder**, a fluent API with cascade change detection that automatically recalculates dependent parameters when upstream values change.
@@ -61,57 +39,51 @@ class MidiSketch {
   void generateFromConfig(const SongConfig& config);
   void generateWithVocal(const SongConfig& config);   // Vocal-priority full generation
   void generateVocal(const SongConfig& config);
+  void regenerateVocal(uint32_t new_seed = 0);
   void regenerateVocal(const VocalConfig& config);
-  void generateAccompaniment(const AccompanimentConfig& config);
-  void regenerateAccompaniment(uint32_t seed);
-  void setVocalNotes(const SongConfig& config, const NoteInput* notes, size_t count);
+  void generateAccompanimentForVocal();
+  void generateAccompanimentForVocal(const AccompanimentConfig& config);
+  void regenerateAccompaniment(uint32_t new_seed = 0);
+  void regenerateAccompaniment(const AccompanimentConfig& config);
+  void setVocalNotes(const SongConfig& config, const std::vector<NoteEvent>& notes);
 
   std::vector<uint8_t> getMidi() const;
   std::string getEventsJson() const;
-  std::string getChordTimeline() const;               // Chord progression timeline
   const Song& getSong() const;
 };
 ```
 
 ### Generator
 
-The central orchestrator (`src/core/generator.h`) that coordinates all track generation:
+The central stateful API (`src/core/generator.h`) owns the generated `Song` and delegates track work to the `Coordinator`:
 
 ```cpp
 class Generator {
-  Song generate(const GeneratorParams& params);
-private:
-  void buildStructure();
-  void generateVocal();
-  void generateAux();
-  void generateMotif();
-  void generateBass();
-  void generateChord();
-  void generateGuitar();      // Accompaniment guitar generation
-  void generateArpeggio();
-  void generateDrums();
-  void generateSE();          // Section markers / sound effects
-  void applyTransitionDynamics();
-  void applyHumanization();
+ public:
+  void generate(const GeneratorParams& params);
+  void generateFromConfig(const SongConfig& config);
+  void generateVocal(const GeneratorParams& params);
+  void generateAccompanimentForVocal();
+  void regenerateVocal(uint32_t new_seed = 0);
+  void generateWithVocal(const GeneratorParams& params);
+  const Song& getSong() const;
 };
 ```
+
+`generate()` returns `void`; callers read the result through `getSong()`. `Coordinator::generateAllTracks()` selects the paradigm order and invokes the registered `ITrackBase` generators, including `GuitarGenerator`. Structure building and post-processing remain internal stages of the generation call rather than public `Generator` members.
 
 ### Song Container
 
 Holds all generated data (9 tracks):
 
 ```cpp
-struct Song {
-  Arrangement arrangement;     // Section layout
-  MidiTrack vocal;            // Channel 0 - Main melody
-  MidiTrack chord;            // Channel 1 - Harmony
-  MidiTrack bass;             // Channel 2 - Foundation
-  MidiTrack motif;            // Channel 3 - BackgroundMotif style
-  MidiTrack arpeggio;         // Channel 4 - SynthDriven style
-  MidiTrack aux;              // Channel 5 - Sub-melody
-  MidiTrack guitar;           // Channel 6 - Accompaniment guitar
-  MidiTrack drums;            // Channel 9 - Rhythm
-  MidiTrack se;               // Channel 15 (markers)
+// Song holds nine tracks, addressed by TrackRole (src/core/song.h).
+// Channel assignments live in src/midi/track_config.h:
+//   Vocal 0 | Chord 1 | Bass 2 | Motif 3 | Arpeggio 4
+//   Aux 5   | Guitar 6 | Drums 9 | SE 15
+class Song {
+  MidiTrack& track(TrackRole role);
+  const Arrangement& arrangement() const;
 };
 ```
 
@@ -123,32 +95,7 @@ Every track has its own MIDI channel (`src/midi/track_config.h`). Aux (Ch 5) and
 
 ### Standard Generation (Traditional paradigm)
 
-```mermaid
-flowchart TD
-    subgraph Input
-        A[GeneratorParams] --> G
-        B[SongConfig] --> G
-    end
-
-    subgraph Generator
-        G[Generator] --> S0[buildStructure]
-        S0 --> S1[generateVocal]
-        S1 --> S2[generateAux]
-        S2 --> S3[generateMotif]
-        S3 --> S4[generateBass]
-        S4 --> S5[generateChord]
-        S5 --> S6[generateGuitar]
-        S6 --> S7[generateArpeggio]
-        S7 --> S8[generateDrums]
-        S8 --> S9[generateSE]
-        S9 --> S10[applyTransitionDynamics]
-        S10 --> S11[applyHumanization]
-    end
-
-    S11 --> Song
-    Song --> MW[MidiWriter]
-    MW --> MIDI["SMF Type 1 Binary"]
-```
+<DocFigure name="standard-generation" />
 
 ::: details Generation Order by Paradigm
 The track generation order varies depending on the Blueprint paradigm:
@@ -158,31 +105,13 @@ The track generation order varies depending on the Blueprint paradigm:
 
 ### Vocal-First Generation
 
-```mermaid
-flowchart TD
-    subgraph Input
-        C[SongConfig] --> GV
-    end
+<DocFigure name="vocal-first-generation" />
 
-    subgraph VocalFirst ["Vocal-First Workflow"]
-        GV[generateVocal] --> V[Vocal Track]
-        V --> RV[regenerateVocal - iterate]
-        RV --> V
-        V --> GA[generateAccompaniment]
-        GA --> S1[generateAux]
-        S1 --> S2[generateMotif]
-        S2 --> S3[generateBass]
-        S3 --> S4[generateChord]
-        S4 --> S5[generateGuitar]
-        S5 --> S6[generateArpeggio]
-        S6 --> S7[generateDrums]
-        S7 --> S8[generateSE]
-    end
+### Cross-Track Voice Limiting
 
-    S8 --> Song
-    Song --> MW[MidiWriter]
-    MW --> MIDI["SMF Type 1 Binary"]
-```
+Sections may cap the number of pitched tracks that are allowed to change from one bar to the next with `max_moving_voices`. When the cap is exceeded, the coordinator freezes the lowest-priority moving tracks by copying the previous bar. The priority order, highest to lowest, is **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**; Drums and SE are outside this limit.
+
+The coordinator preserves track-specific phrase-tail silence during the copy/quantization pass, then restores guitar rake order after pitch resolution. See [Cross-Track Voice Limiting and Final Repair](/docs/generation-pipeline#cross-track-voice-limiting-and-final-repair) for the pass order and tail gate.
 
 ## Time Representation
 
@@ -209,7 +138,7 @@ Two-layer note representation:
 ```cpp
 // Intermediate musical representation (internal)
 struct NoteEvent {
-  Tick startTick;      // Absolute start time
+  Tick start_tick;     // Absolute start time
   Tick duration;       // Duration in ticks
   uint8_t note;        // MIDI note (0-127)
   uint8_t velocity;    // MIDI velocity (0-127)
@@ -230,10 +159,10 @@ Songs are divided into sections:
 
 ```cpp
 struct Section {
-  SectionType type;              // Intro, A, B, Chorus, Bridge, Interlude, Outro
+  SectionType type;              // Intro, A, B, Chorus, Bridge, Interlude, Outro, Chant, MixBreak, Drop
   std::string name;              // Display name
   uint8_t bars;                  // Bar count
-  Tick startBar;                 // Start position (bars)
+  Tick start_bar;                // Start position (bars)
   Tick start_tick;               // Start position (ticks)
   VocalDensity vocal_density;    // Full, Sparse, None
   BackingDensity backing_density; // Normal, Thin, Thick
@@ -248,10 +177,10 @@ Three composition styles affect the generation approach:
 |-------|:-----:|:---:|:-----:|:--------:|-------------|
 | **MelodyLead (0)** | Yes | Yes | Blueprint-dependent | Optional | Traditional arrangement with prominent vocal melody |
 | **BackgroundMotif (1)** | No | Yes | Yes | Optional | Vocal disabled, Aux enabled, Motif as primary focus |
-| **SynthDriven (2)** | No | No | Blueprint-dependent | Optional (manual enable) | Vocal/Aux disabled, synth/arpeggio-forward electronic style |
+| **SynthDriven (2)** | No | No | Yes | Optional (manual enable) | Vocal/Aux disabled, synth/arpeggio-forward electronic style |
 
 ::: warning BGM-Only Modes
-BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux; Arpeggio must be manually enabled with `arpeggioEnabled=true`. Use MelodyLead for songs with vocals.
+BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux, and also generates Motif unconditionally; Arpeggio must be manually enabled with `arpeggioEnabled=true`. Use MelodyLead for songs with vocals.
 :::
 
 ## Production Blueprints
@@ -261,15 +190,15 @@ Blueprints are high-level production templates that control track generation ord
 | ID | Name | Paradigm | RiffPolicy | Drums Required | Weight |
 |----|------|----------|------------|:--------------:|--------|
 | 0 | Traditional | Traditional | Free | - | 42% |
-| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14% |
+| 1 | RhythmLock | RhythmSync | LockedContour | **Yes** | 14% |
 | 2 | StoryPop | MelodyDriven | Evolving | - | 10% |
 | 3 | Ballad | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
-| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
-| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
-| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
-| 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
-| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+| 5 | IdolHyper | RhythmSync | LockedContour | **Yes** | 6% |
+| 6 | IdolKawaii | MelodyDriven | LockedContour | - | 5% |
+| 7 | IdolCoolPop | RhythmSync | LockedContour | **Yes** | 5% |
+| 8 | IdolEmo | MelodyDriven | LockedContour | - | 4% |
+| 9 | BehavioralLoop | RhythmSync | LockedPitch | - | 0%* |
 
 \* BehavioralLoop (ID 9) has weight 0% and must be explicitly selected (never chosen randomly). It forces `addictive_mode=true`, `RiffPolicy::LockedPitch`, and `HookIntensity::Maximum`.
 
@@ -280,18 +209,20 @@ Blueprints are high-level production templates that control track generation ord
 :::
 
 ::: details RiffPolicy
-The API exposes three RiffPolicy values:
-- **Free (0)**: Motif varies per section (MotifRepeatScope controls cross-section behavior)
-- **Locked (1)**: Pitch contour fixed, expression varies (internally LockedContour)
-- **Evolving (2)**: 30% chance of change every 2 sections
+The public C++, C, and JavaScript APIs expose five `RiffPolicy` values:
+- **Free (0)**: `FullSong` generates a fresh motif for each section; `Section` caches and reuses a pattern by section type
+- **LockedContour (1)**: Keep the pitch contour while allowing expression changes; `Locked` is a compatibility alias
+- **LockedPitch (2)**: Keep pitches fixed while allowing velocity changes
+- **LockedAll (3)**: Keep the complete cached riff fixed
+- **Evolving (4)**: Mutate the cached riff once per section while retaining its identity
 
-Internally, Blueprints use a finer-grained set: Free(0), LockedContour(1), LockedPitch(2), LockedAll(3), Evolving(4).
+Blueprints copy their selected policy into the generator parameters. `MotifRepeatScope` selects the `Free` policy's `FullSong` or `Section` behavior.
 :::
 
 ::: details Blueprint Overrides
 Blueprints can override several SongConfig parameters:
 - `section_flow` overrides `formId` (when present and `formExplicit=false`)
-- `riff_policy` overrides `motifRepeatScope` (only when Free)
+- `riff_policy` selects the cross-section riff policy and is copied into the generator parameters
 - `drums_required` forces `drums_enabled=true` (unless `drumsEnabledExplicit=true` and `drumsEnabled=false`)
 - `drums_sync_vocal` overrides the SongConfig setting
 - `mood_mask` restricts compatible moods (check with `isMoodCompatible()`)
@@ -347,14 +278,14 @@ For WASM interop, a C API wraps the C++ classes:
 ```c
 // Lifecycle
 MidiSketchHandle handle = midisketch_create();
-midisketch_generate(handle, params);
+midisketch_generate_from_json(handle, config_json, json_length);
 MidiSketchMidiData* midi = midisketch_get_midi(handle);
 midisketch_free_midi(midi);
 midisketch_destroy(handle);
 ```
 
 Key functions:
-- `midisketch_generate()` - Core generation
+- `midisketch_generate_from_json()` - Core generation
 - `midisketch_generate_vocal_from_json()` - Vocal-only generation
 - `midisketch_regenerate_vocal_from_json()` - Vocal regeneration
 - `midisketch_generate_accompaniment_from_json()` - Accompaniment generation
@@ -362,7 +293,6 @@ Key functions:
 - `midisketch_generate_with_vocal_from_json()` - Vocal-priority full generation
 - `midisketch_set_vocal_notes_from_json()` - Custom vocal injection
 - `midisketch_get_piano_roll_safety()` - Piano roll safety analysis
-- `midisketch_get_chord_timeline()` - Chord timeline retrieval
 - `midisketch_get_midi()` - MIDI binary output
 - `midisketch_get_events()` - JSON event data
 - `midisketch_get_info()` - Metadata (bars, ticks, BPM)

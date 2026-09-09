@@ -25,13 +25,7 @@ Understanding these relationships helps you avoid unexpected behavior. For examp
 
 ### 1.1 Call System
 
-```mermaid
-graph TD
-    callSetting["callSetting<br/>(0=Auto, 1=Enabled, 2=Disabled)"] --> introChant["introChant<br/>(ignored when call inactive)"]
-    callSetting --> mixPattern["mixPattern<br/>(ignored when call inactive)"]
-    callSetting --> callDensity["callDensity<br/>(ignored when call inactive)"]
-    callSetting --> callNotesEnabled["callNotesEnabled<br/>(ignored when call inactive)"]
-```
+<DocFigure name="options-call-dependency" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
@@ -41,51 +35,36 @@ graph TD
 | call active | `callNotesEnabled` | Output calls as MIDI notes |
 
 ::: warning callEnabled is Legacy
-`callSetting` (0=Auto, 1=Enabled, 2=Disabled) replaced the boolean `callEnabled` in `SongConfig`. With `0` (Auto), the style/vocal-style decides whether calls are generated. `callEnabled` is still accepted for backward compatibility (`true`→1, `false`→2) but should not be used in new code. `AccompanimentConfig` still uses a plain `callEnabled` boolean.
+`callSetting` (0=Auto, 1=Enabled, 2=Disabled) replaced the boolean `callEnabled` in `SongConfig`. With `0` (Auto), the vocal style alone decides whether calls are generated — the style preset is not consulted. `callEnabled` is still accepted for backward compatibility (`true`→1, `false`→2) but should not be used in new code. `AccompanimentConfig` still uses a plain `callEnabled` boolean.
 :::
 
 ### 1.2 Arpeggio
 
-```mermaid
-graph TD
-    arpeggioEnabled --> arpeggioPattern
-    arpeggioEnabled --> arpeggioSpeed
-    arpeggioEnabled --> arpeggioOctaveRange
-    arpeggioEnabled --> arpeggioGate
-    arpeggioEnabled --> arpeggioSyncChord
-```
+<DocFigure name="options-arpeggio-dependency" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord (0-7) |
-| `arpeggioEnabled=true` | `arpeggioSpeed` | Eighth/Sixteenth/Triplet |
+| `arpeggioEnabled=true` | `arpeggioPattern` | Up/Down/UpDown/Random/Pinwheel/PedalRoot/Alberti/BrokenChord (0-7), or 255 (default) for the mood's pattern |
+| `arpeggioEnabled=true` | `arpeggioSpeed` | Eighth/Sixteenth/Triplet (0-2), or 255 (default) for the mood's speed |
 | `arpeggioEnabled=true` | `arpeggioOctaveRange` | 1-3 octaves |
-| `arpeggioEnabled=true` | `arpeggioGate` | Gate length (0.0-1.0, default 0.8; AccompanimentConfig uses 0-100) |
+| `arpeggioEnabled=true` | `arpeggioGate` | Gate length 0.0-1.0, or -1 (default) to use the mood's gate, which ranges 0.6-0.98 |
 | `arpeggioEnabled=true` | `arpeggioSyncChord` | Sync with chord changes |
 | `arpeggioEnabled=true` | `arpeggioBaseVelocity` | Base velocity for arpeggio notes (0-127, default 90) |
 
 ### 1.3 Humanization
 
-```mermaid
-graph TD
-    humanize --> humanizeTiming
-    humanize --> humanizeVelocity
-```
+<DocFigure name="options-humanize-dependency" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
-| `humanize=true` | `humanizeTiming` | Timing variation (0.0-1.0, default 0.4; AccompanimentConfig uses 0-100) |
-| `humanize=true` | `humanizeVelocity` | Velocity variation (0.0-1.0, default 0.3; AccompanimentConfig uses 0-100) |
+| `humanize=true` | `humanizeTiming` | Timing variation (0.0-1.0, default 0.4) |
+| `humanize=true` | `humanizeVelocity` | Velocity variation (0.0-1.0, default 0.3) |
+
+`humanizeTiming` only *supplies the amount* when `humanize=true`. Micro-timing itself is not gated on `humanize`: with `humanize=false`, any `driveFeel` other than 50 produces groove timing on its own, scaled by `|driveFeel - 50| / 50`. It reaches drums and bass only.
 
 ### 1.4 Chord Extensions
 
-```mermaid
-graph LR
-    chordExtSus --> chordExtSusProb
-    chordExt7th --> chordExt7thProb
-    chordExt9th --> chordExt9thProb
-    chordExtTritoneSub --> chordExtTritoneSubProb
-```
+<DocFigure name="options-chord-extension-pairs" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
@@ -94,17 +73,13 @@ graph LR
 | `chordExt9th=true` | `chordExt9thProb` | 9th probability (0.0-1.0, default 0.25) |
 | `chordExtTritoneSub=true` | `chordExtTritoneSubProb` | Tritone sub probability (0.0-1.0, default 0.5) |
 
-::: info AccompanimentConfig Uses 0-100
-The probabilities above are `SongConfig` values (0.0-1.0). The regeneration-oriented `AccompanimentConfig` keeps integer 0-100 ranges for the same fields (sus 20, 7th 30, 9th 25, tritone 50).
+::: info Scale differences between the two configs
+`SongConfig` and `AccompanimentConfig` use the same 0.0-1.0 floats and the same defaults for every chord-extension probability and for `humanizeTiming`/`humanizeVelocity`. The one field whose scale differs is `arpeggioGate`, which `AccompanimentConfig` takes as an integer 0-100 (default 80, 255 = style default) while `SongConfig` takes it as 0.0-1.0 (or -1 for the style default).
 :::
 
 ### 1.5 Modulation
 
-```mermaid
-graph TD
-    modulationTiming["modulationTiming (!=None)"] --> modulationSemitones
-    modulationSemitones --> vocalHighAdjust["(internal) vocalHigh auto-adjust"]
-```
+<DocFigure name="options-modulation-chain" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
@@ -113,26 +88,19 @@ graph TD
 
 **Notes**:
 - When `modulationTiming=None`, `modulationSemitones` is not validated
-- **Vocal range auto-adjustment**: When modulation is enabled, `effective_vocal_high = vocal_high - modulation_semitones` ensures vocal stays in range post-modulation
+- **Vocal range auto-adjustment**: the ceiling is first clamped by the Blueprint's `max_pitch` constraint, then reduced by the resolved modulation amount, then floored at `vocalLow + 12` so the range never drops below an octave
 - **Works in all CompositionStyles**: Modulation is effective in BGM modes (BackgroundMotif, SynthDriven) as well
 
 ### 1.6 Vocal (skipVocal exclusion)
 
-```mermaid
-graph TD
-    skipVocal["skipVocal=false"] --> vocalLow["vocalLow / vocalHigh"]
-    skipVocal --> vocalAttitude
-    skipVocal --> vocalStyle
-    skipVocal --> melodyTemplate
-    skipVocal --> melodicComplexity
-    skipVocal --> hookIntensity
-    skipVocal --> vocalGroove
-```
+<DocFigure name="options-skip-vocal" />
 
 | Condition | Effective Options | Use Case |
 |-----------|-------------------|----------|
 | `skipVocal=false` | All vocal-related options | Normal song generation |
-| `skipVocal=true` | All vocal options are ignored | **BGM-only generation (no vocal)** |
+| `skipVocal=true` | Vocal generation is skipped; if a vocal is already present it is kept and every other track adapts to it | **Vocal-first workflow** — this is what `generateAccompaniment()` sets internally. For BGM with no vocal at all, set `compositionStyle=1` or `2` with `compositionStyleExplicit=true`. |
+
+`skipVocal` controls the Vocal track only. It does not skip Aux; Aux remains available unless `compositionStyle=SynthDriven` disables it.
 
 ::: danger No Vocal Recovery
 There is no API to add vocals after BGM-only generation. If you need vocals, use `compositionStyle=MelodyLead` or the **Vocal-First workflow** (see [JavaScript API](/docs/api-js)).
@@ -140,12 +108,7 @@ There is no API to add vocals after BGM-only generation. If you need vocals, use
 
 ### 1.7 Syncopation
 
-```mermaid
-graph TD
-    enableSyncopation["enableSyncopation=true"] --> vocalGrooveSync["vocalGroove syncopation effects"]
-    enableSyncopation --> syncProb["syncopation_prob > 0"]
-    enableSyncopation --> barCross["allow_bar_crossing"]
-```
+<DocFigure name="options-syncopation-master-switch" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
@@ -153,7 +116,7 @@ graph TD
 | `enableSyncopation=false` | `syncopation_prob=0.0` | Syncopation probability forced to zero |
 | `enableSyncopation=false` | `allow_bar_crossing=false` | Bar crossing forced off |
 
-**Notes**: Timing offsets (e.g., +30 ticks for OffBeat) are applied regardless of `enableSyncopation`. Only the syncopation-specific weighting is affected.
+**Notes**: Timing offsets (e.g., +60 ticks for OffBeat) are applied regardless of `enableSyncopation`. Only the syncopation-specific weighting is affected.
 
 ### 1.8 Explicit Flags
 
@@ -166,12 +129,7 @@ graph TD
 
 ### 1.9 Blueprint ID 9 (BehavioralLoop)
 
-```mermaid
-graph TD
-    BP9["blueprintId=9"] --> addictive["internal addictive_mode=true"]
-    addictive --> hookMax["HookIntensity=Maximum (forced)"]
-    addictive --> riffLock["RiffPolicy=LockedPitch (forced)"]
-```
+<DocFigure name="options-behavioral-loop" />
 
 | Parent | Child | Description |
 |--------|-------|-------------|
@@ -187,51 +145,29 @@ The value of `compositionStyle` determines which tracks are generated and which 
 
 ### 2.1 MelodyLead (0) - Default
 
-```mermaid
-graph TD
-    ML["compositionStyle=0 (MelodyLead)"]
-    ML --> ML1["All vocal options effective"]
-    ML --> ML2["arpeggioEnabled → effective"]
-    ML --> ML3["motif options → ignored"]
-    ML --> ML4["modulation → effective"]
-```
+<DocFigure name="options-style-melody-lead" />
 
-**Generated tracks**: Vocal → Aux → Motif (Blueprint-dependent) → Bass → Chord → Guitar → Arpeggio (if enabled) → Drums → SE
+**Generated tracks**: Vocal → Aux → Motif (only when something asks for it, see §17.5) → Bass → Chord → Guitar → Arpeggio (if enabled) → Drums → SE
+
+MelodyLead is the only style that gates the motif. The motif fields are read only when a motif track is actually generated.
 
 ### 2.2 BackgroundMotif (1) - BGM-Only Mode
 
-```mermaid
-graph TD
-    BM["compositionStyle=1 (BackgroundMotif)"]
-    BM --> BM1["vocal options → disabled (no Vocal track)"]
-    BM --> BM2["Aux track → enabled (supports motif)"]
-    BM --> BM3["arpeggioEnabled → effective (Motif + Arpeggio both)"]
-    BM --> BM4["motifRepeatScope ← effective"]
-    BM --> BM5["motifFixedProgression ← effective"]
-    BM --> BM6["motifMaxChordCount ← effective"]
-    BM --> BM7["modulation → effective"]
-```
+<DocFigure name="options-style-background-motif" />
 
-**Generated tracks**:
-| arpeggioEnabled | Generated Tracks |
+**Tracks enabled by this style**:
+| arpeggioEnabled | Enabled Tracks |
 |-----------------|------------------|
 | `false` | Aux + Motif + Bass + Chord + Guitar + Drums |
 | `true` | Aux + Motif + Bass + Chord + Guitar + Drums + **Arpeggio** |
 
+BackgroundMotif enables the Motif generator; section masks and layer schedules determine which sections retain Motif notes.
+
 ### 2.3 SynthDriven (2) - BGM-Only Mode
 
-```mermaid
-graph TD
-    SD["compositionStyle=2 (SynthDriven)"]
-    SD --> SD1["vocal options → disabled (no Vocal track)"]
-    SD --> SD2["Aux track → disabled"]
-    SD --> SD3["arpeggioEnabled → must be manually enabled"]
-    SD --> SD4["Arpeggio-centered arrangement"]
-    SD --> SD5["Motif → Blueprint-dependent"]
-    SD --> SD6["modulation → effective"]
-```
+<DocFigure name="options-style-synth-driven" />
 
-**Generated tracks**: Motif (Blueprint-dependent) + Bass + Chord + Guitar + Arpeggio (if enabled) + Drums
+**Tracks enabled by this style**: Motif + Bass + Chord + Guitar + Arpeggio (if enabled) + Drums. SynthDriven enables the Motif generator; section masks and layer schedules determine which sections retain Motif notes.
 
 ::: tip Choosing CompositionStyle
 - **MelodyLead**: For songs with vocals (pop, rock, ballad)
@@ -250,8 +186,12 @@ graph TD
 | `targetDurationSeconds` | `0` | Use structure pattern from `formId` |
 | `vocalStyle` | `0` (Auto) | Random selection based on style |
 | `melodyTemplate` | `0` (Auto) | Default selection based on style |
+| `arpeggioPattern` | `255` (Auto) | Use the mood's default pattern |
+| `arpeggioSpeed` | `255` (Auto) | Use the mood's default speed |
+| `arpeggioGate` | `-1` | Use the mood's default gate (0.6-0.98) |
 | `driveFeel` | `50` | Neutral (0=laid-back, 100=aggressive) |
 | `moraRhythmMode` | `2` (Auto) | Auto-select from VocalStylePreset |
+| `syllabicSubRate` | `0` | Use the style default; `1`-`100` overrides the style ratio (%) |
 
 ### driveFeel Details
 
@@ -276,14 +216,7 @@ Zero often means "auto" or "use default". This is useful when you want style-app
 
 ### Flowchart
 
-```mermaid
-flowchart TD
-    A{bpm specified?} -->|bpm=0| B["Use stylePreset.tempo_default"]
-    A -->|bpm>0| C["Use specified value (40-240)"]
-
-    D{targetDurationSeconds?} -->|=0| E["Use StructurePattern from formId"]
-    D -->|>0| F["Auto-generate structure for duration"]
-```
+<DocFigure name="options-zero-value-defaults" />
 
 ---
 
@@ -324,17 +257,18 @@ The following are controlled by VocalStylePreset only and have no SongConfig ove
 
 ## 5. Motif Overrides
 
-Motif overrides control the melodic motif generation parameters in BackgroundMotif mode and Blueprint-based motif sections.
+Motif overrides control the melodic motif generation parameters in BackgroundMotif and SynthDriven modes and in Blueprint-based MelodyLead motif sections.
 
 ### 5.1 Motif Override Parameters
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| `motifLength` | 0=auto, 1/2/4 | 0 | Motif length (beats) |
+| `motifLength` | 0=auto, 1/2/4 | 0 | Motif length (bars) |
 | `motifNoteCount` | 0=auto, 3-8 | 0 | Number of notes in motif |
-| `motifMotion` | 0xFF=preset, 0-4 | 0xFF | Pitch motion type |
+| `motifMotion` | 0xFF=preset, 0-5 | 0xFF | Pitch motion type |
 | `motifRegisterHigh` | 0=auto, 1=low, 2=high | 0 | Register (0=mid range) |
 | `motifRhythmDensity` | 0xFF=preset, 0-2 | 0xFF | Rhythm density |
+| `motifMaxChordCount` | 0=no limit, 2-8 | 4 | Cap the number of distinct chords the motif section cycles through |
 
 ### 5.2 MotifMotion Values
 
@@ -345,10 +279,10 @@ Motif overrides control the melodic motif generation parameters in BackgroundMot
 | 2 | WideLeap | Up to 5ths |
 | 3 | NarrowStep | Narrow scale degrees (jazzy) |
 | 4 | Disjunct | Irregular leaps (experimental) |
-| 5 | Ostinato | Same pitch class repetition (**internal Blueprint only**, not available via API) |
+| 5 | Ostinato | All notes on the root pitch class, with root/5th variation |
 
-::: warning Ostinato Motion
-`motifMotion=5` (Ostinato) is reserved for internal Blueprint definitions. The API exposes values 0-4 only. Values above 4 are clamped to 4 via `min(val, 4)`.
+::: tip Ostinato Motion
+`motifMotion=5` (Ostinato) puts every note of the motif on the root pitch class, with root/5th variation. It is what the addictive-loop blueprints reach for, and it is reachable through the API too — the validator accepts 0-5 or `0xFF` (preset); other values above 5 are rejected with `INVALID_MOTIF_OVERRIDE` and are not clamped. Expect a deliberately monotonous riff.
 :::
 
 ### 5.3 MotifRhythmDensity Values
@@ -382,8 +316,8 @@ Motif overrides control the melodic motif generation parameters in BackgroundMot
 | `vocalGroove` | 0-5 | `INVALID_VOCAL_GROOVE` |
 | `modulationTiming` | 0-4 | `INVALID_MODULATION_TIMING` |
 | `modulationSemitones` | 1-4 (when timing!=0) | `INVALID_MODULATION` |
-| `arpeggioPattern` | 0-7 | `INVALID_ARPEGGIO_PATTERN` |
-| `arpeggioSpeed` | 0-2 | `INVALID_ARPEGGIO_SPEED` |
+| `arpeggioPattern` | 0-7, 255 | `INVALID_ARPEGGIO_PATTERN` |
+| `arpeggioSpeed` | 0-2, 255 | `INVALID_ARPEGGIO_SPEED` |
 | `callDensity` | 0-3 | `INVALID_CALL_DENSITY` |
 | `introChant` | 0-2 | `INVALID_INTRO_CHANT` |
 | `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
@@ -391,28 +325,36 @@ Motif overrides control the melodic motif generation parameters in BackgroundMot
 | `arrangementGrowth` | 0-1 | `INVALID_ARRANGEMENT_GROWTH` |
 | `blueprintId` | 0-9, 255 | (255=auto random) |
 
-### 6.2 Parameters NOT Validated by validateSongConfig
+### 6.2 Additional validated ranges
 
-The following parameters are **not** checked by `validateSongConfig()`. Invalid values are clamped or ignored internally by the config converter:
+These are validated too, though they do not appear in the table above:
 
-| Parameter | Effective Range | Notes |
-|-----------|----------------|-------|
-| `enableSyncopation` | boolean | No validation needed |
-| `energyCurve` | 0-3 | Used within enum range |
-| `driveFeel` | 0-100 | 0=laid-back, 50=neutral, 100=aggressive |
-| `moraRhythmMode` | 0-2 | 0=Standard, 1=MoraTimed, 2=Auto |
-| `melodyMaxLeap` | 0=preset, 1-12 | Passed through directly |
-| `melodySyncopationProb` | 0-100, 0xFF=preset | Converted to 0-1.0f |
-| `melodyPhraseLength` | 0=preset, 1-8 | Passed through directly |
-| `melodyLongNoteRatio` | 0-100, 0xFF=preset | Converted to 0-1.0f |
-| `melodyChorusRegisterShift` | -128=preset, -12 to +12 | Passed through directly |
-| `melodyHookRepetition` | 0-2 | Tri-state |
-| `melodyUseLeadingTone` | 0-2 | Tri-state |
-| `motifLength` | 0=auto, 1/2/4 | Processed by switch statement; invalid values ignored |
-| `motifNoteCount` | 0=auto, 3-8 | Clamped to 3-8 |
-| `motifMotion` | 0xFF=preset, 0-4 | Clamped via min(val, 4); Ostinato(5) is internal only |
-| `motifRegisterHigh` | 0=auto, 1=low, 2=high | Passed through directly |
-| `motifRhythmDensity` | 0xFF=preset, 0-2 | Clamped via min(val, 2) |
+| Parameter | Valid range | Error code |
+|-----------|-------------|------------|
+| `energyCurve` | 0-3 | `INVALID_ENERGY_CURVE` |
+| `driveFeel` | 0-100 | `INVALID_DRIVE_FEEL` |
+| `moraRhythmMode` | 0-2 | `INVALID_MORA_RHYTHM_MODE` |
+| `syllabicSubRate` | 0 (style default), 1-100 (%) override | `INVALID_MELODY_OVERRIDE` |
+| `callSetting` | 0-2 | `INVALID_CALL_SETTING` |
+| `humanizeTiming`, `humanizeVelocity` | 0.0-1.0 | `INVALID_PROBABILITY` |
+| `chordExt*Prob` | 0.0-1.0 | `INVALID_PROBABILITY` |
+| `arpeggioOctaveRange` | 1-3 | `INVALID_ARPEGGIO_RANGE` |
+| `arpeggioGate` | 0.0-1.0, or -1 for the style default | `INVALID_ARPEGGIO_RANGE` |
+| `arpeggioBaseVelocity` | 0-127 | `INVALID_ARPEGGIO_RANGE` |
+| `melodyMaxLeap` | 0=preset, 1-12 | `INVALID_MELODY_OVERRIDE` |
+| `melodySyncopationProb` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyPhraseLength` | 0=preset, 1-8 | `INVALID_MELODY_OVERRIDE` |
+| `melodyLongNoteRatio` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyChorusRegisterShift` | -12 to +12, -128=preset | `INVALID_MELODY_OVERRIDE` |
+| `melodyHookRepetition`, `melodyUseLeadingTone` | 0-2 | `INVALID_MELODY_OVERRIDE` |
+| `motifLength` | 0, 1, 2 or 4 (bars) | `INVALID_MOTIF_OVERRIDE` |
+| `motifNoteCount` | 0=auto, 3-8 | `INVALID_MOTIF_OVERRIDE` |
+| `motifMotion` | 0-5, 0xFF=preset | `INVALID_MOTIF_OVERRIDE` |
+| `motifRegisterHigh` | 0-2 | `INVALID_MOTIF_OVERRIDE` |
+| `motifRhythmDensity` | 0-2, 0xFF=preset | `INVALID_MOTIF_OVERRIDE` |
+| `motifMaxChordCount` | 0=no limit, 2-8 | `INVALID_MOTIF_OVERRIDE` |
+
+Out-of-range values are rejected, not clamped. `enableSyncopation` is the only boolean here and needs no range check.
 
 ### 6.3 Style x Attitude Combinations
 
@@ -439,9 +381,11 @@ Check allowed attitudes with: `midisketch_style_preset_allowed_attitudes(styleId
 ### 6.5 Call x Duration x BPM Conflict
 
 ```
-IF call is active (callSetting=1, or 0 resolved to on) AND targetDurationSeconds > 0
+IF callSetting != 2 (Disabled) AND targetDurationSeconds > 0
 THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
+
+The check does not resolve Auto — `callSetting=0` triggers the duration floor even for vocal styles that would not have produced calls.
 
 Minimum time calculation:
 ```
@@ -499,7 +443,7 @@ The guitar track is generated by default. Set `guitarEnabled: false` to disable 
 | Property | Description |
 |----------|-------------|
 | `chordExtTritoneSub` | Enable/disable tritone substitution (default `false`) |
-| `chordExtTritoneSubProb` | Probability of tritone substitution (`SongConfig`: 0.0-1.0, default 0.5 / `AccompanimentConfig`: 0-100, default 50) |
+| `chordExtTritoneSubProb` | Probability of tritone substitution (0.0-1.0, default 0.5 in both `SongConfig` and `AccompanimentConfig`) |
 
 ::: info Availability
 Tritone substitution is available in both the JS `SongConfig` (for full-song generation) and `AccompanimentConfig` (for accompaniment regeneration), as well as the C++ `chord_extension` struct. See [Harmony](/docs/harmony#tritone-substitution) for the musical background.
@@ -586,10 +530,10 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
 ```javascript
 {
   compositionStyle: 1,  // BackgroundMotif (BGM-only)
+  compositionStyleExplicit: true,
   // No need to set skipVocal (auto-disabled in BackgroundMotif)
 
   // Motif settings
-  motifFixedProgression: true,
   motifMaxChordCount: 4,
 
   // Arpeggio (also available in BackgroundMotif)
@@ -597,13 +541,14 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
   arpeggioPattern: 2,         // UpDown
   arpeggioSpeed: 1,           // Sixteenth
   arpeggioOctaveRange: 2,
-  arpeggioGate: 80,
+  arpeggioGate: 0.8,        // SongConfig gate (0.0-1.0)
 
   // Modulation (works in BGM mode too)
   modulationTiming: 1,        // LastChorus
   modulationSemitones: 2      // +2 semitones
 }
-// Output: Motif + Bass + Chord + Drums + Arpeggio (modulates +2 at last chorus)
+// Output: Aux + Motif + Bass + Chord + Drums + Arpeggio (modulates +2 at last chorus)
+// Motif note population follows section masks and layer schedules.
 ```
 
 ### 11.5 BGM Mode (Arpeggio-Centered)
@@ -611,6 +556,7 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
 ```javascript
 {
   compositionStyle: 2,  // SynthDriven (BGM-only)
+  compositionStyleExplicit: true,
   arpeggioEnabled: true,      // Must be explicitly enabled (NOT auto-enabled)
   arpeggioPattern: 0,         // Up
   arpeggioSpeed: 2,           // Triplet
@@ -620,7 +566,8 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
   modulationTiming: 2,        // AfterBridge
   modulationSemitones: 3      // +3 semitones
 }
-// Output: Bass + Chord + Drums + Arpeggio (no Motif, modulates +3 after bridge)
+// Output: Motif + Bass + Chord + Drums + Arpeggio (no Vocal/Aux, modulates +3 after bridge)
+// Motif note population follows section masks and layer schedules.
 ```
 
 ### 11.6 Syncopated Feel
@@ -675,7 +622,8 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
   guitarEnabled: true,
   moodExplicit: true,
   mood: 23,            // Lofi
-  compositionStyle: 1  // BackgroundMotif
+  compositionStyle: 1,  // BackgroundMotif
+  compositionStyleExplicit: true
 }
 // 80 BPM, strong swing, velocity cap 90, guitar track enabled
 ```
@@ -738,8 +686,8 @@ Setting `vocalStyle` automatically configures internal melody generation paramet
 
 | compositionStyle | Implicit Behavior |
 |------------------|-------------------|
-| `BackgroundMotif (1)` | **Vocal disabled** (not generated), **Aux enabled** (supports motif), Motif track generated, **modulation works** |
-| `SynthDriven (2)` | **Vocal/Aux completely disabled**, Motif Blueprint-dependent, **Arpeggio requires manual `arpeggioEnabled=true`**, **modulation works** |
+| `BackgroundMotif (1)` | **Vocal disabled** (not generated), **Aux enabled** (supports motif), Motif generation enabled, **modulation works**; section masks and layer schedules determine populated notes |
+| `SynthDriven (2)` | **Vocal/Aux completely disabled**, Motif generation enabled, **Arpeggio requires manual `arpeggioEnabled=true`**, **modulation works**; section masks and layer schedules determine populated notes |
 
 ### 12.5 Auto-Call Activation
 
@@ -757,6 +705,7 @@ Other vocal styles do not trigger auto-call activation.
 // Example: SynthDriven requires explicit arpeggio enabling
 {
   compositionStyle: 2,  // SynthDriven (BGM-only)
+  compositionStyleExplicit: true,
   arpeggioEnabled: true,   // Must be explicitly set for arpeggio
   modulationTiming: 1,     // Works in BGM mode
   modulationSemitones: 2
@@ -769,13 +718,13 @@ Other vocal styles do not trigger auto-call activation.
 | vocalGroove | Effect |
 |-------------|--------|
 | `Straight (0)` | No change |
-| `OffBeat (1)` | Delay on-beat notes (+30 ticks) |
-| `Swing (2)` | Delay 8th note 2nd beat |
-| `Syncopated (3)` | Anticipate beats 2, 4 (-30 ticks) |
-| `Driving16th (4)` | Emphasize 16th notes |
-| `Bouncy8th (5)` | Bounce feel on 8th notes |
+| `OffBeat (1)` | On-beat notes pushed late by 60 ticks (an eighth of a beat) |
+| `Swing (2)` | The off-eighth of each beat delayed by 60 ticks |
+| `Syncopated (3)` | Notes near beats 2 and 4 anticipated by 60 ticks |
+| `Driving16th (4)` | 16th-note onsets rushed by 30 ticks |
+| `Bouncy8th (5)` | Off-eighth delayed by 40 ticks, on-eighth shortened |
 
-**Syncopation dependency**: When `enableSyncopation=false`, syncopation weight is 0.0 for all groove feels, and `syncopation_prob=0.0` / `allow_bar_crossing=false` are forced. Timing offsets (+30 ticks etc.) apply regardless of `enableSyncopation`.
+**Syncopation dependency**: When `enableSyncopation=false`, syncopation weight is 0.0 for all groove feels, and `syncopation_prob=0.0` / `allow_bar_crossing=false` are forced. Timing offsets apply regardless of `enableSyncopation`.
 
 ### 12.7 hookIntensity → Phrase Generation Changes
 
@@ -888,7 +837,7 @@ SongConfig
 │   ├── energyCurve ─────────────▶ 0-3 energy progression
 │   └── driveFeel ───────────────▶ 0-100 timing/velocity feel
 │
-├── Motif Overrides (BackgroundMotif / Blueprint motif sections)
+├── Motif Overrides (BackgroundMotif / SynthDriven / Blueprint motif sections)
 │   ├── motifLength
 │   ├── motifNoteCount
 │   ├── motifMotion
@@ -899,7 +848,6 @@ SongConfig
     ├── compositionStyle=0 (MelodyLead): Vocal/Aux enabled, standard
     ├── compositionStyle=1 (BackgroundMotif): BGM-only (Vocal disabled, Aux enabled)
     │   ├── motifRepeatScope
-    │   ├── motifFixedProgression
     │   └── motifMaxChordCount
     └── compositionStyle=2 (SynthDriven): BGM-only (Vocal/Aux disabled, arpeggio requires manual enabling)
 ```
@@ -1014,10 +962,10 @@ Production Blueprints control **how** the music is generated, independent of sty
 | 3 | Ballad | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
 | 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
-| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
+| 6 | IdolKawaii | MelodyDriven | Locked | - | 5% |
 | 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
 | 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
-| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+| 9 | BehavioralLoop | RhythmSync | LockedPitch | - | 0%* |
 | 255 | (Random) | - | - | - | - |
 
 \* BehavioralLoop has 0% weight and is never randomly selected; it must be explicitly chosen. When selected, it forces `addictive_mode=true`, `HookIntensity=Maximum`, and `RiffPolicy=LockedPitch`.
@@ -1032,48 +980,44 @@ Production Blueprints control **how** the music is generated, independent of sty
 
 ### 17.3 RiffPolicy Types
 
-| Policy | Description | Effect on motifRepeatScope |
-|--------|-------------|---------------------------|
-| Free | Each section varies | Uses `motifRepeatScope` setting |
-| Locked | Pitch contour fixed, expression varies | **Ignores** `motifRepeatScope` |
-| Evolving | 30% chance to change every 2 sections | **Ignores** `motifRepeatScope` |
+| Policy | Value | Description | Effect on motifRepeatScope |
+|--------|:-----:|-------------|---------------------------|
+| Free | 0 | Each section varies | Uses `motifRepeatScope` setting |
+| LockedContour | 1 | Pitch contour fixed, rhythm and expression vary | **Ignores** `motifRepeatScope` |
+| LockedPitch | 2 | Pitch fully fixed, velocity varies | **Ignores** `motifRepeatScope` |
+| LockedAll | 3 | Every aspect fixed | **Ignores** `motifRepeatScope` |
+| Evolving | 4 | The cached riff is mutated once per section, so it drifts while keeping its identity | **Ignores** `motifRepeatScope` |
+
+`Locked` is an alias for `LockedContour` (1). `motifRepeatScope` is read only inside the `Free` branch — every other policy ignores it.
 
 ### 17.4 Blueprint Override Rules
 
 When a Blueprint is selected (not Traditional/ID 0), several settings are automatically overridden:
 
-```mermaid
-flowchart TD
-    BP[blueprintId ≠ 0] --> SF{Has section_flow?}
-    SF -->|Yes| FO["formId overridden"]
-    SF -->|No| FK["formId kept"]
-
-    BP --> RP{riffPolicy}
-    RP -->|Free| MRS["motifRepeatScope used"]
-    RP -->|Locked/Evolving| MRI["motifRepeatScope ignored"]
-
-    BP --> DR{requiresDrums?}
-    DR -->|Yes| DE["drumsEnabled forced true"]
-    DR -->|No| DK["drumsEnabled kept"]
-```
+<DocFigure name="options-blueprint-overrides" />
 
 | Blueprint Setting | Override Target | Condition |
 |-------------------|-----------------|-----------|
 | `section_flow` | `formId` | When section_flow exists and `formExplicit=false`; `formExplicit=true` takes priority |
-| `riff_policy` | `motifRepeatScope` | Free=use setting, Locked/Evolving=ignore |
+| `riff_policy` | `motifRepeatScope` | Free=use setting; every other policy ignores it |
 | `drums_sync_vocal` | Internal sync | Blueprint definition takes priority |
 | `drums_required` | `drumsEnabled` | When true, forces `drumsEnabled=true` (unless `drumsEnabledExplicit=true` + `drumsEnabled=false`) |
-| `TrackMask::Motif` | Motif generation | Per-section control |
+| `TrackMask::Motif` | Motif generation | Per-section control for MelodyLead; BGM styles enable Motif generation, then masks/layering shape populated notes |
 
 ### 17.5 Motif Generation Flow
 
 ```
-CompositionStyle == BackgroundMotif? → Yes: Motif generated
-└─ No → MelodyLead?
-        ├─ RhythmSync paradigm? → Yes: Motif generated (rhythm axis)
-        └─ section_flow exists & TrackMask::Motif? → Yes: Motif generated
-           └─ No: No motif
+CompositionStyle is BackgroundMotif or SynthDriven?  → Motif generator enabled
+└─ MelodyLead: generator enabled when any of these holds
+   ├─ paradigm is RhythmSync                        (motif is the coordinate axis)
+   ├─ addictiveMode / blueprintId 9                 (the loop *is* the riff)
+   ├─ riffPolicy is LockedContour / LockedPitch / LockedAll
+   │                                                (a locked riff is still a riff)
+   └─ a Blueprint section_flow marks TrackMask::Motif on any section
+   otherwise: no motif
 ```
+
+Eligibility only enables the generator. Blueprint track masks and layer schedules can leave individual sections without Motif notes.
 
 ::: warning Drums Required
 Blueprints with `requiresDrums=true` (ID: 1, 5, 7) automatically enable drums. Set `drumsEnabledExplicit: true` along with `drumsEnabled: false` to explicitly override this behavior.

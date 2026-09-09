@@ -28,8 +28,8 @@ The naming split is worth flagging once: the Japanese pop tradition labels secti
 
 Between verse and chorus most pop songs insert a ramp — a section whose only purpose is to raise tension so the chorus lands harder. The melody climbs, the harmony leans on the dominant, and the section deliberately refuses to resolve. The unresolved ending is a feature: it hands the release to the chorus that follows.
 
-::: info B-melo (pre-chorus / bridge)
-The **pre-chorus** — Japanese **B-melo** (Bメロ) — is the transitional section between verse and chorus that builds tension toward the hook. It often ends on the dominant (V) without resolving. In some forms the same slot hosts a contrasting **bridge** later in the song; the engine treats both as the `B` role.
+::: info B-melo (pre-chorus)
+The **pre-chorus** — Japanese **B-melo** (Bメロ) — is the transitional section between verse and chorus that builds tension toward the hook. It often ends on the dominant (V) without resolving. A **bridge** is a different section: a contrasting block that usually appears once, late in the song, after the second chorus. MidiSketch keeps them apart as two section types, `B` and `Bridge`; forms such as FullWithBridge and ExtendedFull use both, and the `AfterBridge` modulation timing below depends on the distinction.
 :::
 
 <ScoreExample example="bMeloBuild" locale="en" />
@@ -94,7 +94,7 @@ One structural device earns its own section because it is almost a cliché of th
 
 <ScoreExample example="modulationLift" locale="en" />
 
-MidiSketch controls this with two fields. `modulationTiming` chooses *when* the key change happens: `LastChorus` (the classic final-chorus lift), `AfterBridge`, `EachChorus` (rare and aggressive), `Random`, or `None`. `modulationSemitones` chooses *how far*: `+1` to `+4`, with `+2` (a whole step) the most common pop choice. A `+1` lift is subtle; `+3`–`+4` is dramatic but pushes the chorus higher into the vocal range, so pick the amount with `vocalHigh` in mind.
+MidiSketch controls this with two fields. `modulationTiming` chooses *when* the key change happens: `LastChorus` (the classic final-chorus lift), `AfterBridge`, `EachChorus`, `Random`, or `None`. A song currently carries a single modulation point, so `EachChorus` resolves to the same final-chorus lift as `LastChorus`, and the engine reports that fallback as a warning. `modulationSemitones` chooses *how far*: `+1` to `+4`, with `+2` (a whole step) the most common pop choice. A `+1` lift is subtle; `+3`–`+4` is dramatic but pushes the chorus higher into the vocal range, so pick the amount with `vocalHigh` in mind.
 
 ## MidiSketch mapping
 
@@ -105,7 +105,7 @@ MidiSketch controls this with two fields. `modulationTiming` chooses *when* the 
 | Build a form to a target length | `targetDurationSeconds` | seconds; `0` = use `formId`'s structure |
 | Final-chorus key change | `modulationTiming` | `None` / `LastChorus` / `AfterBridge` / `EachChorus` / `Random` |
 | Key-change amount | `modulationSemitones` | `+1`–`+4` semitones (`+2` most common) |
-| Section roles | (internal) | Intro / Verse (A) / Bridge (B) / Chorus / Interlude / Outro |
+| Section roles | (internal) | Intro / Verse (A) / Pre-chorus (B) / Chorus / Bridge / Interlude / Outro |
 
 When `targetDurationSeconds` is `0`, the engine uses the structure from `formId`; set a positive value to auto-build a structure of roughly that length instead.
 

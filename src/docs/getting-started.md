@@ -48,8 +48,8 @@ MIDI Sketch generates multi-track MIDI files with:
 | **Vocal** | 0 | Main melody line (piano roll-safe) |
 | **Chord** | 1 | Harmonic backing with voice leading |
 | **Bass** | 2 | Bass line with approach notes |
-| **Motif** | 3 | Background patterns (BackgroundMotif style) |
-| **Arpeggio** | 4 | Synth arpeggios (SynthDriven style) |
+| **Motif** | 3 | Background pattern track (enabled by BackgroundMotif and SynthDriven) |
+| **Arpeggio** | 4 | Synth arpeggios (when `arpeggioEnabled: true`) |
 | **Aux** | 5 | Sub-melody support (pulse loops, groove accents) |
 | **Guitar** | 6 | Accompaniment guitar (enabled by default) |
 | **Drums** | 9 | Rhythm patterns with fills (GM drums) |
@@ -57,10 +57,12 @@ MIDI Sketch generates multi-track MIDI files with:
 
 ::: info Track Availability
 Not all tracks are generated for every style:
-- **Motif** track: Only in `BackgroundMotif` composition style
+- **Motif** track: Enabled in `BackgroundMotif` and `SynthDriven`; in `MelodyLead`, enabled only when the resolved paradigm, riff policy, addictive mode, or Blueprint section flow requests it. Section masks and layer schedules determine where notes remain
 - **Arpeggio** track: Only when `arpeggioEnabled: true` (must be explicitly enabled, even in `SynthDriven` style)
 - **Guitar** track: Enabled by default (`guitarEnabled: true`); set `guitarEnabled: false` to disable
-- **Vocal/Aux**: Can be skipped with `skipVocal: true` for BGM-only generation
+- **Vocal**: Skipped with `skipVocal: true`; `skipVocal` does not skip **Aux**. `SynthDriven` disables both Vocal and Aux
+
+For the complete eligibility rules, see [Motif Generation Flow](/docs/option-relationships#_17-5-motif-generation-flow).
 :::
 
 ## Next Steps

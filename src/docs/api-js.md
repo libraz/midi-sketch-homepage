@@ -2,12 +2,15 @@
 
 ## Module Functions
 
-### `init()`
+### `init(options?)`
 
-Initialize the WASM module. Must be called before using other functions.
+Initialize the WASM module. Must be called before using other functions. Pass `wasmPath` when the WASM file is served from a custom URL.
 
 ```javascript
 await midisketch.init()
+
+// Optional custom WASM URL
+await midisketch.init({ wasmPath: '/assets/midisketch.wasm' })
 ```
 
 ::: warning Required First Call
@@ -73,7 +76,8 @@ Returns all available production blueprints.
 
 ```javascript
 const blueprints = midisketch.getBlueprints()
-// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42 }, ...]
+// [{ id: 0, name: 'Traditional', paradigm: 0, riffPolicy: 0, weight: 42,
+//    tempoMin: 96, tempoMax: 150 }, ...]
 ```
 
 ### `getBlueprintCount()`
@@ -130,6 +134,15 @@ const required = midisketch.getBlueprintDrumsRequired(1)
 // true
 ```
 
+### `getBlueprintTempoRange(id)`
+
+Returns the recommended BPM range for a blueprint.
+
+```javascript
+const range = midisketch.getBlueprintTempoRange(1)
+// { min: 160, max: 175 }
+```
+
 ### `getFormsByStyle(styleId)`
 
 Returns form/structure IDs compatible with the given style.
@@ -145,7 +158,7 @@ Creates a default SongConfig for the given style preset.
 
 ```javascript
 const config = midisketch.createDefaultConfig(0)
-// { stylePresetId: 0, key: 0, bpm: 120, ... }
+// { stylePresetId: 0, key: 0, bpm: 0, chordProgressionId: 255, ... }
 ```
 
 ### `validateConfig(config)`
@@ -166,6 +179,26 @@ Returns a human-readable message for a `ConfigError` code.
 ```javascript
 const message = midisketch.getConfigErrorMessage(6)
 // e.g. "Invalid BPM"
+```
+
+### `isCallOrientedVocalStyle(style)`
+
+Returns whether the core marks a vocal style as call-oriented. The result is read from the core at runtime.
+
+```javascript
+const usesCalls = midisketch.isCallOrientedVocalStyle(4)
+```
+
+### Configuration serialization helpers
+
+The helpers convert between the public camelCase objects and the snake_case JSON shape used by the core. `deserializeConfig()` fills omitted fields with the documented defaults. `callEnabled` is retained as a legacy view of `callSetting`.
+
+```javascript
+const config = midisketch.createDefaultConfig(0)
+const json = midisketch.serializeConfig(config)
+const restored = midisketch.deserializeConfig(json)
+const vocalJson = midisketch.serializeVocalConfig({ vocalLow: 60 })
+const accompanimentJson = midisketch.serializeAccompanimentConfig({ arpeggioGate: 80 })
 ```
 
 ### `downloadMidi(midiData, filename)`
@@ -193,19 +226,19 @@ sketch.generateFromConfig({
   // Basic settings
   stylePresetId: 0,           // Style preset ID (0-16)
   key: 0,                     // Key (0-11: C to B)
-  bpm: 120,                   // Tempo (0=use style default)
+  bpm: 0,                     // Tempo (0=use style default)
   seed: 12345,                // Random seed (0=random)
-  chordProgressionId: 0,      // Chord progression ID (0-21)
+  chordProgressionId: 255,    // Chord progression ID (255=style default)
   formId: 0,                  // Form/structure ID (0-17)
   vocalAttitude: 0,           // 0=Clean, 1=Expressive, 2=Raw
   drumsEnabled: true,         // Enable drums track
 
   // Arpeggio settings
   arpeggioEnabled: false,     // Enable arpeggio track
-  arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
-  arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
+  arpeggioPattern: 255,       // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord, 255=Auto
+  arpeggioSpeed: 255,         // 0=Eighth, 1=Sixteenth, 2=Triplet, 255=Auto
   arpeggioOctaveRange: 2,     // 1-3 octaves
-  arpeggioGate: 0.8,          // Gate length (0.0-1.0)
+  arpeggioGate: -1,           // Gate length (0.0-1.0, -1=style default)
   arpeggioSyncChord: true,    // Sync arpeggio with chord changes
   arpeggioBaseVelocity: 90,   // Base velocity for arpeggio notes (0-127)
 
@@ -222,7 +255,7 @@ sketch.generateFromConfig({
   vocalGroove: 0,             // Groove feel (0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th)
 
   // Humanization
-  humanize: true,             // Enable humanization
+  humanize: false,            // Enable humanization
   humanizeTiming: 0.4,        // Timing variation (0.0-1.0)
   humanizeVelocity: 0.3,      // Velocity variation (0.0-1.0)
 
@@ -238,6 +271,7 @@ sketch.generateFromConfig({
 
   // Composition style
   compositionStyle: 0,        // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
+  compositionStyleExplicit: false, // Set true to force MelodyLead (0) over the style preset; 1/2 apply without it
 
   // Duration
   targetDurationSeconds: 0,   // Target duration (0=use formId)
@@ -259,7 +293,6 @@ sketch.generateFromConfig({
 
   // Motif settings
   motifRepeatScope: 0,        // 0=FullSong (same motif), 1=Section (per-section motif)
-  motifFixedProgression: true, // Use same chord progression for all sections
   motifMaxChordCount: 4,      // Max chord count (default 4)
 
   // Blueprint settings
@@ -286,6 +319,7 @@ sketch.generateFromConfig({
 
   // Mora rhythm
   moraRhythmMode: 2,          // Mora rhythm mode: 0=Standard, 1=MoraTimed, 2=Auto
+  syllabicSubRate: 0,          // Syllabic subdivision rate: 0=style default, 1-100=% override
 
   // Syncopation
   enableSyncopation: false,   // Enable syncopation effects for VocalGroove
@@ -306,9 +340,9 @@ sketch.generateFromConfig({
   melodyUseLeadingTone: 0,    // Leading tone insertion: 0=preset, 1=off, 2=on (tri-state)
 
   // Motif fine-grained control
-  motifLength: 0,             // Motif length: 0=auto, 1/2/4=beats
+  motifLength: 0,             // Motif length: 0=auto, 1/2/4 bars
   motifNoteCount: 0,          // Motif note count: 0=auto, 3-8
-  motifMotion: 0xFF,          // Motif motion: 0xFF=preset, 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
+  motifMotion: 0xFF,          // Motif motion: 0xFF=preset, 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 5=Ostinato
   motifRegisterHigh: 0,       // Motif register: 0=auto, 1=low, 2=high
   motifRhythmDensity: 0xFF,   // Motif rhythm density: 0xFF=preset, 0=Sparse, 1=Medium, 2=Driving
 })
@@ -321,6 +355,19 @@ Many parameters depend on parent options being enabled. For example, `arpeggioPa
 ::: warning callEnabled is Legacy
 `callSetting` (0=Auto, 1=Enabled, 2=Disabled) is the source of truth for the call feature. The boolean `callEnabled` is kept only for backward compatibility: when serializing, `callEnabled: true` maps to `callSetting: 1` and `false` to `callSetting: 2`; when reading a config back, `callEnabled` is derived from `callSetting` (and left `undefined` for Auto). Use `callSetting` in new code.
 :::
+
+`compositionStyleExplicit` defaults to `false`. `BackgroundMotif` (1) and `SynthDriven` (2) override the style mapping without this flag; set it to `true` when `MelodyLead` (0) must override a style preset. `syllabicSubRate` uses `0` for the style default and `1-100` for a percentage override. In `SongConfig`, humanization and chord-extension probabilities use normalized `0.0-1.0` values. `arpeggioPattern` and `arpeggioSpeed` use `255` for Auto, and `arpeggioGate` uses `-1` for the style default.
+
+`motifFixedProgression` is not part of the current `SongConfig` type or serializer. Motif motion accepts `0xFF` for the preset and `0-5` for `Stepwise`, `GentleLeap`, `WideLeap`, `NarrowStep`, `Disjunct`, or `Ostinato`.
+
+### `setMidiFormat(format)` and `getMidiFormat()`
+
+Select or read the MIDI output format. `MidiFormat.SMF1` is `1` and `MidiFormat.SMF2` is `2`; the WebAssembly build currently supports SMF1, so selecting SMF2 raises `MidiSketchGenerationError`.
+
+```javascript
+sketch.setMidiFormat(midisketch.MidiFormat.SMF1)
+const format = sketch.getMidiFormat()
+```
 
 ### `regenerateVocal(configOrSeed)`
 
@@ -340,7 +387,7 @@ sketch.regenerateVocal({
   vocalStyle: 0,               // Vocal style preset (0=Auto, 1-13=specific presets)
   melodyTemplate: 0,           // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,        // Melody complexity (0=Simple, 1=Standard, 2=Complex)
-  hookIntensity: 2,            // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong)
+  hookIntensity: 2,            // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum)
   vocalGroove: 0,              // Groove feel (0=Straight, 1=OffBeat, 2=Swing, etc.)
   compositionStyle: 0,         // Composition style (0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven)
   keepMotif: false,            // RhythmSync only: keep the existing Motif as the rhythmic axis (false=regenerate both)
@@ -358,13 +405,40 @@ Returns the generated MIDI data as `Uint8Array`.
 const midiData = sketch.getMidi()
 ```
 
+### `getVocalPreviewMidi()`
+
+Returns a compact `Uint8Array` containing the generated vocal melody and chord-root bass for vocal practice. Generate a vocal or full song first.
+
+```javascript
+const preview = sketch.getVocalPreviewMidi()
+```
+
+### `getMelody()` and `setMelody(melody)`
+
+Save the current vocal melody as `MelodyData` and restore it later. `setMelody()` updates the vocal state; call `generateAccompaniment()` afterward when the accompaniment should follow the restored melody.
+
+```javascript
+const melody = sketch.getMelody()
+sketch.setMelody(melody)
+```
+
 ### `getEvents()`
 
 Returns the event data for visualization/playback.
 
 ```javascript
 const events = sketch.getEvents()
-// { sections: [...], tracks: [...], bpm: 120, duration_ticks: ... }
+// { bpm, division, duration_ticks, duration_seconds, vocal_style,
+//   metadata, tracks, sections, chords, tempo_map }
+```
+
+### `getDissonanceReport()`
+
+Analyzes the generated song for harmonic dissonance and returns a `DissonanceReport`.
+
+```javascript
+const report = sketch.getDissonanceReport()
+console.log(report.summary.total_issues)
 ```
 
 ### `generateVocal(config)`
@@ -372,23 +446,18 @@ const events = sketch.getEvents()
 Generate only the vocal track without accompaniment. Use for trial-and-error workflow: generate vocal, preview, regenerate if needed. Call `generateAccompaniment()` when satisfied with the vocal.
 
 ```javascript
-sketch.generateVocal({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 0,
-  chordProgressionId: 0,
-  formId: 0,
+const vocalConfig = {
+  ...midisketch.createDefaultConfig(0),
   vocalLow: 60,
   vocalHigh: 79,
   vocalAttitude: 1,
-  // ... other SongConfig options
-})
+}
+sketch.generateVocal(vocalConfig)
 ```
 
 ### `generateAccompaniment(config?)`
 
-Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE (adapting to vocal).
+Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()`, `generateWithVocal()`, or `setVocalNotes()`. Generates: Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE (adapting to vocal).
 
 ```javascript
 // Simple: use default settings
@@ -403,19 +472,19 @@ sketch.generateAccompaniment({
   arpeggioPattern: 0,         // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed: 1,           // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange: 2,
-  arpeggioGate: 80,           // 0-100
+  arpeggioGate: 80,           // 0-100 (255=style default)
   arpeggioSyncChord: true,
   chordExtSus: false,
   chordExt7th: false,
   chordExt9th: false,
   chordExtTritoneSub: false,  // Tritone substitution (V7 -> bII7)
-  chordExtSusProb: 20,        // 0-100
-  chordExt7thProb: 30,        // 0-100
-  chordExt9thProb: 25,        // 0-100
-  chordExtTritoneSubProb: 50, // 0-100
+  chordExtSusProb: 0.2,       // 0.0-1.0
+  chordExt7thProb: 0.15,      // 0.0-1.0
+  chordExt9thProb: 0.25,      // 0.0-1.0
+  chordExtTritoneSubProb: 0.5, // 0.0-1.0
   humanize: false,
-  humanizeTiming: 50,         // 0-100
-  humanizeVelocity: 50,       // 0-100
+  humanizeTiming: 0.4,        // 0.0-1.0
+  humanizeVelocity: 0.3,      // 0.0-1.0
   seEnabled: true,
   callEnabled: false,
   callDensity: 2,             // 0=None, 1=Minimal, 2=Standard, 3=Intense
@@ -447,13 +516,8 @@ sketch.regenerateAccompaniment({
 Generate all tracks with vocal-first priority. Generation order: Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE. Accompaniment adapts to vocal melody.
 
 ```javascript
-sketch.generateWithVocal({
-  stylePresetId: 0,
-  key: 0,
-  bpm: 120,
-  seed: 0,
-  // ... other SongConfig options
-})
+const config = midisketch.createDefaultConfig(0)
+sketch.generateWithVocal(config)
 ```
 
 ### `setVocalNotes(config, notes)`
@@ -461,6 +525,8 @@ sketch.generateWithVocal({
 Set custom vocal notes for accompaniment generation. Initializes the song structure and chord progression from config, then replaces the vocal track with the provided notes. Call `generateAccompaniment()` after this.
 
 ```javascript
+const config = midisketch.createDefaultConfig(0)
+
 // Set custom vocal notes
 sketch.setVocalNotes(config, [
   { startTick: 0, duration: 480, pitch: 60, velocity: 100 },
@@ -494,6 +560,7 @@ console.log('Recommended:', info.recommended)
 ### `getPianoRollSafety(startTick, endTick, step)`
 
 Get piano roll safety info for a range of ticks. Useful for visualizing safe notes over time in a piano roll editor.
+`step` must be a positive integer, `endTick` must be greater than or equal to `startTick`, and the request may contain at most `MAX_PIANO_ROLL_SAMPLES` (`100000`) samples. The method throws `RangeError` when any of these conditions fails.
 
 ```javascript
 // Get safety info for first 4 bars, sampled at 16th note resolution
@@ -515,6 +582,15 @@ const reasonText = sketch.reasonToString(info.reason[60])
 // "ChordTone" or "LowRegister, Tritone"
 ```
 
+### `collisionToString(collision)`
+
+Convert one `CollisionInfo` entry to a human-readable string. Entries without a collision return an empty string.
+
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+const collisionText = sketch.collisionToString(info.collision[60])
+```
+
 ### `generateFromBuilder(builder)`
 
 Generate MIDI from a SongConfigBuilder instance. The builder provides a fluent API with cascade detection for parameter changes.
@@ -530,12 +606,24 @@ sketch.generateFromBuilder(builder)
 
 ### `getResolvedBlueprintId()`
 
-Returns the actually used blueprint ID after generation. When `blueprintId=255` (random), this returns the randomly selected blueprint.
+Returns the resolved blueprint ID after generation (`0-9`). When `blueprintId=255` (random), this returns the randomly selected blueprint.
 
 ```javascript
-sketch.generateFromConfig({ blueprintId: 255 })  // Random select
+const config = midisketch.createDefaultConfig(0)
+config.blueprintId = 255 // Random select
+sketch.generateFromConfig(config)
 const actualId = sketch.getResolvedBlueprintId()
 console.log(`Used blueprint: ${midisketch.getBlueprintName(actualId)}`)
+```
+
+### `getWarnings()`
+
+Returns non-fatal warnings from the latest generation operation.
+
+```javascript
+for (const warning of sketch.getWarnings()) {
+  console.warn(warning)
+}
 ```
 
 ### `destroy()`
@@ -595,7 +683,7 @@ const config = midisketch.createDefaultConfig(0)
 sketch.generateVocal(config)
 
 // Preview and iterate until satisfied...
-sketch.regenerateVocal({ seed: 12345, vocalAttitude: 2 })
+sketch.regenerateVocal({ seed: 12345, vocalAttitude: 1 })
 
 // Step 2: Generate accompaniment for the vocal
 sketch.generateAccompaniment()
@@ -655,7 +743,7 @@ sketch.generateFromConfig({
 ### Motif Fine-Grained Control
 
 ```javascript
-// 4-beat motif with 5 notes, gentle leap motion
+// 4-bar motif with 5 notes, gentle leap motion
 sketch.generateFromConfig({
   ...midisketch.createDefaultConfig(0),
   motifLength: 4,
@@ -725,20 +813,22 @@ All setter methods return `this` for chaining:
 |--------|------------|-------------|
 | `setSeed(seed)` | number | Set random seed (0=random) |
 | `setKey(key)` | number | Set key (0-11, 0=C) |
-| `setBpm(bpm)` | number | Set BPM (0=style default). Warns if outside 160-175 for RhythmSync blueprints |
+| `setChordProgression(id)` | number | Set chord progression ID |
+| `setForm(id)` | number | Set form ID and mark `formExplicit=true` |
+| `setVocalRange(low, high)` | number, number | Set and normalize the MIDI vocal range |
+| `setBpm(bpm)` | number | Set BPM (0=style default). Warns when outside the selected blueprint's declared range |
 | `setBlueprint(id)` | number | Set blueprint (0-9, 255=random). May cascade: drums, hookIntensity |
-| `setStylePreset(id)` | number | Set style preset. Resets mood, chord, form, BPM to style defaults |
+| `setStylePreset(id)` | number | Set style preset. Resets non-explicit chord, form, BPM, and vocal attitude fields |
 | `setVocalStyle(style)` | number | Set vocal style (0=Auto, 1-13). Idol styles auto-enable call |
 | `setVocalAttitude(attitude)` | number | Set vocal attitude (0=Clean, 1=Expressive, 2=Raw) |
-| `setVocalRange(low, high)` | number, number | Set vocal range (MIDI note bounds) |
 | `setCompositionStyle(style)` | number | Set composition style (0-2). May cascade: skipVocal, arpeggioEnabled |
 | `setModulation(timing, semitones?)` | number, number | Set modulation (timing 0-4, semitones 1-4) |
-| `setChordExtensions(opts)` | object | Set chord extensions ({sus, seventh, ninth, susProb, seventhProb, ninthProb}) |
-| `setArpeggio(enabled, opts?)` | boolean, object | Set arpeggio ({pattern, speed, octaveRange, gate, syncChord}) |
-| `setMotif(opts)` | object | Set motif ({repeatScope, fixedProgression, maxChordCount}) |
+| `setChordExtensions(opts)` | object | Set extensions and normalized probabilities (`sus`, `seventh`, `ninth`, `tritone`, `susProb`, `seventhProb`, `ninthProb`, `tritoneProb`; probabilities are 0.0-1.0) |
+| `setArpeggio(enabled, opts?)` | boolean, object | Set arpeggio (`pattern`, `speed`, `octaveRange`, `gate`, `syncChord`, `baseVelocity`); SongConfig `gate` is 0.0-1.0 or -1 |
+| `setMotif(opts)` | object | Set motif (`repeatScope`, `maxChordCount`, `length`, `noteCount`, `motion`, `registerHigh`, `rhythmDensity`) |
 | `setCall(opts)` | object | Set call/SE ({setting (0=Auto/1=Enabled/2=Disabled), enabled (legacy boolean), notesEnabled, density, introChant, mixPattern, seEnabled}) |
 | `setMelodicComplexity(complexity)` | number | Set melodic complexity (0-2) |
-| `setHookIntensity(intensity)` | number | Set hook intensity (0-3; 4=Maximum is normally set automatically by Behavioral Loop) |
+| `setHookIntensity(intensity)` | number | Set hook intensity (0-4) |
 | `setVocalGroove(groove)` | number | Set vocal groove feel (0-5) |
 | `setMelodyTemplate(template)` | number | Set melody template (0-7) |
 | `setArrangementGrowth(growth)` | number | Set arrangement growth (0-1) |
@@ -747,9 +837,14 @@ All setter methods return `this` for chaining:
 | `setDriveFeel(feel)` | number | Set drive feel (0=laid-back, 50=neutral, 100=aggressive) |
 | `setAddictiveMode(enabled)` | boolean | Enable Behavioral Loop mode |
 | `setMoraRhythmMode(mode)` | number | Set mora rhythm mode (0=Standard, 1=MoraTimed, 2=Auto) |
+| `setSyllabicSubdivisionRate(rate)` | number | Set syllabic subdivision rate (0=style default, 1-100=% override) |
+| `setSyncopation(enabled)` | boolean | Enable melodic syncopation |
+| `setEnergyCurve(curve)` | number | Set energy curve (0-3) |
+| `setMelodyOverrides(opts)` | object | Set optional melody overrides (`maxLeap`, `syncopationProb`, `phraseLength`, `longNoteRatio`, `chorusRegisterShift`, `hookRepetition`, `useLeadingTone`) |
+| `setGuitar(enabled)` | boolean | Enable or disable the guitar track |
 | `setMood(mood)` | number | Set mood preset override (0-23, sets moodExplicit=true) |
 | `setFormExplicit(explicit)` | boolean | Use formId exactly (no randomization) |
-| `setHumanize(enabled, timing?, velocity?)` | boolean, number, number | Set humanization |
+| `setHumanize(enabled, timing?, velocity?)` | boolean, number, number | Set humanization; timing and velocity are 0.0-1.0 and clamped |
 | `setDrums(enabled)` | boolean | Set drums enabled. Warns if disabling with drums-required blueprint |
 
 ### Query Methods
@@ -775,10 +870,10 @@ const derived = builder.getDerivedFields()
 
 ```javascript
 // Reset all settings to defaults
-builder.reset(styleId?)
+builder.reset()       // Or pass a style ID, for example builder.reset(1)
 
 // Reset to defaults but keep explicitly set values
-builder.resetKeepExplicit(styleId?)
+builder.resetKeepExplicit() // Or pass a style ID, for example builder.resetKeepExplicit(1)
 ```
 
 ### Cascade Detection
@@ -788,7 +883,7 @@ Certain parameter changes trigger cascading updates to related parameters:
 - **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum)
 - **Composition style change**: May auto-adjust `skipVocal`, `arpeggioEnabled` (SynthDriven enables arpeggio)
 - **Vocal style change**: Idol-style presets (4=Idol, 9=BrightKira, 11=CuteAffected) auto-enable call if not explicitly set
-- **BPM change**: Warns if BPM is outside 160-175 range for RhythmSync blueprints
+- **BPM change**: Warns if BPM is outside the selected blueprint's declared tempo range
 - **Drums change**: Warns if disabling drums for a blueprint that requires them
 
 ```javascript
@@ -824,6 +919,25 @@ interface ParameterChange {
 ```
 
 ## Constants
+
+### `MidiFormat`
+
+```javascript
+MidiFormat.SMF1 // 1 - Standard MIDI File format 1
+MidiFormat.SMF2 // 2 - MIDI 2.0 Container File (not currently supported by WASM)
+```
+
+`MidiFormatType` is the numeric union represented by this constant (`1 | 2`).
+
+### Attitude bit flags
+
+`allowedAttitudes` values returned by `getStylePresets()` use these bit flags:
+
+```javascript
+ATTITUDE_CLEAN      // 1
+ATTITUDE_EXPRESSIVE // 2
+ATTITUDE_RAW        // 4
+```
 
 ### `VocalAttitude`
 
@@ -909,18 +1023,18 @@ VocalStylePreset.PowerfulShout // 12 - Powerful shout (intense)
 VocalStylePreset.KPop          // 13 - K-Pop style
 ```
 
-### `MelodyTemplate`
+### Melody template values (`SongConfig.melodyTemplate`)
 
-```javascript
-MelodyTemplate.Auto         // 0 - Auto-select based on VocalStylePreset
-MelodyTemplate.PlateauTalk  // 1 - High same-pitch ratio (NewJeans, Billie Eilish)
-MelodyTemplate.RunUpTarget  // 2 - Ascending toward target (anime high-energy, dramatic pop)
-MelodyTemplate.DownResolve  // 3 - Descending resolution (B-section)
-MelodyTemplate.HookRepeat   // 4 - Short repeated hooks (TikTok, K-POP)
-MelodyTemplate.SparseAnchor // 5 - Sparse anchor notes (Ballad)
-MelodyTemplate.CallResponse // 6 - Duet-style call and response
-MelodyTemplate.JumpAccent   // 7 - Emotional peak jumps
-```
+| Value | Meaning |
+|-------|---------|
+| 0 | Auto-select from style and section |
+| 1 | PlateauTalk |
+| 2 | RunUpTarget |
+| 3 | DownResolve |
+| 4 | HookRepeat |
+| 5 | SparseAnchor |
+| 6 | CallResponse |
+| 7 | JumpAccent |
 
 ### `MelodicComplexity`
 
@@ -962,26 +1076,58 @@ ArpeggioPattern.Pinwheel    // 4 - Pinwheel pattern
 ArpeggioPattern.PedalRoot   // 5 - Pedal root pattern
 ArpeggioPattern.Alberti     // 6 - Alberti bass pattern
 ArpeggioPattern.BrokenChord // 7 - Broken chord pattern
+ArpeggioPattern.Auto         // 255 - Let the style choose (SongConfig default)
 ```
 
-### `EnergyCurve`
+### `ArpeggioSpeed`
 
 ```javascript
-EnergyCurve.GradualBuild // 0 - Gradually increasing energy
-EnergyCurve.FrontLoaded  // 1 - High energy from the start
-EnergyCurve.WavePattern  // 2 - Alternating energy levels
-EnergyCurve.SteadyState  // 3 - Consistent energy throughout
+ArpeggioSpeed.Eighth    // 0
+ArpeggioSpeed.Sixteenth // 1
+ArpeggioSpeed.Triplet   // 2
+ArpeggioSpeed.Auto      // 255 - Let the style choose (SongConfig default)
 ```
 
-### `MoraRhythmMode`
+`ARPEGGIO_GATE_AUTO` is `-1` and means that `SongConfig.arpeggioGate` uses the style default.
 
-```javascript
-MoraRhythmMode.Standard  // 0 - Standard rhythm timing
-MoraRhythmMode.MoraTimed // 1 - Mora-based timing (Japanese syllable rhythm)
-MoraRhythmMode.Auto      // 2 - Automatic selection (default)
-```
+### Motif motion values (`SongConfig.motifMotion`)
 
-### `DriveFeel`
+| Value | Meaning |
+|-------|---------|
+| `0xFF` | Use the preset |
+| 0 | Stepwise |
+| 1 | GentleLeap |
+| 2 | WideLeap |
+| 3 | NarrowStep |
+| 4 | Disjunct |
+| 5 | Ostinato |
+
+### Motif rhythm density values (`SongConfig.motifRhythmDensity`)
+
+| Value | Meaning |
+|-------|---------|
+| `0xFF` | Use the preset |
+| 0 | Sparse |
+| 1 | Medium |
+| 2 | Driving |
+
+### Energy curve values (`SongConfig.energyCurve`)
+
+| Value | Meaning |
+|-------|---------|
+| 0 | GradualBuild |
+| 1 | FrontLoaded |
+| 2 | WavePattern |
+| 3 | SteadyState |
+
+### Mora rhythm values (`SongConfig.moraRhythmMode`)
+
+| Value | Meaning |
+|-------|---------|
+| 0 | Standard |
+| 1 | MoraTimed |
+| 2 | Auto |
+### `driveFeel` values (`SongConfig.driveFeel`)
 
 Continuous value from 0 to 100 controlling the rhythmic intensity:
 
@@ -1006,7 +1152,7 @@ RiffPolicy.Free          // 0 - Each section varies independently
 RiffPolicy.LockedContour // 1 - Pitch contour fixed, expression variable
 RiffPolicy.LockedPitch   // 2 - Pitch completely fixed, velocity variable
 RiffPolicy.LockedAll     // 3 - Completely fixed (monotonous, not recommended)
-RiffPolicy.Evolving      // 4 - 30% chance of change every 2 sections
+RiffPolicy.Evolving      // 4 - Gradual evolution across sections
 RiffPolicy.Locked        // Alias for LockedContour (1)
 ```
 
@@ -1048,9 +1194,30 @@ ConfigError.InvalidProbability      // 29
 ConfigError.InvalidArpeggioRange    // 30
 ConfigError.InvalidMelodyOverride   // 31
 ConfigError.InvalidMotifOverride    // 32
+ConfigError.InvalidJson             // 33
+ConfigError.InvalidMood             // 34
+ConfigError.InvalidTargetDuration   // 35
+```
+
+`ConfigErrorCode` is the numeric union of the values in `ConfigError`.
+
+### Error classes
+
+`MidiSketchConfigError` extends `Error` and carries `code: ConfigErrorCode` plus `nativeMessage`. `MidiSketchGenerationError` extends `Error` and carries the numeric `code` returned by the core. Config-backed generation methods throw the config error when validation fails and the generation error for other failures.
+
+```javascript
+try {
+  sketch.generateFromConfig(config)
+} catch (error) {
+  if (error instanceof midisketch.MidiSketchConfigError) {
+    console.error(error.code, error.nativeMessage)
+  }
+}
 ```
 
 ### `NoteSafety`
+
+`MAX_PIANO_ROLL_SAMPLES` is `100000`, the maximum number of samples accepted by one `getPianoRollSafety()` call.
 
 ```javascript
 NoteSafety.Safe      // 0 - Green: chord tone, safe to use
@@ -1071,7 +1238,7 @@ NoteReason.ScaleTone    // 4 - Scale tone (not chord but in scale)
 // Warning reasons (yellow)
 NoteReason.LowRegister  // 8 - Low register (below C4), may sound muddy
 NoteReason.Tritone      // 16 - Tritone interval (unstable except on V7)
-NoteReason.LargeLeap    // 32 - Large leap (9+ semitones from prev note)
+NoteReason.LargeLeap    // 32 - Large leap (6+ semitones from prev note)
 // Dissonant reasons (red)
 NoteReason.Minor2nd     // 64 - Minor 2nd (1 semitone) collision
 NoteReason.Major7th     // 128 - Major 7th (11 semitones) collision
@@ -1084,6 +1251,102 @@ NoteReason.TooLow       // 4096 - Too low to sing
 ```
 
 ## Types
+
+### `SongConfig`
+
+The full configuration object used by `generateFromConfig()`, `generateVocal()`, `generateWithVocal()`, and `setVocalNotes()`:
+
+```typescript
+interface SongConfig {
+  stylePresetId: number
+  key: number
+  bpm: number
+  seed: number
+  chordProgressionId: number
+  formId: number
+  vocalAttitude: number
+  drumsEnabled: boolean
+  drumsEnabledExplicit: boolean
+  blueprintId: number
+  arpeggioEnabled: boolean
+  guitarEnabled: boolean
+  arpeggioPattern: number
+  arpeggioSpeed: number
+  arpeggioOctaveRange: number
+  arpeggioGate: number
+  vocalLow: number
+  vocalHigh: number
+  skipVocal: boolean
+  humanize: boolean
+  humanizeTiming: number
+  humanizeVelocity: number
+  chordExtSus: boolean
+  chordExt7th: boolean
+  chordExt9th: boolean
+  chordExtTritoneSub: boolean
+  chordExtSusProb: number
+  chordExt7thProb: number
+  chordExt9thProb: number
+  chordExtTritoneSubProb: number
+  compositionStyle: number
+  compositionStyleExplicit: boolean
+  targetDurationSeconds: number
+  modulationTiming: number
+  modulationSemitones: number
+  seEnabled: boolean
+  callSetting?: number
+  callEnabled?: boolean
+  callNotesEnabled: boolean
+  introChant: number
+  mixPattern: number
+  callDensity: number
+  vocalStyle: number
+  melodyTemplate: number
+  arrangementGrowth: number
+  arpeggioSyncChord: boolean
+  arpeggioBaseVelocity: number
+  motifRepeatScope: number
+  motifMaxChordCount: number
+  melodicComplexity: number
+  hookIntensity: number
+  vocalGroove: number
+  mood: number
+  moodExplicit: boolean
+  formExplicit: boolean
+  driveFeel: number
+  addictiveMode: boolean
+  moraRhythmMode: number
+  syllabicSubRate?: number
+  enableSyncopation: boolean
+  energyCurve: number
+  melodyMaxLeap: number
+  melodySyncopationProb: number
+  melodyPhraseLength: number
+  melodyLongNoteRatio: number
+  melodyChorusRegisterShift: number
+  melodyHookRepetition: number
+  melodyUseLeadingTone: number
+  motifLength: number
+  motifNoteCount: number
+  motifMotion: number
+  motifRegisterHigh: number
+  motifRhythmDensity: number
+  chordExtProbExplicit: boolean
+}
+```
+
+`createDefaultConfig(styleId)` supplies all required fields. Its defaults include `bpm: 0`, `chordProgressionId: 255`, `arpeggioPattern: 255`, `arpeggioSpeed: 255`, `arpeggioGate: -1`, `humanize: false`, `compositionStyleExplicit: false`, and `syllabicSubRate: 0`.
+
+### `MelodyData`
+
+The serializable value returned by `getMelody()` and accepted by `setMelody()`:
+
+```typescript
+interface MelodyData {
+  seed: number
+  notes: NoteInput[]
+}
+```
 
 ### `VocalConfig`
 
@@ -1098,7 +1361,7 @@ interface VocalConfig {
   vocalStyle?: number        // Vocal style preset (0=Auto)
   melodyTemplate?: number    // Melody template (0=Auto)
   melodicComplexity?: number // 0=Simple, 1=Standard, 2=Complex
-  hookIntensity?: number     // 0=Off, 1=Light, 2=Normal, 3=Strong
+  hookIntensity?: number     // 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum
   vocalGroove?: number       // 0=Straight, 1=OffBeat, etc.
   compositionStyle?: number  // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
   keepMotif?: boolean        // RhythmSync only: keep existing Motif as the rhythmic axis (default: false)
@@ -1121,21 +1384,21 @@ interface AccompanimentConfig {
   arpeggioPattern?: number    // 0=Up, 1=Down, 2=UpDown, 3=Random, 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
   arpeggioSpeed?: number      // 0=Eighth, 1=Sixteenth, 2=Triplet
   arpeggioOctaveRange?: number // 1-3
-  arpeggioGate?: number       // 0-100
+  arpeggioGate?: number       // 0-100, or 255 for the style default
   arpeggioSyncChord?: boolean
   // Chord Extensions
   chordExtSus?: boolean
   chordExt7th?: boolean
   chordExt9th?: boolean
-  chordExtSusProb?: number    // 0-100
-  chordExt7thProb?: number    // 0-100
-  chordExt9thProb?: number    // 0-100
+  chordExtSusProb?: number    // 0.0-1.0
+  chordExt7thProb?: number    // 0.0-1.0
+  chordExt9thProb?: number    // 0.0-1.0
   chordExtTritoneSub?: boolean   // Enable tritone substitution (V7 → bII7)
-  chordExtTritoneSubProb?: number // Tritone substitution probability (0-100)
+  chordExtTritoneSubProb?: number // Tritone substitution probability (0.0-1.0)
   // Humanization
   humanize?: boolean
-  humanizeTiming?: number     // 0-100
-  humanizeVelocity?: number   // 0-100
+  humanizeTiming?: number     // 0.0-1.0
+  humanizeVelocity?: number   // 0.0-1.0
   // SE/Call
   seEnabled?: boolean
   callEnabled?: boolean       // Plain boolean here (callSetting exists only on SongConfig)
@@ -1146,9 +1409,36 @@ interface AccompanimentConfig {
 }
 ```
 
-::: warning AccompanimentConfig Uses 0-100 Ranges
-Unlike `SongConfig` (which uses normalized `0.0-1.0` values), `AccompanimentConfig` keeps integer `0-100` ranges for `arpeggioGate` (default 80), `chordExtSusProb` (20), `chordExt7thProb` (30), `chordExt9thProb` (25), `chordExtTritoneSubProb` (50), `humanizeTiming` (50), and `humanizeVelocity` (50). Also note `guitarEnabled` defaults to `true` when omitted.
+::: warning arpeggioGate Is the One Field on a Different Scale
+`arpeggioGate` is an integer `0-100` here (default 80), with `255` also accepted as the style-default sentinel. `SongConfig` takes the same setting as a `0.0-1.0` float with `-1` for the style default. Every other percentage-like field matches `SongConfig`: the chord-extension probabilities (`chordExtSusProb` 0.2, `chordExt7thProb` 0.15, `chordExt9thProb` 0.25, `chordExtTritoneSubProb` 0.5) and the humanize amounts (`humanizeTiming` 0.4, `humanizeVelocity` 0.3`) are `0.0-1.0` floats, and a value outside that range makes generation fail with `Invalid parameter`. Also note `guitarEnabled` defaults to `true` when omitted.
 :::
+
+### `PresetInfo`
+
+Used by `getStructures()`, `getMoods()`, and `getChords()`:
+
+```typescript
+interface PresetInfo {
+  name: string
+  display?: string
+  defaultBpm?: number
+}
+```
+
+### `StylePresetInfo`
+
+Returned by `getStylePresets()`:
+
+```typescript
+interface StylePresetInfo {
+  id: number
+  name: string
+  displayName: string
+  description: string
+  tempoDefault: number
+  allowedAttitudes: number
+}
+```
 
 ### `NoteInput`
 
@@ -1205,6 +1495,8 @@ interface CollisionInfo {
 }
 ```
 
+`NoteSafetyLevel` is the union `0 | 1 | 2` represented by `NoteSafety.Safe`, `NoteSafety.Warning`, and `NoteSafety.Dissonant`. `NoteReasonFlags` is a numeric bitfield that can combine the `NoteReason` values.
+
 ### `ChordEvent`
 
 Chord event from generation timeline (includes secondary dominant info):
@@ -1218,6 +1510,39 @@ interface ChordEvent {
 }
 ```
 
+### `DissonanceReport`
+
+Returned by `getDissonanceReport()`:
+
+```typescript
+interface DissonanceReport {
+  summary: {
+    total_issues: number
+    simultaneous_clashes: number
+    non_chord_tones: number
+    sustained_over_chord_change: number
+    non_diatonic_notes: number
+    high_severity: number
+    medium_severity: number
+    low_severity: number
+    key: number
+    key_name: string
+    modulation_tick: number
+    modulation_amount: number
+    pre_modulation_issues: number
+    post_modulation_issues: number
+  }
+  issues: Array<{
+    type: string
+    severity: 'low' | 'medium' | 'high'
+    tick: number
+    bar: number
+    beat: number
+    [key: string]: unknown
+  }>
+}
+```
+
 ### `EventData`
 
 Event data from generation:
@@ -1228,6 +1553,13 @@ interface EventData {
   division: number
   duration_ticks: number
   duration_seconds: number
+  vocal_style: number
+  metadata: {
+    blueprint: number
+    style: number
+    mood: number
+    seed: number
+  }
   tracks: Array<{
     name: string
     channel: number
@@ -1239,6 +1571,11 @@ interface EventData {
       duration_ticks: number
       start_seconds: number
       duration_seconds: number
+    }>
+    textEvents?: Array<{
+      tick: number
+      time_seconds: number
+      text: string
     }>
   }>
   sections: Array<{
@@ -1252,6 +1589,11 @@ interface EventData {
     end_seconds: number
   }>
   chords?: ChordEvent[]    // Chord timeline with secondary dominant info
+  tempo_map: Array<{
+    tick: number
+    bpm: number
+    seconds: number
+  }>
 }
 ```
 
@@ -1263,8 +1605,12 @@ Information about a production blueprint:
 interface BlueprintInfo {
   id: number                // Blueprint ID (0-9)
   name: string              // Blueprint name
-  paradigm: number          // Generation paradigm (0-2)
-  riffPolicy: number        // Riff policy (0-4)
+  paradigm: GenerationParadigmType // Generation paradigm (0-2)
+  riffPolicy: RiffPolicyType        // Riff policy (0-4)
   weight: number            // Selection weight percentage
+  tempoMin: number          // Recommended minimum BPM
+  tempoMax: number          // Recommended maximum BPM
 }
 ```
+
+`GenerationParadigmType` is the value union of `GenerationParadigm`; `RiffPolicyType` is the value union of `RiffPolicy`.

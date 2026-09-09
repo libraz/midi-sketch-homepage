@@ -1,34 +1,36 @@
 # CLI Reference
 
-MIDI Sketch includes a command-line tool for generation, analysis, and debugging. This is useful for batch processing, CI/CD pipelines, and investigating MIDI quality issues.
+MIDI Sketch includes a command-line tool for generation, MIDI analysis, validation, and regeneration.
 
 ## Installation
 
-Build the CLI from source:
+Build the CLI from the `midi-sketch` source tree:
 
 ```bash
 cd midi-sketch
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make midisketch_cli
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target midisketch_cli
 ```
 
-The binary will be at `build/midisketch_cli`.
+The binary is `build/bin/midisketch_cli`.
 
 ## Basic Usage
 
 ```bash
-# Generate with defaults
-./midisketch_cli
+# Generate with defaults. Writes output.mid and output.json.
+./build/bin/midisketch_cli
 
-# Generate with specific style and mood
-./midisketch_cli --style 5 --mood 3 --bpm 128
+# Generate with a style, mood, and tempo.
+./build/bin/midisketch_cli --style 5 --mood 3 --bpm 128 -o song.mid
 
-# Generate and analyze for dissonance
-./midisketch_cli --style 5 --analyze
+# Generate and write a dissonance report.
+./build/bin/midisketch_cli --style 5 --analyze
 
-# Analyze existing MIDI file
-./midisketch_cli --input existing.mid --analyze
+# Analyze an existing SMF1 MIDI file.
+./build/bin/midisketch_cli --input existing.mid --analyze
+
+# Validate a MIDI file.
+./build/bin/midisketch_cli --validate existing.mid
 ```
 
 ## Command Reference
@@ -37,108 +39,200 @@ The binary will be at `build/midisketch_cli`.
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--seed N` | Random seed (0 = auto-random) | 0 |
-| `--style N` | Style preset ID (0-16) | 0 |
-| `--mood N` | Mood ID (0-23), overrides style mapping | - |
-| `--chord N` | Chord progression ID (0-21) | - |
-| `--bpm N` | BPM (40-240) | Style preset |
-| `--key N` | Key (0-11: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | 0 |
-| `--form N` | Form/structure pattern ID (0-17) | - |
-| `--duration N` | Target duration in seconds (0 = use pattern) | 0 |
-| `--blueprint N` | Production blueprint ID or name (0-9, 255=auto) | 0 |
-| `--guitar` / `--no-guitar` | Enable/disable guitar track | enabled |
-| `--drive-feel N` | Drive feel (0=laid-back, 50=neutral, 100=aggressive) | 50 |
-| `--energy-curve N` | Energy curve (0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState) | 0 |
-| `--enable-syncopation` / `--no-syncopation` | Enable/disable syncopation effects | disabled |
-| `--mora-rhythm-mode N` | Mora rhythm (0=Standard, 1=MoraTimed, 2=Auto) | 2 |
-| `--addictive-mode` | Enable Behavioral Loop mode | disabled |
+| `--seed N` | Random seed (`0` selects a random seed) | `0` |
+| `--style N` | Style preset ID (`0-16`) | `0` |
+| `--blueprint N\|NAME` | Production blueprint (`0-9`, `255` for random, or a name) | `0` |
+| `--mood N\|NAME` | Mood ID (`0-23`) or name; an explicit mood overrides the style mapping | Style mapping |
+| `--chord N\|NAME` | Chord progression (`0-21`) or name | Auto |
+| `--vocal-style N` | Vocal style (`0-13`; see the list below) | `0` (Auto) |
+| `--bpm N` | BPM (`0` or `40-240`) | Auto from style/mood |
+| `--duration N` | Target duration in seconds (`0` uses the selected form) | `0` |
+| `--form N\|NAME` | Form/structure pattern (`0-17`) or name | Style-compatible form |
+| `--key N` | Key (`0-11`: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | `0` (C) |
+| `--config FILE` | Generate from a `SongConfig` JSON file with snake_case field names | — |
+| `-o`, `--output FILE` | Set the primary output path | `output.mid` |
+| `--format FMT` | MIDI output format: `smf1` or `smf2` (MIDI 2.0 Container File) | `smf1` |
+| `--skip-vocal` | Skip vocal generation for a BGM-first workflow | Disabled |
+| `--vocal-attitude N` | Vocal attitude (`0-2`: Clean, Expressive, Raw) | `0` |
+| `--vocal-low N` | Lower vocal range bound in MIDI notes (`36-96`) | `60` |
+| `--vocal-high N` | Upper vocal range bound in MIDI notes (`36-96`) | `79` |
+
+`--duration` targets a song structure between 12 and 144 bars. The resolved tempo determines the duration that a form can produce; an impossible target is rejected or adjusted and reported.
+
+Controls such as mora rhythm mode and melody syncopation probability are available as the `mora_rhythm_mode` and `melody_syncopation_prob` fields in `SongConfig` JSON. Guitar is enabled by default; use `--no-guitar` to disable it.
 
 ### Vocal Parameters
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--skip-vocal` | Skip vocal in initial generation (BGM-first workflow) | - |
-| `--regenerate-vocal` | Regenerate vocal after initial generation | - |
-| `--vocal-seed N` | Seed for vocal regeneration | - |
-| `--vocal-attitude N` | Vocal attitude (0=Clean, 1=Expressive, 2=Raw) | 0 |
-| `--vocal-low N` | Vocal range lower bound (MIDI note) | 60 |
-| `--vocal-high N` | Vocal range upper bound (MIDI note) | 79 |
-| `--vocal-style N` | Vocal style preset | 0 (Auto) |
+Vocal-only regeneration is not a CLI operation. `--regenerate FILE` restores the complete configuration embedded in the input and rejects generation options. Use a new `SongConfig` with `--config`, or use the native API when a vocal-only regeneration workflow is required.
 
-Vocal style options (14 presets):
-- 0: Auto (selects based on style preset)
-- 1: Standard
-- 2: Vocaloid (fast, wide leaps)
-- 3: UltraVocaloid (extreme speed, 32nd notes)
-- 4: Idol (catchy, hook-heavy)
-- 5: Ballad (slow, sustained)
-- 6: Rock (powerful, register shift)
-- 7: CityPop (jazzy, syncopated)
-- 8: Anime (dynamic, expressive)
-- 9: BrightKira (high, sparkling)
-- 10: CoolSynth (electronic, precise)
-- 11: CuteAffected (playful)
-- 12: PowerfulShout (intense)
-- 13: KPop (tight rhythm, dance-oriented)
+Vocal style IDs are:
+
+| ID | Style |
+|----|-------|
+| 0 | Auto |
+| 1 | Standard |
+| 2 | Vocaloid |
+| 3 | UltraVocaloid |
+| 4 | Idol |
+| 5 | Ballad |
+| 6 | Rock |
+| 7 | CityPop |
+| 8 | Anime |
+| 9 | BrightKira |
+| 10 | CoolSynth |
+| 11 | CuteAffected |
+| 12 | PowerfulShout |
+| 13 | KPop |
 
 ### Melody Overrides
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--melody-max-leap N` | Max melody leap in semitones (0-12, 0=preset) | 0 |
-| `--melody-syncopation-prob N` | Syncopation probability (0-100, 255=preset) | 255 |
-| `--melody-phrase-length N` | Phrase length (0-8, 0=preset) | 0 |
-| `--melody-long-note-ratio N` | Long note ratio (0-100, 255=preset) | 255 |
-| `--melody-chorus-register-shift N` | Chorus register shift (-12 to 12, -128=preset) | -128 |
-| `--melody-hook-repetition N` | Hook repetition (0=preset, 1=off, 2=on) | 0 |
-| `--melody-use-leading-tone N` | Leading tone (0=preset, 1=off, 2=on) | 0 |
+| `--melody-max-leap N` | Maximum melody leap in semitones (`0` for preset, `1-12` to override) | Preset |
+| `--melody-phrase-length N` | Phrase length in bars (`0` for preset, `1-8` to override) | Preset |
+| `--melody-long-note-ratio N` | Long-note ratio (`0-100`); omit the flag to use the preset | Preset |
+| `--melody-chorus-register-shift N` | Chorus register shift (`-12` to `12`); omit the flag to use the preset | Preset |
+| `--melody-hook-repetition N` | Hook repetition (`0` preset, `1` off, `2` on) | Preset |
+| `--melody-use-leading-tone N` | Leading tone (`0` preset, `1` off, `2` on) | Preset |
+
+`melody_syncopation_prob` can be set in `SongConfig` JSON with `0-100` or `255` for the preset value. It is not a command-line option.
 
 ### Motif Overrides
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--motif-length N` | Motif length in beats (0=default, 1, 2, or 4) | 0 |
-| `--motif-note-count N` | Motif note count (0=default, 3-8) | 0 |
-| `--motif-motion N` | Motif motion (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 255=preset) | 255 |
-| `--motif-register-high N` | Motif register (0=default, 1=low, 2=high) | 0 |
-| `--motif-rhythm-density N` | Motif rhythm density (0=Sparse, 1=Medium, 2=Driving, 255=preset) | 255 |
+| `--motif-length N` | Motif length in bars (`0` auto, `1`, `2`, or `4`) | `0` (auto) |
+| `--motif-note-count N` | Motif note count (`0` auto, `3-8`) | `0` (auto) |
+| `--motif-motion N` | Motif motion (`255` preset, `0` Stepwise, `1` GentleLeap, `2` WideLeap, `3` NarrowStep, `4` Disjunct, `5` Ostinato) | Preset |
+| `--motif-register-high N` | Motif register (`0` auto, `1` low, `2` high) | `0` (auto) |
+| `--motif-rhythm-density N` | Motif rhythm density (`255` preset, `0` Sparse, `1` Medium, `2` Driving) | Preset |
+
+### Additional Generation Controls
+
+| Flag | Description |
+|------|-------------|
+| `--addictive` | Enable Behavioral Loop mode |
+| `--arpeggio` | Enable the arpeggio track |
+| `--modulation N` | Modulation timing (`0` None, `1` LastChorus, `2` AfterBridge, `3` EachChorus, `4` Random) |
+| `--composition N` | Composition style (`0` MelodyLead, `1` BackgroundMotif, `2` SynthDriven) |
+| `--enable-sus` | Enable sus2/sus4 chord substitutions |
+| `--enable-9th` | Enable 9th chord extensions |
+| `--syncopation` | Enable syncopation effects in melody rhythm |
+| `--drive N` | Drive feel (`0` laid-back, `50` neutral, `100` aggressive) |
+| `--no-drums` | Disable the drums track |
+| `--no-guitar` | Disable the guitar track |
+| `--vocal-groove N` | Vocal groove (`0` Straight, `1` OffBeat, `2` Swing, `3` Syncopated, `4` Driving16th, `5` Bouncy8th) |
+| `--melodic-complexity N` | Melodic complexity (`0` Simple, `1` Standard, `2` Complex) |
+| `--hook-intensity N` | Hook intensity (`0` Off, `1` Light, `2` Normal, `3` Strong, `4` Maximum) |
+| `--melody-template N` | Melody template (`0` Auto, `1-7`) |
+| `--arrangement N` | Arrangement growth (`0` LayerAdd, `1` RegisterAdd) |
+| `--motif-repeat-scope N` | Motif repeat scope (`0` FullSong, `1` PerSection) |
+| `--energy-curve N` | Energy curve (`0` GradualBuild, `1` FrontLoaded, `2` WavePattern, `3` SteadyState) |
+
+### Humanization
+
+| Flag | Description |
+|------|-------------|
+| `--humanize` | Enable timing and velocity humanization |
+| `--humanize-timing N` | Timing variation amount (`0-100`); also enables humanization |
+| `--humanize-velocity N` | Velocity variation amount (`0-100`); also enables humanization |
+
+### Arpeggio
+
+Use these options with `--arpeggio`. Setting a pattern or speed also enables the arpeggio track.
+
+| Flag | Description |
+|------|-------------|
+| `--arpeggio-pattern N` | Pattern (`0` Up, `1` Down, `2` UpDown, `3` Random, `4` Pinwheel, `5` PedalRoot, `6` Alberti, `7` BrokenChord) |
+| `--arpeggio-speed N` | Speed (`0` Eighth, `1` Sixteenth, `2` Triplet) |
+| `--arpeggio-octave N` | Octave range (`1-3`) |
+| `--arpeggio-gate N` | Gate amount (`0-100`) |
+
+### SE, Call, and MIX
+
+| Flag | Description |
+|------|-------------|
+| `--no-se` | Disable the SE track |
+| `--call N` | Call setting (`0` Auto, `1` Enabled, `2` Disabled) |
+| `--no-call-notes` | Disable call-note output |
+| `--intro-chant N` | Intro chant (`0` None, `1` Gachikoi, `2` Shouting) |
+| `--mix-pattern N` | MIX pattern (`0` None, `1` Standard, `2` Tiger) |
+| `--call-density N` | Call density (`0` None, `1` Minimal, `2` Standard, `3` Intense) |
+
+### Chord Extensions and Modulation
+
+| Flag | Description |
+|------|-------------|
+| `--enable-7th` | Enable 7th chord extensions |
+| `--enable-tritone-sub` | Enable tritone substitutions |
+| `--modulation-semitones N` | Modulation amount (`1-4` semitones) |
 
 ### File Operations
 
 | Flag | Description |
 |------|-------------|
-| `--input FILE` | Analyze existing MIDI file |
+| `--input FILE` | Analyze an existing MIDI file; implies `--analyze` |
 | `--validate FILE` | Validate MIDI file structure |
-| `--regenerate FILE` | Regenerate from embedded metadata |
-| `--new-seed N` | Use new seed when regenerating |
-| `--format FMT` | MIDI format: `smf1` or `smf2` (default) |
+| `--regenerate FILE` | Regenerate from embedded midi-sketch metadata |
+| `--new-seed N` | Use a new seed with `--regenerate` (`0` is valid) |
+| `--format FMT` | Select `smf1` or `smf2` (MIDI 2.0 Container File); regeneration keeps the input format when omitted |
+| `-o`, `--output FILE` | Set the generated or regenerated MIDI path |
+
+`--regenerate` accepts only `--new-seed`, `--format`, `--output`, `--analyze`, `--json`, `--bar`, and `--dump-collisions-at` in addition to the input path. Generation options are rejected. The command detects SMF1, SMF2 Clip, and the supported SMF2 container forms and restores the embedded configuration.
+
+The default output format is SMF1. `--input` dissonance analysis currently works for SMF1; SMF2 input is recognized and its metadata can be displayed, but dissonance analysis and note inspection are not implemented. `--validate` supports SMF1, SMF2 Clip, and the supported ktmidi container; `SMF2CON1` validation is not implemented.
 
 ### Analysis & Debugging
 
 | Flag | Description |
 |------|-------------|
-| `--analyze` | Analyze generated/input MIDI for dissonance |
-| `--json` | Output analysis as JSON to stdout |
-| `--bar N` | Inspect notes at bar N (1-indexed) |
+| `--analyze` | Analyze generated or input MIDI for dissonance |
+| `--json` | Write validation or analysis JSON to stdout |
+| `--bar N` | Inspect notes at bar `N` (1-indexed); note inspection is available for SMF1 |
+| `--dump-collisions-at N` | Dump notes and collision state at tick `N` |
+| `--help`, `-h` | Show the command reference printed by the binary |
+
+With `--analyze --json`, stdout contains only the analysis document. The generated MIDI and event sidecars are still written. With `--validate --json` or `--input --json`, stdout contains only the corresponding JSON report. `--json` without `--analyze` or `--validate` does not switch ordinary generation output to JSON.
+
+## SongConfig JSON
+
+`--config` reads a `SongConfig` JSON object. Field names use snake_case, and nested `arpeggio` and `chord_extension` objects use the same names as the native configuration type. This is the configuration path for controls that have no CLI flag.
+
+```json
+{
+  "style_preset_id": 3,
+  "seed": 12345,
+  "bpm": 120,
+  "guitar_enabled": false,
+  "enable_syncopation": true,
+  "mora_rhythm_mode": 1,
+  "melody_syncopation_prob": 60,
+  "arpeggio_enabled": true,
+  "arpeggio": {
+    "pattern": 0,
+    "speed": 1,
+    "octave_range": 2,
+    "gate": 0.8
+  }
+}
+```
+
+```bash
+./build/bin/midisketch_cli --config song-config.json -o configured.mid
+```
 
 ## Dissonance Analysis
 
-The `--analyze` flag performs music theory-based analysis to detect potential issues.
+The `--analyze` flag reports four issue types:
 
-### Issue Types
+| Type | Description | Typical severity |
+|------|-------------|------------------|
+| **SimultaneousClash** | Simultaneous notes form a dissonant interval, such as a minor 2nd or major 7th | High |
+| **NonChordTone** | A note is outside the current chord | Low-Medium |
+| **SustainedOverChordChange** | A note is held across a chord change | Medium |
+| **NonDiatonicNote** | A note is outside the key scale | High |
 
-| Type | Description | Severity |
-|------|-------------|----------|
-| **SimultaneousClash** | Two notes with dissonant interval (minor 2nd, major 7th) | High |
-| **NonChordTone** | Note not in current chord | Low-Medium |
-| **SustainedOverChordChange** | Note held over chord boundary | Medium |
-| **NonDiatonicNote** | Note outside the key's scale | High |
-
-### Severity Levels
-
-- **CRITICAL (High)**: Definitely wrong, requires fixing
-- **WARNING (Medium)**: Worth reviewing
-- **INFO (Low)**: Normal musical tension (passing tones, neighbor tones)
+The text report groups findings as `CRITICAL`, `WARNING`, and `INFO`. Critical findings include high-severity simultaneous clashes and non-diatonic notes. Passing tones and neighbor tones can appear as informational tension.
 
 ### Example Output
 
@@ -146,22 +240,13 @@ The `--analyze` flag performs music theory-based analysis to detect potential is
 === Dissonance Analysis ===
 
 Action Summary:
-  CRITICAL: 2 issues require fixing
-  WARNING:  5 issues worth reviewing
-  INFO:     12 normal musical tensions (no action needed)
+  INFO:     47 normal musical tensions (no action needed)
 
 Technical Breakdown:
-  Simultaneous clashes:      2
-  Non-chord tones:           8 (usually acceptable)
-  Sustained over chord:      3
-  Non-diatonic notes:        1
-
-=== CRITICAL Issues (require fixing) ===
-
-Bar 4, beat 2.0 (tick 7680):
-  Clash: minor 2nd between Vocal(E4) vs Chord(F4)
-  Chord: Dm7
-  Playing: Vocal(E4), Chord(D3,F4,A4,C5), Bass(D2)
+  Simultaneous clashes:      0
+  Non-chord tones:           47 (usually acceptable)
+  Sustained over chord:      0
+  Non-diatonic notes:        0
 ```
 
 ### JSON Output
@@ -169,36 +254,48 @@ Bar 4, beat 2.0 (tick 7680):
 Use `--json` for machine-readable output:
 
 ```bash
-./midisketch_cli --input song.mid --analyze --json > analysis.json
+./build/bin/midisketch_cli --input song.mid --json > analysis.json
 ```
 
-JSON structure:
+The report contains a `summary` object and an `issues` array. The summary includes issue counts, the key, and modulation information. An issue object includes `type`, `severity`, `tick`, `bar`, and `beat`; clash issues also include interval and note details. The following excerpt comes from a fixed-seed run; only the first issue is shown.
 
 ```json
 {
   "summary": {
-    "total_issues": 19,
-    "simultaneous_clashes": 2,
-    "non_chord_tones": 8,
-    "sustained_over_chord_change": 3,
-    "non_diatonic_notes": 1,
-    "high_severity": 2,
-    "medium_severity": 5,
-    "low_severity": 12
+    "total_issues": 47,
+    "simultaneous_clashes": 0,
+    "non_chord_tones": 47,
+    "sustained_over_chord_change": 0,
+    "non_diatonic_notes": 0,
+    "high_severity": 0,
+    "medium_severity": 2,
+    "low_severity": 45,
+    "key": 0,
+    "key_name": "C major",
+    "modulation_tick": 0,
+    "modulation_amount": 0,
+    "pre_modulation_issues": 47,
+    "post_modulation_issues": 0
   },
   "issues": [
     {
-      "type": "simultaneous_clash",
-      "severity": "high",
-      "tick": 7680,
+      "type": "non_chord_tone",
+      "severity": "low",
+      "tick": 6720,
       "bar": 4,
-      "beat": 2.0,
-      "interval_semitones": 1,
-      "interval_name": "minor 2nd",
-      "notes": [
-        { "track": "Vocal", "pitch": 64, "name": "E4" },
-        { "track": "Chord", "pitch": 65, "name": "F4" }
-      ]
+      "beat": 3.00,
+      "track": "motif",
+      "pitch": 62,
+      "pitch_name": "D4",
+      "chord_degree": 2,
+      "chord_name": "Em",
+      "chord_tones": ["E", "G", "B"],
+      "provenance": {
+        "generation_chord_degree": 2,
+        "generation_lookup_tick": 6720,
+        "generation_source": "motif",
+        "original_pitch": 60
+      }
     }
   ]
 }
@@ -206,170 +303,178 @@ JSON structure:
 
 ## Bar Inspection
 
-The `--bar N` flag shows all notes in a specific bar, grouped by track:
+The `--bar N` flag shows notes in a bar grouped by track. It is available for SMF1 input and SMF1 generation output.
 
 ```bash
-./midisketch_cli --input song.mid --bar 8
+./build/bin/midisketch_cli --input song.mid --bar 4
 ```
 
-Output format:
+Output format (excerpt from a fixed-seed SMF1 run; values depend on the input):
 
 ```
-=== Bar 8 (tick 13440-15360) ===
-
-Vocal:
-  beat 1.0: G4 (2 beats)
-  beat 3.0: E4 (1 beat)
+=== Bar 4 (tick 5760-7680) ===
 
 Chord:
-  beat 1.0: C4,E4,G4,B4 (4 beats)
+  beat 1.0: G3 (240 tick)
+  beat 1.0: B3 (240 tick)
+  beat 1.0: E4 (240 tick)
+  beat 1.5: G3 (240 tick)
+  beat 2.0: G3 (240 tick)
+  beat 2.5: G3 (240 tick)
+  beat 3.0: E3 (240 tick)
+  beat 3.0: G3 (240 tick)
+  beat 3.0: B3 (240 tick)
+  beat 3.5: G3 (240 tick)
+  beat 4.0: G3 (240 tick)
+  beat 4.5: G3 (240 tick)
 
-Bass:
-  beat 1.0: C2 (2 beats)
-  beat 3.0: G2 (2 beats)
+Motif:
+  beat 1.0: G4 (1 beat)
+  beat 3.0: D4 (1 beat)
+
+Aux:
+  beat 1.0: B4 (1 beat)
+  beat 3.0: B4 (1 beat)
 
 Drums:
-  beat 1.0: kick
-  beat 2.0: snare
-  beat 3.0: kick
-  beat 4.0: snare
+  beat 1.0: G#2 (240 tick)
+  beat 1.0: D#3 (240 tick)
+  beat 2.0: C#2 (240 tick)
+  beat 2.0: G#2 (240 tick)
+  beat 3.0: G#2 (240 tick)
+  beat 4.0: C#2 (240 tick)
+  beat 4.0: G#2 (240 tick)
 ```
 
-Notes sustained from previous bars show `(sustained)`:
+Notes that started in a previous bar are shown as `(sustained)` without a beat number:
 
 ```
 Vocal:
-  → A4 (sustained from bar 7)
+  → A4 (sustained)
   beat 2.5: G4 (1 beat)
 ```
 
 ## MIDI Regeneration
 
-Regenerate a song from its embedded metadata:
+Regenerate a song from its embedded `midi-sketch` metadata:
 
 ```bash
-# Regenerate with original seed
-./midisketch_cli --regenerate song.mid
+# Keep the embedded seed and write regenerated.mid.
+./build/bin/midisketch_cli --regenerate song.mid
 
-# Regenerate with new seed
-./midisketch_cli --regenerate song.mid --new-seed 54321
+# Use a new seed and an explicit output path.
+./build/bin/midisketch_cli --regenerate song.mid --new-seed 54321 -o variant.mid
 ```
 
-The CLI auto-detects MIDI format (SMF1, SMF2/ktmidi, SMF2/Clip) and extracts generation parameters embedded in the file.
+The CLI detects SMF1 and supported SMF2 forms, restores the embedded `SongConfig`, and writes the regenerated MIDI. Without `--format`, regeneration keeps the input's SMF1 or SMF2 family. Use `--format smf1` or `--format smf2` to choose the output explicitly.
 
 ### Blueprint Parameters
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--blueprint N` | Production blueprint by ID (0-9) or name | 0 |
+| ID | Blueprint |
+|----|-----------|
+| 0 | Traditional |
+| 1 | RhythmLock |
+| 2 | StoryPop |
+| 3 | Ballad |
+| 4 | IdolStandard |
+| 5 | IdolHyper |
+| 6 | IdolKawaii |
+| 7 | IdolCoolPop |
+| 8 | IdolEmo |
+| 9 | BehavioralLoop |
+| 255 | Random selection |
 
-Blueprint options (10 presets):
-- 0: Traditional (classic pop generation)
-- 1: RhythmLock (drums & bass sync with melody)
-- 2: StoryPop (melody-driven, gradual build)
-- 3: Ballad (quiet start, gradual build)
-- 4: IdolStandard (layers build, big last chorus)
-- 5: IdolHyper (chorus-first, high intensity)
-- 6: IdolKawaii (gentle dynamics, cute vibe)
-- 7: IdolCoolPop (four-on-floor with dance break)
-- 8: IdolEmo (quiet to explosive climax)
-- 9: BehavioralLoop (addictive loop mode, explicit selection only)
-- 255: Auto (weighted random selection)
+Specify a blueprint by name or ID:
 
-You can specify by name (case-insensitive):
 ```bash
-./midisketch_cli --blueprint rhythmlock
-./midisketch_cli --blueprint ballad
+./build/bin/midisketch_cli --blueprint rhythmlock
+./build/bin/midisketch_cli --blueprint ballad
 ```
 
 ## Workflow Examples
 
-### BGM-First Workflow
+### BGM-Only Generation
 
-Generate accompaniment first, then add vocal:
+Generate accompaniment first and skip the vocal track. Use the library API, including the JavaScript [`regenerateVocal`](./api-js#regeneratevocal-configorseed) method, to add or revise a vocal track later; CLI `--regenerate` recreates the embedded configuration and does not add a vocal.
 
 ```bash
-# Generate BGM only
-./midisketch_cli --style 5 --skip-vocal -o bgm.mid
+# Generate BGM only.
+./build/bin/midisketch_cli --style 5 --skip-vocal -o bgm.mid
 
-# Listen and decide on vocal style, then regenerate with vocal
-./midisketch_cli --regenerate bgm.mid --regenerate-vocal --vocal-attitude 2
+# Recreate the embedded configuration in a separate file.
+./build/bin/midisketch_cli --regenerate bgm.mid -o bgm-regenerated.mid
 ```
 
 ### Advanced Generation
 
-Use new features for fine-tuned control:
-
 ```bash
-# Generate with guitar, aggressive drive feel, and front-loaded energy
-./midisketch_cli --style 6 --guitar --drive-feel 80 --energy-curve 1
+# Guitar is enabled by default; set drive and energy explicitly.
+./build/bin/midisketch_cli --style 6 --drive 80 --energy-curve 1
 
-# K-Pop style with syncopation and behavioral loop
-./midisketch_cli --style 0 --vocal-style 13 --enable-syncopation --addictive-mode
+# K-Pop vocal style with syncopation and Behavioral Loop mode.
+./build/bin/midisketch_cli --style 0 --vocal-style 13 --syncopation --addictive
 
-# Custom melody overrides with motif control
-./midisketch_cli --style 3 --melody-max-leap 7 --melody-chorus-register-shift 4 \
+# Melody and motif overrides.
+./build/bin/midisketch_cli --style 3 --melody-max-leap 7 --melody-chorus-register-shift 4 \
   --motif-motion 2 --motif-rhythm-density 2
 
-# Disable guitar and set mora-timed rhythm
-./midisketch_cli --style 0 --no-guitar --mora-rhythm-mode 1
+# Disable guitar and drums, then humanize timing and velocity.
+./build/bin/midisketch_cli --style 0 --no-guitar --no-drums --humanize-timing 25 \
+  --humanize-velocity 20
 ```
 
 ### Quality Iteration
 
-Generate, analyze, and iterate until no critical issues:
-
 ```bash
-# Generate and analyze
-./midisketch_cli --seed 12345 --analyze
+# Generate and analyze.
+./build/bin/midisketch_cli --seed 12345 --analyze
 
-# If issues found, try different seed
-./midisketch_cli --seed 12346 --analyze
+# Try another seed if the report needs improvement.
+./build/bin/midisketch_cli --seed 12346 --analyze
 
-# Or adjust parameters
-./midisketch_cli --seed 12345 --vocal-attitude 0 --analyze
+# Adjust a supported generation parameter.
+./build/bin/midisketch_cli --seed 12345 --vocal-attitude 0 --analyze
 ```
 
 ### Batch Analysis
 
-Analyze multiple files:
-
 ```bash
 for f in *.mid; do
   echo "=== $f ==="
-  ./midisketch_cli --input "$f" --json | jq '.summary'
+  ./build/bin/midisketch_cli --input "$f" --json | jq '.summary'
 done
 ```
 
 ## Output Files
 
-Standard generation creates:
+Generation writes the MIDI file and an event JSON sidecar:
 
-| File | Description |
-|------|-------------|
-| `output.mid` | Generated MIDI (SMF Type 1 or 2) |
-| `output.json` | Generation events and metadata |
+| Invocation | Files |
+|------------|-------|
+| No `--output` | `output.mid`, `output.json` |
+| `--output song.mid` | `song.mid`, `song.mid.json` |
+| Generation with `--analyze` and no `--json` | Adds `analysis.json`, or `song.mid.analysis.json` with a custom output |
 
-With `--analyze`:
+Regeneration writes `regenerated.mid` by default and does not write an event sidecar. With `--analyze` and no `--json`, its report is `analysis.json`, or `<output>.analysis.json` with a custom output. With `--json --analyze`, the report is written to stdout instead of an analysis sidecar.
 
-| File | Description |
-|------|-------------|
-| `analysis.json` | Dissonance analysis report |
+For `--input`, `--output report.json` names the analysis report when `--json` is not used. `--validate` writes its text or JSON report to stdout.
 
 ## Interval Reference
 
-Intervals detected in clash analysis:
+The analyzer compares actual semitone distances in the context of the notes and chords it evaluates. Chord voicings, prepared suspensions, passing durations, and metric position can suppress or change a finding. Distances above 24 semitones are normally skipped; a low-register bass major seventh is a special case. The rows below describe the common interval labels; a label alone does not determine whether a finding is emitted.
 
-| Semitones | Name | Risk |
-|-----------|------|------|
-| 1 | minor 2nd | High (clash) |
-| 2 | major 2nd | Low |
-| 3 | minor 3rd | Safe |
-| 4 | major 3rd | Safe |
-| 5 | perfect 4th | Safe |
-| 6 | tritone | Medium |
-| 7 | perfect 5th | Safe |
-| 8 | minor 6th | Safe |
-| 9 | major 6th | Safe |
-| 10 | minor 7th | Low |
-| 11 | major 7th | High (clash) |
+| Semitones | Name | Typical treatment |
+|-----------|------|-------------------|
+| 1 | minor 2nd | High-risk clash candidate |
+| 2 | major 2nd | Context-dependent; a close interval can be high severity |
+| 3 | minor 3rd | Usually consonant |
+| 4 | major 3rd | Usually consonant |
+| 5 | perfect 4th | Context-dependent |
+| 6 | tritone | Context-dependent; close intervals are medium severity |
+| 7 | perfect 5th | Usually consonant |
+| 8 | minor 6th | Usually consonant |
+| 9 | major 6th | Usually consonant |
+| 10 | minor 7th | Often accepted as a color tone |
+| 11 | major 7th | Context-dependent; close intervals can be medium or high severity |
+
+Compound intervals are evaluated by their actual distance. For example, 13 semitones is a minor 9th, 18 or 30 semitones is a tritone, and 23 or 35 semitones is a major seventh; a compound major seventh can be lower severity than a close major seventh.

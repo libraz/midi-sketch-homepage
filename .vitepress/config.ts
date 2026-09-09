@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import { fileURLToPath, URL } from 'node:url'
 import { generateLlmsTxt, llmsDevPlugin, type LlmsLocale } from './llms'
+import wasmMeta from '../src/wasm/meta.json'
 
 const siteUrl = 'https://midisketch.libraz.net'
 const githubUrl = 'https://github.com/libraz/midi-sketch'
@@ -118,7 +118,7 @@ const softwareApplicationJsonLd = (lang: Locale) => ({
     : 'Generate reproducible pop music MIDI based on music theory. Unlike AI audio generators, MIDI Sketch outputs editable MIDI data you can import into any DAW and customize with your own sounds.',
   url: lang === 'ja' ? `${siteUrl}/ja/` : siteUrl,
   downloadUrl: githubUrl,
-  softwareVersion: '0.2.1',
+  softwareVersion: wasmMeta.version,
   author: {
     '@type': 'Person',
     name: 'libraz'
@@ -256,7 +256,7 @@ function alternateRoute(relativePath: string): string {
     : routeOf(`ja/${relativePath}`)
 }
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   srcDir: 'src',
 
   title: 'MIDI Sketch - Music Theory-Based Pop MIDI Generator',
@@ -424,14 +424,10 @@ export default withMermaid(defineConfig({
       }
     },
     optimizeDeps: {
-      exclude: ['midi-sketch'],
-      // mermaid pulls in fastdom, which ships as UMD. Without pre-bundling,
-      // the dev server serves it raw and the `default` import throws, taking
-      // the whole app down before it mounts.
-      include: ['fastdom', 'fastdom/extensions/fastdom-promised.js']
+      exclude: ['midi-sketch']
     },
     ssr: {
       noExternal: ['midi-sketch']
     }
   }
-}))
+})

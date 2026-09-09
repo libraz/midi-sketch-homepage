@@ -59,7 +59,7 @@ MIDI Sketch doesn't use machine learning or neural networks. It implements class
 - Weighted distance calculation (bass and soprano get 2x priority)
 - Common tone maximization between successive chords
 - Parallel 5ths/octaves detection with context-aware enforcement
-- Avoid note detection (minor 2nd with chord tones, tritone with root)
+- Avoid-note detection, measured from the chord root and gated by harmonic function: the perfect 4th over a major tonic, the minor 6th over a minor chord, and the minor 2nd and major 7th generally. The tritone is an avoid note over tonic and subdominant chords but is required over a dominant, where it is the chord's resolving core.
 :::
 
 ### Non-Chord Tone (NCT) Decoration
@@ -67,31 +67,34 @@ MIDI Sketch doesn't use machine learning or neural networks. It implements class
 Based on Kostka & Payne's *Tonal Harmony* framework:
 
 ::: info Strong Beats and Weak Beats
-In 4/4 time, **strong beats** (1 and 3) feel accented and stable, while **weak beats** (2 and 4) feel lighter. Melodies typically place chord tones on strong beats for harmonic clarity.
+In 4/4 time, beats 1 and 3 are **strong**, beats 2 and 4 are **medium**, offbeat eighth-note subdivisions are **weak**, and other sixteenth-note subdivisions are **very weak**. Melodies typically place chord tones on strong beats for harmonic clarity.
 :::
 
 ::: details NCT Types
 | Type | Placement | Description |
 |------|-----------|-------------|
-| Passing Tone | Weak beat | Stepwise connection between chord tones |
-| Neighbor Tone | Weak beat | Step away from chord tone and return |
+| Passing Tone | Non-strong beat | Stepwise connection between chord tones |
+| Neighbor Tone | Non-strong beat | Step away from chord tone and return |
 | Appoggiatura | Strong beat | Accented dissonance resolving by step |
 | Anticipation | Before beat | Early arrival of next chord tone |
+| Suspension | Chord change | A tone held over from the previous chord, resolving down by step |
 | Tension | Context-dependent | 9th, 11th, 13th extensions |
 :::
 
 ::: details Mood-Dependent Configuration
-- **Bright/Upbeat**: 75% chord tones, pentatonic focus
-- **CityPop**: 50% chord tones, jazz tensions enabled
-- **Ballad**: 65% chord tones, expressive appoggiaturas
-- **Dark/Dramatic**: Chromatic approach notes enabled
+- **Bright/Upbeat, Idol, Anthem**: 71% chord tones, pentatonic focus
+- **Energetic/Dance, Light Rock, Future Bass**: 77% chord tones, rhythm-led
+- **Chill, Synthwave**: 66% chord tones
+- **Dark/Dramatic, Nostalgic**: 57% chord tones, chromatic approach notes enabled
+- **Ballad, Sentimental, Emotional Pop**: 52% chord tones, expressive appoggiaturas, tensions enabled
+- **CityPop**: 48% chord tones, jazz tensions and chromatic approach enabled
 :::
 
 ### Harmony Context & Collision Avoidance
 
 ::: details Multi-Track Coordination
-- **Track collision detection**: Registers all notes from vocal, bass, chord, aux tracks
-- **Low register strictness**: 3-semitone threshold below C4 to prevent muddiness
+- **Track collision detection**: Registers all notes from Vocal, Chord, Bass, Motif, Aux, Guitar, and Arpeggio tracks
+- **Low-register guard**: When both pitches are below C4, short passing-tone tolerance is disabled to prevent muddiness; this is not a general 3-semitone threshold
 - **Safe pitch resolution**: Multi-strategy fallback (chord tones → consonant intervals → range search)
 :::
 
@@ -155,18 +158,18 @@ The Energy Curve system controls how energy progresses through the song, providi
 - Hook repetition, leading tone behavior
 
 **Motif Override** allows fine-grained control over motif generation parameters:
-- Motif length, note count, motion (0-4)
+- Motif length, note count, motion (0-5)
 - Register (high/mid), rhythm density
 :::
 
 ### Expanded Arpeggio Patterns
 
 ::: details 8 Arpeggio Patterns
-Beyond the basic Up, Down, UpDown, and Random patterns, MIDI Sketch now includes:
+Alongside the basic Up, Down, UpDown and Random patterns:
 - **Pinwheel**: Alternating direction pattern
 - **PedalRoot**: Returns to root between each note
 - **Alberti**: Classical broken chord pattern (low-high-mid-high)
-- **BrokenChord**: Irregular chord tone ordering
+- **BrokenChord**: Root-3rd-5th-octave up, then back down through the 5th and 3rd
 :::
 
 ### Performance Controls
@@ -175,6 +178,7 @@ Beyond the basic Up, Down, UpDown, and Random patterns, MIDI Sketch now includes
 - **DriveFeel**: Controls performance intensity from laid-back (0) to aggressive (100), affecting timing tightness and velocity emphasis
 - **Syncopation**: `enableSyncopation` toggle adds groove effects by shifting notes off the grid
 - **MoraRhythmMode**: Support for Japanese mora-timed rhythm, aligning note durations to syllable timing patterns
+- **SyllabicSubRate**: `0` keeps the style default; `1`-`100` overrides the syllabic subdivision ratio as a percentage
 :::
 
 ### Piano Roll Safety API
@@ -221,9 +225,11 @@ Same seed + same parameters = same output. Every time.
 
 ```bash
 # These will always produce identical MIDI files
-./midisketch_cli --seed 12345 --style jpop
-./midisketch_cli --seed 12345 --style jpop
+./midisketch_cli --seed 12345 --style 0
+./midisketch_cli --seed 12345 --style 0
 ```
+
+`--style` takes a style-preset ID (0-16).
 
 ::: tip Reproducibility Benefits
 - Reproducible results for iterative workflows
@@ -233,11 +239,11 @@ Same seed + same parameters = same output. Every time.
 
 ## Candidate Selection System
 
-For melody generation, MIDI Sketch doesn't just output the first result. It generates **20-100 candidates** per section and selects the best one through evaluation:
+For melody generation, MIDI Sketch doesn't just output the first result. It generates **20-100 candidates** per section and selects one through evaluation:
 
-1. **Culling**: Filter out melodies with issues (high register strain, monotony, scattered notes)
-2. **Scoring**: Rank survivors on singability, chord tone alignment, contour shape
-3. **Selection**: Choose the highest-scoring candidate
+1. **Scoring**: Score every candidate on style quality, penalty-based singability, and interval-distribution fit
+2. **Culling**: Discard the bottom half by score — high register strain, monotony and scattered notes push a candidate down
+3. **Selection**: Draw the winner from the surviving half, weighted by score, so strong candidates usually win without every repeat converging on the same melody
 
 ::: details Candidate Counts by Section
 | Section | Candidates |
@@ -279,27 +285,19 @@ Three composition paradigms:
 
 | Style | Vocal | Aux | Motif | Arpeggio | Use Case |
 |-------|:-----:|:---:|:-----:|:--------:|----------|
-| **MelodyLead (0)** | Yes | Yes | Blueprint-dependent | Optional | Songs with vocals |
-| **BackgroundMotif (1)** | No | Yes | Yes | Optional | BGM, lo-fi |
-| **SynthDriven (2)** | No | No | Blueprint-dependent | Optional (manual enable) | Electronic, EDM |
+| **MelodyLead (0)** | Yes | Yes | Paradigm/riff/Blueprint-dependent | Optional | Songs with vocals |
+| **BackgroundMotif (1)** | No | Yes | Enabled | Optional | BGM, lo-fi |
+| **SynthDriven (2)** | No | No | Enabled | Optional (manual enable) | Electronic, EDM |
 
 ::: warning BGM-Only Modes
-BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux; Arpeggio must be manually enabled with `arpeggioEnabled=true`.
+BackgroundMotif disables Vocal, keeps Aux enabled, and enables Motif generation. SynthDriven disables both Vocal and Aux and enables Motif generation. Section masks and layer schedules determine where Motif notes remain; Arpeggio must be manually enabled with `arpeggioEnabled=true`.
 :::
 
 ## Vocal-First Workflow
 
 For MelodyLead style, iterate on the melody before generating accompaniment:
 
-```mermaid
-flowchart LR
-    A[generateVocal] --> B[Preview]
-    B --> C{Satisfied?}
-    C -->|No| D[regenerateVocal]
-    D --> B
-    C -->|Yes| E[generateAccompaniment]
-    E --> F[Export MIDI]
-```
+<DocFigure name="vocal-first-iteration" />
 
 ::: tip Iterate Until Satisfied
 Use `generateVocal()` to create the initial melody, then call `regenerateVocal()` with a new seed or VocalConfig to try variations. Once satisfied, call `generateAccompaniment()` to add the backing tracks. Alternatively, use `generateWithVocal()` for vocal-priority one-shot generation.

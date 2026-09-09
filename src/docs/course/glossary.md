@@ -25,8 +25,9 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Minor | The dark scale colour | `mood`, `moodExplicit` |
 | Key / tonic | The home pitch class a song resolves to | `key` (`0`–`11`) |
 | Scale degree | A note's position within the scale (1st, 2nd, …) | — |
-| Interval | The distance in semitones between two pitches | — |
+| Interval | The distance between two pitches — named by scale steps (third, fifth) or counted in semitones | — |
 | Relative minor | The minor key sharing a major key's notes | `key`, `mood` |
+| Leading tone | The note a semitone below the tonic; the pull behind a `V`→`I` cadence | — |
 
 ## Chords
 
@@ -38,6 +39,7 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Chord quality | Major, minor, diminished, etc. — the chord's colour | — |
 | Chord symbol | Text name of a chord, e.g. `Am`, `G7` | — |
 | Roman numeral notation | Chords labelled by scale degree, e.g. `I`, `V`, `vi` | — |
+| Diatonic | Belonging to the seven notes (or seven chords) of the current key | — |
 | Inversion / voicing | Which chord tone is lowest and how the notes are spaced | (internal voice leading) |
 | Arpeggio | A chord played one note at a time | `arpeggioEnabled` |
 
@@ -53,6 +55,8 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Four-chord loop | A four-chord cycle repeated under a section | `chordProgressionId` |
 | Vamp | A short progression looped as a backdrop | `chordProgressionId` |
 | Borrowed chord (`♭VII`) | A chord pulled in from the parallel key, e.g. `I-♭VII-IV-I` | `chordProgressionId` (Rock presets) |
+| Plagal | A `IV`→`I`-style resolution, without the leading tone | `chordProgressionId` (Rock presets) |
+| Mixolydian | A major scale with a flattened 7th; the mode ♭VII comes from | — |
 
 ## Harmony
 
@@ -88,6 +92,7 @@ Every term this course introduces, in one place. Use it as a lookup table: each 
 | Verse (A-melo) | The calm opening sung section | `formId` |
 | Pre-chorus (B-melo) | The tension-building section before the chorus | `formId` |
 | Chorus (sabi) | The high-energy hook section | `formId`, `hookIntensity` |
+| Bridge | A contrasting section, usually once, late in the song | `formId` |
 | Interlude | An instrumental section between sung sections | `formId` |
 | Outro | The closing section | `formId` |
 | Song form | The ordered sequence of sections | `formId` (`0`–`17`), `formExplicit`, `targetDurationSeconds` |

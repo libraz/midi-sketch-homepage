@@ -43,12 +43,12 @@ The whole emotional palette of pop turns on moving one or two inner notes by a s
 Apply the triad recipe to *every* degree of a scale and the key hands you a ready-made set of seven chords that all belong together.
 
 ::: info Roman numeral (degree) notation
-**Roman numeral notation** names a chord by the scale degree of its root: `I` is the triad on degree `1`, `V` on degree `5`. Uppercase means a major-quality chord, lowercase minor, and `°` diminished. Like scale degrees, it is key-independent — `I` in C is the C chord, `I` in G is the G chord.
+**Roman numeral notation** names a chord by the scale degree of its root: `I` is the triad on degree `1`, `V` on degree `5`. Uppercase means a major-quality chord, lowercase minor, and `°` diminished. Like scale degrees, it is key-independent — `I` in C is the C chord, `I` in G is the G chord. Throughout this course, and in MidiSketch's preset list, the numerals are always counted from the *major* scale of the `key` field, so a minor-sounding progression is written from its relative major: `vi-IV-I-V`, not `i-VI-III-VII`.
 :::
 
 <ScoreExample example="diatonicTriads" locale="en" />
 
-These seven — `I ii iii IV V vi vii°` — are the **diatonic** chords of the key, the entire vocabulary most pop draws on. A chord progression is just an ordered choice from this palette (for example `I–V–vi–IV`), and MidiSketch's `chordProgressionId` selects from 22 such patterns. Because the notation is degree-based, one progression transposes to any `key`.
+These seven — `I ii iii IV V vi vii°` — are the **diatonic** chords of the key, the entire vocabulary most pop draws on. A chord progression is usually an ordered choice from this palette (for example `I–V–vi–IV`), and MidiSketch's `chordProgressionId` selects from 22 preset patterns — eighteen of them purely diatonic, four of which also reach outside the key (see [Chapter 3](/docs/course/progressions)). Because the notation is degree-based, one progression transposes to any `key`.
 
 ## Inversion and voicing
 
@@ -82,8 +82,8 @@ A block chord is a parallel read of the set; an arpeggio is a serial one. MidiSk
 
 | Concept | Config field | Range / notes |
 | --- | --- | --- |
-| Diatonic chord palette → progression | `chordProgressionId` | `0`–`21`; picks an ordered sequence of degrees from the key's diatonic chords |
-| Chord-quality extensions (7th, 9th, sus, tritone sub) | `chordExtSus`, `chordExt7th`, `chordExt9th`, `chordExtTritoneSub` + probabilities | flags + `0.0`–`1.0` (defaults `0.2 / 0.15 / 0.25 / 0.5`) — see [Harmony](/docs/harmony) |
+| Chord palette → progression | `chordProgressionId` | `0`–`21`; picks an ordered sequence of degrees, mostly diatonic — four presets also use borrowed degrees |
+| Chord colour: extensions and substitution (7th, 9th, sus, tritone sub) | `chordExtSus`, `chordExt7th`, `chordExt9th`, `chordExtTritoneSub` + probabilities | flags + `0.0`–`1.0` (defaults `0.2 / 0.15 / 0.25 / 0.5`) — see [Harmony](/docs/harmony) |
 | Broken-chord texture | `arpeggioEnabled`, `arpeggioPattern` | bool; pattern `0`–`7` |
 
 For the engine-side details behind these fields, see [Harmony & Chord Progressions](/docs/harmony), the [Preset catalog](/docs/presets), and the [JavaScript API](/docs/api-js).

@@ -7,39 +7,17 @@
 ```
 midi-sketch/
 ├── src/
-│   ├── core/              # コアエンジン（約16000行、46ヘッダー）
-│   │   ├── generator.h/cpp        # 中央オーケストレーター
-│   │   ├── harmony_context.h      # トラック間衝突検出ファサード
-│   │   ├── chord_progression_tracker.h/cpp
-│   │   ├── track_collision_detector.h/cpp
-│   │   ├── safe_pitch_resolver.h/cpp
-│   │   ├── melody_evaluator.h/cpp # 候補スコアリングシステム
-│   │   ├── melody_templates.h/cpp # 7つのメロディテンプレート定義
-│   │   ├── melody_embellishment.h/cpp # NCT挿入システム
-│   │   ├── pitch_utils.h/cpp      # ピッチ操作
-│   │   ├── chord_utils.h/cpp      # コード操作
-│   │   ├── piano_roll_safety.h/cpp
-│   │   ├── modulation_calculator.h/cpp
-│   │   ├── preset_data.h/cpp      # スタイルプリセット
-│   │   └── ...                    # 型、ユーティリティ等
-│   ├── track/             # トラック生成器（約13000行、14ヘッダー）
-│   │   ├── melody_designer.h/cpp  # テンプレート駆動メロディ
-│   │   ├── vocal.h/cpp            # ボーカル調整
-│   │   ├── aux_track.h/cpp        # Aux副旋律
-│   │   ├── chord_track.h/cpp      # コードボイシング
-│   │   ├── bass.h/cpp             # ベースパターン
-│   │   ├── drums.h/cpp            # ドラムパターン
-│   │   ├── motif.h/cpp            # バックグラウンドモチーフ
-│   │   ├── guitar.h/cpp           # 伴奏ギター
-│   │   ├── arpeggio.h/cpp         # アルペジオパターン
-│   │   └── se.h/cpp               # セクションマーカー
-│   ├── midi/              # MIDI出力（8ヘッダー）
-│   ├── analysis/          # 不協和音分析
-│   ├── midisketch.h       # 公開C++ API
-│   └── midisketch_c.h     # C API（WASMインターフェース）
-├── tests/                 # Google Testスイート（127テストファイル）
-├── dist/                  # WASM配布物
-└── demo/                  # ブラウザデモ
+│   ├── core/          # Generator・Coordinator・ハーモニーコンテキスト・プリセット・ブループリント
+│   ├── track/         # トラック別の生成器（track/generators/）と、
+│   │                  #   melody・vocal・chord・drums の共有ヘルパー（各サブディレクトリ）
+│   ├── instrument/    # 楽器の物理モデル（フレット楽器、鍵盤、ドラム）
+│   ├── midi/          # MIDI 出力とチャンネル／プログラム割り当て
+│   ├── analysis/      # 不協和音分析
+│   ├── midisketch.h   # 公開 C++ API
+│   └── midisketch_c.h # C API（WASM インターフェース）
+├── tests/
+├── dist/
+└── demo/
 ```
 
 ## コアコンポーネント
@@ -49,7 +27,7 @@ midi-sketch/
 高レベルAPIを提供するメインエントリーポイント：
 
 ::: tip 2つの生成ワークフロー
-- **ボーカル先行**: `generateVocal()` → `regenerateVocal()`で反復 → `generateAccompaniment()`で完成
+- **ボーカル先行**: `generateVocal()` → `regenerateVocal()` で反復 → `generateAccompanimentForVocal()` で完成（JS/WASM ラッパーでは `generateAccompaniment()` という名前です）
 - **標準**: `generate()` または `generateFromConfig()` でワンショット生成
 
 設定は**SongConfigBuilder**を使って構築できます。カスケード変更検出付きの流暢なAPIで、上流の値が変更されると依存パラメータが自動的に再計算されます。
@@ -61,57 +39,50 @@ class MidiSketch {
   void generateFromConfig(const SongConfig& config);
   void generateWithVocal(const SongConfig& config);   // Vocal-priority full generation
   void generateVocal(const SongConfig& config);
+  void regenerateVocal(uint32_t new_seed = 0);
   void regenerateVocal(const VocalConfig& config);
-  void generateAccompaniment(const AccompanimentConfig& config);
-  void regenerateAccompaniment(uint32_t seed);
-  void setVocalNotes(const SongConfig& config, const NoteInput* notes, size_t count);
+  void generateAccompanimentForVocal();
+  void generateAccompanimentForVocal(const AccompanimentConfig& config);
+  void regenerateAccompaniment(uint32_t new_seed = 0);
+  void regenerateAccompaniment(const AccompanimentConfig& config);
+  void setVocalNotes(const SongConfig& config, const std::vector<NoteEvent>& notes);
 
   std::vector<uint8_t> getMidi() const;
   std::string getEventsJson() const;
-  std::string getChordTimeline() const;               // Chord progression timeline
   const Song& getSong() const;
 };
 ```
 
 ### Generator
 
-全トラック生成を統括する中央オーケストレーター（`src/core/generator.h`）：
+生成済みの`Song`を保持し、トラック処理を`Coordinator`へ委譲する状態付きAPI（`src/core/generator.h`）：
 
 ```cpp
 class Generator {
-  Song generate(const GeneratorParams& params);
-private:
-  void buildStructure();
-  void generateVocal();
-  void generateAux();
-  void generateMotif();
-  void generateBass();
-  void generateChord();
-  void generateGuitar();      // Accompaniment guitar generation
-  void generateArpeggio();
-  void generateDrums();
-  void generateSE();          // Section markers / sound effects
-  void applyTransitionDynamics();
-  void applyHumanization();
+ public:
+  void generate(const GeneratorParams& params);
+  void generateFromConfig(const SongConfig& config);
+  void generateVocal(const GeneratorParams& params);
+  void generateAccompanimentForVocal();
+  void regenerateVocal(uint32_t new_seed = 0);
+  void generateWithVocal(const GeneratorParams& params);
+  const Song& getSong() const;
 };
 ```
+
+`generate()`の戻り値は`void`で、結果は`getSong()`から読み取ります。`Coordinator::generateAllTracks()`がパラダイム別の順序を選び、登録済みの`ITrackBase`生成器（`GuitarGenerator`を含む）を呼び出します。構造構築と後処理は生成呼び出しの内部段階であり、`Generator`の公開メンバーではありません。
 
 ### Songコンテナ
 
 生成された全データを保持（9トラック）：
 
 ```cpp
-struct Song {
-  Arrangement arrangement;     // セクション配置
-  MidiTrack vocal;            // Channel 0 - Main melody
-  MidiTrack chord;            // Channel 1 - Harmony
-  MidiTrack bass;             // Channel 2 - Foundation
-  MidiTrack motif;            // Channel 3 - BackgroundMotif style
-  MidiTrack arpeggio;         // Channel 4 - SynthDriven style
-  MidiTrack aux;              // Channel 5 - Sub-melody
-  MidiTrack guitar;           // Channel 6 - Accompaniment guitar
-  MidiTrack drums;            // Channel 9 - Rhythm
-  MidiTrack se;               // Channel 15 (markers)
+// Song は 9 トラックを TrackRole で保持します（src/core/song.h）。チャンネル割り当ては src/midi/track_config.h：
+//   Vocal 0 | Chord 1 | Bass 2 | Motif 3 | Arpeggio 4
+//   Aux 5   | Guitar 6 | Drums 9 | SE 15
+class Song {
+  MidiTrack& track(TrackRole role);
+  const Arrangement& arrangement() const;
 };
 ```
 
@@ -123,32 +94,7 @@ struct Song {
 
 ### 標準生成（Traditionalパラダイム）
 
-```mermaid
-flowchart TD
-    subgraph Input
-        A[GeneratorParams] --> G
-        B[SongConfig] --> G
-    end
-
-    subgraph Generator
-        G[Generator] --> S0[buildStructure]
-        S0 --> S1[generateVocal]
-        S1 --> S2[generateAux]
-        S2 --> S3[generateMotif]
-        S3 --> S4[generateBass]
-        S4 --> S5[generateChord]
-        S5 --> S6[generateGuitar]
-        S6 --> S7[generateArpeggio]
-        S7 --> S8[generateDrums]
-        S8 --> S9[generateSE]
-        S9 --> S10[applyTransitionDynamics]
-        S10 --> S11[applyHumanization]
-    end
-
-    S11 --> Song
-    Song --> MW[MidiWriter]
-    MW --> MIDI["SMF Type 1 Binary"]
-```
+<DocFigure name="standard-generation" />
 
 ::: details パラダイム別の生成順序
 トラック生成順序はBlueprintのパラダイムによって異なります：
@@ -158,31 +104,13 @@ flowchart TD
 
 ### ボーカル先行生成
 
-```mermaid
-flowchart TD
-    subgraph Input
-        C[SongConfig] --> GV
-    end
+<DocFigure name="vocal-first-generation" />
 
-    subgraph VocalFirst ["Vocal-First Workflow"]
-        GV[generateVocal] --> V[Vocal Track]
-        V --> RV[regenerateVocal - iterate]
-        RV --> V
-        V --> GA[generateAccompaniment]
-        GA --> S1[generateAux]
-        S1 --> S2[generateMotif]
-        S2 --> S3[generateBass]
-        S3 --> S4[generateChord]
-        S4 --> S5[generateGuitar]
-        S5 --> S6[generateArpeggio]
-        S6 --> S7[generateDrums]
-        S7 --> S8[generateSE]
-    end
+### トラック横断のボイス制限
 
-    S8 --> Song
-    Song --> MW[MidiWriter]
-    MW --> MIDI["SMF Type 1 Binary"]
-```
+セクションは、`max_moving_voices`で小節から次の小節へ変化できるピッチトラック数を制限できます。上限を超えると、Coordinatorは優先度の低い変化中トラックを直前の小節のコピーで凍結します。優先度は高い順に **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass** です。DrumsとSEはこの制限の対象外です。
+
+Coordinatorはコピー・量子化のパス中にトラック固有のフレーズ末尾の休止を保ち、ピッチ解決後にギターのレーキ順を復元します。パスの順序とテールゲートの詳細は[トラック横断のボイス制限と最終修正](/ja/docs/generation-pipeline)を参照してください。
 
 ## 時間表現
 
@@ -209,7 +137,7 @@ constexpr uint8_t BEATS_PER_BAR = 4;
 ```cpp
 // Intermediate musical representation (internal)
 struct NoteEvent {
-  Tick startTick;      // Absolute start time
+  Tick start_tick;     // Absolute start time
   Tick duration;       // Duration in ticks
   uint8_t note;        // MIDI note (0-127)
   uint8_t velocity;    // MIDI velocity (0-127)
@@ -230,10 +158,10 @@ struct MidiEvent {
 
 ```cpp
 struct Section {
-  SectionType type;              // Intro, A, B, Chorus, Bridge, Interlude, Outro
+  SectionType type;              // Intro, A, B, Chorus, Bridge, Interlude, Outro, Chant, MixBreak, Drop
   std::string name;              // Display name
   uint8_t bars;                  // Bar count
-  Tick startBar;                 // Start position (bars)
+  Tick start_bar;                // Start position (bars)
   Tick start_tick;               // Start position (ticks)
   VocalDensity vocal_density;    // Full, Sparse, None
   BackingDensity backing_density; // Normal, Thin, Thick
@@ -248,10 +176,10 @@ struct Section {
 |----------|:-----:|:---:|:-----:|:--------:|------|
 | **MelodyLead (0)** | Yes | Yes | Blueprint依存 | Optional | ボーカルメロディが主役の伝統的なアレンジ |
 | **BackgroundMotif (1)** | No | Yes | Yes | Optional | Vocal無効、Aux有効、Motifが主要フォーカス |
-| **SynthDriven (2)** | No | No | Blueprint依存 | Optional（手動有効化） | Vocal/Aux無効、シンセ/アルペジオ主体のエレクトロニックスタイル |
+| **SynthDriven (2)** | No | No | Yes | Optional（手動有効化） | Vocal/Aux無効、シンセ/アルペジオ主体のエレクトロニックスタイル |
 
 ::: warning BGM専用モード
-BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif生成を強制します。SynthDrivenはVocalとAuxの両方を無効にし、Arpeggioは`arpeggioEnabled=true`で手動で有効にする必要があります。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif生成を強制します。SynthDrivenはVocalとAuxの両方を無効にし、Motif も無条件に生成します。Arpeggioは`arpeggioEnabled=true`で手動で有効にする必要があります。ボーカル付きの楽曲にはMelodyLeadを使用してください。
 :::
 
 ## プロダクションブループリント
@@ -261,15 +189,15 @@ BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif�
 | ID | Name | Paradigm | RiffPolicy | Drums Required | Weight |
 |----|------|----------|------------|:--------------:|--------|
 | 0 | Traditional | Traditional | Free | - | 42% |
-| 1 | RhythmLock | RhythmSync | Locked | **Yes** | 14% |
+| 1 | RhythmLock | RhythmSync | LockedContour | **Yes** | 14% |
 | 2 | StoryPop | MelodyDriven | Evolving | - | 10% |
 | 3 | Ballad | MelodyDriven | Free | - | 4% |
 | 4 | IdolStandard | MelodyDriven | Evolving | - | 10% |
-| 5 | IdolHyper | RhythmSync | Locked | **Yes** | 6% |
-| 6 | IdolKawaii | MelodyDriven | Locked | **Yes** | 5% |
-| 7 | IdolCoolPop | RhythmSync | Locked | **Yes** | 5% |
-| 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
-| 9 | BehavioralLoop | Traditional | LockedPitch | - | 0%* |
+| 5 | IdolHyper | RhythmSync | LockedContour | **Yes** | 6% |
+| 6 | IdolKawaii | MelodyDriven | LockedContour | - | 5% |
+| 7 | IdolCoolPop | RhythmSync | LockedContour | **Yes** | 5% |
+| 8 | IdolEmo | MelodyDriven | LockedContour | - | 4% |
+| 9 | BehavioralLoop | RhythmSync | LockedPitch | - | 0%* |
 
 \* BehavioralLoop（ID 9）はweight 0%で、明示的に選択する必要があります（ランダム選択されません）。`addictive_mode=true`、`RiffPolicy::LockedPitch`、`HookIntensity::Maximum`を強制します。
 
@@ -280,18 +208,20 @@ BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif�
 :::
 
 ::: details RiffPolicy
-APIは3つのRiffPolicy値を公開：
-- **Free (0)**: セクションごとにMotifが変化（MotifRepeatScopeがセクション間の振る舞いを制御）
-- **Locked (1)**: ピッチ輪郭は固定、表現は変化（内部的にはLockedContour）
-- **Evolving (2)**: 2セクションごとに30%の確率で変化
+公開C++、C、JavaScript APIは5つの`RiffPolicy`値を公開します：
+- **Free (0)**: `FullSong`では各セクションに新しいモチーフを生成し、`Section`ではセクションタイプごとにパターンをキャッシュして再利用する
+- **LockedContour (1)**: ピッチ輪郭を保ちながら表現を変える。`Locked`は互換エイリアスです
+- **LockedPitch (2)**: ピッチを固定し、ベロシティの変更を許可する
+- **LockedAll (3)**: キャッシュ済みのリフ全体を固定する
+- **Evolving (4)**: キャッシュ済みのリフを各セクションで変化させながら、同一性を保つ
 
-内部的にはブループリントはより細かい粒度のセットを使用：Free(0)、LockedContour(1)、LockedPitch(2)、LockedAll(3)、Evolving(4)。
+Blueprintは選択したポリシーを生成パラメータへコピーします。`MotifRepeatScope`は`Free`ポリシーの`FullSong`または`Section`の挙動を選びます。
 :::
 
 ::: details ブループリントオーバーライド
 ブループリントはSongConfigの複数のパラメータをオーバーライドできます：
 - `section_flow`が`formId`をオーバーライド（存在し、かつ`formExplicit=false`の場合）
-- `riff_policy`が`motifRepeatScope`をオーバーライド（Freeの場合のみ）
+- `riff_policy`がセクション間のリフポリシーを選び、生成パラメータへコピーされる
 - `drums_required`が`drums_enabled=true`を強制（`drumsEnabledExplicit=true`かつ`drumsEnabled=false`の場合を除く）
 - `drums_sync_vocal`がSongConfigの設定をオーバーライド
 - `mood_mask`が互換性のあるムードを制限（`isMoodCompatible()`で確認）
@@ -347,14 +277,14 @@ WASM相互運用のため、C APIがC++クラスをラップ：
 ```c
 // Lifecycle
 MidiSketchHandle handle = midisketch_create();
-midisketch_generate(handle, params);
+midisketch_generate_from_json(handle, config_json, json_length);
 MidiSketchMidiData* midi = midisketch_get_midi(handle);
 midisketch_free_midi(midi);
 midisketch_destroy(handle);
 ```
 
 主要関数：
-- `midisketch_generate()` - コア生成
+- `midisketch_generate_from_json()` - コア生成
 - `midisketch_generate_vocal_from_json()` - ボーカルのみの生成
 - `midisketch_regenerate_vocal_from_json()` - ボーカル再生成
 - `midisketch_generate_accompaniment_from_json()` - 伴奏生成
@@ -362,7 +292,6 @@ midisketch_destroy(handle);
 - `midisketch_generate_with_vocal_from_json()` - ボーカル優先フル生成
 - `midisketch_set_vocal_notes_from_json()` - カスタムボーカル注入
 - `midisketch_get_piano_roll_safety()` - ピアノロール安全性分析
-- `midisketch_get_chord_timeline()` - コードタイムライン取得
 - `midisketch_get_midi()` - MIDIバイナリ出力
 - `midisketch_get_events()` - JSONイベントデータ
 - `midisketch_get_info()` - メタデータ（小節数、ティック、BPM）

@@ -10,32 +10,7 @@
 
 MIDI Sketchは9つのトラックを異なるMIDIチャンネルに生成します：
 
-```mermaid
-flowchart TB
-    subgraph Melody ["メロディレイヤー"]
-        Vocal["ボーカル (Ch 0)"]
-        Aux["Aux (Ch 5)"]
-    end
-
-    subgraph Harmony ["ハーモニー"]
-        Chord["コード (Ch 1)"]
-        Guitar["ギター (Ch 6)"]
-    end
-
-    subgraph Rhythm ["リズムセクション"]
-        Bass["ベース (Ch 2)"]
-        Drums["ドラム (Ch 9)"]
-    end
-
-    subgraph Synth ["シンセレイヤー"]
-        Motif["モチーフ (Ch 3)"]
-        Arpeggio["アルペジオ (Ch 4)"]
-    end
-
-    subgraph Markers ["マーカー"]
-        SE["SE (Ch 15)"]
-    end
-```
+<DocFigure name="tracks-channel-map" />
 
 ### チャンネル割り当て
 
@@ -57,7 +32,7 @@ flowchart TB
 
 ## ボーカルトラック
 
-**ソース:** `src/track/vocal.cpp`（約314行）、`src/track/melody_designer.cpp`（約2048行）
+**ソース:** `src/track/generators/vocal.cpp`、`src/track/vocal/melody_designer.cpp`
 
 ボーカルシステムは**テンプレート駆動型メロディデザイナー**と**スタイル認識評価**を使用し、予測可能でスタイルに正確なメロディを生成します。
 
@@ -73,16 +48,7 @@ flowchart TB
 2. **Vocal Generator**（`vocal.cpp`）- セクション構造、キャッシング、調整
 3. **VocalStyleProfile** - スタイル別の統一されたバイアス・評価設定
 
-```mermaid
-flowchart TD
-    A[VocalStyleProfile] --> B[MelodyDesigner]
-    B --> C[候補生成]
-    C --> D[評価: スタイル + 歌唱性 + バイアス]
-    D --> E[最良選択]
-    E --> F[Vocal Generator]
-    F --> G[制約適用]
-    G --> H[フレーズキャッシュ]
-```
+<DocFigure name="tracks-vocal-architecture" />
 
 ### メロディテンプレート
 
@@ -90,33 +56,21 @@ flowchart TD
 
 | ID | 名前 | Plateau | 最大ステップ | 用途 |
 |----|------|---------|----------|----------|
-| 0 | Auto | - | - | VocalStyle基準で選択 |
-| 1 | PlateauTalk | 0.65 | 2 | NewJeans、Billie Eilishスタイル |
-| 2 | RunUpTarget | 0.20 | 4 | アニメ系ハイエナジー、ドラマチックポップ |
-| 3 | DownResolve | 0.30 | 3 | Bセクション、プリコーラス |
-| 4 | HookRepeat | 0.40 | 3 | TikTok、K-POPフック |
-| 5 | SparseAnchor | 0.50 | 2 | Official髭男dism、バラード |
-| 6 | CallResponse | - | - | デュエットパターン |
-| 7 | JumpAccent | - | - | 感情的ピーク |
+| 0 | Auto | - | - | VocalStyle 基準で選択 |
+| 1 | PlateauTalk | 0.70 | 2 | 語りに近い、音域の狭いポップ |
+| 2 | RunUpTarget | 0.20 | 3 | アニメ系ハイエナジー、ドラマチックポップ |
+| 3 | DownResolve | 0.40 | 2 | B セクション、プリコーラス |
+| 4 | HookRepeat | 0.55 | 2 | ショート尺、K-POP フック |
+| 5 | SparseAnchor | 0.30 | 4 | 音数の少ない、伸ばし主体のバラード |
+| 6 | CallResponse | 0.35 | 3 | デュエットパターン |
+| 7 | JumpAccent | 0.25 | 5 | 感情的ピーク |
 
 - **Plateau ratio**: 同じピッチに留まる確率（高いほど繰り返しが多い）
-- **Max step**: 半音単位の最大音程（低いほど滑らか）
+- **Max step**: 半音単位の最大ステップ幅（小さいほど滑らか）
 
 ### 生成フロー
 
-```mermaid
-flowchart TD
-    A[セクション開始] --> B{フレーズキャッシュ確認}
-    B -->|キャッシュあり| C[フレーズ取得]
-    B -->|新規| D[MelodyTemplate選択]
-    D --> E[MelodyDesigner.generatePhrase]
-    E --> F[キャッシュに保存]
-    C --> G[ボイスリーディング適用]
-    F --> G
-    G --> H[HarmonyContext.getSafePitch]
-    H --> I[オクターブフォールドで音域内へ]
-    I --> J[トラックに追加]
-```
+<DocFigure name="tracks-vocal-phrase-flow" />
 
 ::: info オクターブフォールド（音域セーフティ）
 音域外に出たノートはオクターブ単位（±12半音）で音域内に折り返され、ピッチクラスが保持されます — コードトーンはコードトーンのままです。音域境界への半音クランプは最終手段としてのみ使われます。クランプは安全な音を不協和音に変えてしまうことがあるためです（例: G をオクターブ下げても G のままですが、F# 上限へクランプするとトライトーンが生じます）。
@@ -129,9 +83,9 @@ MelodyDesignerはピッチ選択を4つのオプションに制限：
 ```cpp
 enum class PitchChoice {
     Same,       // 現在のピッチに留まる（plateau_ratio）
-    StepUp,     // +1半音
-    StepDown,   // -1半音
-    TargetStep  // ターゲット方向へ±2（テンプレートにターゲットがある場合）
+    StepUp,     // スケール上を1音上へ（半音より全音を優先）
+    StepDown,   // スケール上を1音下へ
+    TargetStep  // テンプレートのターゲットピッチへ向かう（max_step で制限）
 };
 ```
 
@@ -151,47 +105,53 @@ enum class PitchChoice {
 
 ```cpp
 struct PhraseCacheKey {
-    SectionType type;      // Verse、Chorus等
-    uint8_t bars;          // セクション長
-    uint8_t chord_degree;  // 開始コード度数
+    SectionType section_type;  // A、Chorus 等
+    uint8_t bars;              // セクション長（小節数）
+    int8_t chord_degree;       // 開始コード度数
 };
-
-// キャッシュ動作:
-// - 80% 正確な再利用: 同じフレーズを再現
-// - 20% バリエーション: 変換を適用（オクターブシフト、リズム変動）
 ```
 
+キャッシュされたフレーズの最初の再利用は必ず完全一致で、まずフレーズを定着させてから変化させます。その後は、サビの出現回数が増えるほど完全一致の確率が下がります。1回目は 80%、2回目は 60%、3回目以降は 30% となり、最後のサビが最も新鮮になります。また、完全一致が2回続いた時点で、次は必ずバリエーションが入ります。
+
 ::: info フレーズバリエーション
-キャッシュされたフレーズを再利用する際、システムはバリエーションを適用することがあります：
-- **オクターブシフト**: フレーズを1オクターブ上下に移動
-- **リズムバリエーション**: わずかなタイミング調整
-- **輪郭反転**: 上昇/下降パターンを反転
+完全一致にならなかった場合は、6種類のバリエーションのいずれかが適用されます。いずれもフレーズの旋律的な同一性を保つもので、移調・反転・切り貼りは行いません。
+
+- **LastNoteShift**: 最後の音をスケール上で1〜2度動かす
+- **LastNoteLong**: 最後の音を伸ばして終止感を強める
+- **BreathRestInsert**: フレーズ終端の手前に短い休符を挿入
+- **DynamicAccent**: 最後の音のベロシティを上げる
+- **LateOnset**: フレーズの開始を16分音符分遅らせる
+- **EchoRepeat**: 最後の音を短く弱くエコーさせる
 :::
 
 ### 音域制約
 
 ```cpp
-struct VocalRange {
-    uint8_t low = 60;   // C4
-    uint8_t high = 79;  // G5
+struct VocalRangeResult {
+    uint8_t effective_low;
+    uint8_t effective_high;
+    float velocity_scale;
 };
 ```
+
+有効音域は歌い手の境界（`vocal_low` と `vocal_high`）から始まり、Blueprintの`max_pitch`上限を適用し、後段の上方向の転調に備えて転調量だけ上限を下げます。下限は維持されます。正の転調が指定された場合は、調整後の上限を上下限の間に最低1オクターブ残すようクランプします。転調なしでBlueprintの`max_pitch`上限だけが適用される場合は、1オクターブ未満になることがあります。コンポジションスタイルが変えるのは`velocity_scale`であり、VocalとMotifを前景・背景に分ける別音域を作るわけではありません。VocalがあるときにMotifの音域をVocalの中央値の周りへ狭める処理は、別の制約として残っています。
 
 ### 非和声音による装飾
 
 ボーカルトラックは非和声音（NCT: Non-Chord Tone）を使用して、単純なコードトーンメロディに動きを加えます：
 
-::: info 強拍と弱拍
-4/4拍子では、**強拍**は1拍目と3拍目（自然に足でリズムを取る位置）、**弱拍**は2拍目と4拍目です。強拍にコードトーンを置くと安定感が生まれ、弱拍に非和声音を置くと和声を崩さずに動きを加えられます。
+::: info 拍の強さ
+エンジンは 4/4 の拍を4段階で扱います。**強拍**（1・3拍目）、**中拍**（2・4拍目）、**弱拍**（8分の裏）、**最弱拍**（16分）です。コードトーンと強調されたアポジャトゥーラは強拍に置かれ、経過音・刺繍音・先取音は 2・4拍目ではなく拍と拍の間の裏拍に置かれます。
 :::
 
 | NCTタイプ | 説明 | 配置 |
 |----------|------|------|
 | **ChordTone** | 現在のコードに含まれる音（基準） | 強拍 |
-| **PassingTone** | 2つのコードトーン間を順次進行でつなぐ | 弱拍 |
-| **NeighborTone** | コードトーンから離れて戻る | 弱拍 |
+| **PassingTone** | 2つのコードトーン間を順次進行でつなぐ | 裏拍の細分位置 |
+| **NeighborTone** | コードトーンから離れて戻る | 裏拍の細分位置 |
 | **Appoggiatura** | 強調された不協和音が順次解決 | 強拍 |
-| **Anticipation** | 次のコードトーンを先取り | コードチェンジ前 |
+| **Anticipation** | 次のコードトーンを先取り | コードチェンジ前の裏拍 |
+| **Suspension** | 前のコードから保留された音が順次下行して解決 | 強拍（続く裏拍で解決） |
 | **Tension** | コードの拡張音（9度、11度、13度） | スタイルに依存 |
 
 設定はムードにより変化：
@@ -202,17 +162,18 @@ struct VocalRange {
 
 ### VocalStyleProfile
 
-各ボーカルスタイルには**生成バイアス**と**評価重み**の両方を制御する統一プロファイルがあります：
+各ボーカルスタイルには**生成バイアス**と**評価重み**の両方を制御する統一プロファイルがあります。8つのプロファイルを14のボーカルスタイルが共有します（Idol/BrightKira/CuteAffected → Idol、Vocaloid/UltraVocaloid/CoolSynth → Vocaloid、Rock/PowerfulShout → Rock、Auto/Standard → Standard）。
 
 | プロファイル | Plateauバイアス | 高音域 | 歌唱性 | サプライズ |
 |--------------|-----------------|--------|--------|------------|
-| **Standard** | 1.0 | 1.0 | 0.25 | 0.15 |
-| **Idol** | 1.2 | 1.0 | 0.30 | 0.12 |
-| **Rock** | 0.8 | 1.2 | 0.20 | 0.20 |
-| **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
-| **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
-| **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
-| **KPop** (13) | 1.0 | 1.2 | 0.25 | 0.20 |
+| **Standard** | 1.00 | 0.80 | 0.15 | 0.15 |
+| **Idol** | 1.25 | 0.85 | 0.18 | 0.05 |
+| **Rock** | 0.80 | 1.20 | 0.15 | 0.20 |
+| **Ballad** | 1.00 | 0.50 | 0.30 | 0.05 |
+| **Anime** | 1.30 | 1.30 | 0.10 | 0.15 |
+| **Vocaloid** | 0.90 | 1.20 | 0.10 | 0.20 |
+| **CityPop** | 0.90 | 0.90 | 0.15 | 0.15 |
+| **KPop** | 1.40 | 1.10 | 0.12 | 0.18 |
 
 ### UltraVocaloidモード
 
@@ -230,30 +191,43 @@ struct VocalRange {
 
 ### メロディ評価システム
 
-MelodyDesignerは複数の候補メロディを生成し、評価します：
+MelodyDesigner は候補メロディをまとめて生成し（サビ 100、B セクション 50、ブリッジとチャント 30、その他 20）、それぞれを採点します：
 
-```mermaid
-flowchart LR
-    A[8候補を生成] --> B[スタイルスコア 40%]
-    A --> C[歌唱性スコア 40%]
-    A --> D[バイアススコア 20%]
-    B --> E[総合スコア]
-    C --> E
-    D --> E
-    E --> F[最良を選択]
-```
+共有される採点の詳細は[メロディ評価](/ja/docs/melody-evaluation)にまとめ、このページではトラックとの接続と制約だけを扱います。
 
-**評価コンポーネント:**
+<DocFigure name="tracks-melody-evaluation" />
+
+**総合スコア:**
 
 | コンポーネント | 重み | 基準 |
 |----------------|------|------|
-| スタイルスコア | 40% | 輪郭一致、パターン一貫性、サプライズバランス |
-| 歌唱性スコア | 40% | 順次進行、ブレス位置、単調さ回避 |
+| スタイルスコア | 40% | 下記の7つの重み付き項目 |
+| 淘汰スコア | 40% | 減点方式：歌唱の難しさ、単調さ、不自然な間 |
 | バイアススコア | 20% | スタイル好みに合った音程分布 |
+
+これにグローバルモチーフのボーナスが加算されます。重みはセクション依存で、サビ 0.35、2回目以降の A セクション 0.25、B セクション 0.22、最初の A セクション 0.15、ブリッジは対比を優先して 0.05 です。
+
+**スタイルスコア**自体が7つの項目からなり、その重みはボーカルスタイルプロファイルに由来し、合計 1.0 になります。以下は Standard プロファイルの値です：
+
+| コンポーネント | Standard の重み | 基準 |
+|----------------|----------------|------|
+| 歌唱性 | 0.15 | 音程分布：順次進行主体、大跳躍は少なく |
+| コードトーン比率 | 0.15 | 強拍に置かれるコードトーン |
+| 輪郭 | 0.15 | アーチ／波形／下降といった認識しやすい形 |
+| サプライズ | 0.15 | 4度以上の意図的な跳躍を1〜2回 |
+| AAABパターン | 0.15 | 3+1 の反復構造 |
+| リズムと音程の整合 | 0.15 | 跳躍前は長音、順次進行は短音 |
+| キャッチーさ | 0.10 | 短いセルの反復、リズムの一貫性、フック輪郭 |
+
+**淘汰スコア**は 1.0 から減点していきます。高音の連続、高音への跳躍、急な方向転換、強拍上の非和声音、孤立した音、フレーズのまとまりの弱さ、間の多さ、短音の連続によるブレス不足が対象です。
+
+候補は総合スコア順に並べ替えられ、下位半分が捨てられたうえで、残りからスコアに比例した確率で1つが抽選されます。最高得点の候補はフォールバックにすぎないため、同程度に良いフレーズも選ばれ続けます。
 
 ### フックシステム
 
-サビセクションでは**6つのリズムパターン**を持つ専用フック生成システムを使用：
+サビセクションでは、**17のリズムパターン**と**25のフックスケルトン**からなる専用のフック生成システムを使用します。代表的なものは以下の通りです。
+
+**代表的なリズムパターン:**
 
 | パターン | リズム | 特徴 |
 |----------|--------|------|
@@ -264,7 +238,7 @@ flowchart LR
 | **Dotted** | 8-4-8 | 付点リズム |
 | **CallResponse** | 4-8-8-8 | コール&レスポンス |
 
-**フックスケルトン:**
+**代表的なフックスケルトン:**
 
 | スケルトン | 説明 |
 |------------|------|
@@ -275,62 +249,61 @@ flowchart LR
 | RhythmRepeat | ピッチは変わりリズムは一定 |
 
 **フック強度**はフックの目立ち方を制御：
-- **Off (0)**: フック繰り返しなし
-- **Light (1)**: 控えめなフック
-- **Normal (2)**: 標準ポップフック
-- **Strong (3)**: 強いフック強調（TikTokスタイル）
+- **Off (0)**: フックの強調なし
+- **Light (1)**: サビ冒頭のみ
+- **Normal (2)**: サビ冒頭と中間
+- **Strong (3)**: 全フックポイント
+- **Maximum (4)**: 反復を最大化し、単純なパターンのみを使用
 
 ### グローバルモチーフシステム
 
-ボーカルトラックは最初に生成されたフレーズから**グローバルモチーフ**を抽出し、音楽的な一貫性を維持します：
+ボーカルトラックはサビのフックから**グローバルモチーフ**を抽出し、以降のセクションの評価に軽いボーナスとして使います。選択にバイアスをかけるだけで、生成を拘束するものではありません。
 
 ```cpp
 struct GlobalMotif {
-    vector<int8_t> interval_signature;  // 相対的ピッチ変化（最大8音）
-    vector<float> rhythm_signature;     // 相対的デュレーション比率
-    ContourType contour_type;           // Ascending, Descending, Peak, Valley, Plateau
+    ContourType contour_type;        // Ascending, Descending, Peak, Valley, Plateau
+    int8_t  interval_signature[8];   // 相対的ピッチ変化
+    uint8_t interval_count;
+    uint8_t rhythm_signature[8];     // 相対的デュレーション比率
+    uint8_t rhythm_count;
 };
 ```
 
-**評価ボーナス:**
-- 輪郭タイプ一致: +5%スコア
-- 類似した音程パターン: +5%スコア（3つ以上一致）
-- これにより後のセクションがオープニングと関連付けられます
+各セクションは、そのセクションに合わせて変形したモチーフと候補を比較します。サビは原形、A セクションは縮小形、B セクションは反復進行形、ブリッジは反行形、アウトロは断片化した形です。ボーナスは上記のセクション重みでスケールされるため、サビではフックの同一性が最も強く保たれ、ブリッジは対比のために自由が残されます。
 
 ### ピアノロールセーフティAPI
 
 **ソース:** `src/core/piano_roll_safety.cpp`
 
-ピアノロールセーフティAPIは、外部ツール（ピアノロールエディタなど）が安全なピッチ配置を判断するのに役立ちます：
+読み取り専用の[ピアノロールセーフティAPI](/ja/docs/api-cpp#piano-roll-safety-api)は、外部ツール（ピアノロールエディタなど）がピッチ配置の警告を表示するために使います。`checkBgmCollisionDetailed`は6つのBGMトラック（Chord、Bass、Arpeggio、Aux、Motif、Guitar）で鳴っているノートをピッチクラスの音程で調べます。音程クラス1または11は`Severe`、6は`Mild`、それ以外は`None`として報告します。この表示用ヘルパーにはコード、長さ、音域、生成器固有の例外はありません。生成時に使う別の`HarmonyContext`フィルターは[ハーモニー](/ja/docs/harmony#harmonycontext)を参照してください。
 
 ```cpp
 enum class CollisionType : uint8_t {
-    None,    // 衝突なし - 配置安全
-    Mild,    // トライトーン（文脈依存）
-    Severe   // 短2度 / 長7度（常に不協和）
+    None,    // 表示警告なし
+    Mild,    // ピッチクラス音程6: 表示警告
+    Severe   // ピッチクラス音程1/11: 表示警告
 };
 ```
 
 **衝突検出:**
 
-| 音程 | タイプ | リスク |
+| ピッチクラス音程 | タイプ | 表示結果 |
 |------|--------|--------|
-| 短2度（1半音） | Severe | 常に回避 |
-| 長7度（11半音） | Severe | 常に回避 |
-| トライトーン（6半音） | Mild | 文脈依存 |
-| その他 | None | 一般的に安全 |
+| 1 または 11 | Severe | Severe表示警告 |
+| 6 | Mild | Mild表示警告 |
+| その他 | None | 表示警告なし |
 
 ::: warning 転調対応
-APIは転調を考慮します。転調が有効な場合、`effective_vocal_high` が減少し、最終サビが転調後に音域を超えないようにします。
+生成されるボーカル音域は歌い手の境界から始まり、Blueprintの`max_pitch`で制限され、上方向の転調に備えて`effective_vocal_high`を下げます。読み取り専用の表示ヘルパーはこの音域計算とは別で、ピッチクラスの衝突を報告するだけであり、Motif用の前景・背景分離音域を作るものではありません。
 :::
 
 ---
 
 ## Auxトラック
 
-**ソース:** `src/track/aux_track.cpp`（約1170行）
+**ソース:** `src/track/generators/aux.cpp`
 
-Aux（補助）トラックは主旋律に対する**副旋律サポート**を提供します。対旋律ではなく、主旋律を強化する「知覚制御レイヤー」です。
+Aux（補助）トラックはメインボーカルがある場合に**副旋律サポート**を提供します。`BackgroundMotif`ではVocalを常にスキップします。Traditional/MelodyDrivenではボーカルを参照せずにAuxをMotifより先に生成し、RhythmSyncではMotifをAuxより先に保ちます。`SynthDriven`ではAuxをスキップします。対旋律そのものではなく、リードがある場合にアレンジを整えるレイヤーです。
 
 ### 目的
 
@@ -357,23 +330,34 @@ Aux（補助）トラックは主旋律に対する**副旋律サポート**を�
 | 7 | MotifCounter | カウンターメロディ（反行） |
 | 8 | SustainPad | 全音符コードトーンパッド |
 
-### テンプレート → Auxマッピング
+### Aux 機能の選択
 
-各メロディテンプレートは適切なaux機能を自動選択：
+主要なセクションでは、Aux 機能はメロディテンプレートではなく Blueprint の aux profile から選ばれます：
 
-| テンプレート | Aux機能 | 理由 |
-|----------|---------------|--------|
-| PlateauTalk | A（PulseLoop） | Ice Cream/ミニマルスタイル |
-| RunUpTarget | B + D | YOASOBI上昇→解決 |
-| HookRepeat | A + C | TikTok繰り返しフック |
-| SparseAnchor | E + D | バラードの感情サポート |
+| セクション | 参照元 |
+|-----------|--------|
+| Intro | キャッシュされたサビモチーフのエコー。モチーフがなければ `aux_profile.intro_function` |
+| A / B / Bridge | `aux_profile.verse_function` |
+| Chorus | `aux_profile.chorus_function` |
+
+したがって Traditional ブループリントはイントロで MelodicHook、A/B で MotifCounter、サビで再び MelodicHook を使い、RhythmLock は曲全体で単一の PulseLoop セルを保ちます。残るセクションタイプ（インタールード・アウトロ・チャント・ミックスブレイク）は、メロディテンプレートが定義する最初の Aux 設定にフォールバックします：
+
+| テンプレート | フォールバック機能 | 音域オフセット | 幅 | ベロシティ比 |
+|-------------|------------------|--------------|-----|------------|
+| PlateauTalk | PulseLoop | -12 | 5 | 0.6 |
+| RunUpTarget | TargetHint | 0 | 7 | 0.5 |
+| DownResolve | PhraseTail | 0 | 5 | 0.5 |
+| HookRepeat | PulseLoop | -12 | 4 | 0.7 |
+| SparseAnchor | EmotionalPad | -5 | 8 | 0.4 |
+| CallResponse | MotifCounter | 0 | 6 | 0.7 |
+| JumpAccent | PhraseTail | 0 | 5 | 0.5 |
 
 ### 生成制約
 
-- 常にボーカルの**後**に生成（衝突回避）
-- ボーカルより狭い音域（50-70%）
-- 低いベロシティ（0.5-0.8×ボーカル）
-- HarmonyContextでボーカルとの不協和音を回避
+- Vocalがある場合はリードとの衝突を避けるためVocalの後に生成します。`BackgroundMotif`でTraditional/MelodyDrivenならVocalがないためAuxをMotifより先に生成し、RhythmSyncならMotifをAuxより先に保ちます。`SynthDriven`ではAuxを生成しません
+- Vocalがある場合、音域はそのテッシトゥーラを中心に`range_offset`でずらした半音単位の絶対幅（4〜12半音）です。Vocalがない場合は設定またはデフォルトのテッシトゥーラを使います。どちらもG3 (55) - C6 (84) にクランプされます
+- ベロシティ比 0.4-0.8 は、ボーカルのベロシティではなく固定のベース値 80 に掛かります。Blueprint の `velocity_scale` はこの比にさらに掛かります
+- HarmonyContext でボーカルとの不協和音を回避
 
 ### サビでの挙動
 
@@ -388,59 +372,30 @@ Aux（補助）トラックは主旋律に対する**副旋律サポート**を�
 
 ## コードトラック
 
-**ソース:** `src/track/chord_track.cpp`（約2000行）
+**ソース:** `src/track/generators/chord.cpp`
 
 ボイスリーディング最適化を伴う和声ボイシングを生成。
 
 ### ボイシングタイプ
 
-```mermaid
-flowchart LR
-    subgraph Close ["クローズボイシング"]
-        C1[R] --> C2[3] --> C3[5] --> C4[7]
-    end
+<DocFigure name="tracks-chord-voicings" />
 
-    subgraph Open ["オープンボイシング"]
-        O1[R] --> O2[5] --> O3[3] --> O4[7]
-    end
-
-    subgraph Rootless ["ルートレス"]
-        RL1[3] --> RL2[5] --> RL3[7] --> RL4[9]
-    end
-```
+ボイシングタイプは3種類です。**Close** はコードトーンを1オクターブ内に収めます。**Open** は Drop 2 ボイシングで、上から2番目の声部が1オクターブ下がるため、ルート-3度-5度-7度の積みは 5度-ルート-3度-7度になります。Drop 3 と Spread はその別バリアントで、セクションとムードに応じて選ばれます。**Rootless** はベースがすでに鳴らしているルートを省き、2声しか残らない場合は9度を補います。
 
 ### ボイスリーディングアルゴリズム
 
-```cpp
-int voiceLeadingDistance(Voicing& prev, Voicing& next) {
-    int distance = 0;
-    for (int i = 0; i < 4; i++) {
-        distance += abs(prev.notes[i] - next.notes[i]);
-    }
-    return distance;
-}
-
-// 距離を最小化するボイシングを選択
-Voicing selectBestVoicing(Voicing& prev, vector<Voicing>& candidates) {
-    return min_element(candidates, [&](auto& a, auto& b) {
-        return voiceLeadingDistance(prev, a) < voiceLeadingDistance(prev, b);
-    });
-}
-```
+1. セクションのボイシングタイプから候補を生成（クローズ、オープン/Drop2、Drop3、スプレッド、ルートレス）
+2. 直前のボイシングからの移動量で採点。最大5音を対象に、外声（バスとソプラノ）は2倍、内声は1倍で重み付け
+3. 共通音の保持を加点
+4. 平行5度・平行8度を減点。減点量はムード依存で、クラシック系・洗練系は厳しく、ポップ系・ダンス系は緩やか
+5. 同一ボイシングが3回続く場合を減点
 
 ### ベースとの協調
 
-`BassAnalysis`を使用して音の重複を回避：
+コードトラックはベースの後に生成されるため、ベースが実際に何を弾いているかを読み取れます。これを使う仕組みは2つあります。
 
-```cpp
-if (bassAnalysis.hasRootOnBeat1) {
-    // ルートレスボイシングを使用 - ベースがルートを担当
-    voicing = generateRootlessVoicing(chord);
-} else {
-    // コードボイシングにルートを含める
-    voicing = generateFullVoicing(chord);
-}
-```
+- `buildBassPitchMask` は小節の1拍目と3拍目でベースが保持しているピッチクラスを集めます。短2度またはトライトーンで衝突する候補ボイシングは除外されます。
+- `BassAnalysis::analyzeBar` は1拍目にベースがルートを鳴らしているかを判定します。鳴らしている場合はルートレスボイシングが優先され、ルートの重複を避けます。
 
 ### 音域制約
 
@@ -453,7 +408,7 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ## ギタートラック
 
-**ソース:** `src/track/guitar.cpp`
+**ソース:** `src/track/generators/guitar.cpp`
 
 ギタートラックは専用のMIDIチャンネル（Ch 6）に伴奏ギターパターンを生成します。コードトラックを補完するリズミック＆ハーモニックサポートを提供します。
 
@@ -484,52 +439,43 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ## ベーストラック
 
-**ソース:** `src/track/bass.cpp`（約1170行）
+**ソース:** `src/track/generators/bass.cpp`
 
 ルート重視のパターンで和声的基盤を生成。
 
 ### パターンタイプ
 
-ベースシステムは17以上のBassPatternタイプをサポートしています。使用するパターンはムードとセクションに基づいて自動選択されるか、BlueprintのSectionSlotで`bass_style_hint`（0=自動、1-17はBassPattern+1にマッピング）を指定してセクションごとに影響を与えることができます。一般的なパターンカテゴリ：
+`BassPattern` は17種類です。使用するパターンはムードとセクションに基づいて自動選択されるか、Blueprint の SectionSlot で `bass_style_hint`（0=自動、1-17 は BassPattern+1 にマッピング）を指定してセクションごとに固定できます。代表的なもの：
 
 | パターン | 説明 | リズム |
 |----------|------|--------|
-| Sparse | ミニマル、バラードスタイル | 1拍目のみ |
-| Standard | ポップ/ロックベースライン | 1、3拍目にフィル |
-| Driving | エネルギッシュ、前進的 | 全体で8分音符 |
+| WholeNote | 持続するルートで安定感（バラード、イントロ） | 2分音符、次小節へのアプローチ付き |
+| RootFifth | 古典的なポップのルート-5度交替 | 4分音符、3拍目に5度 |
+| Syncopated | 裏拍アクセントでグルーブ（プリコーラス） | ルートと裏拍の5度 |
+| Driving | エネルギッシュ、前進的（サビ） | 全体で8分音符 |
+| Walking | 4分音符のスケールウォーク（ジャズ、シティポップ） | 4分音符4つ、半音アプローチ |
+
+残りはジャンル特化のパターンです：RhythmicDrive、PowerDrive、Aggressive、SidechainPulse、Groove、OctaveJump、PedalTone、Tresillo、SubBass808、RnBNeoSoul、SlapPop、FastRun。
 
 ### 生成ロジック
 
-```mermaid
-flowchart TD
-    A[コード取得] --> B[ルート抽出]
-    B --> C{セクションタイプ?}
-    C -->|Chorus| D[オクターブ +12]
-    C -->|Intro/Outro| E[オクターブ -12]
-    C -->|Verse| F[標準オクターブ]
-    D --> G[パターン生成]
-    E --> G
-    F --> G
-    G --> H{4拍目?}
-    H -->|はい| I[アプローチノートオプション]
-    H -->|いいえ| J[標準ノート]
-```
+<DocFigure name="tracks-bass-generation" />
+
+セクションタイプが選ぶのはパターンだけで、オクターブは動かしません。ルートがオクターブ移動するのは、ベース音域 E1 (28) - G3 (55) に収めるために必要なときだけです。
+
+ピーク処理はパターン選択の後に行われます。`PeakLevel::Medium`では選ばれたパターンを密度1段階分、`PeakLevel::Max`では2段階分だけ引き上げます。`bass_style_hint`で明示したパターンにも適用され、ヒントはベースパターンを指定するだけでピークによる高密度化を無効にしません。
 
 ### アプローチノート
 
-4拍目は次のルートへの半音アプローチを使用可能：
+4拍目の後半には、次の小節のルートへ向かうアプローチノートが置かれるのが基本です。常に半音アプローチではなく、コードの機能に応じて選ばれます。トニックとドミナントには次のルートの完全5度下、サブドミナントには全音下が優先され、導音・全音上・完全4度下がフォールバックになります。ターゲットのコードが実際に鳴らす音と衝突する候補は除外されます。これはセカンダリードミナントで重要で、その3度は上がり7度は下がるため、ダイアトニックの三和音とは異なるからです。
 
-```cpp
-// 次のコードルートがCの場合
-// 4拍目はB（半音下）またはDb（半音上）
-uint8_t approachNote = nextRoot - 1; // 半音アプローチ
-```
+半音下からのクロマチックアプローチはウォーキングライン専用で、次のルートが全音または短3度離れている場合に限られます。
 
 ---
 
 ## ドラムトラック
 
-**ソース:** `src/track/drums.cpp`（約880行）
+**ソース:** `src/track/generators/drums.cpp`
 
 フィルとダイナミクスを含むドラムパターンを生成。
 
@@ -550,27 +496,13 @@ constexpr uint8_t TOM_LOW = 45;
 
 ### パターンスタイル
 
-```mermaid
-flowchart TD
-    A[ムード] --> B{スタイル選択}
-    B -->|Ballad, Chill| C[Sparse]
-    B -->|StraightPop| D[Standard]
-    B -->|ElectroPop, IdolPop| E[FourOnFloor]
-    B -->|BrightUpbeat| F[Upbeat]
-    B -->|LightRock| G[Rock]
-    B -->|Yoasobi, Synthwave| H[Synth]
-```
+<DocFigure name="tracks-drum-style-selection" />
 
 ### フィルタイプ
 
-```cpp
-enum class FillType {
-    TomDescend,    // ハイ → ミッド → ロータム
-    TomAscend,     // ロー → ミッド → ハイタム
-    SnareRoll,     // 連続スネアヒット
-    Combo          // 混合要素
-};
-```
+`FillType` は13種類あります。よく使われるのは SnareRoll・TomDescend・TomAscend・SnareTomCombo で、残りはより疎な場面や慣用句的な場面をカバーします（SimpleCrash、LinearFill、GhostToAccent、BDSnareAlternate、HiHatChoke、TomShuffle、BreakdownFill、FlamsAndDrags、HalfTimeFill）。`selectFillType()` がセクションの組み合わせ・ドラムスタイル・次セクションのエネルギーから選択します。
+
+フィルはフィル区間のすべての拍を埋める必要はありません。そのフィルタイプが特に置く音を持たない拍では、無音にせずセクション本来のパターンが維持されます。
 
 フィルの挿入位置：
 
@@ -578,11 +510,13 @@ enum class FillType {
 - 4または8小節ごと
 - サビ前
 
+`Dramatic`または`DrumHit`のサビドロップでは、最後のドロップ区間でキットも短縮されます。その短縮でエントリークラッシュが失われた場合、後処理が次のセクション境界にクラッシュを復元するため、サビの到着マーカーが残ります。
+
 ### ユークリッドドラム
 
-Blueprintで`euclidean_drums_percent`を指定することで、ユークリッドリズムパターンの使用確率を制御できます。ユークリッドリズムは指定されたステップ数に対してヒットをできるだけ均等に分配するパターンです。
+Blueprintにはユークリッド分岐を選ぶ際にドラム生成器がサンプリングする`euclidean_drums_percent`フィールドがあります。ユークリッドリズムは指定されたステップ数に対してヒットをできるだけ均等に分配するパターンです。ただしBlueprintのフィールド計上では現在 **UnprovenLiveness** に分類されており、可聴な効果は保証されません。確実な調整用コントロールではなく予約フィールドとして扱ってください。
 
-### ドラムロール（Drum Role）
+### ドラムの役割（Drum Role）
 
 BlueprintのSectionSlotでセクションごとの`drum_role`を指定してドラム挙動を制御：
 
@@ -598,37 +532,29 @@ BlueprintのSectionSlotでセクションごとの`drum_role`を指定してド�
 グルーブのためのベロシティ軽減スネアアーティキュレーション：
 
 ```cpp
-// メインスネア: ベロシティ 100
-// ゴーストノート: ベロシティ 40-60
+// ゴーストのベロシティはセクションベロシティに対する倍率（0.25-0.65）で、絶対値では
+// ありません。実際には概ね 25-35 の帯に収まります。
 ```
 
-ゴーストノートの密度はムードに応じて適応：
-- **エネルギッシュなムード** (BrightUpbeat, IdolPop): より活発な感触のために高密度
-- **穏やかなムード** (Ballad, Chill): 控えめなゴーストノート
+密度はセクションとムードカテゴリによるテーブル参照で 0%・15%・30%・45% のいずれかが決まり、その後テンポとバッキング密度に応じて調整されます。
+- **エネルギッシュなムード**（EnergeticDance・IdolPop・Anthem・AnimeHighEnergy）: サビで最大 45% の出現確率
+- **穏やかなムード**（Ballad・Sentimental・Chill）: A メロではなし、他は控えめ
 
 ### スウィングタイミング
 
-セクションタイプと進行に応じて変化する連続的なスウィング制御：
+スウィングはムードのグルーブフィールが Swing か Shuffle のときだけ適用されます（Sentimental・Chill・Ballad・Nostalgic・CityPop がスウィング、RnBNeoSoul と Lofi がシャッフル）。それ以外のムードはストレートで、オフセットは 0 です。
 
-```cpp
-float calculateSwingAmount(SectionType section, int bar_in_section, int total_bars);
-// 0.0（ストレート）から0.7（ヘビースウィング）を返す
-```
+| セクション | スウィング量 | 挙動 |
+|-----------|------------|------|
+| Intro | 0.25 | 最も浅い |
+| A / Bridge / Interlude / MixBreak | 0.35 | 一定 |
+| B | 0.40 | 一定 |
+| Chorus | 0.50 | 最も深く、一定 |
+| Outro | 0.40 → 0.20 | 終わりに向かって二次関数的に減衰 |
 
-| セクション | 基本スウィング | 挙動 |
-|-----------|--------------|------|
-| Verse | 低い | 徐々にビルドアップ |
-| Chorus | 中程度 | 一貫したグルーブ |
-| Bridge | 可変 | コンテキスト依存 |
+セクション内で量を一定に保つのは意図的です。小節ごとに揺れるとグルーブが不安定に感じられるためです。Blueprint の SectionSlot は `swing_amount`（0.0-0.7）で上書きできます。
 
-スウィングはオフビートノート（8分音符・16分音符）に適用されます。
-
-### 三連符グリッド
-
-ドラムパターンはシャッフルやスウィングフィール用の三連符サブディビジョンをサポート：
-- **ストレート**: 標準的な8分/16分音符グリッド
-- **三連符**: 1拍あたり12/24分割
-- **ハイブリッド**: ストレートと三連符パターンの混合
+スウィングは別グリッドではありません。オフビートの音は `swing_amount` に応じて三連符の位置へ押し出されます。8分グリッドで最大 +80 ティック、16分グリッドで最大 +40 ティックで、`swing_amount = 1.0` でちょうど三連符位置に一致します。Shuffle は量を 1.5 倍してからクランプします。
 
 ### ヒューマナイゼーション
 
@@ -657,22 +583,25 @@ void generateDrumsTrackWithVocal(
 
 ## モチーフトラック
 
-**ソース:** `src/track/motif.cpp`（約630行）
+**ソース:** `src/track/generators/motif.cpp`
 
-`BackgroundMotif`コンポジションスタイル（BGM専用モード）用。主旋律要素として機能する繰り返しパターンを生成し、ボーカルをバックグラウンドに回すか省略することを可能にします。
+`BackgroundMotif`コンポジションスタイル（BGM専用モード）用。Vocalは常にスキップされ、モチーフが主旋律要素になります。SynthDriven、RhythmSyncパラダイム、Blueprintのセクションフローが要求する場合にも生成されます。
 
 ### パラメータ
 
 ```cpp
 struct MotifParams {
-    MotifLength length;           // 0=auto(2 bars), 1, 2, or 4 beats
-    RhythmDensity rhythm_density; // 0=Sparse, 1=Medium, 2=Driving
-    MotifMotion motion;           // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
-    RepeatScope repeat_scope;     // FullSong, PerSection
-    MotifRegister register_;      // 0=auto(mid), 1=low, 2=high
-    uint8_t note_count;           // 0=auto(6), 3-8
+    MotifLength length;                 // Bars1, Bars2（デフォルト）, Bars4
+    uint8_t note_count;                 // 1サイクル 3-8 音、デフォルト 6
+    bool register_high;                 // false = mid, true = high
+    MotifRhythmDensity rhythm_density;  // Sparse, Medium（デフォルト）, Driving
+    MotifMotion motion;                 // Stepwise, GentleLeap, WideLeap,
+                                        // NarrowStep, Disjunct, Ostinato
+    MotifRepeatScope repeat_scope;      // FullSong（デフォルト）, Section
 };
 ```
+
+`MotifLength` の単位は拍ではなく**小節**です。レジスターは列挙型ではなく真偽値で、`MotifRegister` という型は存在しません。
 
 ### オーバーライドパラメータ
 
@@ -680,36 +609,17 @@ struct MotifParams {
 
 | パラメータ | 型 | 説明 |
 |-----------|------|------|
-| `motifLength` | int (0=auto, 1/2/4) | モチーフ長のオーバーライド（拍単位、0はデフォルトで2小節） |
+| `motifLength` | int (0=auto, 1/2/4) | モチーフ長のオーバーライド（小節単位、0 はデフォルトで2小節） |
 | `motifNoteCount` | int (0=auto, 3-8) | モチーフの音数をオーバーライド（0はデフォルトで6） |
-| `motifMotion` | int (0xFF=preset, 0-4) | モーションタイプのオーバーライド（0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; 内部5=OstinatoはBlueprint専用） |
-| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | レジスター範囲のオーバーライド |
+| `motifMotion` | int (0xFF=preset, 0-5) | モーションタイプのオーバーライド（0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 5=Ostinato） |
+| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | モチーフが組み立ての基準にするレジスターのオーバーライド |
 | `motifRhythmDensity` | int (0xFF=preset, 0-2) | リズム密度のオーバーライド（0=Sparse, 1=Medium, 2=Driving） |
 
 ### パターン生成
 
-```mermaid
-flowchart TD
-    A[パターン作成] --> B[長さ決定]
-    B --> C[3-8音を生成]
-    C --> D{モーションタイプ?}
-    D -->|Stepwise 0| E[スケールステップのみ]
-    D -->|GentleLeap 1| F[3度まで]
-    D -->|WideLeap 2| G2[5度まで]
-    D -->|NarrowStep 3| G3[狭いスケール度数]
-    D -->|Disjunct 4| G4[不規則な跳躍]
-    E --> G[テンションノート追加]
-    F --> G
-    G2 --> G
-    G3 --> G
-    G4 --> G
-    G --> H[リズム密度設定]
-    H --> I{リピートスコープ?}
-    I -->|FullSong| J[全セクションで同じパターン]
-    I -->|PerSection| K[セクションごとに新パターン]
-```
+<DocFigure name="tracks-motif-pattern" />
 
-**MotifMotionの値**（API: 0-4、内部: 0-5）:
+**MotifMotionの値**（API: 0-5）:
 
 | 値 | 名前 | 説明 |
 |----|------|------|
@@ -718,20 +628,28 @@ flowchart TD
 | 2 | WideLeap | 5度まで |
 | 3 | NarrowStep | 狭いスケール度数（ジャジー） |
 | 4 | Disjunct | 不規則な跳躍（実験的） |
-| 5 | Ostinato | 同一ピッチクラスの繰り返し（**内部Blueprint専用**） |
+| 5 | Ostinato | 同一ピッチクラスの繰り返し |
 
-### 音域レンジ
+### 音域
 
-| レジスター | 範囲 |
-|------------|------|
-| Mid | C3 (48) - C5 (72) |
-| High | C4 (60) - C6 (84) |
+モチーフトラックは C4 (60) - C8 (108) を占めます。レジスターのフラグは固有の音域ではなく、組み立ての基準音を選ぶものです：
+
+| レジスター | 基準音 |
+|-----------|--------|
+| Mid（デフォルト） | C4 (60) |
+| High | G4 (67) |
+
+ボーカルがある場合、使用できる音域はボーカルの中央値を基準に狭められます。上限は中央値の3半音上まで下がり、下限は15半音下まで上がるため、モチーフが音域の上端に集中しなくなります。
+
+### 反復
+
+`Free`ポリシーでは、`repeat_scope`が`FullSong`なら各セクションに新しいモチーフを生成し、`Section`ならセクションタイプごとにパターンをキャッシュして再利用します。ロック系のポリシー（LockedContour・LockedPitch・LockedAll）は繰り返しのセクションタイプでキャッシュ済みパターンを再生します。`Evolving`はキャッシュ済みのリフを各セクションで変化させながら、同一性を保ちます。`phrase_tail_rest`が有効な場合、モチーフは末尾の最後の小節で半分を過ぎた位置から新しい音を開始しません。Coordinatorが凍結小節をコピーするときも、生成器へこのカットオフを問い合わせます。
 
 ---
 
 ## アルペジオトラック
 
-**ソース:** `src/track/arpeggio.cpp`（約275行）
+**ソース:** `src/track/generators/arpeggio.cpp`
 
 `SynthDriven`コンポジションスタイル（BGM専用モード）用。エレクトロニックスタイルのトラックで主要なハーモニック/メロディック要素として機能するアルペジオパターンを生成します。
 
@@ -739,41 +657,33 @@ flowchart TD
 
 ```cpp
 struct ArpeggioParams {
-    ArpeggioPattern pattern;  // Up, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord
-    ArpeggioSpeed speed;      // Eighth, Sixteenth, Triplet
-    uint8_t octave_range;     // 1-3オクターブ
-    float gate;               // ノート長比率 (0.0-1.0)
-    bool sync_chord;          // コードチェンジに追従
+    ArpeggioPattern pattern = Auto;  // Up, Down, UpDown, Random, Pinwheel,
+                                     // PedalRoot, Alberti, BrokenChord, Auto
+    ArpeggioSpeed speed = Auto;      // Eighth, Sixteenth, Triplet, Auto
+    uint8_t octave_range = 2;        // 1-3オクターブ
+    float gate = -1.0f;              // ノート長比率 (0.0-1.0)、-1 はスタイル既定
+    bool sync_chord = true;          // コードチェンジに追従
+    uint8_t base_velocity = 90;      // アルペジオノートのベースベロシティ
 };
 ```
 
-### パターンタイプ（全8種類）
+### パターンタイプ
 
-```mermaid
-flowchart LR
-    subgraph Up ["アップ"]
-        U1[C] --> U2[E] --> U3[G] --> U4[C']
-    end
-
-    subgraph Down ["ダウン"]
-        D1[C'] --> D2[G] --> D3[E] --> D4[C]
-    end
-
-    subgraph UpDown ["アップダウン"]
-        UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
-    end
-```
+<DocFigure name="tracks-arpeggio-patterns" />
 
 | ID | パターン | 説明 |
 |----|---------|------|
 | 0 | Up | コードトーンを上昇 |
 | 1 | Down | コードトーンを下降 |
-| 2 | UpDown | 上昇後に下降 |
-| 3 | Random | ランダムなコードトーン選択 |
-| 4 | Pinwheel | 方向が交互に変わるパターン |
-| 5 | PedalRoot | 各音の間にルートに戻る |
-| 6 | Alberti | クラシック的な分散和音（低-高-中-高） |
-| 7 | BrokenChord | 不規則なコードトーン配列 |
+| 2 | UpDown | 上昇後に下降（端の音は重複しない） |
+| 3 | Random | コードトーンをシャッフルした順序 |
+| 4 | Pinwheel | ルート - 5度 - 3度 - 5度 |
+| 5 | PedalRoot | ルートと各上声を交互に鳴らす |
+| 6 | Alberti | 古典的な 低-高-中-高。Pinwheel と同じ音型 |
+| 7 | BrokenChord | 上昇して下降。UpDown と同じ音型 |
+| 255 | Auto | ムードまたは Blueprint 既定のパターンを使用（JS のデフォルト） |
+
+パターンを適用する前に、コードトーンは `octave_range` オクターブ分だけ積み上げられます。したがってデフォルトの 2 では、C メジャーの Up アルペジオは C E G C ではなく C E G C E G になります。
 
 ### スピード変換
 
@@ -791,21 +701,11 @@ Tick getNoteDuration(ArpeggioSpeed speed) {
 
 ## SEトラック
 
-**ソース:** `src/track/se.cpp`（約15行）
+**ソース:** `src/track/generators/se.cpp`
 
-セクションマーカー用の最小トラック（テキストイベントのみ）。
+SE トラックは各セクションの先頭にテキストマーカーを、転調がある場合は転調位置にもマーカーを書き込みます。ピッチの衝突検出には参加しません。
 
-```cpp
-void generateSE(Song& song) {
-    for (auto& section : song.arrangement.sections) {
-        MidiEvent marker;
-        marker.tick = section.start_tick;
-        marker.type = MidiEventType::Text;
-        marker.text = section.name;
-        song.se.addEvent(marker);
-    }
-}
-```
+コールが有効な場合は、コール&レスポンスのチャントも書き込まれます。チャントセクションとミックスブレイクにはそれぞれのプリセットパターン、サビにはコール密度に応じた確率で短いコール、B → サビの遷移直前の小節には PPPH、各イントロにはイントロミックスのパターンが置かれます。コールのノートは任意で、無効にするとテキストマーカーだけが書き込まれます。コールのノートはすべて C3 (48) 固定のため、アレンジ全体に影響を与えずにミュートしたり別の音源へ差し替えたりできます。
 
 ---
 

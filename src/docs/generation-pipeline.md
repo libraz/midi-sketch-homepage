@@ -18,61 +18,38 @@ For iterative vocal refinement:
 Use this workflow when melody quality is critical. You can iterate on the vocal endlessly with `regenerateVocal()` before committing to the full arrangement.
 :::
 
-```mermaid
-flowchart TD
-    subgraph Step1 [Step 1: Vocal Generation]
-        V1[generateVocal] --> V2[Preview/Iterate]
-        V2 -->|Not satisfied| V3[regenerateVocal]
-        V3 --> V2
-    end
+<DocFigure name="pipeline-vocal-first-workflow" />
 
-    subgraph Step2 [Step 2: Accompaniment]
-        A1[generateAccompaniment]
-        A1 --> A2[Aux → Bass → Chord → Guitar → Drums]
-    end
-
-    V2 -->|Satisfied| A1
-```
+Committing to the arrangement clears and rebuilds every non-vocal track — Aux, Bass, Chord, Drums, Arpeggio, Motif, SE and Guitar — and regenerates them in the paradigm order with the vocal held fixed. Motif is kept rather than cleared under the RhythmSync paradigm, where it is the coordinate axis the vocal was written against. Afterwards the vocal gets up to two refinement passes that resolve clashes with the new accompaniment, stopping early once a pass finds nothing to fix.
 
 ### BGM-Only Modes
 
-For `BackgroundMotif` and `SynthDriven` composition styles, vocal generation is skipped:
+For `BackgroundMotif` and `SynthDriven` composition styles, vocal generation is always skipped. In `BackgroundMotif`, Traditional and MelodyDriven paradigms run Aux before Motif without a vocal reference; RhythmSync keeps Motif before Aux even when Vocal is absent. `SynthDriven` skips Aux as well:
 
-```mermaid
-flowchart LR
-    subgraph BGMMode [BGM-Only Pipeline]
-        B1[Structure] --> B2[Motif/Arpeggio]
-        B2 --> B3[Bass]
-        B3 --> B4[Chord]
-        B4 --> B5[Guitar]
-        B5 --> B6[Drums]
-    end
-```
+<DocFigure name="pipeline-bgm-only" />
 
 ## CompositionStyle Branching
 
 | Style | Primary Track | Vocal | Aux | Generation Order |
 |-------|---------------|-------|-----|------------------|
-| **MelodyLead** | Vocal | Yes | Yes | Vocal → Aux → Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio → Drums → SE |
-| **BackgroundMotif** | Motif | No | Yes | Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE |
-| **SynthDriven** | Arpeggio | No | No | Motif (Blueprint) → Bass → Chord → Guitar → Arpeggio (manual) → Drums → SE |
+| **MelodyLead** | Vocal | Yes | Yes | Vocal → Aux → Motif (conditional) → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **BackgroundMotif** | Motif | No | Yes | Aux → Motif* → Bass → Chord → Guitar → Arpeggio → Drums → SE |
+| **SynthDriven** | Arpeggio | No | No | Motif → Bass → Chord → Guitar → Arpeggio (requires `arpeggioEnabled`) → Drums → SE |
+
+\* `BackgroundMotif` uses Aux → Motif for Traditional/MelodyDriven and Motif → Aux for RhythmSync.
 
 ::: info Generation Paradigms
-Three paradigms affect the precise ordering of track generation:
-- **Traditional**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+The generation order is decided by the Blueprint paradigm alone; the composition style only decides which tracks drop out of it.
+
+- **Traditional / MelodyDriven**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
 - **RhythmSync**: Motif → Vocal → Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE
-- **MelodyDriven**: Vocal → Aux → Motif → Bass → Chord → Guitar → Arpeggio → Drums → SE
+
+So the table follows the Traditional/MelodyDriven sequence with skipped tracks removed. BackgroundMotif drops Vocal, which leaves Aux running first in those paradigms; RhythmSync keeps Motif before Aux. SynthDriven drops both Vocal and Aux. Motif is generated unconditionally under BackgroundMotif and SynthDriven — only MelodyLead can skip it. Arpeggio is never enabled automatically: it appears only when `arpeggioEnabled=true`, whatever the composition style.
 :::
 
 ## Phase 1: Structure Building
 
-The generator first creates the song structure based on `StructurePattern`. If an **Energy Curve** is specified (GradualBuild, FrontLoaded, WavePattern, or SteadyState), it adjusts section energy levels during structure building to shape the overall dynamic arc of the song.
-
-```cpp
-void Generator::buildStructure() {
-    arrangement_ = StructureBuilder::build(params_.structure);
-}
-```
+The generator selects the song structure from the target duration, an explicit form, a Blueprint section flow, or `StructurePattern`. It can then insert call sections, overlay Blueprint slot properties, apply Behavioral Loop exit patterns, and apply an **Energy Curve** (GradualBuild, FrontLoaded, WavePattern, or SteadyState) to shape the overall dynamic arc.
 
 ### Structure Patterns
 
@@ -83,9 +60,9 @@ void Generator::buildStructure() {
 | DirectChorus | 16 | A(8)-Chorus(8) |
 | RepeatChorus | 32 | A(8)-B(8)-Chorus(8)-Chorus(8) |
 | FullPop | 56 | Intro-A-B-Chorus-A-B-Chorus-Outro |
-| FullWithBridge | 52 | Intro-A-B-Chorus-Bridge-Chorus-Outro |
-| Ballad | 56 | Intro(8)-A-B-Chorus-Interlude-B-Chorus-Outro |
-| ExtendedFull | 90 | Full form with bridge and extended sections |
+| FullWithBridge | 48 | Intro-A-B-Chorus-Bridge-Chorus-Outro |
+| Ballad | 60 | Intro(8)-A-B-Chorus-Interlude-B-Chorus-Outro |
+| ExtendedFull | 88 | Full form with bridge and extended sections |
 
 ### Section Types
 
@@ -93,7 +70,7 @@ Each section has properties that affect generation:
 
 ```cpp
 struct Section {
-    SectionType type;         // Intro, A, B, Chorus, Bridge, Interlude, Outro
+    SectionType type;         // Intro, A, B, Chorus, Bridge, Interlude, Outro, Chant, MixBreak, Drop
     uint8_t bars;             // Length in bars
     VocalDensity vocal_density;    // Full, Sparse, None
     BackingDensity backing_density; // Normal, Thin, Thick
@@ -106,36 +83,23 @@ struct Section {
 
 The most complex generator with phrase caching and template-driven design. When **melody overrides** are specified, parameters such as max leap, syncopation probability, phrase length, long note ratio, chorus register shift, hook repetition, and leading tone behavior take precedence over template defaults:
 
-```mermaid
-flowchart TD
-    A[Get section] --> B{Phrase cached?}
-    B -->|Yes| C[Retrieve cached phrase]
-    B -->|No| D[Select melody template]
-    D --> E[Generate phrase contour]
-    E --> F[Apply chord tones on strong beats]
-    F --> G[Add embellishments]
-    G --> H[Store in cache]
-    C --> I[Apply voice leading]
-    H --> I
-    I --> J[Apply attitude]
-    J --> K[Clamp to vocal range]
-```
+<DocFigure name="pipeline-vocal-phrase-cache" />
 
 **Melody Templates:**
 
 | Template | Characteristics |
 |----------|-----------------|
 | Auto | Auto-select based on style and section |
-| PlateauTalk | NewJeans/Billie style: high plateau, talk-sing |
-| RunUpTarget | Anime high-energy/dramatic pop style: run up to target note |
-| DownResolve | B-melody: descending resolution |
-| HookRepeat | TikTok/K-POP: short repeating hook |
-| SparseAnchor | 髭男 style: sparse anchor notes |
+| PlateauTalk | Talk-like, narrow-range pop |
+| RunUpTarget | Anime high-energy, dramatic pop: run up to a target note |
+| DownResolve | B-section, pre-chorus: descending resolution |
+| HookRepeat | Short-form, K-POP: short repeating hook |
+| SparseAnchor | Sparse, sustained ballad phrasing |
 | CallResponse | Duet style: call and response |
-| JumpAccent | Emotional: jump accent |
+| JumpAccent | Emotional peaks: jump accent |
 
 ::: info Auto Template Selection
-When `melodyTemplate=Auto`, the system selects based on vocalStyle and section type. For example, Anime style in Chorus sections tends to use HookRepeat or JumpAccent.
+When `melodyTemplate=Auto`, the template is resolved per section from a style × section override table, falling back to the section default. For example, Anime style has no chorus override, so it takes the section default and always uses HookRepeat there; Rock and PowerfulShout are overridden to JumpAccent in the chorus.
 :::
 
 **Vocal Attitudes:**
@@ -146,110 +110,94 @@ When `melodyTemplate=Auto`, the system selects based on vocalStyle and section t
 | Expressive | Tensions with delayed resolution, slight timing deviation |
 | Raw | Non-chord tones, phrase boundary breaking |
 
+The attitude is not a pass applied to a finished melody. It is read while each pitch is chosen, where it decides which pitch classes are even candidates — Clean restricts the set to chord tones, Expressive adds 7ths, 9ths and 11ths on notes long enough to carry them, and Raw opens the whole scale. Notes shorter than an eighth are treated as Clean regardless. The only thing applied afterwards is expression depth: scoop, fall, vibrato and portamento amounts.
+
 ::: warning Attitude Restrictions
 Not all attitudes are available for every style preset. Use `midisketch_style_preset_allowed_attitudes()` to check which attitudes are permitted. Specifying an unsupported attitude results in a validation error.
 :::
 
 ### Aux Track
 
-Generates sub-melody support that adapts to the vocal:
+Generates sub-melody support. When a vocal exists, Aux adapts to it. In `BackgroundMotif`, Traditional/MelodyDriven run Aux before Motif without a vocal reference, while RhythmSync keeps Motif before Aux; `SynthDriven` skips Aux:
 
-```mermaid
-flowchart TD
-    A[Analyze vocal phrase] --> B{Section type?}
-    B -->|Chorus| C[Reduced density, lower register]
-    B -->|Verse| D[Normal density]
-    C --> E[Select aux function]
-    D --> E
-    E --> F{Function type}
-    F -->|PulseLoop| G[Rhythmic anchor pulses]
-    F -->|TargetHint| H[Melodic target notes]
-    F -->|GrooveAccent| I[Syncopated accents]
-    G --> J[Avoid vocal collision]
-    H --> J
-    I --> J
-```
+<DocFigure name="pipeline-aux-selection" />
 
 **Aux Functions:**
 
-| Function | Purpose | When Used |
-|----------|---------|-----------|
-| PulseLoop | Addictive repetition pattern | Straight rhythms |
-| TargetHint | Hints at melody destination | Complex melodies |
-| GrooveAccent | Physical groove accent | Syncopated grooves |
-| PhraseTail | Phrase ending fill | Phrase transitions |
-| EmotionalPad | Emotional pad/floor | Ballad, emotional sections |
-| Unison | Vocal unison doubling | Chorus emphasis |
-| MelodicHook | Melodic hook riff | Hook-focused sections |
-| MotifCounter | Counter melody (contrary motion) | Polyphonic textures |
-| SustainPad | Whole-note chord tone pad | Sustained harmonic support |
+| Function | Purpose |
+|----------|---------|
+| PulseLoop | Addictive repetition pattern |
+| TargetHint | Hints at melody destination |
+| GrooveAccent | Physical groove accent |
+| PhraseTail | Phrase ending fill |
+| EmotionalPad | Emotional pad/floor |
+| Unison | Vocal unison doubling |
+| MelodicHook | Melodic hook riff |
+| MotifCounter | Counter melody (contrary motion) |
+| SustainPad | Whole-note chord tone pad |
+
+Which function runs in a section is named up front by the Blueprint's aux profile — `intro_function` for the intro, `verse_function` for A, B and Bridge, `chorus_function` for the chorus — rather than being picked from the melody at generation time. Three cases override that name: an intro places an echo of the cached chorus motif instead of running an aux function at all; an UltraVocaloid vocal at full density forces GrooveAccent in the chorus; and a chorus Unison is downgraded to MelodicHook when the vocal's rhythm is too unstable to double cleanly.
+
+Register and density are set per section against the vocal's own tessitura, and the chorus is the tight one, not the loose one:
+
+| Section | Offset from vocal centre | Density |
+|---------|--------------------------|---------|
+| Intro | 0 (6-semitone span) | 1.0x |
+| A / B / Bridge | -12 (an octave below) | 0.8x |
+| Chorus, pad functions | -12 | 0.8x |
+| Chorus, rhythmic functions | -6 | 0.95x |
+
+So the verses sit an octave under the vocal and thin out, while a rhythmic chorus aux climbs to within a tritone of the vocal centre and plays denser. The window is an absolute semitone width around that centre, clamped to the aux range G3-C6 and capped further by the profile's `range_ceiling` relative to the vocal's top note. Velocity ratios scale a fixed base of 80 — except Unison and the harmony line, which scale the vocal note's own velocity.
 
 ### Bass Generation
 
 Bass provides the harmonic foundation, adapting to vocal when present:
 
-```mermaid
-flowchart TD
-    A[Get chord for bar] --> B[Determine root note]
-    B --> C{Vocal present?}
-    C -->|Yes| D[Apply collision avoidance]
-    C -->|No| E[Standard generation]
-    D --> F{Section type?}
-    E --> F
-    F -->|Chorus| G[Higher octave]
-    F -->|Intro| H[Lower octave]
-    F -->|Other| I[Mid octave]
-    G --> J[Add approach notes]
-    H --> J
-    I --> J
-    J --> K[Apply pattern]
-```
+<DocFigure name="pipeline-bass-decisions" />
 
 **Bass Patterns:**
 
-The bass system supports 17+ pattern types (BassPattern) including Sparse, Standard, Driving, and genre-specific variants. The active pattern is selected automatically based on mood and section, or can be influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot configuration (0=auto, 1-17 maps to BassPattern+1).
+The bass system supports 17 pattern types (BassPattern). The active pattern is selected automatically based on mood and section, or can be influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot configuration (0=auto, 1-17 maps to BassPattern+1). Section type selects the pattern and the velocity — it does not transpose the bass by octave; the register only moves to keep the root inside the bass range.
 
-Common pattern categories:
-- **Sparse**: Quarter notes on beats 1 and 3 (ballad, chill)
-- **Standard**: Quarter note rhythm with occasional eighths
-- **Driving**: Eighth note patterns with approach notes
+Peak handling is a second step after selection. `PeakLevel::Medium` promotes the chosen pattern one density level and `PeakLevel::Max` promotes it twice. This also applies when `bass_style_hint` explicitly names the base pattern; the hint chooses the starting pattern, not whether a peak is allowed to thicken it.
+
+Common patterns:
+- **WholeNote**: sustained root, half-note motion (ballad, intro)
+- **RootFifth**: root-fifth alternation, the classic pop baseline
+- **Syncopated**: off-beat accents for pre-chorus lift
+- **Driving**: eighth-note pulse with an approach note into the next bar (chorus)
+- **Walking**: quarter-note scale walk (jazz, city pop)
+- **Tresillo / SubBass808 / SlapPop**: genre-specific (Latin, trap, funk)
 
 ### Chord Generation
 
 Chord voicing coordinates with bass and vocal:
 
 ```cpp
-void Generator::generateChord() {
-    BassAnalysis bassAnalysis = analyzeBass(song_.bass);
-    VocalAnalysis vocalAnalysis = analyzeVocal(song_.vocal);
-
-    // Use rootless voicing when bass has root
-    if (bassAnalysis.hasRootOnBeat1) {
-        useRootlessVoicing();
-    }
-
-    // Avoid collision with vocal
-    if (vocalAnalysis.hasNoteAt(tick)) {
-        adjustVoicing(vocalAnalysis.pitchAt(tick));
-    }
-}
+// The bass's pitch classes on beats 1 and 3 become a mask the voicing generator
+// avoids doubling or clashing with (src/track/chord/bass_coordination.h).
+uint16_t bassMask = buildBassPitchMask(song_.bass(), barStart, barEnd);
+VoicingType type = selectVoicingType(section, mood, bassHasRoot, rng);
+VoicedChord v = selectVoicing(root, chord, prevVoicing, hasPrev, type, bassMask, rng);
 ```
 
 **Voice Leading Algorithm:**
-1. Calculate distance between consecutive voicings
-2. Minimize movement (sum of semitone distances)
-3. Maximize common tone retention
-4. Apply inversions to optimize transitions
+1. Generate candidates from the section's voicing type (close, open/Drop2, Drop3, spread, rootless)
+2. Score movement from the previous voicing, weighting the bass and soprano twice as heavily as the inner voices
+3. Reward common tone retention
+4. Subtract a mood-dependent penalty for parallel fifths and octaves — strict for the sophisticated moods, lenient for the energetic ones
 
 ::: info Rootless Voicing
-When bass plays the root on beat 1, chord voicing automatically omits the root to avoid muddiness. This creates cleaner, less cluttered arrangements.
+Rootless voicing is an occasional colour, not an automatic response to the bass. It needs three things at once: the bass carrying the root, a sophisticated mood (CityPop, Nostalgic, Dramatic or ModernPop), and a probability roll — 20% in B sections, 30% in Chorus, 25% in Bridge. A/Intro/Interlude/Outro always use close voicing. What the bass does always influence is doubling: the chord track avoids the pitch classes the bass sounds on beats 1 and 3.
 :::
 
 ### Guitar Track
 
-Generates accompaniment guitar patterns on a dedicated MIDI channel. Controlled by `guitarEnabled` (JS default: `false`, C++ default: `true`). The guitar track is influenced by Blueprint constraints including `guitar_skill` (skill level affecting pattern complexity) and `guitar_below_vocal` (keeps guitar voicings below the vocal register to avoid masking). Guitar generation occurs after chord generation, allowing it to complement the existing harmonic voicing.
+Generates accompaniment guitar patterns on a dedicated MIDI channel. Controlled by `guitarEnabled` (default `true` in both the JS and C++ APIs). The guitar track is influenced by the Blueprint's `guitar_below_vocal` constraint (keeps guitar voicings below the vocal register to avoid masking) and by the per-section `guitar_style_hint`. Guitar generation occurs after chord generation, allowing it to complement the existing harmonic voicing.
 
 Per-section guitar style can be influenced via `guitar_style_hint` (0-7) in the Blueprint's SectionSlot configuration, where 0 selects automatically based on mood and energy.
+
+Some moods deliberately have no guitar (EnergeticDance, Sentimental, Chill, DarkPop, Dramatic, ModernPop, ElectroPop, Synthwave, FutureBass, Trap). On those, the guitar track is skipped entirely even with `guitarEnabled: true`.
 
 ### Drums Generation
 
@@ -257,43 +205,48 @@ Drum patterns are selected based on mood:
 
 | Style | Characteristics | Used By |
 |-------|-----------------|---------|
-| Sparse | Half-time feel, minimal | Ballad, Chill |
-| Standard | 8th hi-hat, 2&4 snare | StraightPop |
-| FourOnFloor | 4-on-floor kick | ElectroPop, IdolPop |
-| Upbeat | Syncopated, 16th hi-hat | BrightUpbeat |
-| Rock | Ride cymbal, crash accents | LightRock |
-| Synth | Tight 16th hi-hat | Yoasobi, Synthwave |
+| Sparse | Half-time feel, minimal | EmotionalPop, Chill, Ballad, Lofi |
+| Standard | 8th hi-hat, 2&4 snare | StraightPop, Sentimental, Nostalgic, CityPop, RnBNeoSoul |
+| FourOnFloor | 4-on-floor kick | EnergeticDance, DarkPop, ElectroPop |
+| Upbeat | Syncopated, driving | BrightUpbeat, MidPop, ModernPop, IdolPop, Anthem |
+| Rock | Ride cymbal, crash accents | LightRock, Dramatic |
+| Synth | Tight 16th hi-hat | AnimeHighEnergy, Synthwave, FutureBass |
+| Trap | Half-time snare on 3, hi-hat rolls | Trap |
+| Latin | Dembow kick-snare figure | LatinPop |
 
-Blueprints can specify `euclidean_drums_percent` to control the probability of using Euclidean rhythm patterns, and per-section `drum_role` (Full, Ambient, Minimal, FXOnly) to shape drum behavior across the arrangement.
+Blueprints carry a `euclidean_drums_percent` field and the drum generator samples it when choosing the Euclidean branch. The field is currently classified as **UnprovenLiveness** in the Blueprint accounting, so its audible effect is not guaranteed; treat it as reserved rather than as a reliable tuning control. Per-section `drum_role` (Full, Ambient, Minimal, FXOnly) does shape drum behavior across the arrangement.
 
 **Fill Generation:**
 - Tom descend/ascend patterns
 - Snare rolls
 - Combination fills at section transitions
 
-### Motif Track (BackgroundMotif style)
+For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. If that cut removes an entry crash, the post-processor restores the crash at the next section boundary so the chorus still has an arrival marker.
 
-Generates repeating patterns as the primary melodic element. When **motif overrides** are specified, parameters such as motif length (0=auto, 1/2/4 beats), note count (0=auto, 3-8), motion (0-4 via API, internal 5=Ostinato for Blueprints only), register (0=auto, 1=low, 2=high), and rhythm density (0=Sparse, 1=Medium, 2=Driving) take precedence over style defaults:
+### Motif Track
+
+Primary melodic element in BackgroundMotif, and also generated under SynthDriven, under the RhythmSync paradigm, and whenever a Blueprint's section flow asks for it. Vocal is not a background layer in `BackgroundMotif`; it is skipped. When **motif overrides** are specified, parameters such as motif length (0=auto, 1/2/4 **bars**), note count (0=auto, 3-8), motion (0-5 via API, including Ostinato), register (0=auto, 1=low, 2=high), and rhythm density (0=Sparse, 1=Medium, 2=Driving) take precedence over style defaults:
 
 ```cpp
 MotifParams params {
-    .length = MotifLength::TwoBars,    // 2 or 4 bars
-    .rhythm_density = RhythmDensity::Medium,
-    .motion = MotifMotion::Stepwise,   // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
-    .repeat_scope = RepeatScope::FullSong
+    .length = MotifLength::Bars2,              // Bars1, Bars2 or Bars4
+    .rhythm_density = MotifRhythmDensity::Medium,
+    .motion = MotifMotion::Stepwise,           // 0=Stepwise .. 5=Ostinato
+    .repeat_scope = MotifRepeatScope::FullSong // FullSong or Section
 };
 ```
 
-### Arpeggio Track (SynthDriven style)
+### Arpeggio Track
 
-Generates arpeggiated patterns as the primary harmonic element:
+Generated whenever `arpeggioEnabled=true`, in any composition style; it is the lead voice in SynthDriven.
 
 ```cpp
 ArpeggioParams params {
-    .pattern = ArpeggioPattern::UpDown,
-    .speed = ArpeggioSpeed::Sixteenth,
-    .octave_range = 2,
-    .gate = 0.5f  // Note length ratio
+    .pattern = ArpeggioPattern::Auto,   // 255 = use the mood's default pattern
+    .speed = ArpeggioSpeed::Auto,       // 255 = use the style default speed
+    .octave_range = 2,                  // 1-3
+    .gate = -1.0f,                      // Note length ratio; -1 = style default
+    .base_velocity = 90
 };
 ```
 
@@ -310,22 +263,21 @@ Generates section markers and sound effect cues:
 
 Automatically applies energy transitions:
 
-```mermaid
-flowchart LR
-    A[B Section] -->|Crescendo| B[Chorus]
-    B -->|Step-up| C[Chorus 2]
-```
+<DocFigure name="pipeline-transition-dynamics" />
+
+Transition dynamics work from an integer energy level per section — Intro 1, A 2, B 3, Chorus 4, Bridge 2, Interlude 1, Outro 2, Chant 1, MixBreak 4, Drop 4. Two adjacent sections at the same level get nothing: a chorus followed by another chorus is flat, not a step up. B into Chorus is the one special case, a full-section suppress-then-crescendo; every other pair gets a ramp across the last bar only.
 
 **Section Energy Multipliers:**
 
+Separately from the transition ramps, each section scales note velocity as it is generated:
+
 | Section | Multiplier |
 |---------|-----------|
-| Intro | 0.75 |
-| A | 0.85 |
-| B | 1.00 |
-| Chorus | 1.20 |
-| Bridge | 0.90 |
-| Outro | 0.80 |
+| Chant | 0.55 |
+| Intro / A / Bridge / Interlude | 0.70 |
+| Outro | 0.75 |
+| B | 0.85 |
+| Chorus / MixBreak / Drop | 1.10 |
 
 ### Humanization
 
@@ -333,45 +285,44 @@ Adds natural variation to timing and velocity:
 
 ```cpp
 void applyHumanization(Song& song, float intensity) {
-    // Timing: random offset ±ms
-    // Velocity: random ±value
-    // Not applied to drums
+    // Timing: micro-offsets on drums and bass
+    // Velocity: random +/- value on pitched tracks (drums excluded)
 }
 ```
 
-::: tip Drums Exception
-Humanization is intentionally **not applied to drums** to maintain tight rhythmic feel. Melodic and harmonic tracks receive humanization while drums stay quantized.
+::: tip What humanization actually touches
+Velocity humanization is applied to the pitched tracks (vocal, chord, bass, motif, arpeggio, aux, guitar) and never to drums, which keeps the kit's dynamics deliberate. Micro-timing is the opposite: it is applied to **drums and bass** to create the groove pocket, while the vocal is deliberately left on the grid. Micro-timing is not gated on `humanize` either — any `driveFeel` other than 50 produces it on its own.
 :::
+
+### Cross-Track Voice Limiting and Final Repair
+
+After track generation, sections with `max_moving_voices` cap how many pitched tracks may change between adjacent bars. The coordinator freezes lower-priority moving tracks in this order (highest to lowest): **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**. Drums and SE are outside the cap. A frozen bar copies the previous bar, shifts it into place, and then re-quantizes pitches against the new chord and the other tracks. Chord-boundary policies may split or shorten notes; the generator's motif phrase-tail cutoff is applied during this copy/quantization pass, and guitar rake order is restored after pitch resolution so the result remains in string order with a playable fingering.
+
+The final tail gate handles a short accidental overlap by trimming the earlier note at the later onset when the overlap is no longer than a quarter note and the remainder either is at least a 32nd note or retains at least seven eighths of an already-short note. Longer overlaps or a shorter remainder follow the ordinary clash rules. See the [Harmony](/docs/harmony) reference for the shared chord-aware collision policy.
+
+In RhythmSync, the post-vocal rewrite re-registers the changed vocal and motif, then rechecks accompaniment and motif-vocal dissonance. That repair covers clashes; it is not a second pass that revalidates every bass doubling or register constraint.
 
 ## MIDI Output
 
-Finally, the Song is converted to SMF Type 1 or Type 2:
+Finally, the Song is converted to SMF Type 1:
 
-```mermaid
-flowchart TD
-    A[Song] --> B[MidiWriter::build]
-    B --> C[Write header]
-    C --> D[Embed generation metadata]
-    D --> E[For each track]
-    E --> F[Convert NoteEvents to MidiEvents]
-    F --> G[Apply transposition to target key]
-    G --> H[Write variable-length timing]
-    H --> I[SMF Binary]
-```
+<DocFigure name="pipeline-midi-output" />
 
 **Track Mapping:**
 
 | Track | Channel | Program |
 |-------|---------|---------|
 | Vocal | 0 | 0 (Piano) |
-| Aux | 1 | 4 (E.Piano) |
-| Chord | 2 | 4 (E.Piano) |
-| Bass | 3 | 33 (E.Bass) |
-| Motif | 4 | 81 (Synth Lead) |
-| Arpeggio | 5 | 81 (Saw Lead) |
-| Guitar | 6 | 25 (Acoustic Guitar) |
+| Chord | 1 | 4 (E.Piano) |
+| Bass | 2 | 33 (E.Bass) |
+| Motif | 3 | 81 (Synth Lead) |
+| Arpeggio | 4 | 81 (Saw Lead) |
+| Aux | 5 | 89 (Warm Pad) |
+| Guitar | 6 | 27 (E.Guitar clean) |
 | Drums | 9 | GM Drums |
 | SE | 15 | Text events |
+
+The programs above are per-track fallbacks; the actual GM program is chosen per mood (`getMoodPrograms`), so the instruments you hear vary with the mood preset.
 
 ## Key Transposition
 

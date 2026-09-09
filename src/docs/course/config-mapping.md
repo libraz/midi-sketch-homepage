@@ -10,6 +10,8 @@ The central claim of the course is that a song idea is independent of the parame
 
 ::: info Blueprint
 A **blueprint** is a high-level recipe that bundles a generation strategy with sensible defaults — paradigm, drum policy, hook behaviour, and arrangement weights. Selecting `blueprintId` is the fastest way to get a coherent song; you then override individual fields. MidiSketch ships 10 blueprints (`blueprintId` 0–9), or `255` to pick one at random by weight.
+
+`BackgroundMotif` and `SynthDriven` enable Motif generation. `MelodyLead` enables Motif only when the resolved paradigm, riff policy, addictive mode, or Blueprint section flow requests it; section masks and layer schedules determine where notes remain. See [Motif Generation Flow](/docs/option-relationships#_17-5-motif-generation-flow).
 :::
 
 ::: info Generation paradigm
@@ -48,8 +50,8 @@ The tables below mirror the course chapter by chapter. Treat them as the referen
 
 | Concept | Config field | Range / notes |
 | --- | --- | --- |
-| Broken-chord texture | `arpeggioEnabled` / `arpeggioPattern` | bool; pattern `0`–`7` (Up … BrokenChord) |
-| Style preset (bundles chord & melody defaults) | `stylePresetId` | `0`–`16` (e.g. 3 = Idol Standard, 12 = Background Motif, 14 = Anime Opening) |
+| Broken-chord texture | `arpeggioEnabled` / `arpeggioPattern` / `arpeggioSpeed` / `arpeggioGate` | bool; pattern `0`–`7` or `255`=Auto; speed `0`–`2` or `255`=Auto; gate `0.0`–`1.0` or `-1`=style default |
+| Style preset (bundles chord & melody defaults) | `stylePresetId` | `0`–`16` (e.g. 3 = Idol Standard, 12 = Background Motif using MelodyLead, 14 = Anime Opening) |
 
 ### Chapter 3 — Chord Progressions
 
@@ -73,6 +75,8 @@ The tables below mirror the course chapter by chapter. Treat them as the referen
 | Hook intensity | `hookIntensity` | `0`–`4` (`4` = Maximum, set via BehavioralLoop) |
 | Vocal delivery style | `vocalStyle` | `0`–`13` (`0` = Auto, `13` = KPop) |
 | Melody template | `melodyTemplate` | `0` = Auto, `1`–`7` |
+| Motif motion | `motifMotion` | `0xFF` = preset, `0`–`5` = override |
+| Syllabic subdivision | `syllabicSubRate` | `0` = style default (not off), `1`–`100` = percentage override |
 | Call & response | `callSetting` | `0` = Auto, `1` = Enabled, `2` = Disabled |
 
 ### Chapter 6 — Song Structure
@@ -98,7 +102,7 @@ Picking a `blueprintId` sets the paradigm, drum policy, and arrangement weights 
 | 6 | IdolKawaii | MelodyDriven | no | 5% |
 | 7 | IdolCoolPop | RhythmSync | yes | 5% |
 | 8 | IdolEmo | MelodyDriven | no | 4% |
-| 9 | BehavioralLoop | Traditional | no | 0% (explicit only) |
+| 9 | BehavioralLoop | RhythmSync | no | 0% (explicit only) |
 
 Drums-required blueprints (`1`, `5`, `7`) force a drum track; query this at runtime with `getBlueprintDrumsRequired(id)`. BehavioralLoop (`9`) forces addictive mode, sets `hookIntensity` to Maximum, and locks the riff.
 
@@ -108,10 +112,10 @@ Putting the dials together, a complete, reproducible song is a few lines:
 
 ```javascript
 const config = createDefaultConfig(0)
-config.key = 7                 // G major (ch1)
-config.chordProgressionId = 0  // preset progression (ch3)
-config.chordExt7th = true      // mellow color (ch4)
-config.hookIntensity = 3       // strong hook (ch5)
+config.key = 7                 // G major (Ch. 1)
+config.chordProgressionId = 0  // preset progression (Ch. 3)
+config.chordExt7th = true      // mellow color (Ch. 4)
+config.hookIntensity = 3       // strong hook (Ch. 5)
 config.seed = 42               // reproducible
 sketch.generateFromConfig(config)
 ```

@@ -11,7 +11,7 @@ A **chord progression** is an ordered sequence of chords played one after anothe
 Before looking at specific progressions, it helps to know that each chord in a key plays one of three structural roles. These roles are why progressions feel directional rather than random.
 
 ::: info Tonic / subdominant / dominant function
-Every chord in a key has a **function** — a structural job. The **tonic** (built on degree 1, `I`) is home: stable, resolved, at rest. The **dominant** (built on degree 5, `V`) is maximum tension; it strongly pulls back toward the tonic. The **subdominant** (built on degree 4, `IV`) is the in-between "away" zone that sets up the dominant. Most progressions are just a walk between these three poles.
+Every chord in a key has a **function** — a structural job — and there are three of them. The **tonic** function (degree 1, `I`, and its stand-ins `vi` and `iii`) is home: stable, resolved, at rest. The **dominant** function (degree 5, `V`, and `vii°`) is maximum tension; it strongly pulls back toward the tonic. The **subdominant** function (degree 4, `IV`, and `ii`) is the in-between "away" zone that sets up the dominant. Most progressions are just a walk between these three poles.
 :::
 
 ::: info Tension and resolution
@@ -51,12 +51,12 @@ Because it sidesteps the tonic, the Royal Road creates motion without closure �
 The most recycled loop in Western pop is a close cousin: four diatonic chords that complete a full emotional arc and then repeat.
 
 ::: info Four-chord loop / canon progression
-A **four-chord loop** is any short four-chord cycle repeated throughout a song; the **canon progression** is the famous descending version (`I-V-vi-IV` and its relatives) named after Pachelbel's Canon. These loops are popular because four chords are enough to trace a complete home → away → sad → hopeful arc while staying simple enough to memorize instantly.
+A **four-chord loop** is any short four-chord cycle repeated throughout a song; `I-V-vi-IV` is by far the most recycled one. It is often confused with the **canon progression** (`I-V-vi-iii-IV-I-IV-V`), named after Pachelbel's Canon, whose first four chords walk the bass steadily downward. These loops are popular because four chords are enough to trace a complete home → away → sad → hopeful arc while staying simple enough to memorize instantly.
 :::
 
 <ScoreExample example="canonPop" locale="en" />
 
-The `I-V-vi-IV` loop starts at home and returns, unlike the Royal Road, which is why it feels resolved yet still danceable on repeat. Both are just different orderings of mostly the same diatonic chords — the ordering is the whole design.
+The `I-V-vi-IV` loop opens on `I` and, because it loops, lands back on it every four bars — unlike the Royal Road, which never touches the tonic at all. The arrival is the loop restarting rather than a cadence, which is why the progression feels resolved and still danceable on repeat. Both are just different orderings of mostly the same diatonic chords — the ordering is the whole design.
 
 ## Borrowed chords: stepping briefly outside the key
 
@@ -68,7 +68,7 @@ A **borrowed chord** is a chord taken from the parallel key (here, the parallel 
 
 <ScoreExample example="borrowedFlatVII" locale="en" />
 
-`I-♭VII-IV-I` (C - B♭ - F - C) trades the leading-tone pull of a diatonic cadence for a plagal, mixolydian brightness — the move behind countless rock and anime choruses. MidiSketch ships two such progressions (the Rock presets), selectable like any other via `chordProgressionId`; ♭VII is the only borrowed chord in the preset set, and the engine voices and analyzes it correctly even though it sits outside the key.
+`I-♭VII-IV-I` (C - B♭ - F - C) trades the leading-tone pull of a diatonic cadence for a plagal, mixolydian brightness — the move behind countless rock and anime choruses. MidiSketch ships two ♭VII progressions (the Rock presets), selectable like any other via `chordProgressionId`. They are not the only presets that step outside the key: AeolianPop is `vi-♭VI-♭VII-I` and NeapolitanPop is `vi-iv-♭II-V-I`, so ♭VI, ♭II and the minor `iv` appear too. The engine voices and analyzes all of them correctly.
 
 ## Vamps: a progression can be tiny
 
@@ -87,7 +87,7 @@ A two-chord vamp like `Am`↔`F` already carries a complete mood. MidiSketch tre
 | Concept | MidiSketch control | Notes |
 | --- | --- | --- |
 | Choosing a progression | `chordProgressionId` (0-21) | 22 preset progressions; `getChords()` lists them all |
-| Borrowed chord (`♭VII`) | `chordProgressionId` (Rock presets) | `I-♭VII-IV-I` / `I-IV-♭VII-I`; the only borrowed chord in the preset set |
+| Borrowed chords | `chordProgressionId` | Rock presets `I-♭VII-IV-I` / `I-IV-♭VII-I`; also AeolianPop `vi-♭VI-♭VII-I` and NeapolitanPop `vi-iv-♭II-V-I` |
 | How progressions are written | degree (Roman numeral) notation | e.g. `IV-V-iii-vi`, key-independent so it transposes to any key |
 | Loop length as a style choice | short vamps vs. long cycles | BehavioralLoop blueprint exploits very short loops (forward reference, Chapter 7) |
 

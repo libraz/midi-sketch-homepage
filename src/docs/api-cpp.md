@@ -1,39 +1,53 @@
 # C++ API Reference
 
-This document covers the C++ API for native applications and the C API for FFI/WASM bindings.
+This page documents the native C++ API and the C ABI used by FFI and WASM bindings. The C ABI accepts JSON for configuration; it has no binary configuration structs.
 
 ## MidiSketch Class
 
 ### Constructor
 
-```cpp
+~~~cpp
 #include "midisketch.h"
 
 midisketch::MidiSketch sketch;
-```
+~~~
 
 ::: info Header Files
-- `midisketch.h` - C++ class API
-- `midisketch_c.h` - C API for FFI/WASM bindings
-- `core/types.h` - Type definitions (includes all core types)
+- midisketch.h - C++ class API
+- midisketch_c.h - C ABI for FFI/WASM bindings
+- core/types.h - Core types included by the C++ API
 :::
 
-### `generateFromConfig(config)`
+### generate(params)
 
-Generate MIDI from a SongConfig object.
+Generate a song from the lower-level GeneratorParams type.
 
-```cpp
+~~~cpp
+midisketch::GeneratorParams params;
+params.key = midisketch::Key::C;
+params.bpm = 120;
+params.seed = 12345;
+sketch.generate(params);
+~~~
+
+### generateFromConfig(config)
+
+Generate MIDI from SongConfig. bpm = 0 and seed = 0 select the style default tempo and a generated seed. chord_progression_id = 255 selects a progression from the style recommendations.
+
+~~~cpp
+using namespace midisketch;
+
 SongConfig config;
-config.style_preset_id = 0;       // Style preset ID (0-16)
-config.key = Key::C;              // Key (C=0 through B=11)
-config.bpm = 120;                 // Tempo (0=use style default)
-config.seed = 12345;              // Random seed (0=random)
-config.chord_progression_id = 0;  // Chord progression ID (0-21)
-config.form = StructurePattern::StandardPop;  // Form/structure (0-17)
-config.vocal_attitude = VocalAttitude::Clean; // 0=Clean, 1=Expressive, 2=Raw
-config.drums_enabled = true;      // Enable drums track
+config.style_preset_id = 0;
+config.key = Key::C;
+config.bpm = 120;
+config.seed = 12345;
+config.chord_progression_id = 255;
+config.form = StructurePattern::StandardPop;
+config.vocal_attitude = VocalAttitude::Expressive;
+config.drums_enabled = true;
+config.guitar_enabled = true;
 
-// Arpeggio settings
 config.arpeggio_enabled = false;
 config.arpeggio.pattern = ArpeggioPattern::Up;
 config.arpeggio.speed = ArpeggioSpeed::Sixteenth;
@@ -41,339 +55,264 @@ config.arpeggio.octave_range = 2;
 config.arpeggio.gate = 0.8f;
 config.arpeggio.sync_chord = true;
 
-// Vocal settings
-config.vocal_low = 60;            // Vocal range lower bound (MIDI note, default C4)
-config.vocal_high = 79;           // Vocal range upper bound (MIDI note, default G5)
-config.skip_vocal = false;        // Skip vocal generation (for BGM-first workflow)
-
-// Vocal style settings
-config.vocal_style = VocalStylePreset::Auto;
-config.melody_template = MelodyTemplateId::Auto;
-config.melodic_complexity = MelodicComplexity::Standard;
-config.hook_intensity = HookIntensity::Normal;
-config.vocal_groove = VocalGrooveFeel::Straight;
-
-// Humanization
-config.humanize = true;
-config.humanize_timing = 0.5f;    // 0.0-1.0
-config.humanize_velocity = 0.5f;  // 0.0-1.0
-
-// Chord extensions
-config.chord_extension.enable_sus = false;
 config.chord_extension.enable_7th = false;
-config.chord_extension.enable_9th = false;
-
-// Composition style
-config.composition_style = CompositionStyle::MelodyLead;
-
-// Modulation settings
-config.modulation_timing = ModulationTiming::None;
-config.modulation_semitones = 2;  // +1 to +4
-
-// Call/SE settings (for idol-style music)
-config.se_enabled = true;
-config.call_setting = CallSetting::Auto;    // 0=Auto, 1=Enabled, 2=Disabled
-config.call_notes_enabled = true;
-config.intro_chant = IntroChant::None;
-config.mix_pattern = MixPattern::None;
+config.chord_extension.seventh_probability = 0.15f;
+config.humanize = false;
+config.call_setting = CallSetting::Auto;
 config.call_density = CallDensity::Standard;
 
-// Blueprint
-config.blueprint_id = 0;         // 0=Traditional, 1-9=specific, 255=random
-
-// Guitar
-config.guitar_enabled = true;    // Enable guitar track
-
-// Arrangement
-config.motif_repeat_scope = 0;   // 0=FullSong, 1=Section
-config.arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
-config.target_duration_seconds = 0; // 0 = use formId
-
-// Mood
-config.mood = 0;                  // 0-23 (used when mood_explicit=true)
-config.mood_explicit = false;     // Use explicit mood vs derive from style
-
-// Feel & Expression
-config.drive_feel = 50;          // 0=laid-back, 50=neutral, 100=aggressive
-config.enable_syncopation = false;
-config.energy_curve = 0;         // 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
-config.mora_rhythm_mode = 2;     // 0=Standard, 1=MoraTimed, 2=Auto
-config.addictive_mode = false;   // Enable Behavioral Loop mode
-
 sketch.generateFromConfig(config);
-```
+~~~
 
 ::: info Parameter Dependencies
-Many parameters depend on parent options being enabled. For example, `arpeggio.pattern` has no effect if `arpeggio_enabled=false`. See [Option Relationships](/docs/option-relationships) for the full dependency tree.
+Some fields take effect only when their parent option is enabled. For example, arpeggio.pattern is ignored when arpeggio_enabled is false. See [Option Relationships](/docs/option-relationships) for the dependency tree.
 :::
 
-### `regenerateVocal(config)`
+### generateVocal(config)
 
-Regenerate only the vocal track (and Aux track). Keeps the same chord progression and structure.
-Use after `generateVocal()` for vocal-first trial-and-error, or after `generateFromConfig()` with `skip_vocal=true` for BGM-first workflow.
+Generate the vocal track without accompaniment.
 
-```cpp
-// With seed only
-sketch.regenerateVocal(12345);
-
-// With full configuration
-VocalConfig vocal_config;
-vocal_config.seed = 0;                    // Random seed (0=new random)
-vocal_config.vocal_low = 60;              // Vocal range lower bound (C4)
-vocal_config.vocal_high = 79;             // Vocal range upper bound (G5)
-vocal_config.vocal_attitude = VocalAttitude::Expressive;
-vocal_config.vocal_style = VocalStylePreset::Auto;
-vocal_config.melody_template = MelodyTemplateId::Auto;
-vocal_config.melodic_complexity = MelodicComplexity::Standard;
-vocal_config.hook_intensity = HookIntensity::Normal;
-vocal_config.vocal_groove = VocalGrooveFeel::Straight;
-
-sketch.regenerateVocal(vocal_config);
-```
-
-### `getMidi()`
-
-Returns the generated MIDI data as `std::vector<uint8_t>`.
-
-```cpp
-std::vector<uint8_t> midi_data = sketch.getMidi();
-
-// Save to file
-std::ofstream out("output.mid", std::ios::binary);
-out.write(reinterpret_cast<const char*>(midi_data.data()), midi_data.size());
-```
-
-### `getEventsJson()`
-
-Returns the event data as JSON string for visualization/playback.
-
-```cpp
-std::string events_json = sketch.getEventsJson();
-// { "sections": [...], "tracks": [...], "bpm": 120, "duration_ticks": ... }
-```
-
-### `generateVocal(config)`
-
-Generate only the vocal track without accompaniment. Use for trial-and-error workflow: generate vocal, preview, regenerate if needed. Call `generateAccompanimentForVocal()` when satisfied with the vocal.
-
-```cpp
+~~~cpp
 SongConfig config;
 config.style_preset_id = 0;
 config.key = Key::C;
 config.bpm = 120;
 config.vocal_attitude = VocalAttitude::Expressive;
-
 sketch.generateVocal(config);
-```
+~~~
 
-### `generateAccompanimentForVocal(config?)`
+### regenerateVocal(config)
 
-Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()` or `setVocalNotes()`. Generates: Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE (adapting to vocal).
+Regenerate the vocal track while retaining the current chord progression and structure. The seed overload regenerates with a new seed.
 
-```cpp
-// Simple: use default settings
+~~~cpp
+sketch.regenerateVocal(12345);
+
+VocalConfig vocal_config;
+vocal_config.seed = 12345;
+vocal_config.vocal_low = 60;
+vocal_config.vocal_high = 79;
+vocal_config.vocal_attitude = VocalAttitude::Expressive;
+vocal_config.vocal_style = VocalStylePreset::Auto;
+vocal_config.keep_motif = false;
+sketch.regenerateVocal(vocal_config);
+~~~
+
+VocalConfig constructed in C++ has present_fields = kAllFields, so all declared fields participate. JSON updates can provide a subset; readFrom records the supplied fields in present_fields.
+
+### generateAccompanimentForVocal(config?)
+
+Generate enabled accompaniment tracks for an existing vocal. Call this after generateVocal(), generateWithVocal(), or setVocalNotes().
+
+~~~cpp
 sketch.generateAccompanimentForVocal();
 
-// With configuration
-AccompanimentConfig acc_config;
-acc_config.seed = 12345;
-acc_config.drums_enabled = true;
-acc_config.arpeggio_enabled = false;
-acc_config.humanize = true;
-acc_config.humanize_timing = 50;
-acc_config.humanize_velocity = 50;
+AccompanimentConfig accompaniment;
+accompaniment.seed = 12345;
+accompaniment.drums_enabled = true;
+accompaniment.guitar_enabled = true;
+accompaniment.arpeggio_enabled = false;
+accompaniment.arpeggio_gate = 80;       // 0-100
+accompaniment.humanize_timing = 0.4f;   // 0.0-1.0
+accompaniment.humanize_velocity = 0.3f; // 0.0-1.0
+sketch.generateAccompanimentForVocal(accompaniment);
+~~~
 
-sketch.generateAccompanimentForVocal(acc_config);
-```
+AccompanimentConfig constructed in C++ has present_fields = kAllFields. Its probability and humanization fields use normalized 0.0-1.0 floats; arpeggio_gate uses 0-100.
 
-### `regenerateAccompaniment(seedOrConfig)`
+### regenerateAccompaniment(seedOrConfig)
 
-Regenerate accompaniment tracks with a new seed or configuration. Keeps current vocal, regenerates all accompaniment tracks (Aux, Bass, Chord, Drums, etc.).
+Keep the current vocal and regenerate accompaniment tracks with a new seed or configuration.
 
-```cpp
-// With seed only
+~~~cpp
 sketch.regenerateAccompaniment(12345);
 
-// With full configuration
-AccompanimentConfig acc_config;
-acc_config.seed = 12345;
-acc_config.drums_enabled = true;
-acc_config.arpeggio_enabled = true;
+AccompanimentConfig accompaniment;
+accompaniment.seed = 12345;
+accompaniment.drums_enabled = true;
+accompaniment.arpeggio_enabled = true;
+sketch.regenerateAccompaniment(accompaniment);
+~~~
 
-sketch.regenerateAccompaniment(acc_config);
-```
+### generateWithVocal(config)
 
-### `generateWithVocal(config)`
+Generate all tracks with vocal-first priority.
 
-Generate all tracks with vocal-first priority. Generation order: Vocal -> Aux -> Bass -> Chord -> Guitar -> Arpeggio -> Drums -> SE. Accompaniment adapts to vocal melody.
-
-```cpp
+~~~cpp
 SongConfig config;
 config.style_preset_id = 0;
 config.key = Key::C;
 config.bpm = 120;
-
 sketch.generateWithVocal(config);
-```
+~~~
 
-### `setVocalNotes(config, notes)`
+### setVocalNotes(config, notes)
 
-Set custom vocal notes for accompaniment generation. Initializes the song structure and chord progression from config, then replaces the vocal track with the provided notes. Call `generateAccompanimentForVocal()` after this.
+Initialize structure and chords from config, replace the vocal track with supplied notes, and then generate accompaniment. NoteEvent constructors are private; use NoteEventBuilder::create().
 
-```cpp
+~~~cpp
 SongConfig config;
 config.style_preset_id = 0;
 config.key = Key::C;
 config.bpm = 120;
 
 std::vector<NoteEvent> notes = {
-  NoteEvent(0, 480, 60, 100),      // C4 at tick 0, duration 480
-  NoteEvent(480, 480, 62, 100),    // D4 at tick 480
-  NoteEvent(960, 960, 64, 100),    // E4 at tick 960, duration 960
+    NoteEventBuilder::create(0, 480, 60, 100),
+    NoteEventBuilder::create(480, 480, 62, 100),
+    NoteEventBuilder::create(960, 960, 64, 100),
 };
 
 sketch.setVocalNotes(config, notes);
-
-// Generate accompaniment for the custom vocal
 sketch.generateAccompanimentForVocal();
-
-// Get the MIDI data
 auto midi = sketch.getMidi();
-```
+~~~
 
-### `getHarmonyContext()`
+### getMidi()
 
-Get harmony context for piano roll safety API.
+Return the generated MIDI file as an owning std::vector<uint8_t> copy.
 
-```cpp
+~~~cpp
+std::vector<uint8_t> midi_data = sketch.getMidi();
+std::ofstream out("output.mid", std::ios::binary);
+out.write(reinterpret_cast<const char*>(midi_data.data()),
+          static_cast<std::streamsize>(midi_data.size()));
+~~~
+
+### getVocalPreviewMidi()
+
+Return a minimal MIDI file containing the vocal melody and root-bass guide as an owning byte-vector copy.
+
+~~~cpp
+auto preview = sketch.getVocalPreviewMidi();
+~~~
+
+### getEventsJson()
+
+Return event data for visualization or playback as an owning std::string copy.
+
+~~~cpp
+std::string events_json = sketch.getEventsJson();
+~~~
+
+### getMelody() / setMelody(melody)
+
+Save and restore vocal melody candidates.
+
+~~~cpp
+MelodyData candidate = sketch.getMelody();
+// ...try another candidate...
+sketch.setMelody(candidate);
+~~~
+
+### getSong() / getParams() / getWarnings()
+
+Return read-only references to state owned by sketch. The references remain valid until destruction; later generation calls can change their contents.
+
+~~~cpp
+const Song& song = sketch.getSong();
+const GeneratorParams& params = sketch.getParams();
+const std::vector<std::string>& warnings = sketch.getWarnings();
+~~~
+
+getWarnings() reports non-fatal warnings from the latest generation operation.
+
+### getHarmonyContext()
+
+Return the read-only harmony context used by the piano-roll safety API.
+
+~~~cpp
 const IHarmonyContext& harmony = sketch.getHarmonyContext();
-```
+~~~
 
-### `getMelody()` / `setMelody(melody)`
+### setMidiFormat(format) / getMidiFormat()
 
-Get/set melody data for saving/restoring candidates.
+Select or query the MIDI output format. New MidiSketch instances use MidiFormat::SMF1 by default.
 
-```cpp
-// Save current melody
-MelodyData melody = sketch.getMelody();
-
-// ... try other melodies ...
-
-// Restore saved melody
-sketch.setMelody(melody);
-```
-
-### `setMidiFormat(format)` / `getMidiFormat()`
-
-Set/get MIDI output format.
-
-```cpp
-sketch.setMidiFormat(MidiFormat::SMF1);  // Standard MIDI File Type 1
-// or
-sketch.setMidiFormat(MidiFormat::SMF2);  // MIDI 2.0 Container File (default)
-
+~~~cpp
+sketch.setMidiFormat(MidiFormat::SMF1); // Standard MIDI File Type 1
+sketch.setMidiFormat(MidiFormat::SMF2); // MIDI 2.0 Container File
 MidiFormat format = sketch.getMidiFormat();
-```
+~~~
 
-### `version()`
+### resolvedBlueprintId()
 
-Get library version string.
+Return the blueprint selected by the latest generation. Call this after generation.
 
-```cpp
+~~~cpp
+uint8_t blueprint_id = sketch.resolvedBlueprintId();
+~~~
+
+### version()
+
+Return the library version string as a borrowed static string.
+
+~~~cpp
 const char* version = MidiSketch::version();
-// e.g. "0.2.1"
-```
+~~~
 
 ---
 
 ## Generation Workflows
 
-MIDI Sketch supports three generation workflows, each suited to different use cases:
+MidiSketch supports BGM-first, vocal-first, and custom-vocal workflows.
 
 ::: tip Choosing a Workflow
-| Workflow | Use Case |
+| Workflow | Use case |
 |----------|----------|
-| **BGM-First** | Preview accompaniment before adding vocals |
-| **Vocal-First** | Iterate on melody before generating backing tracks |
-| **Custom Vocal** | Import your own melody and generate fitting accompaniment |
+| BGM-first | Generate accompaniment before adding vocals |
+| Vocal-first | Iterate on a generated melody before accompaniment |
+| Custom Vocal | Import notes and generate matching accompaniment |
 :::
 
 ### BGM-First Workflow
 
-Generate backing track first, then add vocals:
-
-```cpp
+~~~cpp
 MidiSketch sketch;
-
-// Step 1: Generate BGM only
 SongConfig config;
 config.style_preset_id = 0;
 config.skip_vocal = true;
 sketch.generateFromConfig(config);
 
-// Preview BGM...
-
-// Step 2: Add vocals
-VocalConfig vocal_config;
-vocal_config.seed = 0;
-vocal_config.vocal_low = 60;
-vocal_config.vocal_high = 79;
-vocal_config.vocal_attitude = VocalAttitude::Expressive;
-
-sketch.regenerateVocal(vocal_config);
-
-auto midi_data = sketch.getMidi();
-```
+VocalConfig vocal;
+vocal.seed = 0;
+vocal.vocal_low = 60;
+vocal.vocal_high = 79;
+sketch.regenerateVocal(vocal);
+auto midi = sketch.getMidi();
+~~~
 
 ### Vocal-First Workflow
 
-Generate vocal first, preview, iterate, then generate accompaniment:
-
-```cpp
+~~~cpp
 MidiSketch sketch;
-
 SongConfig config;
 config.style_preset_id = 0;
-
-// Step 1: Generate vocal only
 sketch.generateVocal(config);
 
-// Preview and iterate until satisfied...
-VocalConfig vocal_config;
-vocal_config.seed = 12345;
-vocal_config.vocal_attitude = VocalAttitude::Raw;
-sketch.regenerateVocal(vocal_config);
-
-// Step 2: Generate accompaniment for the vocal
+VocalConfig vocal;
+vocal.seed = 12345;
+vocal.vocal_attitude = VocalAttitude::Expressive;
+sketch.regenerateVocal(vocal);
 sketch.generateAccompanimentForVocal();
-
-auto midi_data = sketch.getMidi();
-```
+auto midi = sketch.getMidi();
+~~~
 
 ### Custom Vocal Import Workflow
 
-Import your own melody and generate fitting accompaniment:
-
-```cpp
+~~~cpp
 MidiSketch sketch;
-
 SongConfig config;
 config.style_preset_id = 0;
 
-// Step 1: Set custom vocal notes
 std::vector<NoteEvent> notes = {
-  NoteEvent(0, 480, 60, 100),
-  NoteEvent(480, 480, 62, 100),
-  NoteEvent(960, 960, 64, 100),
+    NoteEventBuilder::create(0, 480, 60, 100),
+    NoteEventBuilder::create(480, 480, 62, 100),
+    NoteEventBuilder::create(960, 960, 64, 100),
 };
-
 sketch.setVocalNotes(config, notes);
-
-// Step 2: Generate accompaniment
 sketch.generateAccompanimentForVocal();
-
-auto midi_data = sketch.getMidi();
-```
+auto midi = sketch.getMidi();
+~~~
 
 ---
 
@@ -381,110 +320,124 @@ auto midi_data = sketch.getMidi();
 
 ### SongConfig
 
-Main configuration structure for MIDI generation.
+The high-level configuration passed to generateFromConfig(), generateVocal(), generateWithVocal(), and setVocalNotes().
 
-```cpp
+~~~cpp
 struct SongConfig {
-  uint8_t style_preset_id = 0;      // Style preset ID (0-16)
-  uint8_t blueprint_id = 0;         // Production blueprint (0-9, 255=random)
-  Key key = Key::C;                 // Musical key
-  uint16_t bpm = 0;                 // Tempo (0 = use style default)
-  uint32_t seed = 0;                // Random seed (0 = random)
-  uint8_t chord_progression_id = 0; // Chord progression ID
-  StructurePattern form;            // Song structure (formId 0-17)
-  bool form_explicit = false;       // Use formId exactly vs allow randomization
-  uint16_t target_duration_seconds = 0; // Target duration (0 = use formId)
-  VocalAttitude vocal_attitude;     // Vocal expression style (0-2)
-  VocalStylePreset vocal_style = VocalStylePreset::Auto; // Vocal style preset (0-13)
+  uint8_t style_preset_id = 0;
+  uint8_t blueprint_id = 0;       // 255 = random blueprint
+  uint8_t mood = 0;
+  bool mood_explicit = false;
+
+  Key key = Key::C;
+  uint16_t bpm = 0;                  // 0 = style default
+  uint32_t seed = 0;                 // 0 = random
+  uint8_t chord_progression_id = 255; // 255 = style auto-selection
+
+  StructurePattern form = StructurePattern::StandardPop;
+  bool form_explicit = false;
+  uint16_t target_duration_seconds = 0; // 0 = use form
+
+  VocalAttitude vocal_attitude = VocalAttitude::Clean;
+  VocalStylePreset vocal_style = VocalStylePreset::Auto;
+  uint8_t drive_feel = 50;           // 0-100
+
   bool drums_enabled = true;
-  bool drums_enabled_explicit = false; // True if drums setting was explicitly set by user
-  bool guitar_enabled = true;       // Enable guitar track (default: true, both C++ and JS)
+  bool drums_enabled_explicit = false;
   bool arpeggio_enabled = false;
-  bool skip_vocal = false;          // Skip vocal (for BGM-first)
-  uint8_t vocal_low = 60;           // C4
-  uint8_t vocal_high = 79;          // G5
-  CompositionStyle composition_style; // 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
-  uint8_t motif_repeat_scope = 0;   // 0=FullSong, 1=Section
-  uint8_t arrangement_growth = 0;   // 0=LayerAdd, 1=RegisterAdd
+  bool guitar_enabled = true;
+  bool skip_vocal = false;
+  uint8_t vocal_low = 60;
+  uint8_t vocal_high = 79;
 
-  // Arpeggio settings
-  ArpeggioParams arpeggio;          // pattern, speed, octave_range, gate (0.0-1.0, default 0.8),
-                                    //   sync_chord, base_velocity (0-127, default 90)
+  ArpeggioParams arpeggio;
+  ChordExtensionParams chord_extension;
+  bool chord_ext_prob_explicit = false;
 
-  // Chord extensions
-  ChordExtensionParams chord_extension; // enable_sus/enable_7th/enable_9th/tritone_sub (bool),
-                                        //   probabilities 0.0-1.0: sus 0.2, 7th 0.15, 9th 0.25, tritone 0.5
-  bool chord_ext_prob_explicit = false; // Explicit chord extension probabilities
+  CompositionStyle composition_style = CompositionStyle::MelodyLead;
+  bool composition_style_explicit = false;
+  MotifChordParams motif_chord;
+  MotifRepeatScope motif_repeat_scope = MotifRepeatScope::FullSong;
+  ArrangementGrowth arrangement_growth = ArrangementGrowth::LayerAdd;
 
-  // Humanization
   bool humanize = false;
-  float humanize_timing = 0.4f;     // 0.0-1.0
-  float humanize_velocity = 0.3f;   // 0.0-1.0
+  float humanize_timing = 0.4f;
+  float humanize_velocity = 0.3f;
 
-  // Modulation
   ModulationTiming modulation_timing = ModulationTiming::None;
-  int8_t modulation_semitones = 2;  // +1 to +4
+  int8_t modulation_semitones = 2;
 
-  // Call/SE settings
   bool se_enabled = true;
-  uint8_t call_setting = 0;         // 0=Auto, 1=Enabled, 2=Disabled
-  bool call_notes_enabled = true;   // Output calls as notes
-  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
-  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
-  uint8_t call_density = 2;         // 0=None, 1=Minimal, 2=Standard, 3=Intense
+  CallSetting call_setting = CallSetting::Auto;
+  bool call_notes_enabled = true;
+  IntroChant intro_chant = IntroChant::None;
+  MixPattern mix_pattern = MixPattern::None;
+  CallDensity call_density = CallDensity::Standard;
 
-  // Vocal style settings
-  MelodyTemplateId melody_template = MelodyTemplateId::Auto; // 0-7
-  MelodicComplexity melodic_complexity = MelodicComplexity::Standard; // 0-2
-  HookIntensity hook_intensity = HookIntensity::Normal; // 0-4 (4=Maximum, normally forced by Behavioral Loop)
-  VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight; // 0-5
+  MelodyTemplateId melody_template = MelodyTemplateId::Auto;
+  MelodicComplexity melodic_complexity = MelodicComplexity::Standard;
+  HookIntensity hook_intensity = HookIntensity::Normal;
+  VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight;
+  bool enable_syncopation = false;
+  EnergyCurve energy_curve = EnergyCurve::GradualBuild;
 
-  // Mood
-  uint8_t mood = 0;                 // Mood preset (0-23, used when mood_explicit=true)
-  bool mood_explicit = false;       // Use explicit mood vs derive from style
+  uint8_t melody_max_leap = 0;
+  uint8_t melody_syncopation_prob = 0xFF;
+  uint8_t melody_phrase_length = 0;
+  uint8_t melody_long_note_ratio = 0xFF;
+  int8_t melody_chorus_register_shift = INT8_MIN;
+  uint8_t melody_hook_repetition = 0;
+  uint8_t melody_use_leading_tone = 0;
 
-  // Feel & Expression
-  uint8_t drive_feel = 50;          // Drive feel (0=laid-back, 50=neutral, 100=aggressive)
-  bool addictive_mode = false;      // Enable Behavioral Loop mode
-  uint8_t mora_rhythm_mode = 2;     // Mora rhythm: 0=Standard, 1=MoraTimed, 2=Auto
-  bool enable_syncopation = false;  // Enable syncopation effects
-  uint8_t energy_curve = 0;         // Energy curve: 0=GradualBuild, 1=FrontLoaded,
-                                    //   2=WavePattern, 3=SteadyState
+  uint8_t motif_length = 0;
+  uint8_t motif_note_count = 0;
+  uint8_t motif_motion = 0xFF;
+  uint8_t motif_register_high = 0;
+  uint8_t motif_rhythm_density = 0xFF;
 
-  // Melody overrides (sentinel values = use preset default)
-  uint8_t melody_max_leap = 0;           // Max melody leap: 0=preset, 1-12=semitones
-  uint8_t melody_syncopation_prob = 0xFF; // Syncopation probability: 0xFF=preset, 0-100=%
-  uint8_t melody_phrase_length = 0;      // Phrase length: 0=preset, 1-8=bars
-  uint8_t melody_long_note_ratio = 0xFF; // Long note ratio: 0xFF=preset, 0-100=%
-  int8_t melody_chorus_register_shift = -128; // Chorus register shift: -128=preset, -12 to +12
-  uint8_t melody_hook_repetition = 0;    // Hook repetition (0=preset, 1=off, 2=on)
-  uint8_t melody_use_leading_tone = 0;   // Leading tone (0=preset, 1=off, 2=on)
-
-  // Motif overrides (sentinel values = use preset default)
-  uint8_t motif_length = 0;         // Motif length: 0=auto, 1/2/4=beats
-  uint8_t motif_note_count = 0;     // Motif note count: 0=auto, 3-8
-  uint8_t motif_motion = 0xFF;      // Motif motion: 0xFF=preset, 0-4=MotifMotion
-  uint8_t motif_register_high = 0;  // Motif register: 0=auto, 1=low, 2=high
-  uint8_t motif_rhythm_density = 0xFF; // Motif rhythm density: 0xFF=preset, 0-2=MotifRhythmDensity
-
-  // Motif chord settings
-  MotifChordParams motif_chord;     // fixed_progression (default true), max_chord_count (default 4)
+  bool addictive_mode = false;
+  uint8_t mora_rhythm_mode = 2;
+  uint8_t syllabic_sub_rate = 0;
 };
-```
+~~~
 
-::: details Full SongConfig Fields
-See [preset_types.h](https://github.com/libraz/midi-sketch/blob/main/src/core/preset_types.h) for the complete structure definition.
-:::
+The JSON field names are the snake_case names shown above. Nested fields are arpeggio, chord_extension, and motif_chord.
+
+### ArpeggioParams / ChordExtensionParams
+
+~~~cpp
+struct ArpeggioParams {
+  ArpeggioPattern pattern = ArpeggioPattern::Auto;
+  ArpeggioSpeed speed = ArpeggioSpeed::Auto;
+  uint8_t octave_range = 2;
+  float gate = -1.0f;       // 0.0-1.0; -1 = style default
+  bool sync_chord = true;
+  uint8_t base_velocity = 90;
+};
+
+struct ChordExtensionParams {
+  bool enable_sus = false;
+  bool enable_7th = false;
+  bool enable_9th = false;
+  bool tritone_sub = false;
+  float sus_probability = 0.2f;
+  float seventh_probability = 0.15f;
+  float ninth_probability = 0.25f;
+  float tritone_sub_probability = 0.5f;
+};
+~~~
 
 ### VocalConfig
 
-Configuration for vocal regeneration.
+Direct C++ construction supplies every field because present_fields defaults to kAllFields (~0u). JSON parsing sets present_fields to the fields present in the object, enabling partial updates.
 
-```cpp
+~~~cpp
 struct VocalConfig {
-  uint32_t seed = 0;                // Random seed (0 = new random)
-  uint8_t vocal_low = 60;           // Vocal range lower bound
-  uint8_t vocal_high = 79;          // Vocal range upper bound
+  static constexpr uint32_t kAllFields = ~0u;
+  uint32_t present_fields = kAllFields;
+  uint32_t seed = 0;
+  uint8_t vocal_low = 60;
+  uint8_t vocal_high = 79;
   VocalAttitude vocal_attitude = VocalAttitude::Clean;
   VocalStylePreset vocal_style = VocalStylePreset::Auto;
   MelodyTemplateId melody_template = MelodyTemplateId::Auto;
@@ -492,98 +445,77 @@ struct VocalConfig {
   HookIntensity hook_intensity = HookIntensity::Normal;
   VocalGrooveFeel vocal_groove = VocalGrooveFeel::Straight;
   CompositionStyle composition_style = CompositionStyle::MelodyLead;
-  bool keep_motif = false;          // RhythmSync: keep existing Motif as the rhythmic axis
-                                    //   (default: regenerate both vocal and motif)
+  bool keep_motif = false;
 };
-```
+~~~
 
 ### AccompanimentConfig
 
-Configuration for accompaniment generation/regeneration.
-
-```cpp
+~~~cpp
 struct AccompanimentConfig {
-  uint32_t seed = 0;                // Random seed (0 = auto-generate)
-
-  // Drums
+  static constexpr uint32_t kAllFields = ~0u;
+  uint32_t present_fields = kAllFields;
+  uint32_t seed = 0;
   bool drums_enabled = true;
-
-  // Guitar
-  bool guitar_enabled = true;       // Enable guitar track (default: true)
-
-  // Arpeggio
   bool arpeggio_enabled = false;
-  uint8_t arpeggio_pattern = 0;     // 0=Up, 1=Down, 2=UpDown, 3=Random,
-                                    // 4=Pinwheel, 5=PedalRoot, 6=Alberti, 7=BrokenChord
-  uint8_t arpeggio_speed = 1;       // 0=Eighth, 1=Sixteenth, 2=Triplet
+  bool guitar_enabled = true;
+  uint8_t arpeggio_pattern = 0;
+  uint8_t arpeggio_speed = 1;
   uint8_t arpeggio_octave_range = 2;
-  uint8_t arpeggio_gate = 80;       // 0-100
+  uint8_t arpeggio_gate = 80;
   bool arpeggio_sync_chord = true;
-
-  // Chord Extensions
   bool chord_ext_sus = false;
   bool chord_ext_7th = false;
   bool chord_ext_9th = false;
-  bool chord_ext_tritone_sub = false; // Tritone substitution (V7 -> bII7)
-  uint8_t chord_ext_sus_prob = 20;  // 0-100
-  uint8_t chord_ext_7th_prob = 30;  // 0-100
-  uint8_t chord_ext_9th_prob = 25;  // 0-100
-  uint8_t chord_ext_tritone_sub_prob = 50; // 0-100
-
-  // Humanization
+  bool chord_ext_tritone_sub = false;
+  float chord_ext_sus_prob = 0.2f;
+  float chord_ext_7th_prob = 0.15f;
+  float chord_ext_9th_prob = 0.25f;
+  float chord_ext_tritone_sub_prob = 0.5f;
   bool humanize = false;
-  uint8_t humanize_timing = 50;     // 0-100
-  uint8_t humanize_velocity = 50;   // 0-100
-
-  // SE/Call
+  float humanize_timing = 0.4f;
+  float humanize_velocity = 0.3f;
   bool se_enabled = true;
   bool call_enabled = false;
-  uint8_t call_density = 2;         // 0-3
-  uint8_t intro_chant = 0;          // 0=None, 1=Gachikoi, 2=Shouting
-  uint8_t mix_pattern = 0;          // 0=None, 1=Standard, 2=Tiger
-  bool call_notes_enabled = true;   // Output calls as notes
+  uint8_t call_density = 2;
+  uint8_t intro_chant = 0;
+  uint8_t mix_pattern = 0;
+  bool call_notes_enabled = true;
 };
-```
+~~~
+
+The C++ type uses normalized floats for chord-extension probabilities and humanization. The integer 0-100 field is arpeggio_gate only.
 
 ### NoteEvent
 
-Note event structure.
-
-```cpp
+~~~cpp
 struct NoteEvent {
-  Tick start_tick;    // Start time in ticks
-  Tick duration;      // Duration in ticks
-  uint8_t note;       // MIDI note number (0-127)
-  uint8_t velocity;   // MIDI velocity (0-127)
-
-  NoteEvent(Tick start, Tick dur, uint8_t n, uint8_t vel);
+  Tick start_tick;
+  Tick duration;
+  uint8_t note;       // MIDI note number, 0-127
+  uint8_t velocity;   // MIDI velocity, 0-127
+  bool is_syllabic_subdivision = false;
 };
-```
+~~~
+
+The default and four-argument constructors are private. Use NoteEventBuilder::create(start, duration, note, velocity) for direct construction. Tick is uint32_t.
 
 ::: details Understanding Ticks
-MIDI Sketch uses **ticks** as the time unit (480 ticks per quarter note):
-- **Quarter note**: 480 ticks
-- **Eighth note**: 240 ticks
-- **Sixteenth note**: 120 ticks
-- **Whole note**: 1920 ticks
-- **One bar (4/4)**: 1920 ticks
+The core timing constants are 480 ticks per quarter note, 240 per eighth note, 120 per sixteenth note, and 1,920 per 4/4 bar. MIDI_C4 is 60.
 
-Example: A note at beat 2 (tick 480) lasting one beat:
-```cpp
-NoteEvent(480, 480, 60, 100)  // C4 at beat 2, duration 1 beat
-```
+~~~cpp
+auto note = NoteEventBuilder::create(480, 480, 60, 100);
+~~~
 :::
 
 ### MelodyData
 
-Melody data for saving/restoring candidates.
-
-```cpp
+~~~cpp
 struct MelodyData {
-  uint32_t seed;                   // Random seed used
-  std::vector<NoteEvent> notes;    // Melody notes
+  uint32_t seed;
+  std::vector<NoteEvent> notes;
 };
-```
+~~~
 
 ---
 
@@ -591,516 +523,498 @@ struct MelodyData {
 
 ### Key
 
-Musical key (0-11).
-
-```cpp
+~~~cpp
 enum class Key : uint8_t {
   C = 0, Cs, D, Eb, E, F, Fs, G, Ab, A, Bb, B
 };
-```
+~~~
 
 ### VocalAttitude
 
-Vocal expression style.
-
-```cpp
-enum class VocalAttitude : uint8_t {
-  Clean = 0,      // Clean, controlled
-  Expressive,     // Expressive, dynamic
-  Raw             // Raw, emotional
-};
-```
+~~~cpp
+enum class VocalAttitude : uint8_t { Clean = 0, Expressive, Raw };
+~~~
 
 ### CompositionStyle
 
-Overall musical approach.
-
-```cpp
+~~~cpp
 enum class CompositionStyle : uint8_t {
-  MelodyLead = 0,    // Traditional: melody is foreground
-  BackgroundMotif,   // Motif is foreground
-  SynthDriven        // Synth/arpeggio as foreground
+  MelodyLead = 0, BackgroundMotif, SynthDriven
 };
-```
+~~~
 
 ### VocalStylePreset
 
-Vocal style presets.
-
-```cpp
+~~~cpp
 enum class VocalStylePreset : uint8_t {
-  Auto = 0,          // Auto-select based on style
-  Standard,          // Standard pop vocal
-  Vocaloid,          // Vocaloid-style (fast, wide leaps)
-  UltraVocaloid,     // Ultra-fast vocaloid (32nd notes)
-  Idol,              // Idol-style (catchy, hook-heavy)
-  Ballad,            // Ballad (slow, long notes)
-  Rock,              // Rock (powerful, chorus register shift)
-  CityPop,           // City pop (jazzy, syncopated)
-  Anime,             // Anime-style (dynamic, expressive)
-  BrightKira,        // Bright/kira-kira (high, sparkling)
-  CoolSynth,         // Cool synth (electronic, precise)
-  CuteAffected,      // Cute/affected (playful)
-  PowerfulShout,     // Powerful shout (intense)
-  KPop               // K-Pop (tight rhythm, dance-oriented)
+  Auto = 0, Standard, Vocaloid, UltraVocaloid, Idol, Ballad, Rock,
+  CityPop, Anime, BrightKira, CoolSynth, CuteAffected, PowerfulShout, KPop
 };
-```
+~~~
 
 ### MelodyTemplateId
 
-Melody template patterns.
-
-```cpp
+~~~cpp
 enum class MelodyTemplateId : uint8_t {
-  Auto = 0,          // Auto-select based on VocalStylePreset
-  PlateauTalk,       // High same-pitch ratio (NewJeans, Billie Eilish)
-  RunUpTarget,       // Ascending toward target (anime high-energy, dramatic pop)
-  DownResolve,       // Descending resolution (B-section)
-  HookRepeat,        // Short repeated hooks (TikTok, K-POP)
-  SparseAnchor,      // Sparse anchor notes (Ballad)
-  CallResponse,      // Duet-style call and response
-  JumpAccent         // Emotional peak jumps
+  Auto = 0, PlateauTalk, RunUpTarget, DownResolve,
+  HookRepeat, SparseAnchor, CallResponse, JumpAccent
 };
-```
+~~~
 
-### MelodicComplexity
+### MelodicComplexity / HookIntensity
 
-Melody complexity level.
-
-```cpp
-enum class MelodicComplexity : uint8_t {
-  Simple = 0,    // Simple melodies with minimal intervals
-  Standard,      // Standard melodic complexity
-  Complex        // Complex with larger intervals
-};
-```
-
-### HookIntensity
-
-Hook repetition intensity.
-
-```cpp
-enum class HookIntensity : uint8_t {
-  Off = 0,     // No hook repetition
-  Light,       // Light hook presence
-  Normal,      // Normal hook repetition (default)
-  Strong,      // Strong, catchy hook emphasis
-  Maximum      // Maximum repetition (used by Behavioral Loop / addictive_mode)
-};
-```
+~~~cpp
+enum class MelodicComplexity : uint8_t { Simple = 0, Standard, Complex };
+enum class HookIntensity : uint8_t { Off = 0, Light, Normal, Strong, Maximum };
+~~~
 
 ### VocalGrooveFeel
 
-Vocal groove/rhythm feel.
-
-```cpp
+~~~cpp
 enum class VocalGrooveFeel : uint8_t {
-  Straight = 0,   // Straight rhythm
-  OffBeat,        // Off-beat emphasis
-  Swing,          // Swing feel
-  Syncopated,     // Syncopated rhythm
-  Driving16th,    // Driving 16th note feel
-  Bouncy8th       // Bouncy 8th note feel
+  Straight = 0, OffBeat, Swing, Syncopated, Driving16th, Bouncy8th
 };
-```
+~~~
 
-### ModulationTiming
+### StructurePattern
 
-Key modulation timing.
+StructurePattern has 18 values, numbered 0 through 17 in declaration order.
 
-```cpp
+~~~cpp
+enum class StructurePattern : uint8_t {
+  StandardPop = 0, BuildUp, DirectChorus, RepeatChorus, ShortForm,
+  FullPop, FullWithBridge, DriveUpbeat, Ballad, AnthemStyle, ExtendedFull,
+  ChorusFirst, ChorusFirstShort, ChorusFirstFull,
+  ImmediateVocal, ImmediateVocalFull, AChorusB, DoubleVerse
+};
+~~~
+
+### ModulationTiming / EnergyCurve
+
+~~~cpp
 enum class ModulationTiming : uint8_t {
-  None = 0,        // No modulation
-  LastChorus,      // Modulate at last chorus
-  AfterBridge,     // Modulate after bridge
-  EachChorus,      // Modulate at each chorus
-  Random           // Random modulation timing
+  None = 0, LastChorus, AfterBridge, EachChorus, Random
 };
-```
+enum class EnergyCurve : uint8_t {
+  GradualBuild = 0, FrontLoaded, WavePattern, SteadyState
+};
+~~~
+
+### CallSetting / CallDensity / IntroChant / MixPattern
+
+~~~cpp
+enum class CallSetting : uint8_t { Auto = 0, Enabled, Disabled };
+enum class CallDensity : uint8_t { None = 0, Minimal, Standard, Intense };
+enum class IntroChant : uint8_t { None = 0, Gachikoi, Shouting };
+enum class MixPattern : uint8_t { None = 0, Standard, Tiger };
+~~~
+
+### ArrangementGrowth / MotifRepeatScope
+
+~~~cpp
+enum class ArrangementGrowth : uint8_t { LayerAdd = 0, RegisterAdd };
+enum class MotifRepeatScope : uint8_t { FullSong = 0, Section };
+~~~
 
 ### TrackRole
 
-Track role identifier.
-
-```cpp
+~~~cpp
 enum class TrackRole : uint8_t {
-  Vocal = 0,   // Main melody track
-  Chord,       // Chord voicing track
-  Bass,        // Bass line track
-  Drums,       // Drum pattern track
-  SE,          // Sound effects (calls, chants)
-  Motif,       // Background motif track
-  Arpeggio,    // Synth arpeggio track
-  Aux,         // Auxiliary vocal track
-  Guitar       // Guitar track
+  Vocal = 0, Chord, Bass, Drums, SE, Motif, Arpeggio, Aux, Guitar
 };
-```
+~~~
 
 ### ArpeggioPattern / ArpeggioSpeed
 
-Arpeggio settings.
+Both enums have an Auto = 255 sentinel for style or blueprint selection.
 
-```cpp
+~~~cpp
 enum class ArpeggioPattern : uint8_t {
-  Up,           // Ascending notes
-  Down,         // Descending notes
-  UpDown,       // Ascending then descending
-  Random,       // Random order
-  Pinwheel,     // Alternating high/low notes
-  PedalRoot,    // Root pedal with upper voice movement
-  Alberti,      // Classical Alberti bass pattern
-  BrokenChord   // Broken chord voicing
+  Up = 0, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord,
+  Auto = 255
 };
-
 enum class ArpeggioSpeed : uint8_t {
-  Eighth,      // 8th notes
-  Sixteenth,   // 16th notes (default)
-  Triplet      // Triplet feel
+  Eighth = 0, Sixteenth, Triplet, Auto = 255
 };
-```
-
-### EnergyCurve
-
-Energy curve for dynamic progression across the song.
-
-```cpp
-enum class EnergyCurve : uint8_t {
-  GradualBuild = 0,  // Gradual build to climax
-  FrontLoaded,       // High energy from the start
-  WavePattern,       // Alternating energy waves
-  SteadyState        // Consistent energy throughout
-};
-```
+~~~
 
 ### MoraRhythmMode
 
-Mora-based rhythm mode for Japanese lyrics alignment.
+MoraRhythmMode is represented by the uint8_t mora_rhythm_mode field in SongConfig.
 
-```cpp
-enum class MoraRhythmMode : uint8_t {
-  Standard = 0,    // Standard rhythm (ignores mora)
-  MoraTimed,       // Mora-timed rhythm (one note per mora)
-  Auto             // Auto-select based on style (default)
-};
-```
+~~~cpp
+enum class MoraRhythmMode : uint8_t { Standard = 0, MoraTimed, Auto };
+~~~
 
-### MotifMotion
+### MotifMotion / MotifRhythmDensity
 
-Motion style for background motif patterns.
-
-```cpp
+~~~cpp
 enum class MotifMotion : uint8_t {
-  Stepwise = 0,    // Smooth stepwise motion
-  GentleLeap,      // Gentle leaps (3rds, 4ths)
-  WideLeap,        // Wide leaps (5ths+)
-  NarrowStep,      // Narrow chromatic steps
-  Disjunct          // Disjunct/angular motion
-  // Ostinato(5) is internal only
+  Stepwise = 0, GentleLeap, WideLeap, NarrowStep, Disjunct, Ostinato
 };
-```
-
-### MotifRhythmDensity
-
-Rhythm density for background motif patterns.
-
-```cpp
-enum class MotifRhythmDensity : uint8_t {
-  Sparse = 0,    // Sparse, open rhythm
-  Medium,        // Medium density (default)
-  Driving        // Dense, driving rhythm
-};
-```
+enum class MotifRhythmDensity : uint8_t { Sparse = 0, Medium, Driving };
+~~~
 
 ### MidiFormat
 
-MIDI file format.
-
-```cpp
+~~~cpp
 enum class MidiFormat : uint8_t {
-  SMF1 = 1,    // Standard MIDI File Type 1 (legacy)
-  SMF2 = 2     // MIDI 2.0 Container File (ktmidi format)
+  SMF1 = 1, // Standard MIDI File Type 1
+  SMF2 = 2  // MIDI 2.0 Container File
 };
-```
+~~~
 
 ---
 
 ## Constants
 
-```cpp
-constexpr Tick TICKS_PER_BEAT = 480;     // Ticks per quarter note
-constexpr uint8_t BEATS_PER_BAR = 4;     // Beats per bar (4/4)
-constexpr Tick TICKS_PER_BAR = 1920;     // Ticks per bar
-constexpr uint8_t MIDI_C4 = 60;          // Middle C
-constexpr MidiFormat kDefaultMidiFormat = MidiFormat::SMF2;
-```
+~~~cpp
+using Tick = uint32_t;
+constexpr Tick TICKS_PER_BEAT = 480;
+constexpr uint8_t BEATS_PER_BAR = 4;
+constexpr Tick TICKS_PER_BAR = 1920;
+constexpr uint8_t MIDI_C4 = 60;
+constexpr MidiFormat kDefaultMidiFormat = MidiFormat::SMF1;
+~~~
 
 ---
 
 ## C API (midisketch_c.h)
 
-The C API provides FFI bindings for WASM and other language integrations.
+The C ABI is intended for FFI and WASM bindings. Configuration and melody inputs are JSON strings. Binary configuration structs are not part of the current header.
 
-::: warning Memory Management
-Functions returning pointers (e.g., `midisketch_get_midi`) allocate memory that must be freed with the corresponding free function (e.g., `midisketch_free_midi`).
+::: warning Memory and Threading
+midisketch_get_midi(), midisketch_get_vocal_preview_midi(), midisketch_get_events(), midisketch_get_dissonance(), and midisketch_get_piano_roll_safety() allocate result objects. Free them with their matching midisketch_free_* function.
+
+Names, error messages, and other const char* results are borrowed; never pass them to midisketch_free(). midisketch_get_warnings_json() and midisketch_get_melody_json() return thread-local storage replaced by the next call on the same thread. The default-config JSON, pointer candidate getters, single-tick piano-roll results, and string-conversion helpers use shared static storage. Synchronize calls that share a handle and synchronize pointer-returning query calls when they can run concurrently.
 :::
 
 ### Handle Management
 
-```c
-// Create a new MidiSketch instance
+~~~c
 MidiSketchHandle midisketch_create(void);
-
-// Destroy a MidiSketch instance
 void midisketch_destroy(MidiSketchHandle handle);
-```
+~~~
+
+### MIDI Format
+
+~~~c
+MidiSketchError midisketch_set_midi_format(
+    MidiSketchHandle handle, MidiSketchMidiFormat format);
+MidiSketchMidiFormat midisketch_get_midi_format(MidiSketchHandle handle);
+~~~
+
+The default is MIDISKETCH_MIDI_FORMAT_SMF1. Native builds support both formats. WASM builds return MIDISKETCH_ERROR_UNSUPPORTED_FORMAT (7) when asked to select SMF2.
 
 ### Generation Functions
 
-```c
-// Generate from song config
-MidiSketchError midisketch_generate_from_config(
-    MidiSketchHandle handle,
-    const MidiSketchSongConfig* config
-);
-
-// Generate only vocal
-MidiSketchError midisketch_generate_vocal(
-    MidiSketchHandle handle,
-    const MidiSketchSongConfig* config
-);
-
-// Regenerate vocal with new config
-MidiSketchError midisketch_regenerate_vocal(
-    MidiSketchHandle handle,
-    const MidiSketchVocalConfig* config
-);
-
-// Generate accompaniment
+~~~c
 MidiSketchError midisketch_generate_accompaniment(MidiSketchHandle handle);
-
-// Regenerate accompaniment with new seed
 MidiSketchError midisketch_regenerate_accompaniment(
-    MidiSketchHandle handle,
-    uint32_t new_seed
-);
+    MidiSketchHandle handle, uint32_t new_seed);
+~~~
 
-// Generate all tracks with vocal-first priority
-MidiSketchError midisketch_generate_with_vocal(
-    MidiSketchHandle handle,
-    const MidiSketchSongConfig* config
-);
-
-// Set custom vocal notes
-MidiSketchError midisketch_set_vocal_notes(
-    MidiSketchHandle handle,
-    const MidiSketchSongConfig* config,
-    const MidiSketchNoteInput* notes,
-    size_t count
-);
-```
+These no-config entry points require a generated song. The JSON entry points are listed below.
 
 ### Output Functions
 
-```c
-// Get MIDI data (must free with midisketch_free_midi)
+~~~c
 MidiSketchMidiData* midisketch_get_midi(MidiSketchHandle handle);
-
-// Get vocal preview MIDI
 MidiSketchMidiData* midisketch_get_vocal_preview_midi(MidiSketchHandle handle);
-
-// Free MIDI data
 void midisketch_free_midi(MidiSketchMidiData* data);
 
-// Get event data as JSON (must free with midisketch_free_events)
 MidiSketchEventData* midisketch_get_events(MidiSketchHandle handle);
-
-// Free event data
 void midisketch_free_events(MidiSketchEventData* data);
-```
+
+MidiSketchDissonanceData* midisketch_get_dissonance(MidiSketchHandle handle);
+void midisketch_free_dissonance(MidiSketchDissonanceData* data);
+
+MidiSketchInfo midisketch_get_info(MidiSketchHandle handle);
+~~~
+
+MidiSketchInfo.track_count is the engine's nine defined track roles, including disabled or empty roles. Serialized MIDI omits empty tracks; event JSON may include track roles with empty notes.
 
 ### Preset Information
 
-```c
-// Get counts
-uint8_t midisketch_style_preset_count(void);
+~~~c
 uint8_t midisketch_structure_count(void);
+uint8_t midisketch_mood_count(void);
 uint8_t midisketch_chord_count(void);
+const char* midisketch_structure_name(uint8_t id);
+const char* midisketch_mood_name(uint8_t id);
+const char* midisketch_chord_name(uint8_t id);
+const char* midisketch_chord_display(uint8_t id);
+uint16_t midisketch_mood_default_bpm(uint8_t id);
 
-// Get names
+uint8_t midisketch_style_preset_count(void);
 const char* midisketch_style_preset_name(uint8_t id);
 const char* midisketch_style_preset_display_name(uint8_t id);
+const char* midisketch_style_preset_description(uint8_t id);
+uint16_t midisketch_style_preset_tempo_default(uint8_t id);
+uint8_t midisketch_style_preset_allowed_attitudes(uint8_t id);
+MidiSketchStylePresetSummary midisketch_get_style_preset(uint8_t id);
 
-// Get compatible progressions/forms for a style (WASM-friendly)
 MidiSketchChordCandidates* midisketch_get_progressions_by_style_ptr(uint8_t style_id);
 MidiSketchFormCandidates* midisketch_get_forms_by_style_ptr(uint8_t style_id);
+MidiSketchChordCandidates midisketch_get_progressions_by_style(uint8_t style_id);
+MidiSketchFormCandidates midisketch_get_forms_by_style(uint8_t style_id);
+~~~
 
-// Create default config for a style (WASM-friendly)
-MidiSketchSongConfig* midisketch_create_default_config_ptr(uint8_t style_id);
-
-// Validate config
-MidiSketchConfigError midisketch_validate_config(const MidiSketchSongConfig* config);
-```
+The _ptr candidate getters return shared static buffers and are not thread-safe. The by-value variants return a copy. Pointers inside MidiSketchStylePresetSummary refer to library-owned strings.
 
 ### Blueprint Information
 
-```c
-// Get number of available blueprints
+~~~c
+typedef enum {
+  MIDISKETCH_PARADIGM_TRADITIONAL = 0,
+  MIDISKETCH_PARADIGM_RHYTHM_SYNC = 1,
+  MIDISKETCH_PARADIGM_MELODY_DRIVEN = 2
+} MidiSketchParadigm;
+
+typedef enum {
+  MIDISKETCH_RIFF_FREE = 0,
+  MIDISKETCH_RIFF_LOCKED_CONTOUR = 1,
+  MIDISKETCH_RIFF_LOCKED_PITCH = 2,
+  MIDISKETCH_RIFF_LOCKED_ALL = 3,
+  MIDISKETCH_RIFF_EVOLVING = 4,
+  MIDISKETCH_RIFF_LOCKED = MIDISKETCH_RIFF_LOCKED_CONTOUR
+} MidiSketchRiffPolicy;
+
 uint8_t midisketch_blueprint_count(void);
-
-// Get blueprint name by ID
 const char* midisketch_blueprint_name(uint8_t id);
-
-// Get blueprint paradigm by ID (0=Traditional, 1=RhythmSync, 2=MelodyDriven)
-uint8_t midisketch_blueprint_paradigm(uint8_t id);
-
-// Get blueprint riff policy by ID (0=Free, 1=LockedContour, 2=LockedPitch, 3=LockedAll, 4=Evolving)
-uint8_t midisketch_blueprint_riff_policy(uint8_t id);
-
-// Get blueprint weight (for auto-selection) by ID
+MidiSketchParadigm midisketch_blueprint_paradigm(uint8_t id);
+MidiSketchRiffPolicy midisketch_blueprint_riff_policy(uint8_t id);
 uint8_t midisketch_blueprint_weight(uint8_t id);
-
-// Whether the blueprint requires the drums track (1, 5, 7 -> non-zero)
-int midisketch_blueprint_drums_required(uint8_t id);
-
-// Get resolved blueprint ID after generation
+uint8_t midisketch_blueprint_drums_required(uint8_t id);
+uint8_t midisketch_vocal_style_call_enabled(uint8_t style);
+uint16_t midisketch_blueprint_tempo_min(uint8_t id);
+uint16_t midisketch_blueprint_tempo_max(uint8_t id);
 uint8_t midisketch_get_resolved_blueprint_id(MidiSketchHandle handle);
-```
+const char* midisketch_get_warnings_json(MidiSketchHandle handle);
+~~~
+
+The blueprint tempo getters return 0 for an invalid ID. The resolved ID is 255 before generation. The warning JSON is an array string such as [] and its pointer is thread-local and borrowed.
 
 ### JSON Config API (WASM)
 
-The JSON-based API is used by the WASM/JS bindings for configuration exchange.
-
-```c
-// Generate from JSON config string
+~~~c
 MidiSketchError midisketch_generate_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-
-// Validate JSON config
-MidiSketchConfigError midisketch_validate_config_json(
-    const char* json,
-    size_t json_length
-);
-
-// Create default config as JSON string
-const char* midisketch_create_default_config_json(uint8_t style_id);
-
-// Generate vocal only from JSON config
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 MidiSketchError midisketch_generate_vocal_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-
-// Generate all tracks with vocal-first priority from JSON config
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 MidiSketchError midisketch_generate_with_vocal_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 
-// Regenerate vocal from JSON config
+const char* midisketch_create_default_config_json(uint8_t style_id);
+MidiSketchConfigError midisketch_validate_config_json(
+    const char* config_json, size_t json_length);
+MidiSketchConfigError midisketch_get_last_config_error(MidiSketchHandle handle);
+
 MidiSketchError midisketch_regenerate_vocal_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-
-// Generate accompaniment from JSON config
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 MidiSketchError midisketch_generate_accompaniment_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-
-// Regenerate accompaniment from JSON config
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 MidiSketchError midisketch_regenerate_accompaniment_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-
-// Set custom vocal notes from JSON
+    MidiSketchHandle handle, const char* config_json, size_t json_length);
 MidiSketchError midisketch_set_vocal_notes_from_json(
-    MidiSketchHandle handle,
-    const char* json,
-    size_t json_length
-);
-```
+    MidiSketchHandle handle, const char* json, size_t json_length);
+const char* midisketch_get_melody_json(MidiSketchHandle handle);
+MidiSketchError midisketch_set_melody_from_json(
+    MidiSketchHandle handle, const char* json, size_t json_length);
+~~~
+
+config_json uses the snake_case SongConfig fields. midisketch_create_default_config_json() returns a borrowed static string replaced by the next call. Passing NULL or an empty string to midisketch_regenerate_vocal_from_json() selects the seed-only overload. Accompaniment JSON uses AccompanimentConfig fields; its probability and humanization values are normalized floats (0.0-1.0), while arpeggio_gate is 0-100. The C implementation records supplied JSON fields for partial VocalConfig and AccompanimentConfig updates.
+
+midisketch_set_vocal_notes_from_json() accepts this shape:
+
+~~~json
+{
+  "config": {"style_preset_id": 0, "key": 0, "bpm": 120},
+  "notes": [
+    {"start_tick": 0, "duration": 480, "pitch": 60, "velocity": 100}
+  ]
+}
+~~~
+
+midisketch_get_melody_json() returns {"seed":N,"notes":[...]}. Its pointer is thread-local and replaced by the next call on the same thread.
 
 ### Piano Roll Safety API
 
-```c
-// Get piano roll safety for a range of ticks
+~~~c
 MidiSketchPianoRollData* midisketch_get_piano_roll_safety(
-    MidiSketchHandle handle,
-    uint32_t start_tick,
-    uint32_t end_tick,
-    uint32_t step
-);
-
-// Get piano roll safety at a single tick
+    MidiSketchHandle handle, uint32_t start_tick, uint32_t end_tick, uint32_t step);
 MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_at(
-    MidiSketchHandle handle,
-    uint32_t tick
-);
-
-// Get piano roll safety with previous pitch context (for leap detection)
+    MidiSketchHandle handle, uint32_t tick);
 MidiSketchPianoRollInfo* midisketch_get_piano_roll_safety_with_context(
-    MidiSketchHandle handle,
-    uint32_t tick,
-    uint8_t prev_pitch
-);
-
-// Free piano roll data
+    MidiSketchHandle handle, uint32_t tick, uint8_t prev_pitch);
 void midisketch_free_piano_roll_data(MidiSketchPianoRollData* data);
-
-// Convert reason flags to human-readable string
+size_t midisketch_piano_roll_data_count(const MidiSketchPianoRollData* data);
+uint8_t midisketch_piano_roll_data_was_truncated(const MidiSketchPianoRollData* data);
 const char* midisketch_reason_to_string(uint16_t reason);
+const char* midisketch_collision_to_string(const MidiSketchCollisionInfo* collision);
+~~~
 
-// Get config error message string
-const char* midisketch_config_error_string(uint8_t error_code);
-```
+Batch results own an array and are limited to 100,000 samples. Use the count and truncation helpers instead of reading the encoded count field directly. Single-tick results and the two string-conversion functions use shared static storage and must be consumed before the next call.
+
+The safety values and reason flags are bit-compatible with the header:
+
+~~~c
+typedef enum {
+  MIDISKETCH_NOTE_SAFE = 0,
+  MIDISKETCH_NOTE_WARNING = 1,
+  MIDISKETCH_NOTE_DISSONANT = 2
+} MidiSketchNoteSafety;
+
+typedef enum {
+  MIDISKETCH_REASON_NONE = 0,
+  MIDISKETCH_REASON_CHORD_TONE = 1,
+  MIDISKETCH_REASON_TENSION = 2,
+  MIDISKETCH_REASON_SCALE_TONE = 4,
+  MIDISKETCH_REASON_LOW_REGISTER = 8,
+  MIDISKETCH_REASON_TRITONE = 16,
+  MIDISKETCH_REASON_LARGE_LEAP = 32,
+  MIDISKETCH_REASON_MINOR_2ND = 64,
+  MIDISKETCH_REASON_MAJOR_7TH = 128,
+  MIDISKETCH_REASON_NON_SCALE = 256,
+  MIDISKETCH_REASON_PASSING_TONE = 512,
+  MIDISKETCH_REASON_OUT_OF_RANGE = 1024,
+  MIDISKETCH_REASON_TOO_HIGH = 2048,
+  MIDISKETCH_REASON_TOO_LOW = 4096
+} MidiSketchNoteReason;
+
+typedef struct {
+  uint8_t track_role;
+  uint8_t colliding_pitch;
+  uint8_t interval_semitones;
+} MidiSketchCollisionInfo;
+
+typedef struct {
+  uint32_t tick;
+  int8_t chord_degree;
+  uint8_t current_key;
+  uint8_t safety[128];
+  uint16_t reason[128];
+  MidiSketchCollisionInfo collision[128];
+  uint8_t recommended[8];
+  uint8_t recommended_count;
+} MidiSketchPianoRollInfo;
+
+typedef struct {
+  MidiSketchPianoRollInfo* data;
+  size_t count;
+} MidiSketchPianoRollData;
+~~~
 
 ### Error Codes
 
-```c
+~~~c
 typedef enum {
   MIDISKETCH_OK = 0,
   MIDISKETCH_ERROR_INVALID_PARAM = 1,
-  MIDISKETCH_ERROR_INVALID_STRUCTURE = 2,
-  MIDISKETCH_ERROR_INVALID_MOOD = 3,
-  MIDISKETCH_ERROR_INVALID_CHORD = 4,
-  MIDISKETCH_ERROR_GENERATION_FAILED = 5,
-  MIDISKETCH_ERROR_OUT_OF_MEMORY = 6,
+  MIDISKETCH_ERROR_INVALID_STRUCTURE = 2, /* deprecated, ABI compatibility */
+  MIDISKETCH_ERROR_INVALID_MOOD = 3,      /* deprecated, ABI compatibility */
+  MIDISKETCH_ERROR_INVALID_CHORD = 4,     /* deprecated, ABI compatibility */
+  MIDISKETCH_ERROR_GENERATION_FAILED = 5, /* deprecated, ABI compatibility */
+  MIDISKETCH_ERROR_OUT_OF_MEMORY = 6,     /* deprecated, ABI compatibility */
+  MIDISKETCH_ERROR_UNSUPPORTED_FORMAT = 7
 } MidiSketchError;
-```
+
+const char* midisketch_error_string(MidiSketchError error);
+const char* midisketch_config_error_string(MidiSketchConfigError error);
+~~~
+
+The error-string functions return borrowed static messages. MidiSketchConfigError values run from MIDISKETCH_CONFIG_OK = 0 through MIDISKETCH_CONFIG_INVALID_TARGET_DURATION = 35; the enum in midisketch_c.h is authoritative.
+
+~~~c
+typedef enum {
+  MIDISKETCH_CONFIG_OK = 0,
+  MIDISKETCH_CONFIG_INVALID_STYLE = 1,
+  MIDISKETCH_CONFIG_INVALID_CHORD = 2,
+  MIDISKETCH_CONFIG_INVALID_FORM = 3,
+  MIDISKETCH_CONFIG_INVALID_ATTITUDE = 4,
+  MIDISKETCH_CONFIG_INVALID_VOCAL_RANGE = 5,
+  MIDISKETCH_CONFIG_INVALID_BPM = 6,
+  MIDISKETCH_CONFIG_DURATION_TOO_SHORT = 7,
+  MIDISKETCH_CONFIG_INVALID_MODULATION = 8,
+  MIDISKETCH_CONFIG_INVALID_KEY = 9,
+  MIDISKETCH_CONFIG_INVALID_COMPOSITION_STYLE = 10,
+  MIDISKETCH_CONFIG_INVALID_ARPEGGIO_PATTERN = 11,
+  MIDISKETCH_CONFIG_INVALID_ARPEGGIO_SPEED = 12,
+  MIDISKETCH_CONFIG_INVALID_VOCAL_STYLE = 13,
+  MIDISKETCH_CONFIG_INVALID_MELODY_TEMPLATE = 14,
+  MIDISKETCH_CONFIG_INVALID_MELODIC_COMPLEXITY = 15,
+  MIDISKETCH_CONFIG_INVALID_HOOK_INTENSITY = 16,
+  MIDISKETCH_CONFIG_INVALID_VOCAL_GROOVE = 17,
+  MIDISKETCH_CONFIG_INVALID_CALL_DENSITY = 18,
+  MIDISKETCH_CONFIG_INVALID_INTRO_CHANT = 19,
+  MIDISKETCH_CONFIG_INVALID_MIX_PATTERN = 20,
+  MIDISKETCH_CONFIG_INVALID_MOTIF_REPEAT_SCOPE = 21,
+  MIDISKETCH_CONFIG_INVALID_ARRANGEMENT_GROWTH = 22,
+  MIDISKETCH_CONFIG_INVALID_MODULATION_TIMING = 23,
+  MIDISKETCH_CONFIG_INVALID_BLUEPRINT = 24,
+  MIDISKETCH_CONFIG_INVALID_CALL_SETTING = 25,
+  MIDISKETCH_CONFIG_INVALID_ENERGY_CURVE = 26,
+  MIDISKETCH_CONFIG_INVALID_DRIVE_FEEL = 27,
+  MIDISKETCH_CONFIG_INVALID_MORA_RHYTHM_MODE = 28,
+  MIDISKETCH_CONFIG_INVALID_PROBABILITY = 29,
+  MIDISKETCH_CONFIG_INVALID_ARPEGGIO_RANGE = 30,
+  MIDISKETCH_CONFIG_INVALID_MELODY_OVERRIDE = 31,
+  MIDISKETCH_CONFIG_INVALID_MOTIF_OVERRIDE = 32,
+  MIDISKETCH_CONFIG_INVALID_JSON = 33,
+  MIDISKETCH_CONFIG_INVALID_MOOD = 34,
+  MIDISKETCH_CONFIG_INVALID_TARGET_DURATION = 35
+} MidiSketchConfigError;
+~~~
 
 ### C API Structures
 
-```c
-// MIDI binary output
+~~~c
 typedef struct {
   uint8_t* data;
   size_t size;
 } MidiSketchMidiData;
 
-// Event JSON output
 typedef struct {
   char* json;
   size_t length;
 } MidiSketchEventData;
 
-// Note input for custom vocal
 typedef struct {
-  uint32_t start_tick;
-  uint32_t duration;
-  uint8_t pitch;
-  uint8_t velocity;
-} MidiSketchNoteInput;
-```
+  char* json;
+  size_t length;
+} MidiSketchDissonanceData;
+
+typedef struct {
+  uint16_t total_bars;
+  uint32_t total_ticks;
+  uint16_t bpm;
+  uint8_t track_count;
+} MidiSketchInfo;
+
+typedef struct {
+  uint8_t id;
+  const char* name;
+  const char* display_name;
+  const char* description;
+  uint16_t tempo_default;
+  uint8_t allowed_attitudes;
+} MidiSketchStylePresetSummary;
+
+typedef struct { uint8_t count; uint8_t ids[20]; } MidiSketchChordCandidates;
+typedef struct { uint8_t count; uint8_t ids[10]; } MidiSketchFormCandidates;
+~~~
+
+The piano-roll safety structs and MidiSketchNoteSafety, MidiSketchNoteReason, and MidiSketchCollisionInfo declarations are also defined in midisketch_c.h; their arrays contain 128 MIDI pitches.
+
+### Utilities
+
+~~~c
+const char* midisketch_version(void);
+void* midisketch_malloc(size_t size);
+void midisketch_free(void* ptr);
+~~~
+
+midisketch_version() returns a borrowed static string. midisketch_malloc() and midisketch_free() are the allocator pair for FFI memory explicitly allocated through the C ABI.
 
 ---
 
@@ -1108,75 +1022,66 @@ typedef struct {
 
 ### C++ Example
 
-```cpp
+~~~cpp
 #include "midisketch.h"
 #include <fstream>
 
 int main() {
-    using namespace midisketch;
+  using namespace midisketch;
 
-    // Create instance
-    MidiSketch sketch;
+  MidiSketch sketch;
+  SongConfig config;
+  config.style_preset_id = 0;
+  config.key = Key::C;
+  config.bpm = 120;
+  config.seed = 12345;
+  config.vocal_attitude = VocalAttitude::Expressive;
 
-    // Configure
-    SongConfig config;
-    config.style_preset_id = 0;  // J-Pop
-    config.key = Key::C;
-    config.bpm = 120;
-    config.seed = 12345;
-    config.drums_enabled = true;
-    config.vocal_attitude = VocalAttitude::Expressive;
+  sketch.generateFromConfig(config);
+  const auto midi = sketch.getMidi();
 
-    // Generate
-    sketch.generateFromConfig(config);
-
-    // Get MIDI data
-    auto midi = sketch.getMidi();
-
-    // Save to file
-    std::ofstream out("output.mid", std::ios::binary);
-    out.write(reinterpret_cast<const char*>(midi.data()), midi.size());
-
-    return 0;
+  std::ofstream out("output.mid", std::ios::binary);
+  out.write(reinterpret_cast<const char*>(midi.data()),
+            static_cast<std::streamsize>(midi.size()));
+  return 0;
 }
-```
+~~~
 
 ### C Example
 
-```c
+~~~c
 #include "midisketch_c.h"
 #include <stdio.h>
+#include <string.h>
 
-int main() {
-    // Create instance
-    MidiSketchHandle handle = midisketch_create();
+int main(void) {
+  MidiSketchHandle handle = midisketch_create();
+  if (!handle) return 1;
 
-    // Get default config for J-Pop style
-    MidiSketchSongConfig* config = midisketch_create_default_config_ptr(0);
-    config->key = 0;  // C
-    config->bpm = 120;
-    config->seed = 12345;
-
-    // Generate
-    MidiSketchError err = midisketch_generate_from_config(handle, config);
-    if (err != MIDISKETCH_OK) {
-        printf("Generation failed: %d\n", err);
-        midisketch_destroy(handle);
-        return 1;
-    }
-
-    // Get MIDI data
-    MidiSketchMidiData* midi = midisketch_get_midi(handle);
-
-    // Save to file
-    FILE* f = fopen("output.mid", "wb");
-    fwrite(midi->data, 1, midi->size, f);
-    fclose(f);
-
-    // Cleanup
-    midisketch_free_midi(midi);
+  const char config[] =
+      "{\"style_preset_id\":0,\"key\":0,\"bpm\":120,\"seed\":12345}";
+  const size_t config_length = sizeof(config) - 1;
+  MidiSketchError error = midisketch_generate_from_json(
+      handle, config, config_length);
+  if (error != MIDISKETCH_OK) {
+    fprintf(stderr, "%s\n", midisketch_error_string(error));
     midisketch_destroy(handle);
+    return 1;
+  }
 
-    return 0;
+  MidiSketchMidiData* midi = midisketch_get_midi(handle);
+  if (!midi) {
+    midisketch_destroy(handle);
+    return 1;
+  }
+
+  FILE* file = fopen("output.mid", "wb");
+  if (file) {
+    fwrite(midi->data, 1, midi->size, file);
+    fclose(file);
+  }
+  midisketch_free_midi(midi);
+  midisketch_destroy(handle);
+  return file ? 0 : 1;
 }
-```
+~~~

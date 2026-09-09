@@ -10,32 +10,7 @@ The tracks below map onto musical roles — melody, chords, bass, motif, arpeggi
 
 MIDI Sketch generates 9 tracks across different MIDI channels:
 
-```mermaid
-flowchart TB
-    subgraph Melody ["Melody Layer"]
-        Vocal["Vocal (Ch 0)"]
-        Aux["Aux (Ch 5)"]
-    end
-
-    subgraph Harmony ["Harmony"]
-        Chord["Chord (Ch 1)"]
-        Guitar["Guitar (Ch 6)"]
-    end
-
-    subgraph Rhythm ["Rhythm Section"]
-        Bass["Bass (Ch 2)"]
-        Drums["Drums (Ch 9)"]
-    end
-
-    subgraph Synth ["Synth Layer"]
-        Motif["Motif (Ch 3)"]
-        Arpeggio["Arpeggio (Ch 4)"]
-    end
-
-    subgraph Markers ["Markers"]
-        SE["SE (Ch 15)"]
-    end
-```
+<DocFigure name="tracks-channel-map" />
 
 ### Channel Assignment
 
@@ -57,7 +32,7 @@ The programs above are the built-in fallbacks (`src/midi/track_config.h`). The a
 
 ## Vocal Track
 
-**Source:** `src/track/vocal.cpp` (~314 lines), `src/track/melody_designer.cpp` (~2048 lines)
+**Source:** `src/track/generators/vocal.cpp`, `src/track/vocal/melody_designer.cpp`
 
 The vocal system uses a **template-driven melody designer** with **style-aware evaluation** for predictable, stylistically-accurate melody generation.
 
@@ -73,16 +48,7 @@ The vocal generation consists of three major components:
 2. **Vocal Generator** (`vocal.cpp`) - Section structure, caching, and coordination
 3. **VocalStyleProfile** - Unified bias and evaluation configuration per style
 
-```mermaid
-flowchart TD
-    A[VocalStyleProfile] --> B[MelodyDesigner]
-    B --> C[Generate Candidates]
-    C --> D[Evaluate: Style + Singability + Bias]
-    D --> E[Select Best]
-    E --> F[Vocal Generator]
-    F --> G[Apply Constraints]
-    G --> H[Cache Phrase]
-```
+<DocFigure name="tracks-vocal-architecture" />
 
 ### Melody Templates
 
@@ -91,32 +57,20 @@ flowchart TD
 | ID | Name | Plateau | Max Step | Use Case |
 |----|------|---------|----------|----------|
 | 0 | Auto | - | - | VocalStyle-based selection |
-| 1 | PlateauTalk | 0.65 | 2 | NewJeans, Billie Eilish style |
-| 2 | RunUpTarget | 0.20 | 4 | Anime high-energy, dramatic pop |
-| 3 | DownResolve | 0.30 | 3 | B-section, pre-chorus |
-| 4 | HookRepeat | 0.40 | 3 | TikTok, K-POP hooks |
-| 5 | SparseAnchor | 0.50 | 2 | Official髭男dism, ballad |
-| 6 | CallResponse | - | - | Duet patterns |
-| 7 | JumpAccent | - | - | Emotional peaks |
+| 1 | PlateauTalk | 0.70 | 2 | Talk-like, narrow-range pop |
+| 2 | RunUpTarget | 0.20 | 3 | Anime high-energy, dramatic pop |
+| 3 | DownResolve | 0.40 | 2 | B-section, pre-chorus |
+| 4 | HookRepeat | 0.55 | 2 | Short-form, K-POP hooks |
+| 5 | SparseAnchor | 0.30 | 4 | Sparse, sustained ballad phrasing |
+| 6 | CallResponse | 0.35 | 3 | Duet patterns |
+| 7 | JumpAccent | 0.25 | 5 | Emotional peaks |
 
 - **Plateau ratio**: Probability of staying on the same pitch (higher = more repetitive)
-- **Max step**: Maximum interval in semitones (lower = smoother)
+- **Max step**: Maximum step size in semitones (lower = smoother)
 
 ### Generation Flow
 
-```mermaid
-flowchart TD
-    A[Start Section] --> B{Check phrase cache}
-    B -->|Cached| C[Retrieve phrase]
-    B -->|New| D[Select MelodyTemplate]
-    D --> E[MelodyDesigner.generatePhrase]
-    E --> F[Cache phrase]
-    C --> G[Apply voice leading]
-    F --> G
-    G --> H[HarmonyContext.getSafePitch]
-    H --> I[Octave fold into range]
-    I --> J[Add to track]
-```
+<DocFigure name="tracks-vocal-phrase-flow" />
 
 ::: info Octave Fold (Range Safety)
 Notes that land outside the allowed range are folded by octaves (±12 semitones) back into range, preserving the pitch class — a chord tone stays a chord tone. A chromatic clamp to the range boundary is used only as a last resort, because clamping can turn a safe note into a dissonance (e.g. G folded down an octave stays G, while clamping G to a ceiling of F# would create a tritone).
@@ -129,9 +83,9 @@ The MelodyDesigner limits pitch selection to 4 options:
 ```cpp
 enum class PitchChoice {
     Same,       // Stay on current pitch (plateau_ratio)
-    StepUp,     // +1 semitone
-    StepDown,   // -1 semitone
-    TargetStep  // ±2 toward target (if template has target)
+    StepUp,     // Up one scale step (whole step preferred over half)
+    StepDown,   // Down one scale step
+    TargetStep  // Move toward the template's target pitch, bounded by max_step
 };
 ```
 
@@ -151,47 +105,53 @@ Phrases are cached using a composite key (V2 cache) to ensure musical coherence:
 
 ```cpp
 struct PhraseCacheKey {
-    SectionType type;      // Verse, Chorus, etc.
-    uint8_t bars;          // Section length
-    uint8_t chord_degree;  // Starting chord degree
+    SectionType section_type;  // A, Chorus, etc.
+    uint8_t bars;              // Section length in bars
+    int8_t chord_degree;       // Starting chord degree
 };
-
-// Cache behavior:
-// - 80% exact reuse: Same phrase reproduced
-// - 20% variation: Applied transformations (octave shift, rhythm variation)
 ```
 
+The first reuse of a cached phrase is always exact, so the phrase is established before it is varied. After that, the chance of an exact repeat falls with each chorus occurrence: 80% on the first occurrence, 60% on the second, 30% from the third onward, so the final chorus is the freshest. Exact repetition is also forced to stop after two consecutive identical statements.
+
 ::: info Phrase Variation
-When reusing cached phrases, the system may apply variations:
-- **Octave shift**: Move phrase up/down an octave
-- **Rhythm variation**: Slight timing adjustments
-- **Contour inversion**: Flip ascending/descending patterns
+When a reuse is not exact, one of six variations is applied. All of them preserve the melodic identity of the phrase — none of them transpose, invert or re-cut it:
+
+- **LastNoteShift**: Move the final note by one or two scale degrees
+- **LastNoteLong**: Extend the final note for a more dramatic ending
+- **BreathRestInsert**: Insert a short rest before the phrase ends
+- **DynamicAccent**: Raise the final note's velocity
+- **LateOnset**: Start the phrase a sixteenth note late
+- **EchoRepeat**: Echo the final note, shorter and quieter
 :::
 
 ### Range Constraints
 
 ```cpp
-struct VocalRange {
-    uint8_t low = 60;   // C4
-    uint8_t high = 79;  // G5
+struct VocalRangeResult {
+    uint8_t effective_low;
+    uint8_t effective_high;
+    float velocity_scale;
 };
 ```
+
+The effective range starts with the singer bounds (`vocal_low` and `vocal_high`), then applies the Blueprint `max_pitch` ceiling and reserves headroom for a later upward modulation by lowering the effective high bound by the modulation amount. The lower bound is preserved. When positive modulation is requested, the adjusted high is clamped so at least one octave remains; a Blueprint `max_pitch` cap without modulation may produce a narrower span. Composition styles change `velocity_scale`; they do not create a separate foreground/background vocal range. Motif-follow-vocal behavior is a separate constraint: when a vocal exists, the motif generator still narrows its register around the vocal median.
 
 ### Non-Chord Tone Decoration
 
 The vocal track uses non-chord tones (NCT) to add melodic interest beyond simple chord-tone melodies:
 
-::: info Strong Beats and Weak Beats
-In 4/4 time, **strong beats** are beats 1 and 3 (where you naturally tap your foot), while **weak beats** are beats 2 and 4. Chord tones on strong beats create stability; non-chord tones on weak beats add movement without disrupting the harmony.
+::: info Beat strength
+The engine grades beats four ways in 4/4: **strong** (beats 1 and 3), **medium** (beats 2 and 4), **weak** (off-beat 8ths) and **very weak** (16ths). Chord tones and accented appoggiaturas belong on strong beats; passing tones, neighbour tones and anticipations go on the weak subdivisions between beats, not on beats 2 and 4.
 :::
 
 | NCT Type | Description | Placement |
 |----------|-------------|-----------|
 | **ChordTone** | Notes belonging to the current chord (baseline) | Strong beats |
-| **PassingTone** | Stepwise connection between two chord tones | Weak beats |
-| **NeighborTone** | Step away from a chord tone and return | Weak beats |
+| **PassingTone** | Stepwise connection between two chord tones | Off-beat subdivisions |
+| **NeighborTone** | Step away from a chord tone and return | Off-beat subdivisions |
 | **Appoggiatura** | Accented dissonance that resolves by step | Strong beats |
-| **Anticipation** | Early arrival of the next chord's tone | Before chord change |
+| **Anticipation** | Early arrival of the next chord's tone | Off-beat subdivisions, before the chord change |
+| **Suspension** | A tone held over from the previous chord, resolving down by step | Strong beat, resolving on the following weak one |
 | **Tension** | Extended chord tones (9th, 11th, 13th) | Based on style |
 
 Configuration varies by mood:
@@ -202,17 +162,18 @@ Configuration varies by mood:
 
 ### VocalStyleProfile
 
-Each vocal style has a unified profile that controls both **generation bias** and **evaluation weights**:
+Each vocal style has a unified profile that controls both **generation bias** and **evaluation weights**. Eight profiles are shared across the fourteen vocal styles (Idol/BrightKira/CuteAffected → Idol; Vocaloid/UltraVocaloid/CoolSynth → Vocaloid; Rock/PowerfulShout → Rock; Auto/Standard → Standard):
 
 | Profile | Plateau Bias | High Register | Singability | Surprise |
 |---------|-------------|---------------|-------------|----------|
-| **Standard** | 1.0 | 1.0 | 0.25 | 0.15 |
-| **Idol** | 1.2 | 1.0 | 0.30 | 0.12 |
-| **Rock** | 0.8 | 1.2 | 0.20 | 0.20 |
-| **Ballad** | 1.1 | 0.9 | 0.40 | 0.10 |
-| **Anime** | 0.9 | 1.3 | 0.25 | 0.25 |
-| **Vocaloid** | 0.6 | 1.1 | 0.10 | 0.25 |
-| **KPop** (13) | 1.0 | 1.2 | 0.25 | 0.20 |
+| **Standard** | 1.00 | 0.80 | 0.15 | 0.15 |
+| **Idol** | 1.25 | 0.85 | 0.18 | 0.05 |
+| **Rock** | 0.80 | 1.20 | 0.15 | 0.20 |
+| **Ballad** | 1.00 | 0.50 | 0.30 | 0.05 |
+| **Anime** | 1.30 | 1.30 | 0.10 | 0.15 |
+| **Vocaloid** | 0.90 | 1.20 | 0.10 | 0.20 |
+| **CityPop** | 0.90 | 0.90 | 0.15 | 0.15 |
+| **KPop** | 1.40 | 1.10 | 0.12 | 0.18 |
 
 ### UltraVocaloid Mode
 
@@ -230,30 +191,43 @@ Enhanced Vocaloid-style generation with:
 
 ### Melody Evaluation System
 
-The MelodyDesigner generates multiple candidate melodies and evaluates them:
+The MelodyDesigner generates a batch of candidate melodies — 100 for a chorus, 50 for a B section, 30 for a bridge or chant, 20 everywhere else — and scores each one:
 
-```mermaid
-flowchart LR
-    A[Generate 8 Candidates] --> B[Style Score 40%]
-    A --> C[Singability Score 40%]
-    A --> D[Bias Score 20%]
-    B --> E[Combined Score]
-    C --> E
-    D --> E
-    E --> F[Select Best]
-```
+The shared scoring reference is [Melody Evaluation](/docs/melody-evaluation); this page keeps only the track-level wiring and constraints.
 
-**Evaluation Components:**
+<DocFigure name="tracks-melody-evaluation" />
+
+**Combined score:**
 
 | Component | Weight | Criteria |
 |-----------|--------|----------|
-| Style Score | 40% | Contour matching, pattern consistency, surprise balance |
-| Singability Score | 40% | Stepwise motion, breath marks, monotony avoidance |
-| Bias Score | 20% | Interval distribution matching style preferences |
+| Style score | 40% | Seven weighted qualities, listed below |
+| Culling score | 40% | Penalty-based: singing difficulty, monotony, awkward gaps |
+| Bias score | 20% | Interval distribution matching style preferences |
+
+A global-motif bonus is added on top, weighted by section: 0.35 in the chorus, 0.25 in a repeated A section, 0.22 in B, 0.15 in the first A section and 0.05 in the bridge, where contrast is wanted instead.
+
+**The style score** is itself seven components whose weights come from the vocal style profile and sum to 1.0. The values below are the Standard profile:
+
+| Component | Standard weight | Criteria |
+|-----------|-----------------|----------|
+| Singability | 0.15 | Interval distribution: step-heavy, few large leaps |
+| Chord tone ratio | 0.15 | Chord tones landing on strong beats |
+| Contour | 0.15 | Recognisable arch / wave / descending shape |
+| Surprise | 0.15 | One or two deliberate leaps of a 4th or more |
+| AAAB pattern | 0.15 | Three-plus-one repetition structure |
+| Rhythm-interval fit | 0.15 | Long note before a leap, short note for a step |
+| Catchiness | 0.10 | Short-cell repetition, rhythmic consistency, hook contour |
+
+**The culling score** starts at 1.0 and subtracts penalties: consecutive high notes, a leap onto a high note, rapid direction changes, non-chord tones on strong beats, melodically isolated notes, low phrase cohesion, excessive silence, and breathless runs of short notes.
+
+Candidates are then sorted by combined score, the bottom half is discarded, and one of the survivors is drawn at random with higher scores weighted more heavily. The top-scoring candidate is only the fallback, so equally good phrases stay in rotation.
 
 ### Hook System
 
-Chorus sections use a dedicated hook generation system with **6 rhythm patterns**:
+Chorus sections use a dedicated hook generation system built from **17 rhythm patterns** and **25 hook skeletons**. The most common are:
+
+**Common rhythm patterns:**
 
 | Pattern | Rhythm | Character |
 |---------|--------|-----------|
@@ -264,7 +238,7 @@ Chorus sections use a dedicated hook generation system with **6 rhythm patterns*
 | **Dotted** | 8-4-8 | Dotted rhythm feel |
 | **CallResponse** | 4-8-8-8 | Call and response |
 
-**Hook Skeletons:**
+**Common hook skeletons:**
 
 | Skeleton | Description |
 |----------|-------------|
@@ -275,62 +249,61 @@ Chorus sections use a dedicated hook generation system with **6 rhythm patterns*
 | RhythmRepeat | Pitch varies, rhythm constant |
 
 **Hook Intensity** controls hook prominence:
-- **Off (0)**: No hook repetition
-- **Light (1)**: Subtle hook presence
-- **Normal (2)**: Standard pop hooks
-- **Strong (3)**: Heavy hook emphasis (TikTok-style)
+- **Off (0)**: No hook emphasis
+- **Light (1)**: Chorus start only
+- **Normal (2)**: Chorus start and middle
+- **Strong (3)**: All hook points
+- **Maximum (4)**: Maximum repetition, simple patterns only
 
 ### Global Motif System
 
-The vocal track extracts a **global motif** from the first generated phrase and uses it to maintain musical coherence:
+The vocal track extracts a **global motif** from the chorus hook and uses it as a light evaluation bonus for later sections — it biases selection, it does not constrain generation:
 
 ```cpp
 struct GlobalMotif {
-    vector<int8_t> interval_signature;  // Relative pitch changes (max 8)
-    vector<float> rhythm_signature;     // Relative duration ratios
-    ContourType contour_type;           // Ascending, Descending, Peak, Valley, Plateau
+    ContourType contour_type;        // Ascending, Descending, Peak, Valley, Plateau
+    int8_t  interval_signature[8];   // Relative pitch changes
+    uint8_t interval_count;
+    uint8_t rhythm_signature[8];     // Relative duration ratios
+    uint8_t rhythm_count;
 };
 ```
 
-**Evaluation Bonus:**
-- Matching contour type: +5% score
-- Similar interval patterns: +5% score (3+ matches)
-- This ensures later sections feel related to the opening
+Each section compares its candidates against a transformation of the motif chosen to suit that section: the original in the chorus, a diminished version in A, a sequenced version in B, an inverted version in the bridge and a fragmented version in the outro. The bonus is then scaled by the section weights listed above, so the chorus preserves the hook identity most strongly and the bridge is left free to contrast.
 
 ### Piano Roll Safety API
 
 **Source:** `src/core/piano_roll_safety.cpp`
 
-The Piano Roll Safety API helps external tools (like piano roll editors) determine safe pitch placements:
+The read-only [Piano Roll Safety API](/docs/api-cpp#piano-roll-safety-api) helps external tools such as piano roll editors display pitch-placement warnings. `checkBgmCollisionDetailed` checks sounding notes in six BGM tracks (Chord, Bass, Arpeggio, Aux, Motif and Guitar) by pitch-class interval. It reports `Severe` for interval classes 1 or 11, `Mild` for class 6, and `None` otherwise. This display helper does not apply chord, duration, register or generator-specific exceptions; the generator's separate `HarmonyContext` filter is described in [Harmony](/docs/harmony#harmonycontext).
 
 ```cpp
 enum class CollisionType : uint8_t {
-    None,    // No collision - safe to place
-    Mild,    // Tritone (context-dependent)
-    Severe   // Minor 2nd / Major 7th (always dissonant)
+    None,    // No display warning
+    Mild,    // Pitch-class interval 6: display warning
+    Severe   // Pitch-class intervals 1/11: display warning
 };
 ```
 
 **Collision Detection:**
 
-| Interval | Type | Risk |
+| Pitch-class interval | Type | Display result |
 |----------|------|------|
-| Minor 2nd (1 semitone) | Severe | Always avoid |
-| Major 7th (11 semitones) | Severe | Always avoid |
-| Tritone (6 semitones) | Mild | Context-dependent |
-| Others | None | Generally safe |
+| 1 or 11 | Severe | Severe display warning |
+| 6 | Mild | Mild display warning |
+| Other classes | None | No display warning |
 
 ::: warning Modulation Awareness
-The API accounts for key modulation. When modulation is enabled, the `effective_vocal_high` is reduced to prevent the final chorus from exceeding the vocal range after transposition.
+The generated vocal range starts with the singer bounds, is capped by the Blueprint's `max_pitch`, and reserves upward modulation headroom by reducing `effective_vocal_high`. The read-only display helper is independent of that range calculation: it reports pitch-class collisions and does not create a separate foreground-motif range.
 :::
 
 ---
 
 ## Aux Track
 
-**Source:** `src/track/aux_track.cpp` (~1170 lines)
+**Source:** `src/track/generators/aux.cpp`
 
-The Aux (auxiliary) track provides **sub-melody support** for the main vocal. It's not a counter-melody, but a "perceptual control layer" that enhances the main melody.
+The Aux (auxiliary) track provides **sub-melody support** when a main vocal exists. In `BackgroundMotif`, Vocal is always skipped; Traditional/MelodyDriven run Aux before Motif without a vocal reference, while RhythmSync keeps Motif before Aux. `SynthDriven` skips Aux. Aux is not a counter-melody, but a layer that shapes the arrangement around the lead when one is present.
 
 ### Purpose
 
@@ -357,22 +330,33 @@ The Aux (auxiliary) track provides **sub-melody support** for the main vocal. It
 | 7 | MotifCounter | Counter melody (contrary motion) |
 | 8 | SustainPad | Whole-note chord tone pad |
 
-### Template → Aux Mapping
+### Aux Function Selection
 
-Each melody template automatically selects appropriate aux functions:
+For the main song sections the aux function comes from the Blueprint's aux profile, not from the melody template:
 
-| Template | Aux Functions | Reason |
-|----------|---------------|--------|
-| PlateauTalk | A (PulseLoop) | Ice Cream / minimal style |
-| RunUpTarget | B + D | YOASOBI ascending then resolving |
-| HookRepeat | A + C | TikTok repetitive hooks |
-| SparseAnchor | E + D | Ballad emotional support |
+| Section | Source |
+|---------|--------|
+| Intro | An echo of the cached chorus motif, or `aux_profile.intro_function` when no motif is cached |
+| A / B / Bridge | `aux_profile.verse_function` |
+| Chorus | `aux_profile.chorus_function` |
+
+So a Traditional blueprint runs MelodicHook in the intro, MotifCounter in the verses and MelodicHook again in the chorus, while RhythmLock holds a single PulseLoop cell throughout. The remaining section types — interlude, outro, chant, mix break — fall back to the first aux configuration the melody template defines:
+
+| Template | Fallback function | Range offset | Width | Velocity ratio |
+|----------|-------------------|--------------|-------|----------------|
+| PlateauTalk | PulseLoop | -12 | 5 | 0.6 |
+| RunUpTarget | TargetHint | 0 | 7 | 0.5 |
+| DownResolve | PhraseTail | 0 | 5 | 0.5 |
+| HookRepeat | PulseLoop | -12 | 4 | 0.7 |
+| SparseAnchor | EmotionalPad | -5 | 8 | 0.4 |
+| CallResponse | MotifCounter | 0 | 6 | 0.7 |
+| JumpAccent | PhraseTail | 0 | 5 | 0.5 |
 
 ### Generation Constraints
 
-- Always generated **after** vocal (to avoid collisions)
-- Narrower range than vocal (50-70% of vocal range)
-- Lower velocity (0.5-0.8× vocal velocity)
+- Generated after Vocal when Vocal is present, so its pitches can avoid the lead; with `BackgroundMotif`, Traditional/MelodyDriven run Aux before Motif because Vocal is absent, while RhythmSync keeps Motif before Aux. `SynthDriven` does not generate Aux
+- When a vocal exists, the range is an absolute semitone width — 4 to 12 semitones wide — centred on its tessitura and offset by the section's `range_offset`; without a vocal it uses the configured/default tessitura. In both cases it is clamped to G3 (55) - C6 (84)
+- Velocity ratios of 0.4-0.8 scale a fixed base velocity of 80, not the vocal note's own velocity; a blueprint's `velocity_scale` multiplies that ratio
 - Uses HarmonyContext to avoid dissonance with vocal
 
 ### Chorus Behavior
@@ -388,59 +372,30 @@ In chorus sections, Aux track adapts its behavior:
 
 ## Chord Track
 
-**Source:** `src/track/chord_track.cpp` (~2000 lines)
+**Source:** `src/track/generators/chord.cpp`
 
 Generates harmonic voicings with voice leading optimization.
 
 ### Voicing Types
 
-```mermaid
-flowchart LR
-    subgraph Close ["Close Voicing"]
-        C1[R] --> C2[3] --> C3[5] --> C4[7]
-    end
+<DocFigure name="tracks-chord-voicings" />
 
-    subgraph Open ["Open Voicing"]
-        O1[R] --> O2[5] --> O3[3] --> O4[7]
-    end
-
-    subgraph Rootless ["Rootless"]
-        RL1[3] --> RL2[5] --> RL3[7] --> RL4[9]
-    end
-```
+Three voicing types are available. **Close** packs the chord tones into a single octave. **Open** is a Drop 2 voicing: the second voice from the top drops an octave, so a root-3rd-5th-7th stack becomes 5th-root-3rd-7th; Drop 3 and Spread are its other variants, selected per section and mood. **Rootless** omits the root the bass is already holding and adds a 9th when only two voices would otherwise remain.
 
 ### Voice Leading Algorithm
 
-```cpp
-int voiceLeadingDistance(Voicing& prev, Voicing& next) {
-    int distance = 0;
-    for (int i = 0; i < 4; i++) {
-        distance += abs(prev.notes[i] - next.notes[i]);
-    }
-    return distance;
-}
-
-// Select voicing that minimizes distance
-Voicing selectBestVoicing(Voicing& prev, vector<Voicing>& candidates) {
-    return min_element(candidates, [&](auto& a, auto& b) {
-        return voiceLeadingDistance(prev, a) < voiceLeadingDistance(prev, b);
-    });
-}
-```
+1. Generate candidates from the section's voicing type (close, open/Drop2, Drop3, spread, rootless)
+2. Score each by weighted movement from the previous voicing — the outer voices (bass and soprano) count double, the inner voices once, over up to five pitches
+3. Reward retained common tones
+4. Penalise parallel 5ths and octaves, by an amount that depends on the mood: strict for classical and sophisticated moods, relaxed for pop and dance
+5. Penalise a voicing identical to the previous one three times running
 
 ### Bass Coordination
 
-Uses `BassAnalysis` to avoid doubling:
+The chord track is generated after the bass, so it can read what the bass is actually playing. Two mechanisms use that:
 
-```cpp
-if (bassAnalysis.hasRootOnBeat1) {
-    // Use rootless voicing - bass provides root
-    voicing = generateRootlessVoicing(chord);
-} else {
-    // Include root in chord voicing
-    voicing = generateFullVoicing(chord);
-}
-```
+- `buildBassPitchMask` collects the pitch classes the bass sustains across beats 1 and 3 of the bar, and candidate voicings that would clash with them by a minor 2nd or a tritone are rejected.
+- `BassAnalysis::analyzeBar` reports whether the bass states the root on beat 1. When it does, a rootless voicing becomes the preferred choice, so the root is not doubled.
 
 ### Register Constraints
 
@@ -453,7 +408,7 @@ constexpr uint8_t CHORD_HIGH = 84;  // C6
 
 ## Guitar Track
 
-**Source:** `src/track/guitar.cpp`
+**Source:** `src/track/generators/guitar.cpp`
 
 The Guitar track generates accompaniment guitar patterns on a dedicated MIDI channel (Ch 6). It provides rhythmic and harmonic support that complements the chord track.
 
@@ -484,52 +439,43 @@ Guitar generation is influenced by Blueprint constraints:
 
 ## Bass Track
 
-**Source:** `src/track/bass.cpp` (~1170 lines)
+**Source:** `src/track/generators/bass.cpp`
 
 Generates the harmonic foundation with root-focused patterns.
 
 ### Pattern Types
 
-The bass system supports 17+ BassPattern types. The active pattern is selected automatically based on mood and section, or influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot (0=auto, 1-17 maps to BassPattern+1). Common pattern categories:
+`BassPattern` has 17 values. The active pattern is selected automatically based on mood and section, or pinned per section via `bass_style_hint` in the Blueprint's SectionSlot (0=auto, 1-17 maps to BassPattern+1). Common ones:
 
 | Pattern | Description | Rhythm |
 |---------|-------------|--------|
-| Sparse | Minimal, ballad-style | Beat 1 only |
-| Standard | Pop/rock baseline | Beats 1, 3 with fills |
-| Driving | Energetic, forward | Eighth notes throughout |
+| WholeNote | Sustained roots for stability (ballad, intro) | Half notes, approach into the next bar |
+| RootFifth | Classic pop root-fifth alternation | Quarter notes, fifth on beat 3 |
+| Syncopated | Off-beat accents for groove (pre-chorus) | Root with an off-beat fifth |
+| Driving | Energetic, forward (chorus) | Eighth notes throughout |
+| Walking | Quarter-note scale walk (jazz, city pop) | Four quarter notes, chromatic approach |
+
+The rest cover genre-specific cases: RhythmicDrive, PowerDrive, Aggressive, SidechainPulse, Groove, OctaveJump, PedalTone, Tresillo, SubBass808, RnBNeoSoul, SlapPop and FastRun.
 
 ### Generation Logic
 
-```mermaid
-flowchart TD
-    A[Get chord] --> B[Extract root]
-    B --> C{Section type?}
-    C -->|Chorus| D[Octave +12]
-    C -->|Intro/Outro| E[Octave -12]
-    C -->|Verse| F[Standard octave]
-    D --> G[Generate pattern]
-    E --> G
-    F --> G
-    G --> H{Beat 4?}
-    H -->|Yes| I[Approach note option]
-    H -->|No| J[Standard note]
-```
+<DocFigure name="tracks-bass-generation" />
+
+The section type steers which pattern is used, but it never shifts the octave. The root only moves by an octave when that is what keeps it inside the bass range of E1 (28) to G3 (55).
+
+Peak handling runs after pattern selection. `PeakLevel::Medium` promotes the selected pattern one density level and `PeakLevel::Max` promotes it twice. This applies to an explicit `bass_style_hint` as well as to an automatically selected pattern: the hint names the base pattern, while the peak still adds density.
 
 ### Approach Notes
 
-Beat 4 may use chromatic approach to next root:
+The second half of beat 4 usually carries an approach note into the next bar's root. The choice is chord-function aware rather than always chromatic: a perfect 5th below the target for tonic and dominant chords, a step below for subdominants, with the leading tone, a step above and a perfect 4th below as fallbacks. Any candidate that would clash with a tone the target chord actually sounds is rejected, which matters for secondary dominants, whose third is raised and seventh lowered relative to the diatonic triad.
 
-```cpp
-// If next chord root is C
-// Beat 4 could be B (half step below) or Db (half step above)
-uint8_t approachNote = nextRoot - 1; // chromatic approach
-```
+A chromatic half step below the target is reserved for walking lines, and only when the next root is a whole step or a minor 3rd away.
 
 ---
 
 ## Drums Track
 
-**Source:** `src/track/drums.cpp` (~880 lines)
+**Source:** `src/track/generators/drums.cpp`
 
 Generates drum patterns with fills and dynamics.
 
@@ -550,36 +496,24 @@ constexpr uint8_t TOM_LOW = 45;
 
 ### Pattern Styles
 
-```mermaid
-flowchart TD
-    A[Mood] --> B{Style selection}
-    B -->|Ballad, Chill| C[Sparse]
-    B -->|StraightPop| D[Standard]
-    B -->|ElectroPop, IdolPop| E[FourOnFloor]
-    B -->|BrightUpbeat| F[Upbeat]
-    B -->|LightRock| G[Rock]
-    B -->|Yoasobi, Synthwave| H[Synth]
-```
+<DocFigure name="tracks-drum-style-selection" />
 
 ### Fill Types
 
-```cpp
-enum class FillType {
-    TomDescend,    // High → Mid → Low tom
-    TomAscend,     // Low → Mid → High tom
-    SnareRoll,     // Rapid snare hits
-    Combo          // Mixed elements
-};
-```
+`FillType` has 13 members. The common ones are SnareRoll, TomDescend, TomAscend and SnareTomCombo; the rest cover sparser and more idiomatic cases — SimpleCrash, LinearFill, GhostToAccent, BDSnareAlternate, HiHatChoke, TomShuffle, BreakdownFill, FlamsAndDrags and HalfTimeFill. `selectFillType()` picks one from the section pair, the drum style and the next section's energy.
+
+A fill does not have to cover every beat of its window; when a fill type has nothing to say on a beat, the section's ordinary pattern is kept there rather than leaving silence.
 
 Fills are inserted at:
 - Section transitions
 - Every 4 or 8 bars
 - Before chorus
 
+For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. If that cut removes an entry crash, post-processing restores the crash at the next section boundary so the chorus still has an arrival marker.
+
 ### Euclidean Drums
 
-Blueprints can specify `euclidean_drums_percent` to control the probability of using Euclidean rhythm patterns, which distribute hits as evenly as possible across a given number of steps.
+Blueprints provide `euclidean_drums_percent`, which the drum generator samples when choosing the Euclidean branch. The field is currently classified as **UnprovenLiveness** in Blueprint accounting, so its audible effect is not guaranteed; treat it as reserved rather than as a reliable tuning control.
 
 ### Drum Role
 
@@ -597,37 +531,29 @@ Per-section `drum_role` in the Blueprint's SectionSlot controls drum behavior:
 Velocity-reduced snare articulations for groove:
 
 ```cpp
-// Main snare: velocity 100
-// Ghost note: velocity 40-60
+// Ghost velocity is a multiplier on the section velocity (0.25-0.65),
+// not an absolute value; ghosts land in roughly the 25-35 band.
 ```
 
-Ghost note density adapts to mood:
-- **Energetic moods** (BrightUpbeat, IdolPop): Higher density for livelier feel
-- **Calm moods** (Ballad, Chill): Sparse ghost notes
+Density is a table lookup by section and mood category, giving 0%, 15%, 30% or 45%, then adjusted for tempo and backing density:
+- **Energetic moods** (EnergeticDance, IdolPop, Anthem, AnimeHighEnergy): up to 45% ghost probability in the chorus
+- **Calm moods** (Ballad, Sentimental, Chill): none in verses, light elsewhere
 
 ### Swing Timing
 
-Continuous swing control varies by section type and progress:
+Swing only applies when the mood's groove feel is Swing or Shuffle — Sentimental, Chill, Ballad, Nostalgic and CityPop swing; RnBNeoSoul and Lofi shuffle. Every other mood is straight and the offset is zero.
 
-```cpp
-float calculateSwingAmount(SectionType section, int bar_in_section, int total_bars);
-// Returns 0.0 (straight) to 0.7 (heavy swing)
-```
+| Section | Swing amount | Behaviour |
+|---------|-------------|-----------|
+| Intro | 0.25 | Lightest |
+| A / Bridge / Interlude / MixBreak | 0.35 | Constant |
+| B | 0.40 | Constant |
+| Chorus | 0.50 | Deepest, constant |
+| Outro | 0.40 → 0.20 | Quadratic decay to the end |
 
-| Section | Base Swing | Behavior |
-|---------|-----------|----------|
-| Verse | Low | Builds gradually |
-| Chorus | Medium | Consistent groove |
-| Bridge | Variable | Context-dependent |
+The amount is held constant within a section on purpose; bar-to-bar drift makes the groove feel unstable. A Blueprint SectionSlot can override it via `swing_amount` (0.0-0.7).
 
-Swing is applied to off-beat notes (8th and 16th subdivisions).
-
-### Triplet Grids
-
-Drum patterns support triplet subdivisions for shuffle and swing feels:
-- **Straight**: Standard 8th/16th note grid
-- **Triplet**: 12/24 subdivisions per beat
-- **Hybrid**: Mix of straight and triplet patterns
+Swing is not a separate grid. Off-beat notes are pushed toward the triplet position by `swing_amount`: up to +80 ticks on the 8th-note grid and +40 on the 16th-note grid, so `swing_amount = 1.0` lands exactly on the triplet. Shuffle multiplies the amount by 1.5 before clamping.
 
 ### Humanization
 
@@ -656,22 +582,25 @@ This "rhythm lock" effect makes the groove follow the melody, common in modern p
 
 ## Motif Track
 
-**Source:** `src/track/motif.cpp` (~630 lines)
+**Source:** `src/track/generators/motif.cpp`
 
-For `BackgroundMotif` composition style (BGM-only mode). Creates repeating patterns that serve as the primary melodic element, allowing the vocal to take a background role or be omitted entirely.
+For `BackgroundMotif` composition style (BGM-only mode). Vocal is always skipped; the motif is the primary melodic element. The generator also runs for `SynthDriven`, the RhythmSync paradigm, and Blueprint section flows that request it.
 
 ### Parameters
 
 ```cpp
 struct MotifParams {
-    MotifLength length;           // 0=auto(2 bars), 1, 2, or 4 beats
-    RhythmDensity rhythm_density; // 0=Sparse, 1=Medium, 2=Driving
-    MotifMotion motion;           // 0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct
-    RepeatScope repeat_scope;     // FullSong, PerSection
-    MotifRegister register_;      // 0=auto(mid), 1=low, 2=high
-    uint8_t note_count;           // 0=auto(6), 3-8
+    MotifLength length;                 // Bars1, Bars2 (default), Bars4
+    uint8_t note_count;                 // 3-8 notes per cycle, default 6
+    bool register_high;                 // false = mid, true = high
+    MotifRhythmDensity rhythm_density;  // Sparse, Medium (default), Driving
+    MotifMotion motion;                 // Stepwise, GentleLeap, WideLeap,
+                                        // NarrowStep, Disjunct, Ostinato
+    MotifRepeatScope repeat_scope;      // FullSong (default), Section
 };
 ```
+
+`MotifLength` counts **bars**, not beats. The register is a boolean, not an enum — there is no `MotifRegister` type.
 
 ### Override Parameters
 
@@ -679,36 +608,17 @@ When motif overrides are specified in the config, the following parameters take 
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `motifLength` | int (0=auto, 1/2/4) | Override motif length in beats (0 defaults to 2 bars) |
+| `motifLength` | int (0=auto, 1/2/4) | Override motif length in bars (0 defaults to 2 bars) |
 | `motifNoteCount` | int (0=auto, 3-8) | Override number of notes in the motif (0 defaults to 6) |
-| `motifMotion` | int (0xFF=preset, 0-4) | Override motion type (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct; internal 5=Ostinato for Blueprints only) |
-| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | Override register range |
+| `motifMotion` | int (0xFF=preset, 0-5) | Override motion type (0=Stepwise, 1=GentleLeap, 2=WideLeap, 3=NarrowStep, 4=Disjunct, 5=Ostinato) |
+| `motifRegisterHigh` | int (0=auto, 1=low, 2=high) | Override the register the motif builds from |
 | `motifRhythmDensity` | int (0xFF=preset, 0-2) | Override rhythm density (0=Sparse, 1=Medium, 2=Driving) |
 
 ### Pattern Generation
 
-```mermaid
-flowchart TD
-    A[Create pattern] --> B[Determine length]
-    B --> C[Generate 3-8 notes]
-    C --> D{Motion type?}
-    D -->|Stepwise 0| E[Scale steps only]
-    D -->|GentleLeap 1| F[Up to 3rd]
-    D -->|WideLeap 2| G2[Up to 5th]
-    D -->|NarrowStep 3| G3[Narrow scale degrees]
-    D -->|Disjunct 4| G4[Irregular leaps]
-    E --> G[Add tension notes]
-    F --> G
-    G2 --> G
-    G3 --> G
-    G4 --> G
-    G --> H[Set rhythm density]
-    H --> I{Repeat scope?}
-    I -->|FullSong| J[Same pattern all sections]
-    I -->|PerSection| K[New pattern each section]
-```
+<DocFigure name="tracks-motif-pattern" />
 
-**MotifMotion values** (API: 0-4, internal: 0-5):
+**MotifMotion values** (API: 0-5):
 
 | Value | Name | Description |
 |-------|------|-------------|
@@ -717,20 +627,28 @@ flowchart TD
 | 2 | WideLeap | Up to 5ths |
 | 3 | NarrowStep | Narrow scale degrees (jazzy) |
 | 4 | Disjunct | Irregular leaps (experimental) |
-| 5 | Ostinato | Same pitch class repeated (**internal Blueprint use only**) |
+| 5 | Ostinato | Same pitch class repeated |
 
-### Register Ranges
+### Register
 
-| Register | Range |
-|----------|-------|
-| Mid | C3 (48) - C5 (72) |
-| High | C4 (60) - C6 (84) |
+The motif track occupies C4 (60) - C8 (108). The register flag picks the base note it builds from, not a range of its own:
+
+| Register | Base note |
+|----------|-----------|
+| Mid (default) | C4 (60) |
+| High | G4 (67) |
+
+When a vocal is present, the usable range is narrowed around the vocal median: the ceiling drops to three semitones above it and the floor rises to fifteen below, which keeps the motif from piling up at the top of its range.
+
+### Repetition
+
+For the `Free` policy, `repeat_scope` controls whether `FullSong` generates a fresh motif for each section or `Section` caches and reuses a pattern by section type. The locked policies (LockedContour, LockedPitch, LockedAll) replay the cached pattern on repeated section types. `Evolving` mutates its cached riff once per section while retaining its identity. When `phrase_tail_rest` applies, the motif stops starting notes halfway through the final bar of the tail; the coordinator asks the generator for that cutoff when it copies a frozen bar.
 
 ---
 
 ## Arpeggio Track
 
-**Source:** `src/track/arpeggio.cpp` (~275 lines)
+**Source:** `src/track/generators/arpeggio.cpp`
 
 For `SynthDriven` composition style (BGM-only mode). Creates arpeggiated patterns that serve as the primary harmonic/melodic element in electronic-style tracks.
 
@@ -738,41 +656,33 @@ For `SynthDriven` composition style (BGM-only mode). Creates arpeggiated pattern
 
 ```cpp
 struct ArpeggioParams {
-    ArpeggioPattern pattern;  // Up, Down, UpDown, Random, Pinwheel, PedalRoot, Alberti, BrokenChord
-    ArpeggioSpeed speed;      // Eighth, Sixteenth, Triplet
-    uint8_t octave_range;     // 1-3 octaves
-    float gate;               // Note length ratio (0.0-1.0)
-    bool sync_chord;          // Follow chord changes
+    ArpeggioPattern pattern = Auto;  // Up, Down, UpDown, Random, Pinwheel,
+                                     // PedalRoot, Alberti, BrokenChord, Auto
+    ArpeggioSpeed speed = Auto;      // Eighth, Sixteenth, Triplet, Auto
+    uint8_t octave_range = 2;        // 1-3 octaves
+    float gate = -1.0f;              // Note length ratio (0.0-1.0); -1 = style default
+    bool sync_chord = true;          // Follow chord changes
+    uint8_t base_velocity = 90;      // Base velocity for arpeggio notes
 };
 ```
 
-### Pattern Types (8 Total)
+### Pattern Types
 
-```mermaid
-flowchart LR
-    subgraph Up ["Up"]
-        U1[C] --> U2[E] --> U3[G] --> U4[C']
-    end
-
-    subgraph Down ["Down"]
-        D1[C'] --> D2[G] --> D3[E] --> D4[C]
-    end
-
-    subgraph UpDown ["UpDown"]
-        UD1[C] --> UD2[E] --> UD3[G] --> UD4[C'] --> UD5[G] --> UD6[E]
-    end
-```
+<DocFigure name="tracks-arpeggio-patterns" />
 
 | ID | Pattern | Description |
 |----|---------|-------------|
 | 0 | Up | Ascending through chord tones |
 | 1 | Down | Descending through chord tones |
-| 2 | UpDown | Ascending then descending |
-| 3 | Random | Random chord tone selection |
-| 4 | Pinwheel | Alternating direction pattern |
-| 5 | PedalRoot | Returns to root between each note |
-| 6 | Alberti | Classical broken chord (low-high-mid-high) |
-| 7 | BrokenChord | Irregular chord tone ordering |
+| 2 | UpDown | Ascending then descending (endpoints not repeated) |
+| 3 | Random | Shuffled chord tone order |
+| 4 | Pinwheel | Root - 5th - 3rd - 5th |
+| 5 | PedalRoot | Root alternating with each upper chord tone |
+| 6 | Alberti | Classical low-high-mid-high; same figure as Pinwheel |
+| 7 | BrokenChord | Ascending then descending; same figure as UpDown |
+| 255 | Auto | Use the mood or blueprint default pattern (the JS default) |
+
+The chord tones are stacked across `octave_range` octaves before the pattern is applied, so with the default of 2 an Up arpeggio on a C major triad plays C E G C E G, not C E G C.
 
 ### Speed Conversion
 
@@ -790,21 +700,11 @@ Tick getNoteDuration(ArpeggioSpeed speed) {
 
 ## SE Track
 
-**Source:** `src/track/se.cpp` (~15 lines)
+**Source:** `src/track/generators/se.cpp`
 
-Minimal track for section markers (text events only).
+The SE track carries a text marker at the start of every section, plus a marker at the modulation point when the song modulates. It takes no part in pitch collision detection.
 
-```cpp
-void generateSE(Song& song) {
-    for (auto& section : song.arrangement.sections) {
-        MidiEvent marker;
-        marker.tick = section.start_tick;
-        marker.type = MidiEventType::Text;
-        marker.text = section.name;
-        song.se.addEvent(marker);
-    end
-}
-```
+When calls are enabled it also writes call-and-response chants: chant and mix-break sections get their preset pattern, choruses get scattered short calls at a probability set by the call density, a PPPH figure is placed in the last bar before a B → Chorus transition, and an intro mix pattern is placed at each intro. Call notes are optional; with them switched off only the text markers are written. Every call note sounds at a fixed C3 (48), so the track can be muted or re-pointed without affecting the rest of the arrangement.
 
 ---
 

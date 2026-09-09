@@ -22,59 +22,59 @@ MIDI Sketchには一般的なポップミュージックパターンをカバー
 コード進行とは、楽曲の和声的な骨格を形成するコードの連続です。音楽に動きと感情を与えるものです。同じメロディでも、異なるコード進行の上では全く違う印象になります。
 :::
 
-### 4コード進行
+### 4コード進行（ID 0〜19）
 
-```mermaid
-flowchart LR
-    subgraph Canon ["カノン (I-V-vi-IV)"]
-        C1[I] --> C2[V] --> C3[vi] --> C4[IV]
-    end
+<DocFigure name="harmony-four-chord-progressions" />
 
-    subgraph Axis ["Axis (vi-IV-I-V)"]
-        A1[vi] --> A2[IV] --> A3[I] --> A4[V]
-    end
-
-    subgraph Komuro ["小室 (vi-IV-V-I)"]
-        K1[vi] --> K2[IV] --> K3[V] --> K4[I]
-    end
-```
+ID は `chordProgressionId` に指定します。
 
 | ID | 名前 | ディグリー | 特徴 |
 |----|------|------------|------|
-| 0 | Pop4 | I-V-vi-IV | 定番ポップ |
-| 1 | Axis | vi-IV-I-V | メランコリック |
-| 2 | Komuro | vi-IV-V-I | 明るいJ-pop |
-| 3 | Canon | I-V-vi-iii-IV | クラシック |
-| 4 | Emotional4 | vi-V-IV-V | エモーショナルビルド |
-| 5 | Minimal | I-IV | シンプルな2コード |
-| 6 | AltMinimal | I-V | パワーポップ |
-| 7 | Progression3 | I-vi-IV | 3コード |
-| 8 | Rock4 | I-bVII-IV-I | ロック感 |
+| 0 | FourChordPop | I-V-vi-IV | 最も素直な4コードループ。デフォルト |
+| 1 | Pop1 | I-vi-IV-V | 50年代型ターンアラウンド。V が冒頭へ戻す |
+| 2 | Axis | vi-IV-I-V | 平行短調から始まるため暗く響く |
+| 3 | Pop2 | IV-I-V-vi | サブドミナント始まりで、偽終止の V-vi で閉じる |
+| 4 | Classic | I-IV-V-I | 教科書的な I-IV-V を正格終止で締める |
+| 5 | Pop3 | I-IV-vi-V | 明るく始まり vi へ沈み、V を残したまま終わる |
+| 6 | Oudou | IV-V-iii-vi | 王道進行。J-POP の定番 |
+| 7 | Minor1 | vi-V-IV-V | 短調のトニックを軸に IV と V を往復し、解決しない |
+| 8 | Minor2 | vi-IV-V-I | Axis と同じ4和音を回転させ、V-I で終わらせた形 |
+| 9 | Pop4 | I-V-iii-IV | FourChordPop の vi を iii に置き換えた、軽く落ち着かない形 |
+| 10 | Pop5 | I-iii-IV-V | スケールを1段ずつ上り、V が I へ押し戻す |
+| 11 | Rock1 | I-bVII-IV-I | ミクソリディアンの bVII。ロックとブルースの響き |
+| 12 | Rock2 | I-IV-bVII-I | 同じ bVII の色を IV 経由で出す形 |
+| 13 | Extended4 | I-V-vi-iii | パッヘルベル型の出だしを iii で止めた形 |
+| 14 | Minor3 | vi-I-V-IV | 短調で始まり、以降はメジャーコードが3つ下降して続く |
+| 15 | AeolianPop | vi-bVI-bVII-I | 借用した bVI と bVII が上行してトニックへ入る |
+| 16 | AnimeHighEnergy1 | vi-iii-IV-I | 短調で始まり明るい I へ駆け上がる |
+| 17 | JazzPop | ii-V-I-vi | ii-V-I のターンアラウンドを vi で開き直す |
+| 18 | AnimeHighEnergy2 | vi-ii-V-I | 五度圏をそのまま下ってトニックへ着地 |
+| 19 | CityPop | I-vi-ii-V | ポップループの中に ii-V を折り込んだシティポップのグルーヴ |
 
 ::: details これらの進行を理解する
-- **Pop4 (I-V-vi-IV)**: 現代音楽で最も人気のある進行。数千のヒット曲で使用。満足感のある馴染みやすいサウンド。
-- **Axis (vi-IV-I-V)**: マイナーコードから始まり、即座に切なさを演出。多くのエモーショナルバラードで使用。
-- **Komuro (vi-IV-V-I)**: 日本のプロデューサー小室哲哉にちなんで命名。最後のV→I解決が明るく前向きな印象を生み出す。
-- **Canon (I-V-vi-iii-IV)**: パッヘルベルのカノンに基づく。時代を超えたエレガントさ。
-- **Rock4 (I-bVII-IV-I)**: bVII（フラットセブン）コードがロック/ブルース的な風味を加える。
+- **FourChordPop (I-V-vi-IV)**: 現代のポップスで最も多用されるループです。馴染みが強く、ほとんどのメロディが無理なく乗ります。
+- **Axis (vi-IV-I-V)**: 同じ和音の集合をマイナーから始めるため、ループ全体がメランコリックに色付きます。エモーショナルなバラードでよく使われます。
+- **Minor2 (vi-IV-V-I)**: 最後の V→I が正格終止なので、短調寄りに始まったループが明るい場所へ着地します。
+- **Oudou (IV-V-iii-vi)**: 王道進行です。トニック以外から始まり vi で終わるため、常に解決しきらない浮遊感が続きます。
+- **Rock1 (I-bVII-IV-I)**: bVII は同主短調からの借用で、ミクソリディアン的なロック／ブルースの風味を加えます。
+- **AeolianPop (vi-bVI-bVII-I)**: 借用和音が2つ続けて上行しトニックへ入る、この中で最もモーダルインターチェンジの効いた進行です。
 :::
 
-### 5コード進行
+### 5コード進行（ID 20〜21）
 
 | ID | 名前 | ディグリー | 特徴 |
 |----|------|------------|------|
-| 9 | Extended5 | I-V-vi-iii-IV | 拡張カノン |
-| 10 | Emotional5 | vi-IV-I-V-ii | 複雑なエモーショナル |
+| 20 | Extended5 | I-V-vi-iii-IV | パッヘルベル由来の拡張形 |
+| 21 | NeapolitanPop | vi-iv-bII-V-I | 借用の iv とナポリの bII を経て正格終止へ |
 
 ### 全進行リスト
 
-合計22の進行：
+上記の22進行がすべてです。内訳は4コードが20種類、5コードが2種類で、以下をカバーします。
 
-- ポップバリアント（ブライト、ダーク）
-- エモーショナルバリアント
-- ミニマル（2-3コード）パターン
-- ロック影響
-- ii-Vを含むジャズ影響
+- 明るい／暗いダイアトニックなポップループ
+- モーダルインターチェンジによる色付け（bVI、bVII、iv、bII）
+- bVII を核にしたロック系のパターン
+- ii-V を含むジャズ寄りのターンアラウンド
 
 ## ディグリーシステム
 
@@ -82,20 +82,25 @@ flowchart LR
 コードディグリー（I, ii, iii, IV, V, vi, vii）は、キー内でのコードの位置を示します。大文字 = メジャーコード、小文字 = マイナーコード。例：Cメジャーでは I = Cメジャー、ii = Dマイナー、V = Gメジャー。
 :::
 
-コードディグリーは整数で表現：
+コードディグリーは名前付きの enum ではなく素の整数で表現されるため、進行は単なるディグリー番号の配列です。
 
-```cpp
-enum Degree {
-    I   = 0,   // トニック
-    ii  = 1,   // サブドミナント
-    iii = 2,   // メディアント
-    IV  = 3,   // サブドミナント
-    V   = 4,   // ドミナント
-    vi  = 5,   // サブメディアント
-    vii = 6,   // リーディングトーン
-    bVII = 10  // フラットセブン（借用）
-};
-```
+| 値 | ディグリー | 役割 | C メジャーでの例 |
+|----|-----------|------|-----------------|
+| 0 | I | トニック | C |
+| 1 | ii | 上主音（スープラトニック） | Dm |
+| 2 | iii | メディアント | Em |
+| 3 | IV | サブドミナント | F |
+| 4 | V | ドミナント | G |
+| 5 | vi | サブメディアント | Am |
+| 6 | vii° | リーディングトーン | Bdim |
+| 8 | bVI | 同主短調からの借用 | Ab |
+| 10 | bVII | 同主短調からの借用 | Bb |
+| 11 | bIII | 同主短調からの借用 | Eb |
+| 12 | iv | 借用した短調のサブドミナント | Fm |
+| 13 | bII | ナポリの和音 | Db |
+| 14 | #IVdim | 半音階的な経過和音 | F#dim |
+
+7 と 9 は使用しません。`bII` はナポリの和音、`iv` は短調の変格終止 iv-I を作ります。これらは飾りではなく、AeolianPop（15）は bVI と bVII を、NeapolitanPop（21）は iv と bII を実際に出力するため、ディグリーを解釈する側は 6 より大きい値を扱う必要があります。
 
 ## コードクオリティ
 
@@ -105,29 +110,22 @@ enum Degree {
 - **ディミニッシュコード**は緊張感があり不安定（ポップでは稀に使用）
 :::
 
-メジャーキーのディグリーによってクオリティが決定：
+クオリティはディグリーだけで決まります。キーやモードは参照されず、オーギュメントのクオリティは存在しません。
 
-```mermaid
-flowchart TD
-    A[ディグリー] --> B{クオリティ}
-    B -->|I, IV, V| C[メジャー]
-    B -->|ii, iii, vi| D[マイナー]
-    B -->|vii| E[ディミニッシュ]
-    B -->|bVII| F[メジャー借用]
-```
+<DocFigure name="harmony-degree-quality" />
 
 ```cpp
-ChordQuality getQuality(Degree degree) {
-    switch (degree) {
-        case I: case IV: case V: case bVII:
-            return Major;
-        case ii: case iii: case vi:
-            return Minor;
-        case vii:
-            return Diminished;
-    }
+ChordQuality getChordQuality(int8_t degree) {
+    // 6 = vii, 14 = #IVdim
+    if (degree == 6 || degree == 14) return ChordQuality::Diminished;
+    // 1 = ii, 2 = iii, 5 = vi, 12 = 借用の iv
+    if (degree == 1 || degree == 2 || degree == 5 || degree == 12) return ChordQuality::Minor;
+    // I, IV, V と借用の bVI, bVII, bIII, bII
+    return ChordQuality::Major;
 }
 ```
+
+借用した `iv` はマイナーです。短3度を持つことこそが借用する理由です。一方 bVI、bVII、bIII、bII はいずれもメジャートライアドになります。
 
 ## コードエクステンション
 
@@ -149,22 +147,22 @@ ChordQuality getQuality(Degree degree) {
 | Sus2 | ルート、2度、5度 | C-D-G |
 | Sus4 | ルート、4度、5度 | C-F-G |
 | 7th | + 7度 | C-E-G-B/Bb |
-| 9th | + 7度 + 9度 | C-E-G-B-D |
+| add9 | + 9度（7度なし） | C-E-G-D |
+| 9th | + 7度 + 9度 | C-E-G-B-D（maj9）／C-E-G-Bb-D（dom9）／C-Eb-G-Bb-D（min9） |
 
 ### エクステンション適用ルール
 
-```mermaid
-flowchart TD
-    A[コード] --> B{ポジション?}
-    B -->|プレドミナント IV, V| C[Sus2/Sus4 候補]
-    B -->|ドミナント V, ii| D[7th 候補]
-    B -->|トニック I, サビのvi| E[9th 候補]
-    C --> F{確率チェック}
-    D --> F
-    E --> F
-    F -->|パス| G[エクステンション適用]
-    F -->|失敗| H[トライアド維持]
-```
+<DocFigure name="harmony-extension-rules" />
+
+3つのファミリーは sus → 7th → 9th の順に判定され、最初に通ったものを返して終了します。したがって1つのコードに2つのエクステンションが付くことはありません。判定は各ファミリーが個別に乱数を振るため、片方の確率を上げても他方が痩せることはありません。
+
+- **sus** は小節位置のルールです。セクションの最初の小節か最後から2番目の小節で、かつマイナーコードでないことが条件です。70% で Sus4、残りが Sus2 になります。
+- **7th** は B メロまたはサビ、あるいは位置を問わず V のときに適用されます。V では確率が2倍になります。
+- **9th** はサビ内のどのコードにも、または B メロ内の V に適用されます。iii はダイアトニックな9度がルートから見て b9 になるため、Min7 にフォールバックします。
+
+::: info サビのコードは先に確定する
+7th が有効な場合、サビは上記の判定より前にリハーモナイズされます。V は Dom7、マイナーコードは Min7、I は Maj7、それ以外は add9 が確定的に割り当てられます。そのため上記のルールがサビで効くのは、7th を無効にしているときだけです。同じ処理は A メロで IV を ii に置き換えることもあります（その IV が V や I へ解決する場合、および ii が隣接している場合は置き換えません）。
+:::
 
 ### 設定
 
@@ -197,47 +195,33 @@ JS の `SongConfig` では `chordExtSus` / `chordExt7th` / `chordExt9th` / `chor
 
 1. **動きを最小化**: 各声部は最小の音程で移動
 2. **共通音**: コード間で共有される音を保持
-3. **平行5度/8度を避ける**: クラシック的制約
+3. **平行5度/8度**: 禁止ではなくペナルティ。強さはムード依存で、バラードやドラマチック系では重く、平行進行が定石のダンス／アイドル系では軽く働きます。
 4. **滑らかなベース**: 順次進行または小さな跳躍を優先
 
 ### アルゴリズム
 
 ```cpp
-Voicing optimizeVoicing(Voicing prev, Chord next) {
-    vector<Voicing> candidates = generateAllVoicings(next);
+VoicedChord selectVoicing(const VoicedChord& prev, const Chord& next, Mood mood) {
+    auto candidates = generateVoicings(next);
 
-    return min_element(candidates, [&](auto& a, auto& b) {
-        int distA = totalVoiceDistance(prev, a);
-        int distB = totalVoiceDistance(prev, b);
+    // スコアが高いほど良い。共通音の寄与が支配的で、距離はバスとソプラノを
+    // 2倍に重み付けする。平行5度/8度は禁止ではなく、ムード依存のペナルティ。
+    int score = typeBonus(candidate)
+              + countCommonTones(prev, candidate) * 100
+              + (hasParallelFifthsOrOctaves(prev, candidate) ? parallelPenalty(mood) : 0)
+              - weightedVoicingDistance(prev, candidate)
+              + repetitionPenalty(candidate, prev);
 
-        // 大きな跳躍にもペナルティ
-        int leapA = maxSingleVoiceDistance(prev, a);
-        int leapB = maxSingleVoiceDistance(prev, b);
-
-        return (distA + leapA * 2) < (distB + leapB * 2);
-    });
+    // 同点はランダムに選ぶため、同じ小節でボイシングが固定されない。
+    return pickRandomlyAmongBest(candidates, score);
 }
 ```
 
+声部ごとの跳躍量を見る項はありません。`weightedVoicingDistance` は声部ごとの重み付き和で、バスとソプラノが2倍、内声が1倍です。共通音は1つで 100 点あり、数半音ぶんの移動量を上回るため、共有音の保持が最も強く働く要素になります。同じボイシングが3回以上続くと、超過1回につき 50 点のペナルティが付きます。
+
 ### ボイシングタイプ
 
-```mermaid
-flowchart TB
-    subgraph Close ["クローズポジション"]
-        direction LR
-        CL1["C4"] --- CL2["E4"] --- CL3["G4"] --- CL4["B4"]
-    end
-
-    subgraph Open ["オープンポジション"]
-        direction LR
-        OP1["C3"] --- OP2["G3"] --- OP3["E4"] --- OP4["B4"]
-    end
-
-    subgraph Rootless ["ルートレス（ベース協調用）"]
-        direction LR
-        RL1["E3"] --- RL2["G3"] --- RL3["B3"] --- RL4["D4"]
-    end
-```
+<DocFigure name="harmony-voicing-types" />
 
 ::: details ボイシングの解説
 - **クローズポジション**: 全ての音が1オクターブ内。コンパクトで直接的なサウンド。ポップで一般的。
@@ -257,11 +241,14 @@ struct BassAnalysis {
     Tick accentTicks[];    // 強拍位置
 };
 
-// ベースがルートを持つ場合、コードはルートレスボイシングを使用
-if (bassAnalysis.hasRootOnBeat1) {
+// ベースがルートを持つとルートレスが「候補になる」だけで、実際の採用は
+// ムードとセクションで絞られ、確率で決まる（B/サビ/ブリッジで20〜30%）。
+if (bassAnalysis.hasRootOnBeat1 && moodSupportsRootless(mood) && rollProbability(sectionRate)) {
     voicing = generateRootlessVoicing(chord);
 }
 ```
+
+ルートレスボイシングはジャズ寄りのムード（CityPop、Nostalgic、Dramatic、ModernPop）かつ B・サビ・ブリッジに限られます。Aメロ、イントロ、アウトロ、バラードでは常にルートを保持します。
 
 ## セカンダリードミナント
 
@@ -282,10 +269,12 @@ IVからVに直接進む代わりに、V/V（Vに解決するドミナントコ�
 
 ### 自動挿入
 
-MIDI Sketchは以下の条件に基づいてセカンダリードミナントを自動挿入します：
-- **コードの長さ**: 長いコードは準備の候補
-- **セクションタイプ**: Bメロセクションはセカンダリードミナントを好む
-- **スタイル**: ジャズやシティポップはより多くのセカンダリードミナントを使用
+セカンダリードミナントは2つのルールで挿入されます。
+
+- **サビへ入る箇所（確定的）**: サビの最初のコードが ii・IV・V・vi のいずれかなら、その属和音を直前セクションの最後の半小節に置きます。
+- **セクション内（確率的）**: 1小節あたりの確率はセクションの緊張度 × 0.25。緊張度 0.5 の閾値を超えるのはサビ（0.75）・Bメロ（0.65）・ブリッジ（0.60）・MixBreak（0.55）だけで、Aメロ・イントロ・アウトロには挿入されません。
+
+ポップスとして過密にならないよう、挿入間隔は最低2小節、1セクションあたり最大 `小節数 / 8` 個（8小節につき1個）に制限されます。ターゲットになるのは ii・IV・V・vi のみで、挿入される和音は常にドミナント7thです。
 
 ```cpp
 // 例: V前にV/Vを挿入
@@ -300,7 +289,7 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 ::: details 設定
 トライトーン代理は以下から利用可能：
 - **SongConfig (JS)**: `chordExtTritoneSub`（有効化、デフォルト `false`）と`chordExtTritoneSubProb`（確率 0.0-1.0、デフォルト `0.5`）
-- **AccompanimentConfig (JS)**: `chordExtTritoneSub`（有効化）と`chordExtTritoneSubProb`（確率 **0-100**、デフォルト `50` — この設定は整数パーセントのレンジを維持）
+- **AccompanimentConfig (JS)**: `chordExtTritoneSub`（有効化）と`chordExtTritoneSubProb`（確率 **0.0-1.0**、デフォルト `0.5`）
 - **C++ SongConfig**: `chord_extension.tritone_sub`と`chord_extension.tritone_sub_probability`（0.0-1.0）
 :::
 
@@ -322,7 +311,7 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 
 ### EventDataにおけるChordEvent
 
-`EventData`のJSON出力にはセクションごとの詳細なコード情報を含む`chords`配列が含まれるようになり、セカンダリードミナントのアノテーションも含まれます。これにより外部ツールで和声構造を可視化・分析できます。
+`EventData` の JSON 出力には、セクションごとの詳細なコード情報を含む `chords` 配列があり、セカンダリードミナントのアノテーションも含まれます。これにより外部ツールで和声構造を可視化・分析できます。
 
 ## キー転調
 
@@ -343,12 +332,16 @@ MIDI Sketchは以下の条件に基づいてセカンダリードミナントを
 
 ### 転調ポイント
 
-| 構造 | 転調ポイント | 量 |
-|------|-------------|-----|
-| StandardPop | B → Chorus | +1半音 |
-| RepeatChorus | Chorus 1 → 2 | +1半音 |
-| Ballad | B → Chorus | +2半音 |
-| Full patterns | 様々 | +1 ～ +4 |
+転調量は常に `modulationSemitones`（1〜4、C++ 側の未設定時のデフォルトは 2）から決まり、楽曲構造によって変わることはありません。位置は `modulationTiming` が決めます。
+
+| `modulationTiming` | 位置 |
+|---|---|
+| 1 LastChorus | 最後のサビの頭（最も一般的） |
+| 2 AfterBridge | ブリッジ直後のサビ。無ければ最後のサビにフォールバック |
+| 3 EachChorus | 最後のサビ1箇所にフォールバックし、警告を出します |
+| 4 Random | シードで決まるランダムなサビ |
+
+`DirectChorus` と `ShortForm` の構造では転調ポイントが取れないため、転調は行われません。
 
 ### 実装
 
@@ -405,27 +398,41 @@ uint8_t nearestChordTone(uint8_t pitch, Chord chord) {
 テンションノートは現在のコードに属さないが、意図的に音楽的興味を生み出すために使用される音です。「解決したい」という感覚を生み出します。答えを待つ音楽的な問いかけのようなものです。上手く使うと、メロディはより表現力豊かで感情的に魅力的になります。
 :::
 
-メロディに興味を加える非コードトーン：
+テンションの可否はコードのディグリーごとに決まります。3度とぶつかるもの、b9 になるものは除外されます。
 
-| テンション | 音程 | 解決 |
-|------------|------|------|
+| ディグリー | 使用可能なテンション |
+|---|---|
+| I | 9th, 13th（11th は長3度に対する #4 になるため除外） |
+| ii | 9th, 11th, 13th |
+| iii | 11th, b13th（9th は b9 になるため除外） |
+| IV | 9th, #11th, 13th |
+| V | 9th, 13th（11th は sus4 のときのみ） |
+| vi | 9th, 11th（13th は b13 になるため除外） |
+| vii° | 11th のみ |
+
+| テンション | ルートからの音程 | 典型的な解決 |
+|---|---|---|
 | 9th | 長2度 | ルートへ下降 |
 | 11th | 完全4度 | 3度へ下降 |
+| #11 | 増4度 | 5度へ上行 |
 | 13th | 長6度 | 5度へ下降 |
-| b9 | 短2度 | ルートへ下降 |
-| #11 | 増4度 | 5度へ |
+| b13 | 短6度 | 5度へ下降 |
 
 ### ボーカルアティチュードによる使用
 
-::: info 拍の配置
-**弱拍**（4/4拍子の2拍目と4拍目）はテンションノートを置くのに安全な場所です。強拍（1拍目と3拍目）で確立された和声的基盤を崩さないためです。
+| アティチュード | ピッチの候補 | 音楽的効果 |
+|----------------|--------------|-----------|
+| Clean | コードトーンのみ | 安全、協和、歌いやすい |
+| Expressive | コードトーンに加えてルートから見た 7th・9th・11th（キー内に収まるもののみ）。長い音符にだけ付与され、8分音符より短い音符はコードトーンに戻ります。どのくらい長ければ付与するかは `tensionUsage` が決めます | カラフル、感情的、表現力豊か |
+| Raw | ダイアトニックスケール7音すべて（コードトーンかどうかを問わない） | エッジー、予測不能、強烈 |
+
+::: info 拍の位置ではなく音符の長さで決まる
+テンションの可否は小節内の位置ではなく音符の長さで決まります。短い音符はアティチュードにかかわらずコードトーンへ戻されます。すぐ通り過ぎる不協和は安全でも、伸ばした不協和はそうではないためです。
 :::
 
-| アティチュード | 許可されるテンション | 音楽的効果 |
-|----------------|---------------------|-----------|
-| Clean | なし（コードトーンのみ） | 安全、協和、歌いやすい |
-| Expressive | 弱拍で9th、13th | カラフル、感情的、表現力豊か |
-| Raw | 全テンション、任意の拍 | エッジー、予測不能、強烈 |
+::: info 拍の位置が効いてくる場面
+拍の位置が効くのは別の処理です。`MelodicEmbellisher` は1拍目と3拍目をStrong、2拍目と4拍目をMedium、8分音符の裏拍をWeak、16分音符の細分をVeryWeakに分類します。経過音と刺繍音はStrong以外に置かれ、倚音と掛留音は強拍で下行解決するアクセント付きの音として扱われます。
+:::
 
 ::: tip ボーカルアティチュードの選び方
 - **Clean**: シンプルなポップ、子供向け、歌いやすさが重要な場合に最適
@@ -437,64 +444,43 @@ uint8_t nearestChordTone(uint8_t pitch, Chord chord) {
 
 ## ハーモニーとメロディの統合
 
-ボーカル生成システムは、音楽的に整合性のあるメロディを作成するためにハーモニー情報を広範に活用しています。
+ボーカル生成システムは、メロディ候補の形を整えるためにハーモニー情報を使います。
 
 ### HarmonyContext
 
-`HarmonyContext`システムは生成された全トラックを追跡し、衝突のないピッチ候補を提供します：
+`HarmonyContext`システムは生成されたトラックを追跡し、衝突を避けるためのピッチ候補を絞り込みます：
 
-```mermaid
-flowchart TD
-    A[MelodyDesigner] --> B[ピッチ候補をリクエスト]
-    B --> C[HarmonyContext]
-    C --> D[該当tickのベースをチェック]
-    C --> E[該当tickのコードをチェック]
-    C --> F[該当tickのAuxをチェック]
-    D --> G[衝突検出]
-    E --> G
-    F --> G
-    G --> H[安全なピッチを返す]
-    H --> I[メロディが安全なピッチを使用]
-```
+<DocFigure name="harmony-context-collision" />
 
 ::: info HarmonyContextが重要な理由
-HarmonyContextがなければ、メロディが伴奏と衝突する可能性があります。例えば、ベースがEを弾いているときにメロディがFを同時に鳴らすと、厳しい短2度の不協和音になります。HarmonyContextはメロディピッチを提案する前に全てのアクティブなノートをチェックすることでこれを防ぎます。
+HarmonyContextがなければ、メロディが伴奏と衝突する可能性があります。例えば、ベースが E を弾いているときにメロディが F を同時に鳴らすと、厳しい短2度の不協和音になります。HarmonyContextはメロディピッチを提案する前にアクティブなノートをチェックし、このような衝突を多く除きます。後続の処理や意図的な音の例外は、和声の文脈に従います。
 :::
 
-### 衝突タイプ
+### 何が衝突とみなされるか
 
-| 音程 | 衝突タイプ | 結果 |
-|------|-----------|------|
-| 短2度（1半音） | **重大** | 常に回避 |
-| 長7度（11半音） | **重大** | 常に回避 |
-| トライトーン（6半音） | **軽度** | コンテキスト依存 |
-| 完全5度、オクターブ | **なし** | 和声的に安定 |
+`HarmonyContext` が答えるのは Yes/No の1問だけです。提案されたピッチが既に鳴っている音とぶつかるかどうかを `TrackCollisionDetector` に問い合わせ、順位付けのない真偽値を1つ受け取ります。登録される7つのピッチ役割は Vocal・ベース・コード・モチーフ・Aux・Arpeggio・ギターです。候補自身の役割は除外し、ドラムと SE はピッチ衝突検出の対象外です。生成側は実際の半音数で判定するため、同じピッチクラスの音程でも離れ方によって結果が変わります。
+
+| 音程 | 生成側の規則 |
+|------|------|
+| 短2度 | 1 または 13 半音。不協和。ただし短いメロディの1半音の重なりは通過することがあります |
+| 長2度 | 2 半音。不協和。ただし14半音の長9度は対象外で、鳴っているコードに属する2音は許容されます |
+| 長7度 | 11、23、35 半音。3オクターブ未満では不協和。正規化度数 I/IV（0/3）の Maj7/Maj9 に登録されたルート–長7度は例外です |
+| トライトーン | 6、18、30 半音。不協和。ただしコードが V、vii°、または有効なセカンダリードミナントなら許容されます |
+| その他の音程 | 短7度、長9度、36 半音以上の距離は基本規則で許容されます |
+
+短いメロディの1半音（短2度）と2半音（長2度）の重なりは、持続するコード／ギター音が関係せず、少なくとも一方のピッチが C4 以上の場合に限り許容されます。重なりの上限は1半音が 120 tick、2半音が 240 tick で、1拍目と3拍目では半分になります。C3 未満のベースを含む長7度は11半音でブロックされ、正規化度数 I/IV（0/3）の Maj7/Maj9 に登録されたルート–長7度も、23 半音以上離れた場合だけ例外になります。生成後アナライザーは24半音超を基本カットオフとしたうえで、低音域の長7度と登録済みエクステンションを別に処理します。そのため、生成側が拒否する35半音の長7度や30半音のトライトーンがレポートに出ない場合があります。返る真偽値は候補を絞るためのもので、最終出力に不協和音がないことを保証しません。
+
+**軽度**・**重大** という段階付けは別のモジュールのものです。後述する読み取り専用の `PianoRollSafety` API が持つもので、生成を制御するのではなく表示用に深刻度を返します。
 
 ### コード認識メロディ生成
 
-MelodyDesignerは複数の段階でコード情報を使用します：
+メロディ生成は生成→評価→リファインの3段階ではなく、単一パスです。`generateSection` がフレーズプランを立て、そのtickで鳴っているコードに対して1音ずつピッチを選び、装飾を加え、最後にダウンビートの窓にある不正な音だけをコードトーンへスナップします。下行解決するアクセント付きの不協和音は許可されたまま残ります。`generateSectionWithEvaluation` はこのパスをラップし、1セクションあたり最大100回走らせて結果の中から選びます。
 
-```mermaid
-flowchart LR
-    subgraph Generation ["1. 生成"]
-        G1[強拍] --> G2[コードトーンを優先]
-        G3[弱拍] --> G4[経過音を許可]
-    end
+<DocFigure name="harmony-chord-aware-melody" />
 
-    subgraph Evaluation ["2. 評価"]
-        E1[協和度をチェック]
-        E2[コードトーン整合をスコア化]
-    end
+**音のスコアリング**: 候補を書いている最中、コードトーンは 16 点、さらにルートか5度なら 4 点、スケールトーンは 12 点です。スケール外の音はハーモニーからは何も得られず、旋律面やリズム面の項が支えたときだけ残ります。
 
-    subgraph Refinement ["3. 洗練"]
-        R1[次コードへのボイスリーディング]
-        R2[コード変化の先取り]
-    end
-
-    Generation --> Evaluation --> Refinement
-```
-
-**強拍ルール**: 1拍目と3拍目では、メロディは強くコードトーンを優先します。これにより、メロディが強拍間で自由に動いても和声的な安定感が生まれます。
+**ダウンビート規則**: コードトーン適合度を測るのは1拍目と3拍目だけです。ダウンビートの窓では `classifyVocalTone` がコードトーンと、下行解決する倚音・掛留音のようなアクセント付きの不協和音を残し、それ以外の不正な音だけをコードトーンへ寄せます。メロディに方向性のある緊張感を残しながら、和声の足場を保ちます。
 
 ### VocalStyleProfileとハーモニー
 
@@ -517,39 +503,22 @@ flowchart LR
 
 ### メロディ評価：ハーモニー要素
 
-メロディ評価システムにはハーモニースコアリングが含まれます：
+ハーモニーがメロディ評価に入ってくるのは、1つの比率としてです。`calcChordToneRatio` は1拍目または3拍目に始まる音だけを見て、そのtickで鳴っているコードと照合し、コードトーンだった割合を返します。音ごとの段階的な加点・減点はなく、弱拍の音は数えられません。強拍の音が1つもないフレーズは中立の 0.5 になります。
 
-```cpp
-float evaluateHarmonyFit(const MelodyCandidate& melody, const Chord& chord) {
-    float score = 0.0f;
-
-    for (auto& note : melody.notes) {
-        if (isStrongBeat(note.tick)) {
-            // 強拍: コードトーン = +1.0, テンション = +0.3, その他 = -0.5
-            if (isChordTone(note.pitch, chord)) score += 1.0f;
-            else if (isTension(note.pitch, chord)) score += 0.3f;
-            else score -= 0.5f;
-        } else {
-            // 弱拍: より寛容
-            if (isChordTone(note.pitch, chord)) score += 0.5f;
-            else if (isScaleTone(note.pitch)) score += 0.2f;
-        }
-    }
-
-    return score / melody.notes.size();
-}
-```
+より細かい重み付けは、完成した候補を採点する段階ではなく、音を書いている段階で行われます。前述の 16 / 4 / 12 点のスケールがそれです。ハーモニーは、生成時のバイアスとして1回、選択時の単純な比率として1回、合わせて2度メロディを形づくります。
 
 ### フックシステムとハーモニー
 
 フックシステム（サビセクションで使用）は、記憶に残るパターンを作成しながらハーモニーを尊重します：
 
-| フックスケルトン | 和声的振る舞い |
-|-----------------|---------------|
-| **Repeat** | 単一のコードトーンに留まる |
-| **Ascending** | コードアルペジオを上昇 |
-| **AscendDrop** | アルペジオ上昇後、下降解決 |
-| **LeapReturn** | テンションへジャンプ、コードトーンへ戻る |
+| フックスケルトン | 旋律の形 |
+|-----------------|---------|
+| **Repeat** | 単一のピッチを保持 |
+| **Ascending** | スケール上を3音連続で上行 |
+| **AscendDrop** | トライアドをアルペジオで上行し、1度分下へ戻る |
+| **LeapReturn** | 5度上のコードトーンへ跳躍し、アンカーの2度上へ下降 |
+
+スケルトンのオフセットはフレーズのアンカーからの音度で表されるため、鳴っているコードに合わせて同じ形が適応します。エンジンには25種類のスケルトンがあり、上記はその中で頻出のものです。
 
 ::: info フック + コード同期
 フックはコード変化と整合するときに最も効果的です。`hookIntensity`パラメータは、フックがコードトーンを強調するか、テンションでメロディの興味を生み出すかを制御します。
@@ -557,33 +526,15 @@ float evaluateHarmonyFit(const MelodyCandidate& melody, const Chord& chord) {
 
 ### ピアノロールセーフティAPI
 
-外部ツール（ピアノロールエディタなど）向けに、`PianoRollSafety` APIはハーモニー認識のピッチ提案を提供します：
+外部ツール（ピアノロールエディタなど）向けに、[JavaScript `PianoRollSafety` API](/ja/docs/api-js#getpianorollsafetyat-tick-prevpitch) は各MIDIピッチの表示用安全度、理由フラグ、衝突情報を提供します。スケッチを生成した後に呼び出します：
 
-```cpp
-// 特定のtickで安全なピッチを取得
-vector<SafePitch> getSafePitches(Tick tick) {
-    Chord currentChord = getChordAt(tick);
-    vector<uint8_t> activePitches = getActiveNotesAt(tick);
-
-    vector<SafePitch> result;
-    for (uint8_t pitch = vocalLow; pitch <= vocalHigh; pitch++) {
-        CollisionType collision = checkCollision(pitch, activePitches);
-        bool isChordTone = currentChord.contains(pitch % 12);
-
-        result.push_back({
-            pitch,
-            collision,
-            isChordTone ? PitchSafety::Recommended : PitchSafety::Acceptable
-        });
-    }
-    return result;
-}
+```javascript
+const info = sketch.getPianoRollSafetyAt(0)
+const safety = info.safety[60]
+const reasons = info.reason[60]
 ```
 
-これにより、視覚的なフィードバックを表示できます：
-- **緑**: コードトーン（推奨）
-- **黄**: スケールトーン（許容）
-- **赤**: 衝突ピッチ（回避）
+色はこの表示API独自の安全度を表します。緑は安全、黄は警告、赤は不協和音または音域外です。深刻度の規則はHarmonyContextの生成側フィルターとは別で、生成側のコード例外を引き継ぎません。
 
 ---
 
@@ -593,17 +544,17 @@ vector<SafePitch> getSafePitches(Tick tick) {
 
 | スタイル | 進行 | エクステンション | アティチュード |
 |----------|------|-----------------|----------------|
-| シンプルポップ | Pop4 (0) | 低 (10-20%) | Clean |
-| エモーショナルバラード | Axis (1) | 中 (30%) | Expressive |
-| J-Pop | Komuro (2) | 中 (30%) | Expressive |
-| シティポップ | Extended5 (9) | 高 (50%+) | Expressive |
-| ロック | Rock4 (8) | 低 (10%) | Raw |
+| シンプルポップ | FourChordPop (0) | 低 (10-20%) | Clean |
+| エモーショナルバラード | Axis (2) | 中 (30%) | Expressive |
+| J-Pop | Oudou (6) | 中 (30%) | Expressive |
+| シティポップ | CityPop (19) | 高 (50%+) | Expressive |
+| ロック | Rock1 (11) | 低 (10%) | Raw |
 
 ### クイックスタート推奨設定
 
 ::: tip 初心者向け
 以下の安全なデフォルト設定から始めましょう：
-- **進行**: Pop4 (ID 0) - ほぼ何にでも合う
+- **進行**: FourChordPop (ID 0) - ほぼ何にでも合う
 - **エクステンション**: 全確率を30%以下に
 - **アティチュード**: Clean - 最も作業しやすいメロディ
 - **転調**: なし、またはLastChorusで+1半音

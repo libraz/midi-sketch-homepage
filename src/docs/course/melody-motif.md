@@ -11,7 +11,7 @@ A **melody** is a single sequence of notes heard as the "tune" of a song — the
 The relationship between a melody note and the chord under it determines whether it sounds resolved or tense. The safest notes are the ones already in the chord.
 
 ::: info Chord tone vs non-chord tone
-A **chord tone** is a melody note that belongs to the chord sounding underneath it — over a C chord, the notes C, E, and G are chord tones and can never clash. A **non-chord tone** (NCT) is any melody note outside that chord; it introduces tension against the harmony. Landing on chord tones feels stable and arrived; the trick to good melody is how you use the notes in between.
+A **chord tone** is a melody note that belongs to the chord sounding underneath it — over a C chord, the notes C, E, and G are chord tones, so they cannot be dissonant against that chord. A **non-chord tone** (NCT) is any melody note outside that chord; it introduces tension against the harmony. Landing on chord tones feels stable and arrived; the trick to good melody is how you use the notes in between.
 :::
 
 <ScoreExample example="chordTones" locale="en" />
