@@ -1,9 +1,0 @@
-{
-  "$schema": "https://raw.githubusercontent.com/raineorshine/npm-check-updates/main/src/types/RunOptions.json",
-  "reject": [
-    "typescript"
-  ],
-  "reason": {
-    "typescript": "v7 is the native port and drops the ./lib/tsc entry point that vue-tsc resolves; yarn typecheck fails with ERR_PACKAGE_PATH_NOT_EXPORTED. Hold at 6.x until vue-tsc supports it."
-  }
-}
