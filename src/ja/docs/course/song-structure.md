@@ -94,7 +94,7 @@ MidiSketchはセクションごとに1つのメロディと伴奏を生成し、
 
 <ScoreExample example="modulationLift" locale="ja" />
 
-MidiSketchはこれを2つのフィールドで制御します。`modulationTiming` は*いつ*転調するかを選びます：`LastChorus`（定番の最後のサビでの持ち上げ）、`AfterBridge`、`EachChorus`、`Random`、`None`。現状、1曲が持つ転調点は1つだけなので、`EachChorus` は `LastChorus` と同じ最後のサビでの持ち上げにフォールバックし、エンジンはその旨を警告として返します。`modulationSemitones` は*どれだけ*上げるかで、`+1`〜`+4`、ポップスで最も多いのは `+2`（全音）です。`+1` は控えめ、`+3`〜`+4` は劇的ですがサビが音域の上へ押し上げられるため、`vocalHigh` を念頭に量を選んでください。
+MidiSketchはこれを2つのフィールドで制御します。`modulationTiming` は*いつ*転調するかを選びます：`LastChorus`（定番の最後のサビでの持ち上げ）、`AfterBridge`、`EachChorus`、`Random`、`None`。現状、1曲が持つ転調点は1つだけなので、`EachChorus` は `LastChorus` と同じ最後のサビでの持ち上げにフォールバックし、エンジンはその旨を警告として返します。`modulationSemitones` は*どれだけ*上げるかで、`+1`〜`+4`、ポップスで最も多いのは `+2`（全音）です。`+1` は控えめ、`+3`〜`+4` は劇的です。生成器は曲全体でボーカルの上限を転調量の分だけ下げるため、C では持ち上がったサビも `vocalHigh` に収まります。その代わり、上げ幅が大きいほど転調前のメロディが使える音域は狭くなります。
 
 ## MidiSketchとの対応
 

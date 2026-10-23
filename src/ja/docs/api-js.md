@@ -49,7 +49,7 @@ const moods = midisketch.getMoods()
 
 ```javascript
 const chords = midisketch.getChords()
-// [{ name: 'Pop4', display: 'I-V-vi-IV' }, ...]
+// [{ name: 'FourChordPop', display: 'I - V - vi - IV' }, ...]
 ```
 
 ### `getStylePresets()`
@@ -58,16 +58,16 @@ const chords = midisketch.getChords()
 
 ```javascript
 const presets = midisketch.getStylePresets()
-// [{ id: 0, name: 'jpop', displayName: 'J-Pop', description: '...', tempoDefault: 120, allowedAttitudes: 7 }, ...]
+// [{ id: 0, name: 'minimal_groove_pop', displayName: 'Minimal Groove Pop', description: '...', tempoDefault: 122, allowedAttitudes: 3 }, ...]
 ```
 
 ### `getProgressionsByStyle(styleId)`
 
-指定したスタイルと互換性のあるコード進行 ID を返します。
+指定したスタイルが推奨するコード進行 ID を返します。`chordProgressionId: 255` のときは、この中から 1 つが選ばれます。
 
 ```javascript
 const progressions = midisketch.getProgressionsByStyle(0)
-// [0, 1, 2, ...]
+// [0, 1, 6, 13, 17, 19, 20]
 ```
 
 ### `getBlueprints()`
@@ -145,11 +145,11 @@ const range = midisketch.getBlueprintTempoRange(1)
 
 ### `getFormsByStyle(styleId)`
 
-指定したスタイルと互換性のあるフォーム/構成 ID を返します。
+フォームを明示しないときに、指定したスタイルが抽選しうるフォーム/構成 ID を返します。
 
 ```javascript
 const forms = midisketch.getFormsByStyle(0)
-// [0, 1, 2, ...]
+// [0, 2, 4, 3, 1, 12, 14]
 ```
 
 ### `createDefaultConfig(styleId)`
@@ -226,7 +226,7 @@ sketch.generateFromConfig({
   // 基本設定
   stylePresetId: 0,           // スタイルプリセット ID (0-16)
   key: 0,                     // キー (0-11: C から B)
-  bpm: 0,                     // テンポ (0=スタイルのデフォルト)
+  bpm: 0,                     // テンポ (0=指定した Blueprint のテンポ、なければ明示したムードのテンポ、それ以外はスタイルのテンポ)
   seed: 12345,                // ランダムシード (0=ランダム)
   chordProgressionId: 255,    // コード進行 ID (255=スタイルのデフォルト)
   formId: 0,                  // フォーム/構成 ID (0-17)
@@ -252,7 +252,9 @@ sketch.generateFromConfig({
   melodyTemplate: 0,          // メロディテンプレート (0=自動, 1-7=特定テンプレート)
   melodicComplexity: 1,       // メロディ複雑さ (0=シンプル, 1=標準, 2=複雑)
   hookIntensity: 2,           // フック強度 (0=オフ, 1=ライト, 2=ノーマル, 3=ストロング, 4=Maximum - 通常はBehavioral Loopが設定)
+  hookIntensityExplicit: false, // true なら Blueprint やアディクティブモードが hookIntensity を上げない
   vocalGroove: 0,             // グルーブ感 (0=ストレート, 1=オフビート, 2=スウィング, 3=シンコペ, 4=16分ドライブ, 5=バウンス8分)
+  vocalGrooveExplicit: false, // true なら Blueprint のリード設定が vocalGroove を変えない
 
   // ヒューマナイズ
   humanize: false,            // ヒューマナイズ有効化
@@ -296,7 +298,7 @@ sketch.generateFromConfig({
   motifMaxChordCount: 4,      // 最大コード数 (デフォルト 4)
 
   // Blueprint 設定
-  blueprintId: 0,             // Production Blueprint (0=Traditional, 1-9=特定, 255=ランダム)
+  blueprintId: 255,           // Production Blueprint (255=デフォルト: スタイルのテンポに合うものを抽選、0-9=指定した Blueprint を自身のテンポで使用)
 
   // ギター設定
   guitarEnabled: true,        // ギタートラック有効化 (デフォルト: true)
@@ -323,6 +325,7 @@ sketch.generateFromConfig({
 
   // シンコペーション
   enableSyncopation: false,   // VocalGroove のシンコペーション効果有効化
+  enableSyncopationExplicit: false, // true なら明示した false が Blueprint のリード設定でもオフのまま
 
   // エナジーカーブ
   energyCurve: 0,             // エナジーカーブ: 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
@@ -331,13 +334,13 @@ sketch.generateFromConfig({
   chordExtProbExplicit: false, // コード拡張確率が明示的に設定されたか (ムードによる自動調整を抑制)
 
   // メロディ詳細制御
-  melodyMaxLeap: 0,           // 最大跳躍音程: 0=プリセット, 1-12=半音でオーバーライド
+  melodyMaxLeap: 0,           // 最大跳躍: 0=Blueprint の跳躍幅のまま, 1-12=その半音数で上限を設定
   melodySyncopationProb: 0xFF, // シンコペーション確率: 0xFF=プリセット, 0-100=%オーバーライド
   melodyPhraseLength: 0,      // フレーズ長: 0=プリセット, 1-8=小節
   melodyLongNoteRatio: 0xFF,  // ロングノート比率: 0xFF=プリセット, 0-100=%オーバーライド
   melodyChorusRegisterShift: -128, // サビ音域シフト: -128=プリセット, -12〜+12=半音
   melodyHookRepetition: 0,    // フック反復: 0=プリセット, 1=オフ, 2=オン (三状態)
-  melodyUseLeadingTone: 0,    // 導音挿入: 0=プリセット, 1=オフ, 2=オン (三状態)
+  melodyUseLeadingTone: 0,    // セクション境界のピックアップ音: 0 または 2=セクション遷移が求める箇所に入れる, 1=入れない
 
   // モチーフ詳細制御
   motifLength: 0,             // モチーフ長: 0=自動, 1/2/4小節
@@ -605,11 +608,10 @@ sketch.generateFromBuilder(builder)
 
 ### `getResolvedBlueprintId()`
 
-生成後に解決された Blueprint ID（`0-9`）を返します。`blueprintId=255`（自動）の場合、ランダムに選択された Blueprint が返されます。
+生成後に解決された Blueprint ID（`0-9`）を返します。`blueprintId` がデフォルトの `255` の場合は、抽選された Blueprint が返されます。
 
 ```javascript
-const config = midisketch.createDefaultConfig(0)
-config.blueprintId = 255 // 自動選択
+const config = midisketch.createDefaultConfig(0) // blueprintId: 255
 sketch.generateFromConfig(config)
 const actualId = sketch.getResolvedBlueprintId()
 console.log(`使用された Blueprint: ${midisketch.getBlueprintName(actualId)}`)
@@ -815,8 +817,8 @@ const builder = new midisketch.SongConfigBuilder(styleId)
 | `setChordProgression(id)` | number | コード進行 ID 設定 |
 | `setForm(id)` | number | フォーム ID を設定し `formExplicit=true` にする |
 | `setVocalRange(low, high)` | number, number | MIDI ボーカル音域を設定し、上下を正規化する |
-| `setBpm(bpm)` | number | BPM 設定 (0=スタイルデフォルト)。選択した Blueprint の宣言済み範囲外で警告 |
-| `setBlueprint(id)` | number | Blueprint 設定 (0-9, 255=ランダム)。カスケード: drums, hookIntensity |
+| `setBpm(bpm)` | number | BPM 設定 (0=指定した Blueprint のテンポ、なければ明示したムードのテンポ、それ以外はスタイルのテンポ)。選択した Blueprint の宣言済み範囲外で警告 |
+| `setBlueprint(id)` | number | Blueprint 設定 (0-9 はその Blueprint のテンポで使用、255 はスタイルのテンポに合うものを抽選)。カスケード: drums, hookIntensity |
 | `setStylePreset(id)` | number | スタイルプリセット設定。未明示の chord, form, BPM, vocal attitude をスタイルデフォルトにリセット |
 | `setVocalStyle(style)` | number | ボーカルスタイル設定 (0=自動, 1-13)。アイドル系スタイルは call を自動有効化 |
 | `setVocalAttitude(attitude)` | number | ボーカルアティチュード設定 (0=Clean, 1=Expressive, 2=Raw) |
@@ -1308,7 +1310,9 @@ interface SongConfig {
   motifMaxChordCount: number
   melodicComplexity: number
   hookIntensity: number
+  hookIntensityExplicit: boolean
   vocalGroove: number
+  vocalGrooveExplicit: boolean
   mood: number
   moodExplicit: boolean
   formExplicit: boolean
@@ -1317,6 +1321,7 @@ interface SongConfig {
   moraRhythmMode: number
   syllabicSubRate?: number
   enableSyncopation: boolean
+  enableSyncopationExplicit: boolean
   energyCurve: number
   melodyMaxLeap: number
   melodySyncopationProb: number
@@ -1334,7 +1339,7 @@ interface SongConfig {
 }
 ```
 
-`createDefaultConfig(styleId)` は必須フィールドをすべて設定します。主なデフォルトは `bpm: 0`、`chordProgressionId: 255`、`arpeggioPattern: 255`、`arpeggioSpeed: 255`、`arpeggioGate: -1`、`humanize: false`、`compositionStyleExplicit: false`、`syllabicSubRate: 0` です。
+`createDefaultConfig(styleId)` は必須フィールドをすべて設定します。主なデフォルトは `bpm: 0`、`blueprintId: 255`、`chordProgressionId: 255`、`arpeggioPattern: 255`、`arpeggioSpeed: 255`、`arpeggioGate: -1`、`humanize: false`、`compositionStyleExplicit: false`、`syllabicSubRate: 0` です。
 
 ### `MelodyData`
 

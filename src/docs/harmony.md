@@ -102,6 +102,8 @@ Chord degrees are plain integers rather than a named enum type, so a progression
 
 Values 7 and 9 are unused. `bII` is the Neapolitan; `iv` gives the minor plagal cadence iv-I. These degrees are not decorative: AeolianPop (15) emits bVI and bVII, and NeapolitanPop (21) emits iv and bII, so anything parsing degree output has to handle values above 6.
 
+`#IVdim` appears only as a passing chord on the last beat of a pre-chorus's second-to-last bar, leading into V; the same device uses `vii°` before I. It needs that bar to hold a single chord, which in practice means ballad moods.
+
 ## Chord Quality
 
 ::: info Major vs Minor
@@ -160,8 +162,10 @@ The three families are tested in order - sus, then 7th, then 9th - and the first
 - **7th** applies in B and Chorus sections, or on V anywhere; on V the probability is doubled.
 - **9th** applies to any chord in a Chorus, or to V inside a B section. iii falls back to Min7, because its diatonic 9th would be a flat 9th above the root.
 
-::: info Chorus chords are decided beforehand
-Whenever 7ths are enabled, a chorus is reharmonised before these tests run: V becomes Dom7, minor chords Min7, I becomes Maj7 and everything else gets add9. The rules above then only govern what happens outside a chorus, or inside one with 7ths disabled. The same pass may substitute ii for IV in an A section, unless that IV resolves to V or I or ii is already an adjacent chord.
+::: info Chorus colour
+When 7ths are enabled, a chorus proposes one colour per chord instead of running the tests above: Dom7 on V, Min7 on minor chords, Maj7 on I and add9 on the other major chords. A proposal is kept only when its family is enabled (add9 needs 9ths) and it wins that family's probability roll; otherwise the chord stays a triad. With 7ths disabled, a chorus goes through the tests above like any other section.
+
+Separately, an A section replaces IV with ii in the chord timeline, unless that IV resolves to V or I or ii is already the chord before or after it. This substitution does not depend on any extension setting.
 :::
 
 ### Configuration
@@ -272,10 +276,10 @@ Instead of going directly from IV to V, inserting V/V (a dominant chord that res
 
 MIDI Sketch inserts secondary dominants under two rules:
 
-- **Entering a chorus (deterministic)**: when the first chord of a Chorus is ii, IV, V or vi, its dominant is placed in the last half-bar of the preceding section.
-- **Within a section (probabilistic)**: the per-bar chance is the section's tension times 0.25. Only Chorus (0.75), Pre-chorus B (0.65), Bridge (0.60) and MixBreak (0.55) clear the 0.5 tension threshold; verses, intros and outros never receive one.
+- **Entering a chorus (deterministic)**: when the first chord of a Chorus is ii, IV, V or vi, its dominant is placed in the last half-bar of the preceding section. The chorus a song modulates into always gets one, whatever its first chord: the dominant of that chord in the new key (see [Key Modulation](#key-modulation)).
+- **Within a section (probabilistic)**: the per-bar chance is the section's tension times 0.25. Only Chorus (0.75), Pre-chorus B (0.65), Bridge (0.60) and MixBreak (0.55) clear the 0.5 tension threshold; verses, intros and outros never receive one. The last two bars of a section are left to the rule above.
 
-Two limits keep the density pop-appropriate: at least two bars between insertions, and at most `bars / 8` per section (one per eight bars). Only ii, IV, V and vi are valid targets; the inserted chord is always a dominant 7th.
+Two limits keep the density pop-appropriate: at least two bars between insertions, and at most `bars / 8` per section, with a minimum of one. A chorus then restates its loop from the first statement, so a dominant drawn there recurs in every restatement and the finished chorus can hold more than its limit. Apart from the modulated chorus, only ii, IV, V and vi are valid targets; the inserted chord is always a dominant 7th.
 
 ```cpp
 // Example: V/V insertion before V
@@ -328,8 +332,10 @@ Key modulation (changing the key mid-song) is a powerful technique to add excite
 | `modulationSemitones` | 1-4 | Amount to modulate (required when timing is not 0) |
 
 ::: warning
-When `modulationTiming` is non-zero, `modulationSemitones` must be set to 1-4. The vocal high range is automatically adjusted to prevent the final sections from exceeding the vocal range after transposition.
+When `modulationTiming` is non-zero, `modulationSemitones` must be set to 1-4. The vocal's upper bound is lowered by the modulation amount for the whole song, so the sections after the key change still fit under `vocalHigh` once they are raised.
 :::
+
+The vocal range is applied in C and moves with `key`: in any other key the vocal can sound up to that many semitones above `vocalHigh` (up to 4 in E, up to 11 in B).
 
 ### Modulation Points
 
@@ -340,9 +346,11 @@ The amount always comes from `modulationSemitones` (1-4; the C++ default when un
 | 1 LastChorus | Start of the final chorus (most common) |
 | 2 AfterBridge | First chorus that follows a bridge; falls back to the final chorus |
 | 3 EachChorus | Falls back to a single final-chorus lift and emits a warning |
-| 4 Random | A randomly selected chorus (seed-determined) |
+| 4 Random | A randomly selected chorus other than one that opens the song (seed-determined) |
 
-The `DirectChorus` and `ShortForm` structures never modulate - they have no meaningful modulation point.
+The `DirectChorus` and `ShortForm` structures never modulate - they have no meaningful modulation point. Neither does a song whose only chorus opens it; such a song keeps one key and reports no modulation amount.
+
+The last half-bar before the chorus that modulates holds the dominant seventh of that chorus's first chord in the new key. In C, raised by 2 into a chorus on I, that is A7 leading into D, so the new key is prepared before it arrives.
 
 ### Implementation
 

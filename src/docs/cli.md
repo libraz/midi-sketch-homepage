@@ -41,11 +41,11 @@ The binary is `build/bin/midisketch_cli`.
 |------|-------------|---------|
 | `--seed N` | Random seed (`0` selects a random seed) | `0` |
 | `--style N` | Style preset ID (`0-16`) | `0` |
-| `--blueprint N\|NAME` | Production blueprint (`0-9`, `255` for random, or a name) | `0` |
+| `--blueprint N\|NAME` | Production blueprint: `0-9` or a name plays that blueprint at its own tempo; `255` draws one that holds the style tempo | `255` |
 | `--mood N\|NAME` | Mood ID (`0-23`) or name; an explicit mood overrides the style mapping | Style mapping |
 | `--chord N\|NAME` | Chord progression (`0-21`) or name | Auto |
 | `--vocal-style N` | Vocal style (`0-13`; see the list below) | `0` (Auto) |
-| `--bpm N` | BPM (`0` or `40-240`) | Auto from style/mood |
+| `--bpm N` | BPM (`0` or `40-240`) | Auto: a named blueprint's tempo, else the mood's (when `--mood` is given), else the style's |
 | `--duration N` | Target duration in seconds (`0` uses the selected form) | `0` |
 | `--form N\|NAME` | Form/structure pattern (`0-17`) or name | Style-compatible form |
 | `--key N` | Key (`0-11`: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B) | `0` (C) |
@@ -382,7 +382,7 @@ The CLI detects SMF1 and supported SMF2 forms, restores the embedded `SongConfig
 | 7 | IdolCoolPop |
 | 8 | IdolEmo |
 | 9 | BehavioralLoop |
-| 255 | Random selection |
+| 255 | Drawn from the blueprints that suit the mood and hold the style tempo (default) |
 
 Specify a blueprint by name or ID:
 

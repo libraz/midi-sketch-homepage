@@ -46,7 +46,7 @@ Each preset is a bundle of the config fields taught in the course. The capstone 
 | Outro | None | Medium-Low | Resolution |
 | Chant | None | Low | Call-and-response chant |
 | MixBreak | None | High | MIX break before the last chorus |
-| Drop | None | High | EDM drop: kick and sub-bass only, then re-entry |
+| Drop | None | High | EDM drop: kick and sub-bass only, then re-entry. No built-in form or blueprint flow produces one |
 
 ::: tip Duration Calculation
 At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact pattern duration, or specify a target duration for auto-generated structures.
@@ -81,7 +81,7 @@ At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact 
 | 20 | RnBNeoSoul | 92 | Standard | R&B/Neo-Soul, strong swing, extended chords; practical band 85-100 |
 | 21 | LatinPop | 95 | Latin | Latin Pop, dembow rhythm, tresillo bass |
 | 22 | Trap | 70 | Trap | Trap, half-time feel, 808 sub-bass, hi-hat rolls |
-| 23 | Lofi | 80 | Sparse | Lo-fi, strong swing, max velocity 90 |
+| 23 | Lofi | 80 | Sparse | Lo-fi, strong swing |
 
 ### Mood Categories
 
@@ -138,7 +138,7 @@ At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact 
 17 style presets that combine mood, structure, and composition approach:
 
 ::: tip Choosing a Style Preset
-Style presets provide sensible defaults for BPM, structure, vocal attitude, and recommended chord progressions. You can override any of these settings after calling `createDefaultConfig()`.
+Style presets provide defaults for BPM, structure, vocal attitude, and recommended chord progressions. You can override any of these settings after calling `createDefaultConfig()`. The default BPM is what `bpm: 0` plays while the blueprint is drawn (`blueprintId: 255`, the default); a blueprint chosen by ID plays at its own tempo instead.
 :::
 
 | ID | Name | Description | Default BPM |
@@ -158,7 +158,7 @@ Style presets provide sensible defaults for BPM, structure, vocal attitude, and 
 | 12 | Background Motif | Motif-driven defaults with subdued vocals; uses MelodyLead | 120 |
 | 13 | City Pop | Groovy 80s Japanese city pop with jazzy chords | 105 |
 | 14 | Anime Opening | Epic, dramatic anime OP style with building energy | 142 |
-| 15 | EDM Synth Pop | Modern electronic dance music with synth leads | 138 |
+| 15 | EDM Synth Pop | Modern electronic dance music with synth leads; uses SynthDriven, so a full-song generation has no vocal | 138 |
 | 16 | Emotional Ballad | Slow emotional ballad with expressive vocals | 72 |
 
 ### Style Categories
@@ -182,7 +182,7 @@ Style presets provide sensible defaults for BPM, structure, vocal attitude, and 
 | SynthDriven (2) | Synth/Arpeggio | No | No | Motif generation enabled; section masks/layering apply; arpeggio requires manual `arpeggioEnabled=true` |
 
 ::: warning BGM-Only Modes
-BackgroundMotif and SynthDriven do not generate vocal tracks. BackgroundMotif keeps Aux active and enables Motif generation; SynthDriven disables both Vocal and Aux and enables Motif generation. Section masks and layer schedules determine where Motif notes remain. Use MelodyLead for songs with vocals.
+BackgroundMotif and SynthDriven do not generate vocal tracks when the whole song is generated in one call (`generate`, `generateFromConfig`). BackgroundMotif keeps Aux active and enables Motif generation; SynthDriven disables both Vocal and Aux and enables Motif generation. Section masks and layer schedules determine where Motif notes remain. Use MelodyLead for songs with vocals. The vocal-first calls (`generateVocal`, `generateWithVocal`) still write the vocal they are asked for under either style.
 :::
 
 ## Production Blueprints
@@ -201,11 +201,11 @@ BackgroundMotif and SynthDriven do not generate vocal tracks. BackgroundMotif ke
 | 7 | IdolCoolPop (danceable beat) | RhythmSync | Locked | **Yes** | 5% |
 | 8 | IdolEmo (calm into explosion) | MelodyDriven | Locked | - | 4% |
 | 9 | BehavioralLoop (addictive loop) | RhythmSync | LockedPitch | - | 0%* |
-| 255 | (Random) | - | - | - | - |
+| 255 | (Drawn, default) | - | - | - | - |
 
-\*BehavioralLoop: explicit selection only (weight 0%, not randomly selected). Forces `addictive_mode=true`, `HookIntensity=Maximum`, `RiffPolicy=LockedPitch`.
+\*BehavioralLoop: explicit selection only (weight 0%, never drawn). Forces `addictive_mode=true`, `HookIntensity=Maximum`, `RiffPolicy=LockedPitch`.
 
-Use `blueprintId: 255` for auto-selection based on weights.
+`blueprintId: 255` is the default everywhere. It draws a blueprint by weight from those that suit the mood and whose tempo range holds the song's tempo (the style's, or the mood's when the mood is explicit). A blueprint chosen by ID (`0-9`) plays at its own tempo when `bpm` is `0`.
 
 ### Generation Paradigms
 
@@ -242,7 +242,7 @@ Blueprints 1-8 carry their own section flow, which replaces the `formId` setting
 <DocFigure name="presets-background-motif-roles" />
 
 ::: info No Vocal in BackgroundMotif
-BackgroundMotif disables the Vocal track. The Aux track remains active and provides sub-melody support alongside the motif.
+BackgroundMotif disables the Vocal track in a full-song generation; `generateVocal` and `generateWithVocal` still write the vocal they are asked for. The Aux track remains active and provides sub-melody support alongside the motif.
 :::
 
 ### SynthDriven
@@ -250,7 +250,7 @@ BackgroundMotif disables the Vocal track. The Aux track remains active and provi
 <DocFigure name="presets-synth-driven-roles" />
 
 ::: info No Vocal/Aux in SynthDriven
-SynthDriven disables both the Vocal and Aux tracks. Arpeggio must be manually enabled (`arpeggioEnabled=true`) as it is not auto-enabled.
+SynthDriven disables both the Vocal and Aux tracks in a full-song generation; `generateVocal` and `generateWithVocal` still write the vocal they are asked for. Arpeggio must be manually enabled (`arpeggioEnabled=true`) as it is not auto-enabled.
 :::
 
 ## Arpeggio Patterns
@@ -331,9 +331,11 @@ Rock, PowerfulShout and the three idol styles additionally use CallResponse in t
 
 | Level | Effect | Use Case |
 |-------|--------|----------|
-| Simple (0) | Reduced density, smaller leaps, more hooks | Catchy, memorable |
+| Simple (0) | Reduced density, fewer leaps, more hooks | Catchy, memorable |
 | Standard (1) | Default behavior | General use |
-| Complex (2) | Increased density, larger leaps, more variation | Sophisticated |
+| Complex (2) | Increased density, more leaps, more variation | Sophisticated |
+
+Complexity changes how often the melody leaps, not how wide a leap may be: the leap budget comes from the blueprint, and only `melodyMaxLeap` narrows it.
 
 ## Hook Intensity
 
@@ -371,9 +373,11 @@ The syncopation effects of VocalGroove (OffBeat, Swing, Syncopated, Driving16th,
 | Value | Name | Description |
 |-------|------|-------------|
 | 0 | GradualBuild | Gradually building energy (default) |
-| 1 | FrontLoaded | High energy from the start, settling later |
-| 2 | WavePattern | Wave-like energy progression |
+| 1 | FrontLoaded | High from the start and held there; dips only for a bridge or interlude |
+| 2 | WavePattern | Choruses at the crest, verses and bridges in the trough, a pre-chorus in between |
 | 3 | SteadyState | Maintain consistent energy level |
+
+Under FrontLoaded and WavePattern, an ochisabi (quiet final chorus) or a climactic section keeps its own dynamics.
 
 ## Mora Rhythm Mode
 
@@ -393,13 +397,13 @@ Fine-grained melody parameters that override VocalStylePreset and MelodicComplex
 
 | Parameter | Range | Default | Description |
 |-----------|-------|---------|-------------|
-| `melodyMaxLeap` | 0=preset, 1-12 | 0 | Maximum melodic leap in semitones |
+| `melodyMaxLeap` | 0=blueprint budget, 1-12 | 0 | Caps the blueprint's leap budget at this many semitones |
 | `melodySyncopationProb` | 0-100, 0xFF=preset | 0xFF | Syncopation probability (%) |
 | `melodyPhraseLength` | 0=preset, 1-8 | 0 | Phrase length in bars |
 | `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0xFF | Long note ratio (%) |
 | `melodyChorusRegisterShift` | -12 to +12, -128=preset | -128 | Chorus register shift in semitones |
 | `melodyHookRepetition` | 0=preset, 1=off, 2=on | 0 | Hook repetition (tri-state) |
-| `melodyUseLeadingTone` | 0=preset, 1=off, 2=on | 0 | Leading tone insertion at section boundaries (tri-state) |
+| `melodyUseLeadingTone` | 0 or 2=on, 1=off | 0 | Pickup note at the section boundaries whose transition calls for one (B to Chorus, Bridge to Chorus); `2` adds none where the transition has none |
 
 ::: tip Parameter Application Order
 Melody overrides are applied after StylePreset, VocalStylePreset, and MelodicComplexity. User-specified values always take the highest priority.
@@ -449,8 +453,7 @@ Continuous value 0-100 controlling performance intensity:
 Valid tempo range: **40-240 BPM**
 
 ::: info BPM Setting
-- Set to `0` to use the style preset's default BPM
-- Each style preset has an optimal default BPM setting
+- `0` resolves in this order: a blueprint chosen by ID plays at its own tempo; otherwise an explicit mood's tempo, else the style preset's default BPM. A drawn blueprint (`blueprintId: 255`) is drawn from those whose range holds that tempo, so the style's default is what plays; when no blueprint suited to the mood holds it, the tempo is clamped into the drawn blueprint's range
 - BPM outside the 40-240 range will cause validation errors
 :::
 
@@ -558,7 +561,7 @@ config.energyCurve = 1                 // FrontLoaded energy
 
 ```javascript
 const config = createDefaultConfig(0)
-config.melodyMaxLeap = 5              // Max melodic leap in semitones
+config.melodyMaxLeap = 5              // Cap leaps at 5 semitones
 config.melodyPhraseLength = 4         // Phrase length in bars
 config.melodyHookRepetition = 2       // Hook repetition ON (tri-state: 0=preset, 1=off, 2=on)
 ```

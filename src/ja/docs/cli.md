@@ -41,11 +41,11 @@ cmake --build build --target midisketch_cli
 |--------|------|-----------|
 | `--seed N` | ランダムシード（`0` はランダムに選択） | `0` |
 | `--style N` | スタイルプリセット ID（`0-16`） | `0` |
-| `--blueprint N\|NAME` | Production Blueprint（`0-9`、`255` はランダム、または名前） | `0` |
+| `--blueprint N\|NAME` | Production Blueprint。`0-9` または名前で指定するとその Blueprint 自身のテンポで鳴ります。`255` はスタイルのテンポに合う Blueprint を抽選します | `255` |
 | `--mood N\|NAME` | ムード ID（`0-23`）または名前。明示したムードはスタイルのマッピングを上書きします | スタイルのマッピング |
 | `--chord N\|NAME` | コード進行（`0-21`）または名前 | 自動選択 |
 | `--vocal-style N` | ボーカルスタイル（`0-13`。下の一覧を参照） | `0`（Auto） |
-| `--bpm N` | BPM（`0` または `40-240`） | スタイルとムードから自動選択 |
+| `--bpm N` | BPM（`0` または `40-240`） | 自動。Blueprint を指定していればそのテンポ、なければ `--mood` を指定したときはムードのテンポ、それ以外はスタイルのテンポ |
 | `--duration N` | 目標再生時間（秒）。`0` は選択したフォームを使用します | `0` |
 | `--form N\|NAME` | フォーム／構成パターン（`0-17`）または名前 | スタイルに対応するフォーム |
 | `--key N` | キー（`0-11`: C, C#, D, Eb, E, F, F#, G, Ab, A, Bb, B） | `0`（C） |
@@ -382,7 +382,7 @@ CLI は SMF1 と対応する SMF2 形式を検出し、埋め込み `SongConfig`
 | 7 | IdolCoolPop |
 | 8 | IdolEmo |
 | 9 | BehavioralLoop |
-| 255 | ランダム選択 |
+| 255 | ムードに合い、スタイルのテンポを収める Blueprint から抽選（デフォルト） |
 
 Blueprint は名前または ID で指定できます。
 

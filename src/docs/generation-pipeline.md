@@ -147,7 +147,7 @@ Register and density are set per section against the vocal's own tessitura, and 
 | Chorus, pad functions | -12 | 0.8x |
 | Chorus, rhythmic functions | -6 | 0.95x |
 
-So the verses sit an octave under the vocal and thin out, while a rhythmic chorus aux climbs to within a tritone of the vocal centre and plays denser. The window is an absolute semitone width around that centre, clamped to the aux range G3-C6 and capped further by the profile's `range_ceiling` relative to the vocal's top note. Velocity ratios scale a fixed base of 80 — except Unison and the harmony line, which scale the vocal note's own velocity.
+So the verses sit an octave under the vocal and thin out, while a rhythmic chorus aux climbs to within a tritone of the vocal centre and plays denser. The window is an absolute semitone width around that centre, clamped to the aux range G3-C6 and capped further by the profile's `range_ceiling` relative to the vocal's top note. Velocity ratios scale a fixed base of 80 — except Unison, which scales the velocity of the vocal note it doubles.
 
 ### Bass Generation
 

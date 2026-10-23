@@ -46,7 +46,7 @@
 | Outro | None | 中低 | 解決 |
 | Chant | None | 低 | コール＆レスポンスのチャント |
 | MixBreak | None | 高 | ラスサビ前のMIXブレイク |
-| Drop | None | 高 | EDMのドロップ：キック＋サブベースのみ、その後再入 |
+| Drop | None | 高 | EDMのドロップ：キック＋サブベースのみ、その後再入。組み込みのフォームや Blueprint のフローでは生成されません |
 
 ::: tip 長さの計算
 120 BPMの場合: 1小節 ≈ 2秒。`targetDurationSeconds=0`で正確なパターンの長さを使用するか、目標秒数を指定して自動生成された構造を使用します。
@@ -81,7 +81,7 @@
 | 20 | RnBNeoSoul | 92 | Standard | R&B/ネオソウル、強スウィング、テンションコード。実用帯域は 85-100 |
 | 21 | LatinPop | 95 | Latin | ラテンポップ、デンボウリズム、トレシージョベース |
 | 22 | Trap | 70 | Trap | トラップ、ハーフタイム、808サブベース、ハイハットロール |
-| 23 | Lofi | 80 | Sparse | Lo-fi、強スウィング、最大ベロシティ90 |
+| 23 | Lofi | 80 | Sparse | Lo-fi、強スウィング |
 
 ### ムードカテゴリ
 
@@ -138,7 +138,7 @@
 ムード、構造、コンポジションアプローチを組み合わせた17のスタイルプリセット：
 
 ::: tip スタイルプリセットの選び方
-スタイルプリセットは、BPM、構造、ボーカルアティチュード、推奨コード進行の適切なデフォルト値を提供します。`createDefaultConfig()` 呼び出し後にこれらの設定を上書きできます。
+スタイルプリセットは、BPM、構造、ボーカルアティチュード、推奨コード進行のデフォルト値を提供します。`createDefaultConfig()` 呼び出し後にこれらの設定を上書きできます。デフォルト BPM は、Blueprint を抽選するとき（デフォルトの `blueprintId: 255`）に `bpm: 0` で鳴るテンポです。ID で選んだ Blueprint は、その Blueprint 自身のテンポで鳴ります。
 :::
 
 | ID | 名前 | 説明 | デフォルトBPM |
@@ -158,7 +158,7 @@
 | 12 | Background Motif | モチーフ駆動の既定値と控えめなボーカル。MelodyLeadを使用 | 120 |
 | 13 | City Pop | グルーヴィーな80年代シティポップ、ジャジーなコード | 105 |
 | 14 | Anime Opening | エピック、ドラマチックなアニメOP風 | 142 |
-| 15 | EDM Synth Pop | モダンEDM、シンセリード | 138 |
+| 15 | EDM Synth Pop | モダンEDM、シンセリード。SynthDriven を使うため、曲全体を生成するとボーカルはありません | 138 |
 | 16 | Emotional Ballad | スローエモーショナルバラード、表情豊かなボーカル | 72 |
 
 ### スタイルカテゴリ
@@ -182,7 +182,7 @@
 | SynthDriven (2) | シンセ/アルペジオ | なし | なし | モチーフ生成を有効化（セクションマスク/レイヤー設定が適用）。アルペジオは手動で`arpeggioEnabled=true`が必要 |
 
 ::: warning BGM専用モード
-BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。BackgroundMotifではAuxを有効にしたままモチーフ生成を有効にします。SynthDrivenではボーカルとAuxの両方を無効にしてモチーフ生成を有効にします。セクションマスクとレイヤースケジュールによってMotifノートが残る場所が決まります。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+BackgroundMotifとSynthDrivenは、曲全体を1回の呼び出しで生成する場合（`generate`、`generateFromConfig`）にボーカルトラックを生成しません。BackgroundMotifではAuxを有効にしたままモチーフ生成を有効にします。SynthDrivenではボーカルとAuxの両方を無効にしてモチーフ生成を有効にします。セクションマスクとレイヤースケジュールによってMotifノートが残る場所が決まります。ボーカル付きの楽曲にはMelodyLeadを使用してください。ボーカルを先に生成する呼び出し（`generateVocal`、`generateWithVocal`）は、どちらのスタイルでも求められたボーカルを書きます。
 :::
 
 ## Production Blueprint
@@ -201,11 +201,11 @@ BackgroundMotifとSynthDrivenはボーカルトラックを生成しません。
 | 7 | IdolCoolPop (踊れるビート) | RhythmSync | Locked | **必須** | 5% |
 | 8 | IdolEmo (静→爆発) | MelodyDriven | Locked | - | 4% |
 | 9 | BehavioralLoop (中毒ループ) | RhythmSync | LockedPitch | - | 0%* |
-| 255 | (ランダム) | - | - | - | - |
+| 255 | (抽選、デフォルト) | - | - | - | - |
 
-\*BehavioralLoop: 明示的な選択のみ（重み0%、ランダム選択されません）。`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch` を強制します。
+\*BehavioralLoop: 明示的な選択のみ（重み0%、抽選されません）。`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch` を強制します。
 
-`blueprintId: 255` で重み付き自動選択
+`blueprintId: 255` はすべての入口でデフォルトです。ムードに合い、テンポ範囲が曲のテンポ（スタイルのテンポ。ムードを明示した場合はムードのテンポ）を収める Blueprint から、重みに従って抽選します。ID（`0-9`）で選んだ Blueprint は、`bpm` が `0` のとき自身のテンポで鳴ります。
 
 ### 生成パラダイム
 
@@ -242,7 +242,7 @@ Blueprint 1-8 は独自の section_flow を持ち、`formId` 設定を置き換�
 <DocFigure name="presets-background-motif-roles" />
 
 ::: info BackgroundMotifではボーカルなし
-BackgroundMotifではボーカルトラックが無効になります。Auxトラックは有効なままで、モチーフと共に副旋律サポートを提供します。
+BackgroundMotifでは、曲全体の生成でボーカルトラックが無効になります。`generateVocal` と `generateWithVocal` は求められたボーカルを書きます。Auxトラックは有効なままで、モチーフと共に副旋律サポートを提供します。
 :::
 
 ### SynthDriven
@@ -250,7 +250,7 @@ BackgroundMotifではボーカルトラックが無効になります。Auxト�
 <DocFigure name="presets-synth-driven-roles" />
 
 ::: info SynthDrivenではボーカル/Auxなし
-SynthDrivenではボーカルトラックとAuxトラックの両方が無効になります。アルペジオは手動で有効化が必要です（`arpeggioEnabled=true`）。自動有効化はされません。
+SynthDrivenでは、曲全体の生成でボーカルトラックとAuxトラックの両方が無効になります。`generateVocal` と `generateWithVocal` は求められたボーカルを書きます。アルペジオは手動で有効化が必要です（`arpeggioEnabled=true`）。自動有効化はされません。
 :::
 
 ## アルペジオパターン
@@ -331,9 +331,11 @@ Rock・PowerfulShout・アイドル系3スタイルは、ブリッジで CallRes
 
 | レベル | 効果 | 用途 |
 |--------|------|------|
-| Simple (0) | 密度低下、跳躍小、フック多め | キャッチー、覚えやすい |
+| Simple (0) | 密度低下、跳躍少なめ、フック多め | キャッチー、覚えやすい |
 | Standard (1) | デフォルト動作 | 一般用途 |
-| Complex (2) | 密度増加、跳躍大、バリエーション多 | 洗練された |
+| Complex (2) | 密度増加、跳躍多め、バリエーション多 | 洗練された |
+
+複雑さが変えるのは跳躍の頻度で、跳躍の幅ではありません。跳躍幅の上限は Blueprint が決め、それを狭めるのは `melodyMaxLeap` だけです。
 
 ## フック強度
 
@@ -371,9 +373,11 @@ VocalGrooveのシンコペーション効果（OffBeat、Swing、Syncopated、Dr
 | 値 | 名前 | 説明 |
 |----|------|------|
 | 0 | GradualBuild | 徐々にエネルギーが上昇（デフォルト） |
-| 1 | FrontLoaded | 最初からハイエナジー、後半は落ち着く |
-| 2 | WavePattern | 波のようなエネルギー推移 |
+| 1 | FrontLoaded | 最初から高く、最後まで保つ。下がるのはブリッジと間奏だけ |
+| 2 | WavePattern | サビが頂点、Aメロとブリッジが谷、Bメロがその中間 |
 | 3 | SteadyState | 一定のエネルギーレベルを維持 |
+
+FrontLoaded と WavePattern では、落ちサビとクライマックスのセクションはそれぞれの強弱を保ちます。
 
 ## モーラリズムモード
 
@@ -393,13 +397,13 @@ VocalStylePresetとMelodicComplexityのデフォルトを上書きする細か�
 
 | パラメータ | 範囲 | デフォルト | 説明 |
 |-----------|------|-----------|------|
-| `melodyMaxLeap` | 0=preset, 1-12 | 0 | 最大メロディ跳躍（半音単位） |
+| `melodyMaxLeap` | 0=Blueprint の跳躍幅, 1-12 | 0 | Blueprint の跳躍幅の上限をこの半音数に抑える |
 | `melodySyncopationProb` | 0-100, 0xFF=preset | 0xFF | シンコペーション確率（%） |
 | `melodyPhraseLength` | 0=preset, 1-8 | 0 | フレーズ長（小節単位） |
 | `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0xFF | 長音符比率（%） |
 | `melodyChorusRegisterShift` | -12 to +12, -128=preset | -128 | サビの音域シフト（半音単位） |
 | `melodyHookRepetition` | 0=preset, 1=off, 2=on | 0 | フック反復（トライステート） |
-| `melodyUseLeadingTone` | 0=preset, 1=off, 2=on | 0 | セクション境界でのリーディングトーン挿入（トライステート） |
+| `melodyUseLeadingTone` | 0 または 2=on, 1=off | 0 | セクション遷移がピックアップ音を求める境界（B からサビ、Bridge からサビ）に入れるかどうか。`2` でも、遷移が求めない境界には足しません |
 
 ::: tip パラメータ適用順序
 メロディオーバーライドはStylePreset、VocalStylePreset、MelodicComplexityの後に適用されます。ユーザー指定の値は常に最高優先度を持ちます。
@@ -449,8 +453,7 @@ VocalStylePresetとMelodicComplexityのデフォルトを上書きする細か�
 有効テンポ範囲: **40-240 BPM**
 
 ::: info BPM設定について
-- `0` に設定するとスタイルプリセットのデフォルトBPMを使用
-- 各スタイルプリセットには最適なデフォルトBPM設定あり
+- `0` は次の順に決まります。ID で選んだ Blueprint はその Blueprint 自身のテンポで鳴ります。それ以外は、ムードを明示していればムードのテンポ、なければスタイルプリセットのデフォルト BPM です。抽選する Blueprint（`blueprintId: 255`）はそのテンポを収めるものから選ばれるので、スタイルのデフォルトがそのまま鳴ります。ムードに合う Blueprint がどれもそのテンポを収めない場合は、抽選された Blueprint の範囲に収めます
 - 40-240の範囲外のBPMはバリデーションエラーになります
 :::
 
@@ -558,7 +561,7 @@ config.energyCurve = 1                 // FrontLoadedエネルギー
 
 ```javascript
 const config = createDefaultConfig(0)
-config.melodyMaxLeap = 5              // 最大メロディ跳躍（半音単位）
+config.melodyMaxLeap = 5              // 跳躍を5半音までに抑える
 config.melodyPhraseLength = 4         // フレーズ長（小節単位）
 config.melodyHookRepetition = 2       // フック反復ON（トライステート: 0=preset, 1=off, 2=on）
 ```

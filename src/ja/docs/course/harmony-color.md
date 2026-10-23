@@ -82,7 +82,7 @@ MidiSketchはセカンダリードミナントを自動挿入します — 設�
 
 <ScoreExample example="tritoneSub" locale="ja" />
 
-MidiSketchでは、`chordExtTritoneSub` がドミナント機能を持つコードすべてにこの置き換えを行います。キー本来の `V7` なら `♭II7` になり、挿入されたセカンダリードミナントならそのコード自身のトライトーン代理になります。確率 `chordExtTritoneSubProb`（有効時0.5）で発火します。
+MidiSketchでは、`chordExtTritoneSub` がこの置き換えを行うのはキー本来のドミナントだけです。`V` のコードが `♭II7` になります。挿入されたセカンダリードミナントはそのまま残るため、`V/V` に固有の代理が付くことはありません。各 `V` は確率 `chordExtTritoneSubProb`（有効時0.5）で置き換わります。
 
 ## まとめ：色付けは確率のつまみ
 

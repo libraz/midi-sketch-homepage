@@ -49,7 +49,7 @@ Returns available chord progressions.
 
 ```javascript
 const chords = midisketch.getChords()
-// [{ name: 'Pop4', display: 'I-V-vi-IV' }, ...]
+// [{ name: 'FourChordPop', display: 'I - V - vi - IV' }, ...]
 ```
 
 ### `getStylePresets()`
@@ -58,16 +58,16 @@ Returns available style presets with detailed information.
 
 ```javascript
 const presets = midisketch.getStylePresets()
-// [{ id: 0, name: 'jpop', displayName: 'J-Pop', description: '...', tempoDefault: 120, allowedAttitudes: 7 }, ...]
+// [{ id: 0, name: 'minimal_groove_pop', displayName: 'Minimal Groove Pop', description: '...', tempoDefault: 122, allowedAttitudes: 3 }, ...]
 ```
 
 ### `getProgressionsByStyle(styleId)`
 
-Returns chord progression IDs compatible with the given style.
+Returns the chord progression IDs the style recommends. With `chordProgressionId: 255`, generation picks one of these.
 
 ```javascript
 const progressions = midisketch.getProgressionsByStyle(0)
-// [0, 1, 2, ...]
+// [0, 1, 6, 13, 17, 19, 20]
 ```
 
 ### `getBlueprints()`
@@ -145,11 +145,11 @@ const range = midisketch.getBlueprintTempoRange(1)
 
 ### `getFormsByStyle(styleId)`
 
-Returns form/structure IDs compatible with the given style.
+Returns the form/structure IDs the style can draw when the form is not set explicitly.
 
 ```javascript
 const forms = midisketch.getFormsByStyle(0)
-// [0, 1, 2, ...]
+// [0, 2, 4, 3, 1, 12, 14]
 ```
 
 ### `createDefaultConfig(styleId)`
@@ -226,7 +226,7 @@ sketch.generateFromConfig({
   // Basic settings
   stylePresetId: 0,           // Style preset ID (0-16)
   key: 0,                     // Key (0-11: C to B)
-  bpm: 0,                     // Tempo (0=use style default)
+  bpm: 0,                     // Tempo (0=a named blueprint's tempo, else the explicit mood's, else the style's)
   seed: 12345,                // Random seed (0=random)
   chordProgressionId: 255,    // Chord progression ID (255=style default)
   formId: 0,                  // Form/structure ID (0-17)
@@ -252,7 +252,9 @@ sketch.generateFromConfig({
   melodyTemplate: 0,          // Melody template (0=Auto, 1-7=specific templates)
   melodicComplexity: 1,       // Melody complexity (0=Simple, 1=Standard, 2=Complex)
   hookIntensity: 2,           // Hook intensity (0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum - normally set by Behavioral Loop)
+  hookIntensityExplicit: false, // True keeps hookIntensity when a blueprint or addictive mode would raise it
   vocalGroove: 0,             // Groove feel (0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th)
+  vocalGrooveExplicit: false, // True keeps vocalGroove when a blueprint lead setting would change it
 
   // Humanization
   humanize: false,            // Enable humanization
@@ -296,7 +298,7 @@ sketch.generateFromConfig({
   motifMaxChordCount: 4,      // Max chord count (default 4)
 
   // Blueprint settings
-  blueprintId: 0,             // Production blueprint (0=Traditional, 1-9=specific, 255=random)
+  blueprintId: 255,           // Production blueprint (255=default: drawn to hold the style tempo; 0-9 names one, which plays at its own tempo)
 
   // Guitar settings
   guitarEnabled: true,        // Enable guitar track (default: true)
@@ -323,6 +325,7 @@ sketch.generateFromConfig({
 
   // Syncopation
   enableSyncopation: false,   // Enable syncopation effects for VocalGroove
+  enableSyncopationExplicit: false, // True makes an explicit false stay off under a blueprint lead setting
 
   // Energy curve
   energyCurve: 0,             // Energy curve: 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState
@@ -331,13 +334,13 @@ sketch.generateFromConfig({
   chordExtProbExplicit: false, // True if chord extension probabilities were explicitly set (suppresses mood-based auto-adjustment)
 
   // Melody fine-grained control
-  melodyMaxLeap: 0,           // Max leap interval: 0=preset, 1-12=semitones override
+  melodyMaxLeap: 0,           // Max leap: 0=the blueprint's leap budget, 1-12=caps it at this many semitones
   melodySyncopationProb: 0xFF, // Syncopation probability: 0xFF=preset, 0-100=% override
   melodyPhraseLength: 0,      // Phrase length: 0=preset, 1-8=bars
   melodyLongNoteRatio: 0xFF,  // Long note ratio: 0xFF=preset, 0-100=% override
   melodyChorusRegisterShift: -128, // Chorus register shift: -128=preset, -12 to +12=semitones
   melodyHookRepetition: 0,    // Hook repetition: 0=preset, 1=off, 2=on (tri-state)
-  melodyUseLeadingTone: 0,    // Leading tone insertion: 0=preset, 1=off, 2=on (tri-state)
+  melodyUseLeadingTone: 0,    // Section-boundary pickups: 0 or 2=the pickups the section transition calls for, 1=none
 
   // Motif fine-grained control
   motifLength: 0,             // Motif length: 0=auto, 1/2/4 bars
@@ -606,11 +609,10 @@ sketch.generateFromBuilder(builder)
 
 ### `getResolvedBlueprintId()`
 
-Returns the resolved blueprint ID after generation (`0-9`). When `blueprintId=255` (random), this returns the randomly selected blueprint.
+Returns the resolved blueprint ID after generation (`0-9`). When `blueprintId` is `255`, the default, this returns the blueprint that was drawn.
 
 ```javascript
-const config = midisketch.createDefaultConfig(0)
-config.blueprintId = 255 // Random select
+const config = midisketch.createDefaultConfig(0) // blueprintId: 255
 sketch.generateFromConfig(config)
 const actualId = sketch.getResolvedBlueprintId()
 console.log(`Used blueprint: ${midisketch.getBlueprintName(actualId)}`)
@@ -816,8 +818,8 @@ All setter methods return `this` for chaining:
 | `setChordProgression(id)` | number | Set chord progression ID |
 | `setForm(id)` | number | Set form ID and mark `formExplicit=true` |
 | `setVocalRange(low, high)` | number, number | Set and normalize the MIDI vocal range |
-| `setBpm(bpm)` | number | Set BPM (0=style default). Warns when outside the selected blueprint's declared range |
-| `setBlueprint(id)` | number | Set blueprint (0-9, 255=random). May cascade: drums, hookIntensity |
+| `setBpm(bpm)` | number | Set BPM (0=a named blueprint's tempo, else the explicit mood's, else the style's). Warns when outside the selected blueprint's declared range |
+| `setBlueprint(id)` | number | Set blueprint (0-9 plays at that blueprint's tempo; 255 draws one that holds the style tempo). May cascade: drums, hookIntensity |
 | `setStylePreset(id)` | number | Set style preset. Resets non-explicit chord, form, BPM, and vocal attitude fields |
 | `setVocalStyle(style)` | number | Set vocal style (0=Auto, 1-13). Idol styles auto-enable call |
 | `setVocalAttitude(attitude)` | number | Set vocal attitude (0=Clean, 1=Expressive, 2=Raw) |
@@ -1309,7 +1311,9 @@ interface SongConfig {
   motifMaxChordCount: number
   melodicComplexity: number
   hookIntensity: number
+  hookIntensityExplicit: boolean
   vocalGroove: number
+  vocalGrooveExplicit: boolean
   mood: number
   moodExplicit: boolean
   formExplicit: boolean
@@ -1318,6 +1322,7 @@ interface SongConfig {
   moraRhythmMode: number
   syllabicSubRate?: number
   enableSyncopation: boolean
+  enableSyncopationExplicit: boolean
   energyCurve: number
   melodyMaxLeap: number
   melodySyncopationProb: number
@@ -1335,7 +1340,7 @@ interface SongConfig {
 }
 ```
 
-`createDefaultConfig(styleId)` supplies all required fields. Its defaults include `bpm: 0`, `chordProgressionId: 255`, `arpeggioPattern: 255`, `arpeggioSpeed: 255`, `arpeggioGate: -1`, `humanize: false`, `compositionStyleExplicit: false`, and `syllabicSubRate: 0`.
+`createDefaultConfig(styleId)` supplies all required fields. Its defaults include `bpm: 0`, `blueprintId: 255`, `chordProgressionId: 255`, `arpeggioPattern: 255`, `arpeggioSpeed: 255`, `arpeggioGate: -1`, `humanize: false`, `compositionStyleExplicit: false`, and `syllabicSubRate: 0`.
 
 ### `MelodyData`
 

@@ -109,7 +109,7 @@ The Emotion Curve system plans the emotional journey of a song, assigning specif
 - **Bridge**: Reflection (lower energy, contrast)
 - **Outro**: Closure (decreasing tension)
 
-Each section receives emotion parameters (tension, energy, resolution need, pitch tendency, density) that guide generation across all tracks.
+Each section's plan holds tension, energy, resolution need, pitch tendency and density, but only energy and the section-boundary hints reach the song. Energy sets each section's velocity level and ceiling when the finished notes are post-processed, a rise in energy into the next section ramps the velocity over the last two beats, and a boundary can be marked for a drum fill. No track reads tension, resolution need, pitch tendency or density, so apart from those drum fills the curve does not change which notes are written or how many.
 :::
 
 ### Euclidean Rhythms
@@ -143,10 +143,12 @@ A dedicated guitar track generates accompaniment patterns influenced by Blueprin
 
 ::: details Song Energy Progression
 The Energy Curve system controls how energy progresses through the song, providing high-level control over dynamics beyond per-section settings:
-- **GradualBuild**: Energy increases steadily from start to finish
-- **FrontLoaded**: High energy at the start, tapering toward the end
-- **WavePattern**: Alternating high and low energy across sections
-- **SteadyState**: Consistent energy level throughout
+- **GradualBuild**: Keeps the energy the song form and Blueprint already give each section, which builds toward the choruses
+- **FrontLoaded**: High from the start and held there: every chorus at peak, the other sections raised a step, with a dip only for a bridge or interlude
+- **WavePattern**: Rises and falls with the form: choruses at the crest, verses and bridges in the trough, and a pre-chorus in between
+- **SteadyState**: Every section between the intro and the outro at the same medium level
+
+Under FrontLoaded and WavePattern, a quiet final chorus (ochisabi) and a climactic section keep the dynamics they declare.
 :::
 
 ### Melody & Motif Overrides
@@ -291,6 +293,8 @@ Three composition paradigms:
 
 ::: warning BGM-Only Modes
 BackgroundMotif disables Vocal, keeps Aux enabled, and enables Motif generation. SynthDriven disables both Vocal and Aux and enables Motif generation. Section masks and layer schedules determine where Motif notes remain; Arpeggio must be manually enabled with `arpeggioEnabled=true`.
+
+The Vocal column describes `generateFromConfig()`. `generateVocal()` and `generateWithVocal()` write a vocal whatever the composition style, so the vocal-first workflow below is the way to put a vocal over a BGM style.
 :::
 
 ## Vocal-First Workflow

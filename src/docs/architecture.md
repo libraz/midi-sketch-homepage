@@ -181,6 +181,8 @@ Three composition styles affect the generation approach:
 
 ::: warning BGM-Only Modes
 BackgroundMotif disables Vocal but keeps Aux enabled and forces Motif generation. SynthDriven disables both Vocal and Aux, and also generates Motif unconditionally; Arpeggio must be manually enabled with `arpeggioEnabled=true`. Use MelodyLead for songs with vocals.
+
+The Vocal column describes full-song generation (`generateFromConfig()`). The vocal-first calls `generateVocal()` and `generateWithVocal()` write a vocal whatever the composition style.
 :::
 
 ## Production Blueprints

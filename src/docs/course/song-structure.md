@@ -94,7 +94,7 @@ One structural device earns its own section because it is almost a cliché of th
 
 <ScoreExample example="modulationLift" locale="en" />
 
-MidiSketch controls this with two fields. `modulationTiming` chooses *when* the key change happens: `LastChorus` (the classic final-chorus lift), `AfterBridge`, `EachChorus`, `Random`, or `None`. A song currently carries a single modulation point, so `EachChorus` resolves to the same final-chorus lift as `LastChorus`, and the engine reports that fallback as a warning. `modulationSemitones` chooses *how far*: `+1` to `+4`, with `+2` (a whole step) the most common pop choice. A `+1` lift is subtle; `+3`–`+4` is dramatic but pushes the chorus higher into the vocal range, so pick the amount with `vocalHigh` in mind.
+MidiSketch controls this with two fields. `modulationTiming` chooses *when* the key change happens: `LastChorus` (the classic final-chorus lift), `AfterBridge`, `EachChorus`, `Random`, or `None`. A song currently carries a single modulation point, so `EachChorus` resolves to the same final-chorus lift as `LastChorus`, and the engine reports that fallback as a warning. `modulationSemitones` chooses *how far*: `+1` to `+4`, with `+2` (a whole step) the most common pop choice. A `+1` lift is subtle; `+3`–`+4` is dramatic. The generator lowers the vocal's ceiling by the amount for the whole song, so in C the raised chorus still stays under `vocalHigh`; a larger lift narrows the room the melody has before the key change instead.
 
 ## MidiSketch mapping
 

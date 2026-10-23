@@ -180,6 +180,8 @@ struct Section {
 
 ::: warning BGM専用モード
 BackgroundMotifはVocalを無効にしますが、Auxは有効のままでMotif生成を強制します。SynthDrivenはVocalとAuxの両方を無効にし、Motif も無条件に生成します。Arpeggioは`arpeggioEnabled=true`で手動で有効にする必要があります。ボーカル付きの楽曲にはMelodyLeadを使用してください。
+
+Vocal の列は楽曲全体の生成（`generateFromConfig()`）での動作です。ボーカルファーストの `generateVocal()` と `generateWithVocal()` は、コンポジションスタイルに関係なくボーカルを書きます。
 :::
 
 ## プロダクションブループリント

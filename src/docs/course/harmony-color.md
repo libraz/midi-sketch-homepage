@@ -82,7 +82,7 @@ A **tritone substitution** replaces a dominant 7th chord (`V7`) with the dominan
 
 <ScoreExample example="tritoneSub" locale="en" />
 
-In MidiSketch, `chordExtTritoneSub` performs this swap on any dominant-function chord: on the key's own `V7` it produces `♭II7`, and on an inserted secondary dominant it produces that chord's own tritone substitute. It fires at probability `chordExtTritoneSubProb` (0.5 when enabled).
+In MidiSketch, `chordExtTritoneSub` performs this swap only on the key's own dominant: a `V` chord becomes `♭II7`. Inserted secondary dominants are left as they are, so a `V/V` does not get a substitute of its own. Each `V` is substituted with probability `chordExtTritoneSubProb` (0.5 when enabled).
 
 ## Putting it together: color is a probability dial
 

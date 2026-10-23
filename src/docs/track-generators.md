@@ -101,17 +101,15 @@ This constrained approach produces more natural, singable melodies.
 
 ### Phrase Caching
 
-Phrases are cached using a composite key (V2 cache) to ensure musical coherence:
+The first occurrence of each section type is cached and replayed by every later section of that type, the way a pop song restates its tune with new lyrics. The cache is keyed by section type alone:
 
 ```cpp
-struct PhraseCacheKey {
-    SectionType section_type;  // A, Chorus, etc.
-    uint8_t bars;              // Section length in bars
-    int8_t chord_degree;       // Starting chord degree
-};
+std::unordered_map<SectionType, CachedPhrase> phrase_cache;  // A, B, Chorus, ...
 ```
 
-The first reuse of a cached phrase is always exact, so the phrase is established before it is varied. After that, the chance of an exact repeat falls with each chorus occurrence: 80% on the first occurrence, 60% on the second, 30% from the third onward, so the final chorus is the freshest. Exact repetition is also forced to stop after two consecutive identical statements.
+The starting chord is deliberately not part of the key. The progression restarts at every section, and the chords a replay meets are answered by its own collision pass. A later section of a different length replays the bars it shares with the cached one: a shorter section ends on the cached head, a longer one continues with freshly written bars. What is cached is the resolved melody, before the approach into the next section and the hook emphasis, which a restatement takes from its own context.
+
+Each restatement is exact with a probability that falls as the phrase is reused: 80% on the first restatement, 60% on the second and 30% from the third onward, so later sections are fresher. Exact repetition is also forced to stop after two consecutive identical statements.
 
 ::: info Phrase Variation
 When a reuse is not exact, one of six variations is applied. All of them preserve the melodic identity of the phrase — none of them transpose, invert or re-cut it:
@@ -122,6 +120,8 @@ When a reuse is not exact, one of six variations is applied. All of them preserv
 - **DynamicAccent**: Raise the final note's velocity
 - **LateOnset**: Start the phrase a sixteenth note late
 - **EchoRepeat**: Echo the final note, shorter and quieter
+
+A phrase that opens on its hook (a chorus or drop) never takes LateOnset, so the hook keeps its downbeat entry.
 :::
 
 ### Range Constraints
@@ -162,18 +162,18 @@ Configuration varies by mood:
 
 ### VocalStyleProfile
 
-Each vocal style has a unified profile that controls both **generation bias** and **evaluation weights**. Eight profiles are shared across the fourteen vocal styles (Idol/BrightKira/CuteAffected → Idol; Vocaloid/UltraVocaloid/CoolSynth → Vocaloid; Rock/PowerfulShout → Rock; Auto/Standard → Standard):
+Each vocal style has a unified profile with two parts: four **interval-mix weights** that feed the bias score, and the **evaluation weights** of the style score. Eight profiles are shared across the fourteen vocal styles (Idol/BrightKira/CuteAffected → Idol; Vocaloid/UltraVocaloid/CoolSynth → Vocaloid; Rock/PowerfulShout → Rock; Auto/Standard → Standard):
 
-| Profile | Plateau Bias | High Register | Singability | Surprise |
-|---------|-------------|---------------|-------------|----------|
-| **Standard** | 1.00 | 0.80 | 0.15 | 0.15 |
-| **Idol** | 1.25 | 0.85 | 0.18 | 0.05 |
-| **Rock** | 0.80 | 1.20 | 0.15 | 0.20 |
-| **Ballad** | 1.00 | 0.50 | 0.30 | 0.05 |
-| **Anime** | 1.30 | 1.30 | 0.10 | 0.15 |
-| **Vocaloid** | 0.90 | 1.20 | 0.10 | 0.20 |
-| **CityPop** | 0.90 | 0.90 | 0.15 | 0.15 |
-| **KPop** | 1.40 | 1.10 | 0.12 | 0.18 |
+| Profile | Same pitch | Stepwise | Skip | Leap | Singability | Surprise |
+|---------|-----------|----------|------|------|-------------|----------|
+| **Standard** | 1.00 | 1.00 | 1.00 | 0.50 | 0.15 | 0.15 |
+| **Idol** | 1.25 | 1.45 | 1.00 | 0.45 | 0.18 | 0.05 |
+| **Rock** | 0.80 | 0.80 | 1.00 | 0.80 | 0.15 | 0.20 |
+| **Ballad** | 1.00 | 1.60 | 1.00 | 0.20 | 0.30 | 0.05 |
+| **Anime** | 1.30 | 1.00 | 1.20 | 0.60 | 0.10 | 0.15 |
+| **Vocaloid** | 0.90 | 0.70 | 1.00 | 1.00 | 0.10 | 0.20 |
+| **CityPop** | 0.90 | 1.20 | 1.10 | 0.40 | 0.15 | 0.15 |
+| **KPop** | 1.40 | 0.90 | 1.10 | 0.60 | 0.12 | 0.18 |
 
 ### UltraVocaloid Mode
 
@@ -183,10 +183,11 @@ Enhanced Vocaloid-style generation with:
 - **Per-section rhythm lock**: Each section maintains consistent rhythmic identity
 
 ::: details Profile Parameters
-- **Plateau Bias**: Preference for staying on the same pitch (higher = more repetitive)
-- **High Register**: Preference for high notes (higher = brighter)
+- **Same pitch**, **Stepwise**, **Skip** (3rds), **Leap** (5ths and wider): multipliers on how common each interval kind is in a candidate (1.0 = neutral). A candidate's share of each kind, weighted and normalised, becomes its bias score. A higher same-pitch weight favours repetitive lines
 - **Singability**: Weight for human-singable melodies (higher = easier to sing)
 - **Surprise**: Weight for unexpected melodic turns (higher = more dynamic)
+
+The profile does not bias register: where a melody sits in the vocal range comes from the section's range shift and tessitura, not from the style.
 :::
 
 ### Melody Evaluation System
@@ -361,12 +362,15 @@ So a Traditional blueprint runs MelodicHook in the intro, MotifCounter in the ve
 
 ### Chorus Behavior
 
-In chorus sections, Aux track adapts its behavior:
+A chorus runs the Blueprint's `chorus_function`, and the register, velocity and density follow the kind of function. Ratios are multiplied by the Blueprint's `velocity_scale` and `density_scale`:
 
-- **Reduced density**: Aux takes a backseat to let vocal shine
-- **Lower register**: Moves to lower range to avoid vocal collision
-- **Simplified patterns**: Uses more sustained notes, less busy patterns
-- **Phrase endings**: Respects phrase boundaries with proper resolution
+| Chorus function | Range offset | Range width | Velocity ratio | Density ratio |
+|-----------------|--------------|-------------|----------------|---------------|
+| EmotionalPad, SustainPad | -12 | 12 | 0.60 | 0.80 |
+| Rhythmic functions (PulseLoop, GrooveAccent, MelodicHook and the rest) | -6 | 12 | 0.75 | 0.95 |
+| Unison | 0 | 12 | 0.75 | 1.00 |
+
+Unison only runs when the lead's rhythm is stable enough to double (rhythm stability of 0.5 or more); otherwise the chorus falls back to MelodicHook with the rhythmic settings. An UltraVocaloid chorus at full vocal density always uses GrooveAccent (offset -6, velocity 0.75, density 0.80).
 
 ---
 
@@ -380,7 +384,9 @@ Generates harmonic voicings with voice leading optimization.
 
 <DocFigure name="tracks-chord-voicings" />
 
-Three voicing types are available. **Close** packs the chord tones into a single octave. **Open** is a Drop 2 voicing: the second voice from the top drops an octave, so a root-3rd-5th-7th stack becomes 5th-root-3rd-7th; Drop 3 and Spread are its other variants, selected per section and mood. **Rootless** omits the root the bass is already holding and adds a 9th when only two voices would otherwise remain.
+Three voicing types are available. **Close** packs the chord tones into a single octave. **Open** is a Drop 2 voicing: the second voice from the top drops an octave, so a root-3rd-5th-7th stack becomes 5th-root-3rd-7th; Drop 3 and Spread are its other variants, selected per section and mood. **Rootless** is a voicing candidate that leaves out the root the bass is already holding. It is chosen with the probabilities and mood conditions given below.
+
+The voicing type is chosen per bar from the section: intro, interlude, outro, chant and A are always Close, MixBreak is always Open, and B, chorus and bridge draw between Close and Open (B 40% Open, chorus 60% Open, bridge 50% Open). Ballad moods fix B and the bridge to Close and the chorus to Open. A section marked `PeakLevel::Medium` or `PeakLevel::Max` promotes a Close pick to Open with 70% or 90% probability.
 
 ### Voice Leading Algorithm
 
@@ -395,7 +401,7 @@ Three voicing types are available. **Close** packs the chord tones into a single
 The chord track is generated after the bass, so it can read what the bass is actually playing. Two mechanisms use that:
 
 - `buildBassPitchMask` collects the pitch classes the bass sustains across beats 1 and 3 of the bar, and candidate voicings that would clash with them by a minor 2nd or a tritone are rejected.
-- `BassAnalysis::analyzeBar` reports whether the bass states the root on beat 1. When it does, a rootless voicing becomes the preferred choice, so the root is not doubled.
+- `BassAnalysis::analyzeBar` reports whether the bass states the root on beat 1. Only when it does, and only in CityPop, Nostalgic, Dramatic and ModernPop moods, may a rootless voicing replace the Open/Close draw: with probability 20% in a B section, 30% in a chorus and 25% in a bridge. Elsewhere the voicing keeps its root.
 
 ### Register Constraints
 
@@ -424,8 +430,7 @@ Guitar generation is influenced by Blueprint constraints:
 
 | Constraint | Description |
 |------------|-------------|
-| `guitar_skill` | Skill level (Beginner/Intermediate/Advanced/Virtuoso) affecting pattern complexity and voicing sophistication |
-| `guitar_below_vocal` | When enabled, keeps guitar voicings below the vocal register (vocal_low - 2 semitones) to avoid masking the melody |
+| `guitar_below_vocal` | When enabled, keeps guitar voicings at least two semitones below the lowest vocal note of each section to avoid masking the melody; a section with no vocal, or a vocal sitting below the guitar floor, is left unconstrained |
 | `guitar_style_hint` | Per-section style hint (0-7) defined in the Blueprint's SectionSlot. 0 = auto-select based on mood and energy |
 
 ### Generation
@@ -475,7 +480,7 @@ A chromatic half step below the target is reserved for walking lines, and only w
 
 ## Drums Track
 
-**Source:** `src/track/generators/drums.cpp`
+**Source:** `src/track/drums.cpp`, `src/track/drums/`
 
 Generates drum patterns with fills and dynamics.
 
@@ -504,10 +509,7 @@ constexpr uint8_t TOM_LOW = 45;
 
 A fill does not have to cover every beat of its window; when a fill type has nothing to say on a beat, the section's ordinary pattern is kept there rather than leaving silence.
 
-Fills are inserted at:
-- Section transitions
-- Every 4 or 8 bars
-- Before chorus
+A fill is placed only in the last bar of a section, and only when the next section asks for one (`fill_before`) or is a full-weight chorus; a quiet chorus (ochisabi) is not led into by a fill. The fill starts on beat 4 in low-energy sections, beat 3 in medium ones and beat 1 (the whole bar) in high-energy ones. The final section never fills, and the bar that breaks into the last chorus keeps its groove and drops its final beat instead.
 
 For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. If that cut removes an entry crash, post-processing restores the crash at the next section boundary so the chorus still has an arrival marker.
 
@@ -531,13 +533,13 @@ Per-section `drum_role` in the Blueprint's SectionSlot controls drum behavior:
 Velocity-reduced snare articulations for groove:
 
 ```cpp
-// Ghost velocity is a multiplier on the section velocity (0.25-0.65),
-// not an absolute value; ghosts land in roughly the 25-35 band.
+// Ghost velocity is a multiplier on the beat velocity (0.25-0.65 by section and
+// position, then a random 0.85-1.15), clamped to 20-100, not an absolute value.
 ```
 
 Density is a table lookup by section and mood category, giving 0%, 15%, 30% or 45%, then adjusted for tempo and backing density:
-- **Energetic moods** (EnergeticDance, IdolPop, Anthem, AnimeHighEnergy): up to 45% ghost probability in the chorus
-- **Calm moods** (Ballad, Sentimental, Chill): none in verses, light elsewhere
+- **Energetic moods** (EnergeticDance, IdolPop, Anthem, AnimeHighEnergy, LatinPop, Trap): up to 45% ghost probability in the chorus
+- **Calm moods** (Ballad, Sentimental, Chill, Lofi): none in verses, light elsewhere
 
 ### Swing Timing
 
@@ -557,10 +559,12 @@ Swing is not a separate grid. Off-beat notes are pushed toward the triplet posit
 
 ### Humanization
 
-Subtle timing and velocity variations make patterns feel less mechanical:
-- **Timing jitter**: ±5-15 ticks from grid
-- **Velocity variation**: ±5-10 from base velocity
+Drum humanization is small and applies to the kick only:
+- **Kick jitter**: up to ±2 ticks (2% of a sixteenth note), scaled by `humanize_timing`; the offset is truncated to whole ticks, so low settings give none
+- **No velocity humanization pass**: drum dynamics come from the pattern, the section and the ghost-note and accent rules (see [Generation Pipeline](/docs/generation-pipeline#humanization))
 - **Hi-hat accent patterns**: Natural emphasis on downbeats
+
+Groove offsets are a separate mechanism: the section's time feel shifts drum onsets (laid back about +10 ms, pushed about −7 ms, scaled by tempo), and the drive-feel micro-timing pass places drums and bass in the pocket.
 
 ### Vocal Synchronization
 

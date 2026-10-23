@@ -126,6 +126,11 @@ BGM専用生成後にボーカルを追加するAPIは存在しません。ボ�
 | `formExplicit=true` | `formId` | formIdが指定通りに使用される。falseの場合はBlueprint/ランダム化により上書きされる可能性あり |
 | `chordExtProbExplicit=true` | コード拡張確率 | Moodに基づくコード拡張確率の自動調整が抑制される |
 | `drumsEnabledExplicit=true` | `drumsEnabled` | 明示的なドラム制御。drums_required Blueprintでドラムを無効化するために必要 |
+| `hookIntensityExplicit=true` | `hookIntensity` | アディクティブモードや RhythmLock + AnimeHighEnergy のリード設定が Maximum に上げる場合も、指定値を保ちます |
+| `vocalGrooveExplicit=true` | `vocalGroove` | RhythmLock + AnimeHighEnergy のリード設定が Driving16th に切り替える場合も、指定値を保ちます |
+| `enableSyncopationExplicit=true` | `enableSyncopation` | 明示した `false` は、RhythmLock + AnimeHighEnergy のリード設定でもシンコペーション 0.0 のままです。フラグがなければ、このリード設定はシンコペーションを最低 0.30 まで上げます |
+
+ビルダーの `setHookIntensity`、`setVocalGroove`、`setSyncopation` は対応するフラグを立てるので、これらで設定した値はこうした連鎖で上書きされません。
 
 ### 1.9 Blueprint ID 9 (BehavioralLoop)
 
@@ -181,7 +186,8 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 
 | オプション | 特殊値 | 動作 |
 |------------|--------|------|
-| `bpm` | `0` | スタイルプリセットのデフォルトBPMを使用 |
+| `bpm` | `0` | ID で選んだ Blueprint はそのテンポで鳴ります。それ以外は明示したムードのテンポ、なければスタイルプリセットのデフォルトBPMです |
+| `blueprintId` | `255`（デフォルト） | ムードに合い、曲のテンポを収める Blueprint から重みに従って抽選します |
 | `seed` | `0` | ランダムシードを自動生成 |
 | `targetDurationSeconds` | `0` | `formId`で指定した構造パターンを使用 |
 | `vocalStyle` | `0` (Auto) | スタイルに応じたランダム選択 |
@@ -206,9 +212,11 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 | 値 | 名前 | 効果 |
 |----|------|------|
 | `0` | GradualBuild | 徐々に盛り上がる（デフォルト） |
-| `1` | FrontLoaded | 冒頭からエネルギー高、後半は落ち着く |
-| `2` | WavePattern | 波状のエネルギー推移 |
+| `1` | FrontLoaded | 冒頭から高く、最後まで保つ。下がるのはブリッジと間奏だけ |
+| `2` | WavePattern | サビが頂点、Aメロとブリッジが谷、Bメロがその中間 |
 | `3` | SteadyState | 一定のエネルギーを維持 |
+
+FrontLoaded と WavePattern では、落ちサビとクライマックスのセクションはそれぞれの強弱を保ちます。
 
 ::: info ゼロ値の活用
 ゼロは「自動」または「デフォルトを使用」を意味することが多いです。正確な値を指定せずにスタイルに適したデフォルトを使いたい場合に便利です。
@@ -228,13 +236,13 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 
 | パラメータ | 範囲 | デフォルト | 説明 |
 |-----------|------|----------|------|
-| `melodyMaxLeap` | 0=preset, 1-12 | 0 | 最大音程跳躍（半音数） |
+| `melodyMaxLeap` | 0=Blueprint の跳躍幅, 1-12 | 0 | Blueprint の跳躍幅の上限を抑える（半音数） |
 | `melodySyncopationProb` | 0-100, 0xFF=preset | 0xFF | シンコペーション確率（%） |
 | `melodyPhraseLength` | 0=preset, 1-8 | 0 | フレーズ長（小節数） |
 | `melodyLongNoteRatio` | 0-100, 0xFF=preset | 0xFF | ロングノート比率（%） |
 | `melodyChorusRegisterShift` | -12〜+12, -128=preset | -128 | コーラスのレジスタシフト（半音） |
 | `melodyHookRepetition` | 0=preset, 1=off, 2=on | 0 | フックの反復パターン |
-| `melodyUseLeadingTone` | 0=preset, 1=off, 2=on | 0 | セクション境界での導音挿入 |
+| `melodyUseLeadingTone` | 0 または 2=on, 1=off | 0 | セクション遷移が求める境界にピックアップ音を入れる |
 
 ### 4.2 三値パラメータ
 
@@ -245,6 +253,8 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 | `0` | プリセット/VocalStylePresetの値を使用（デフォルト） |
 | `1` | 明示的にOFF |
 | `2` | 明示的にON |
+
+ピックアップ音をオフにするプリセットはないため、`melodyUseLeadingTone` では `0` と `2` は同じ動作です。セクション遷移が求める境界（B からサビ、Bridge からサビ）にピックアップ音を入れ、`2` でも遷移が求めない境界には足しません。`1` はそのピックアップ音を入れません。
 
 ### 4.3 プリセット制御のみのパラメータ（オーバーライドなし）
 
@@ -323,7 +333,7 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 | `mixPattern` | 0-2 | `INVALID_MIX_PATTERN` |
 | `motifRepeatScope` | 0-1 | `INVALID_MOTIF_REPEAT_SCOPE` |
 | `arrangementGrowth` | 0-1 | `INVALID_ARRANGEMENT_GROWTH` |
-| `blueprintId` | 0-9, 255 | (255=自動ランダム) |
+| `blueprintId` | 0-9, 255 | `INVALID_BLUEPRINT`（255 はデフォルトで、スタイルのテンポを収めるものを抽選） |
 
 ### 6.2 追加でバリデーションされる範囲
 
@@ -341,7 +351,7 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 | `arpeggioOctaveRange` | 1-3 | `INVALID_ARPEGGIO_RANGE` |
 | `arpeggioGate` | 0.0-1.0、または -1 でスタイル既定 | `INVALID_ARPEGGIO_RANGE` |
 | `arpeggioBaseVelocity` | 0-127 | `INVALID_ARPEGGIO_RANGE` |
-| `melodyMaxLeap` | 0=preset, 1-12 | `INVALID_MELODY_OVERRIDE` |
+| `melodyMaxLeap` | 0=Blueprint の跳躍幅, 1-12 | `INVALID_MELODY_OVERRIDE` |
 | `melodySyncopationProb` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
 | `melodyPhraseLength` | 0=preset, 1-8 | `INVALID_MELODY_OVERRIDE` |
 | `melodyLongNoteRatio` | 0-100, 0xFF=preset | `INVALID_MELODY_OVERRIDE` |
@@ -385,7 +395,7 @@ IF callSetting != 2（Disabled）AND targetDurationSeconds > 0
 THEN targetDurationSeconds >= getMinimumSecondsForCall(introChant, mixPattern, bpm)
 ```
 
-このチェックは Auto を解決しません — `callSetting=0` は、実際にはコールが生成されないボーカルスタイルでも最小秒数の制約を発動させます。
+ここでの `bpm` は生成時に決まるテンポです。`bpm` を明示していればその値、なければ ID で選んだ Blueprint のテンポ、なければ明示したムードのテンポ、それ以外はスタイルプリセットのテンポです。このチェックは Auto を解決しません — `callSetting=0` は、実際にはコールが生成されないボーカルスタイルでも最小秒数の制約を発動させます。
 
 最小時間の計算式:
 ```
@@ -625,7 +635,7 @@ min_seconds = min_bars * 240 / bpm
   compositionStyle: 1,  // BackgroundMotif
   compositionStyleExplicit: true
 }
-// 80 BPM、強スウィング、ベロシティ上限90、ギタートラック有効
+// 80 BPM、強スウィング、ギタートラック有効
 ```
 
 ---
@@ -640,7 +650,6 @@ min_seconds = min_bars * 240 / bpm
 
 | パラメータ | 説明 |
 |-----------|------|
-| `max_leap_interval` | 最大跳躍幅（半音数） |
 | `syncopation_prob` | シンコペーション確率 |
 | `verse/chorus_density_modifier` | セクション別密度係数 |
 | `hook_repetition` | フック反復の有無 |
@@ -670,9 +679,11 @@ min_seconds = min_bars * 240 / bpm
 
 | melodicComplexity | 自動設定 |
 |-------------------|----------|
-| `Simple (0)` | `note_density *= 0.7`, `max_leap_interval ≤ 5`, `hook_repetition=true`, `tension_usage *= 0.5`, `sixteenth_note_ratio *= 0.5`, `syncopation_prob *= 0.5` |
+| `Simple (0)` | `note_density *= 0.7`, `hook_repetition=true`, `tension_usage *= 0.5`, `syncopation_prob *= 0.5`、候補の採点で跳躍より順次進行を優先 |
 | `Standard (1)` | 変更なし（デフォルト） |
-| `Complex (2)` | `note_density *= 1.3`, `max_leap_interval *= 1.5` (max 12), `tension_usage *= 1.5`, `sixteenth_note_ratio *= 1.5` (max 0.5), `syncopation_prob *= 1.5` (max 0.5) |
+| `Complex (2)` | `note_density *= 1.3`, `tension_usage *= 1.5`, `syncopation_prob *= 1.5` (max 0.5)、候補の採点で跳躍と3度進行を優先 |
+
+ボーカルスタイルも複雑さも、跳躍の幅の上限は変えません。跳躍幅の上限は Blueprint が決め、それを狭めるのは `melodyMaxLeap` だけです。
 
 ### 12.3 VocalAttitude → ピッチ選択
 
@@ -686,8 +697,8 @@ min_seconds = min_bars * 240 / bpm
 
 | compositionStyle | 暗黙的に発生する動作 |
 |------------------|---------------------|
-| `BackgroundMotif (1)` | **Vocal無効化**（生成されない）、**Aux有効**（モチーフをサポート）、Motif生成を有効化、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
-| `SynthDriven (2)` | **Vocal/Aux完全無効化**、Motif生成を有効化、**arpeggioは手動で`arpeggioEnabled=true`が必要**、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
+| `BackgroundMotif (1)` | 曲全体の生成では**Vocal無効化**（`generateVocal`/`generateWithVocal` は求められたボーカルを書きます）、**Aux有効**（モチーフをサポート）、Motif生成を有効化、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
+| `SynthDriven (2)` | 曲全体の生成では**Vocal/Auxを無効化**（`generateVocal`/`generateWithVocal` は求められたボーカルを書きます）、Motif生成を有効化、**arpeggioは手動で`arpeggioEnabled=true`が必要**、**modulation有効**。セクションマスクとレイヤースケジュールで生成ノートを決定 |
 
 ### 12.5 自動Call有効化
 
@@ -747,8 +758,8 @@ min_seconds = min_bars * 240 / bpm
 
 ```
 1. StylePreset          → 基本パラメータ（melody_params、mood、bpmデフォルト）
-2. VocalStylePreset     → max_leap、syncopation、densityのプリセット調整
-3. MelodicComplexity    → 密度倍率、跳躍倍率、hook_repetition
+2. VocalStylePreset     → syncopation、densityのプリセット調整
+3. MelodicComplexity    → 密度倍率、hook_repetition、跳躍頻度の採点
 4. SongConfig Overrides → melody/motifオーバーライドパラメータ（ユーザー指定値が最優先）
 5. Master Switch        → enableSyncopation=falseでsyncopation_prob=0.0を強制
 ```
@@ -862,7 +873,7 @@ SongConfig
 |----------|-----------|:----:|------|
 | **基本** | `stylePresetId` | はい | スタイル決定 |
 | | `key` | はい | キー（内部はCメジャー、出力時に移調） |
-| | `bpm` | はい | テンポ（0=スタイルデフォルト） |
+| | `bpm` | はい | テンポ（0=指定した Blueprint のテンポ、なければ明示したムードのテンポ、それ以外はスタイルのテンポ） |
 | | `seed` | はい | ランダムシード |
 | | `chordProgressionId` | はい | コード進行（メロディ生成の参照） |
 | | `formId` | はい | 構造パターン |
@@ -966,9 +977,11 @@ Production Blueprintは、スタイル/ムード設定とは独立して、音�
 | 7 | IdolCoolPop | RhythmSync | Locked | **必須** | 5% |
 | 8 | IdolEmo | MelodyDriven | Locked | - | 4% |
 | 9 | BehavioralLoop | RhythmSync | LockedPitch | - | 0%* |
-| 255 | (Random) | - | - | - | - |
+| 255 | (抽選、デフォルト) | - | - | - | - |
 
-\* BehavioralLoopはウェイト0%のため、ランダム選択では選ばれません。明示的に選択する必要があります。選択すると`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch`が強制されます。
+`255` がデフォルトです。ムードに合い、テンポ範囲が曲のテンポを収める Blueprint から、重みに従って抽選します。
+
+\* BehavioralLoopはウェイト0%のため、抽選では選ばれません。明示的に選択する必要があります。選択すると`addictive_mode=true`、`HookIntensity=Maximum`、`RiffPolicy=LockedPitch`が強制されます。
 
 ### 17.2 パラダイムの種類
 

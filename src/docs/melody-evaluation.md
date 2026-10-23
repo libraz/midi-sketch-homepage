@@ -148,24 +148,23 @@ Measures hook memorability from four factors: repetition of 2- and 3-note interv
 
 Different vocal styles use different evaluation weights:
 
-| Style | Singability | Surprise | Plateau Bias | High Register |
-|-------|-------------|----------|--------------|---------------|
-| **Standard** | 0.15 | 0.15 | 1.0 | 0.8 |
-| **Idol** | 0.18 | 0.05 | 1.25 | 0.85 |
-| **Rock** | 0.15 | 0.20 | 0.8 | 1.2 |
-| **Ballad** | 0.30 | 0.05 | 1.0 | 0.5 |
-| **Anime** | 0.10 | 0.15 | 1.3 | 1.3 |
-| **Vocaloid** | 0.10 | 0.20 | 0.9 | 1.2 |
-| **CityPop** | 0.15 | 0.15 | 0.9 | 0.9 |
-| **KPop** | 0.12 | 0.18 | 1.4 | 1.1 |
+| Style | Singability | Surprise | Plateau Bias |
+|-------|-------------|----------|--------------|
+| **Standard** | 0.15 | 0.15 | 1.0 |
+| **Idol** | 0.18 | 0.05 | 1.25 |
+| **Rock** | 0.15 | 0.20 | 0.8 |
+| **Ballad** | 0.30 | 0.05 | 1.0 |
+| **Anime** | 0.10 | 0.15 | 1.3 |
+| **Vocaloid** | 0.10 | 0.20 | 0.9 |
+| **CityPop** | 0.15 | 0.15 | 0.9 |
+| **KPop** | 0.12 | 0.18 | 1.4 |
 
-Singability and Surprise are scoring weights that sum to 1.0 across all seven dimensions. Plateau Bias and High Register are generation biases applied while candidates are built, so they are multipliers around 1.0 rather than weights.
+Singability and Surprise are scoring weights that sum to 1.0 across all seven dimensions. Plateau Bias is a multiplier around 1.0 in the interval-mix score: when the winning candidate is picked, each candidate's share of same-pitch, stepwise, skip and leap intervals is weighted by the style, and that score carries 20% of the candidate's total. No style weight changes the register a melody is written in.
 
 ::: details Parameter Definitions
 - **Singability**: Weight for interval-based scoring
 - **Surprise**: Weight for large leap detection
-- **Plateau Bias**: Preference for same-pitch continuation
-- **High Register**: Preference for higher pitches
+- **Plateau Bias**: Weight for same-pitch continuation in the interval-mix score
 :::
 
 ### Style-Specific Cohesion Thresholds
