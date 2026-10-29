@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "packageManager": "yarn@4.18.0",
+  "packageManager": "yarn@4.18.1",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
@@ -13,15 +13,15 @@
     "copy:wasm": "./scripts/copy-wasm.sh"
   },
   "devDependencies": {
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.6.6",
     "typescript": "^6.0.3",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.42",
-    "vue-tsc": "^3.3.11"
+    "vue": "^3.5.44",
+    "vue-tsc": "^3.3.13"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
-    "smplr": "^1.0.0",
+    "smplr": "^1.1.0",
     "tone": "15.1.22",
     "vexflow": "^5.0.0"
   }
