@@ -4,8 +4,7 @@
 // When targeting node and ES6 we use `await import ..` in the generated code
 // so the outer function needs to be marked as async.
 async function Module(moduleArg = {}) {
-  var moduleRtn;
-
+  var Module = moduleArg;
 // include: shell.js
 // include: minimum_runtime_check.js
 // end include: minimum_runtime_check.js
@@ -22,7 +21,6 @@ async function Module(moduleArg = {}) {
 // after the generated code, you will need to define   var Module = {};
 // before the code. Then that object will be used in the code, and you
 // can continue to use Module afterwards as well.
-var Module = moduleArg;
 
 // Determine the runtime environment we are in. You can customize this by
 // setting the ENVIRONMENT setting at compile time (see settings.js).
@@ -48,7 +46,7 @@ if (ENVIRONMENT_IS_NODE) {
 // refer to Module (if they choose; they can also define Module)
 
 
-var arguments_ = [];
+var programArgs = [];
 var thisProgram = './this.program';
 var quit_ = (status, toThrow) => {
   throw toThrow;
@@ -97,7 +95,7 @@ readAsync = async (filename, binary = true) => {
     thisProgram = process.argv[1].replace(/\\/g, '/');
   }
 
-  arguments_ = process.argv.slice(2);
+  programArgs = process.argv.slice(2);
 
   quit_ = (status, toThrow) => {
     process.exitCode = status;
@@ -216,47 +214,32 @@ function assert(condition, text) {
 var isFileURI = (filename) => filename.startsWith('file://');
 
 // include: runtime_common.js
-// include: runtime_stack_check.js
-// end include: runtime_stack_check.js
 // include: runtime_exceptions.js
+// Base Emscripten EH error class
+class EmscriptenEH {}
+
+class EmscriptenSjLj extends EmscriptenEH {}
+
 // end include: runtime_exceptions.js
 // include: runtime_debug.js
 // end include: runtime_debug.js
-var readyPromiseResolve, readyPromiseReject;
-
 // Memory management
-var
-/** @type {!Int8Array} */
-  HEAP8,
-/** @type {!Uint8Array} */
-  HEAPU8,
-/** @type {!Int16Array} */
-  HEAP16,
-/** @type {!Uint16Array} */
-  HEAPU16,
-/** @type {!Int32Array} */
-  HEAP32,
-/** @type {!Uint32Array} */
-  HEAPU32,
-/** @type {!Float32Array} */
-  HEAPF32,
-/** @type {!Float64Array} */
-  HEAPF64;
-
-// BigInt64Array type is not correctly defined in closure
-var
-/** not-@type {!BigInt64Array} */
-  HEAP64,
-/* BigUint64Array type is not correctly defined in closure
-/** not-@type {!BigUint64Array} */
-  HEAPU64;
 
 var runtimeInitialized = false;
 
 
 
+// When ALLOW_MEMORY_GROWTH is enabled, the conversion from Wasm
+// memory to ArrayBuffer requires some additional logic.
+function getMemoryBuffer() {
+  return wasmMemory.buffer;
+}
+
 function updateMemoryViews() {
-  var b = wasmMemory.buffer;
+  // If we already have a heap that is resizeable/growable buffer we don't
+  // need to do anything in updateMemoryViews.
+  if (HEAP8?.buffer?.resizable) return;
+  var b = getMemoryBuffer();
   HEAP8 = new Int8Array(b);
   HEAP16 = new Int16Array(b);
   Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
@@ -273,11 +256,10 @@ function updateMemoryViews() {
 // end include: memoryprofiler.js
 // end include: runtime_common.js
 function preRun() {
-  if (Module['preRun']) {
-    if (typeof Module['preRun'] == 'function') Module['preRun'] = [Module['preRun']];
-    while (Module['preRun'].length) {
-      addOnPreRun(Module['preRun'].shift());
-    }
+  var preRun = Module['preRun'];
+  if (preRun) {
+    if (typeof preRun == 'function') preRun = [preRun];
+    onPreRuns.push(...preRun);
   }
   // Begin ATPRERUNS hooks
   callRuntimeCallbacks(onPreRuns);
@@ -292,16 +274,15 @@ function initRuntime() {
   wasmExports['__wasm_call_ctors']();
 
   // No ATPOSTCTORS hooks
+
 }
 
 function postRun() {
-   // PThreads reuse the runtime from the main thread.
 
-  if (Module['postRun']) {
-    if (typeof Module['postRun'] == 'function') Module['postRun'] = [Module['postRun']];
-    while (Module['postRun'].length) {
-      addOnPostRun(Module['postRun'].shift());
-    }
+  var postRun = Module['postRun'];
+  if (postRun) {
+    if (typeof postRun == 'function') postRun = [postRun];
+    onPostRuns.push(...postRun);
   }
 
   // Begin ATPOSTRUNS hooks
@@ -309,11 +290,13 @@ function postRun() {
   // End ATPOSTRUNS hooks
 }
 
-/** @param {string|number=} what */
+/**
+ * @param {string|number=} what
+ */
 function abort(what) {
   Module['onAbort']?.(what);
 
-  what = 'Aborted(' + what + ')';
+  what = `Aborted(${what})`;
   // TODO(sbc): Should we remove printing and leave it up to whoever
   // catches the exception?
   err(what);
@@ -338,7 +321,6 @@ function abort(what) {
   /** @suppress {checkTypes} */
   var e = new WebAssembly.RuntimeError(what);
 
-  readyPromiseReject?.(e);
   // Throw the error whether or not MODULARIZE is set because abort is used
   // in code paths apart from instantiation where an exception is expected
   // to be thrown when abort is called.
@@ -359,9 +341,6 @@ function findWasmBinary() {
 }
 
 function getBinarySync(file) {
-  if (file == wasmBinaryFile && wasmBinary) {
-    return new Uint8Array(wasmBinary);
-  }
   if (readBinary) {
     return readBinary(file);
   }
@@ -440,8 +419,7 @@ async function createWasm() {
   // Load the wasm module and create an instance of using native support in the JS engine.
   // handle a generated wasm instance, receiving its exports and
   // performing other necessary setup
-  /** @param {WebAssembly.Module=} module*/
-  function receiveInstance(instance, module) {
+  function receiveInstance(instance) {
     wasmExports = instance.exports;
 
     assignWasmExports(wasmExports);
@@ -468,11 +446,10 @@ async function createWasm() {
   // performing.
   // Also pthreads and wasm workers initialize the wasm instance through this
   // path.
-  if (Module['instantiateWasm']) {
-    return new Promise((resolve, reject) => {
-        Module['instantiateWasm'](info, (inst, mod) => {
-          resolve(receiveInstance(inst, mod));
-        });
+  var instantiateWasm = Module['instantiateWasm'];
+  if (instantiateWasm) {
+    return new Promise((resolve) => {
+        instantiateWasm(info, (inst) => resolve(receiveInstance(inst)));
     });
   }
 
@@ -494,6 +471,36 @@ async function createWasm() {
         this.status = status;
       }
     }
+
+  /** @type {!Int16Array} */
+  var HEAP16;
+
+  /** @type {!Int32Array} */
+  var HEAP32;
+
+  /** not-@type {!BigInt64Array} */
+  var HEAP64;
+
+  /** @type {!Int8Array} */
+  var HEAP8;
+
+  /** @type {!Float32Array} */
+  var HEAPF32;
+
+  /** @type {!Float64Array} */
+  var HEAPF64;
+
+  /** @type {!Uint16Array} */
+  var HEAPU16;
+
+  /** @type {!Uint32Array} */
+  var HEAPU32;
+
+  /** not-@type {!BigUint64Array} */
+  var HEAPU64;
+
+  /** @type {!Uint8Array} */
+  var HEAPU8;
 
   var callRuntimeCallbacks = (callbacks) => {
       while (callbacks.length > 0) {
@@ -614,16 +621,13 @@ async function createWasm() {
       }
     }
   
-  var exceptionLast = 0;
-  
   var uncaughtExceptionCount = 0;
   var ___cxa_throw = (ptr, type, destructor) => {
       var info = new ExceptionInfo(ptr);
       // Initialize ExceptionInfo content after it was allocated in __cxa_allocate_exception.
       info.init(type, destructor);
-      exceptionLast = ptr;
       uncaughtExceptionCount++;
-      throw exceptionLast;
+      abort()
     };
 
   var __abort_js = () =>
@@ -637,6 +641,12 @@ async function createWasm() {
 
   var timers = {
   };
+  
+  var clearTimers = () => {
+      for (var t of Object.values(timers)) {
+        clearTimeout(t.id);
+      }
+    };
   
   var handleException = (e) => {
       // Certain exception types we do not treat as errors since they are used for
@@ -915,11 +925,10 @@ async function createWasm() {
   var ENV = {
   };
   
-  var getExecutableName = () => thisProgram || './this.program';
+  var getExecutableName = () => thisProgram;
   var getEnvStrings = () => {
       if (!getEnvStrings.strings) {
         // Default values.
-        // Browser language detection #8751
         var lang = (globalThis.navigator?.language ?? 'C').replace('-', '_') + '.UTF-8';
         var env = {
           'USER': 'web_user',
@@ -1016,6 +1025,14 @@ async function createWasm() {
   
   var UTF8Decoder = globalThis.TextDecoder && new TextDecoder();
   
+  
+    /**
+   * heapOrArray is either a regular array, or a JavaScript typed array view.
+   * @param {number} idx
+   * @param {number=} maxBytesToRead
+   * @param {boolean=} ignoreNul
+   * @return {number}
+   */
   var findStringEnd = (heapOrArray, idx, maxBytesToRead, ignoreNul) => {
       var maxIdx = idx + maxBytesToRead;
       if (ignoreNul) return maxIdx;
@@ -1164,6 +1181,8 @@ async function createWasm() {
 
 
 
+
+
 // End JS library code
 
 // include: postlibrary.js
@@ -1176,16 +1195,18 @@ async function createWasm() {
   if (Module['noExitRuntime']) noExitRuntime = Module['noExitRuntime'];
 if (Module['print']) out = Module['print'];
 if (Module['printErr']) err = Module['printErr'];
-if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   // End ATMODULES hooks
 
-  if (Module['arguments']) arguments_ = Module['arguments'];
+  if (Module['arguments']) programArgs = Module['arguments'];
   if (Module['thisProgram']) thisProgram = Module['thisProgram'];
 
-  if (Module['preInit']) {
-    if (typeof Module['preInit'] == 'function') Module['preInit'] = [Module['preInit']];
-    while (Module['preInit'].length > 0) {
-      Module['preInit'].shift()();
+  var preInit = Module['preInit'];
+  if (preInit) {
+    if (typeof preInit == 'function') Module['preInit'] = preInit = [preInit];
+    // Written as a loop so that preInit functions that themselves add more
+    // preInit functions.  Is this actually needed?
+    while (preInit.length > 0) {
+      preInit.shift()();
     }
   }
 }
@@ -1381,69 +1402,46 @@ var wasmImports = {
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===
 
-function run() {
+async function run() {
 
   preRun();
 
-  function doRun() {
-    // run may have just been called through dependencies being fulfilled just in this very frame,
-    // or while the async setStatus time below was happening
-    Module['calledRun'] = true;
-
-    if (ABORT) return;
-
-    initRuntime();
-
-    readyPromiseResolve?.(Module);
-    Module['onRuntimeInitialized']?.();
-
-    postRun();
+  var setStatus = Module['setStatus'];
+  if (setStatus) {
+    setStatus('Running...');
+    // Yield to the event loop to allow the browser to paint "Running..."
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    // Then we want to clear the status text, but only after the rest of this function runs.
+    setTimeout(setStatus, 1, '');
   }
 
-  if (Module['setStatus']) {
-    Module['setStatus']('Running...');
-    setTimeout(() => {
-      setTimeout(() => Module['setStatus'](''), 1);
-      doRun();
-    }, 1);
-  } else
-  {
-    doRun();
-  }
+  if (ABORT) return;
+
+  initRuntime();
+
+  Module['onRuntimeInitialized']?.();
+
+  postRun();
 }
 
 var wasmExports;
 
 // In modularize mode the generated code is within a factory function so we
 // can use await here (since it's not top-level-await).
-wasmExports = await (createWasm());
-
-run();
+wasmExports = await createWasm();
+await run();
 
 // end include: postamble.js
 
 // include: postamble_modularize.js
 // In MODULARIZE mode we wrap the generated code in a factory function
 // and return either the Module itself, or a promise of the module.
-//
-// We assign to the `moduleRtn` global here and configure closure to see
-// this as an extern so it won't get minified.
-
-if (runtimeInitialized)  {
-  moduleRtn = Module;
-} else {
-  // Set up the promise that indicates the Module is initialized
-  moduleRtn = new Promise((resolve, reject) => {
-    readyPromiseResolve = resolve;
-    readyPromiseReject = reject;
-  });
-}
 
 // end include: postamble_modularize.js
 
 
 
-  return moduleRtn;
+  return Module;
 }
 
 // Export using a UMD style export, or ES6 exports if selected

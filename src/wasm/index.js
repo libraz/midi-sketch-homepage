@@ -248,7 +248,7 @@ function getBlueprints() {
 // js/src/config-fields.ts
 var CONFIG_FIELDS = [
   { js: "stylePresetId", cpp: "style_preset_id", default: 0, type: "number" },
-  { js: "blueprintId", cpp: "blueprint_id", default: 0, type: "number" },
+  { js: "blueprintId", cpp: "blueprint_id", default: 255, type: "number" },
   { js: "mood", cpp: "mood", default: 0, type: "number" },
   { js: "moodExplicit", cpp: "mood_explicit", default: false, type: "boolean" },
   { js: "key", cpp: "key", default: 0, type: "number" },
@@ -291,8 +291,21 @@ var CONFIG_FIELDS = [
   { js: "melodyTemplate", cpp: "melody_template", default: 0, type: "number" },
   { js: "melodicComplexity", cpp: "melodic_complexity", default: 1, type: "number" },
   { js: "hookIntensity", cpp: "hook_intensity", default: 2, type: "number" },
+  {
+    js: "hookIntensityExplicit",
+    cpp: "hook_intensity_explicit",
+    default: false,
+    type: "boolean"
+  },
   { js: "vocalGroove", cpp: "vocal_groove", default: 0, type: "number" },
+  { js: "vocalGrooveExplicit", cpp: "vocal_groove_explicit", default: false, type: "boolean" },
   { js: "enableSyncopation", cpp: "enable_syncopation", default: false, type: "boolean" },
+  {
+    js: "enableSyncopationExplicit",
+    cpp: "enable_syncopation_explicit",
+    default: false,
+    type: "boolean"
+  },
   { js: "energyCurve", cpp: "energy_curve", default: 0, type: "number" },
   { js: "addictiveMode", cpp: "addictive_mode", default: false, type: "boolean" },
   { js: "moraRhythmMode", cpp: "mora_rhythm_mode", default: 2, type: "number" },
@@ -676,84 +689,6 @@ var VocalStylePreset = {
   // K-POP style (syncopation, hooks, rap-like passages)
 };
 
-// js/src/presets.ts
-function getStructures() {
-  const a = getApi();
-  const count = a.structureCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({ name: a.structureName(i) });
-  }
-  return result;
-}
-function getMoods() {
-  const a = getApi();
-  const count = a.moodCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      name: a.moodName(i),
-      defaultBpm: a.moodDefaultBpm(i)
-    });
-  }
-  return result;
-}
-function getChords() {
-  const a = getApi();
-  const count = a.chordCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      name: a.chordName(i),
-      display: a.chordDisplay(i)
-    });
-  }
-  return result;
-}
-function getStylePresets() {
-  const a = getApi();
-  const count = a.stylePresetCount();
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push({
-      id: i,
-      name: a.stylePresetName(i),
-      displayName: a.stylePresetDisplayName(i),
-      description: a.stylePresetDescription(i),
-      tempoDefault: a.stylePresetTempoDefault(i),
-      allowedAttitudes: a.stylePresetAllowedAttitudes(i)
-    });
-  }
-  return result;
-}
-function getProgressionsByStyle(styleId) {
-  const a = getApi();
-  const m = getModule();
-  const retPtr = a.getProgressionsByStylePtr(styleId);
-  const view = new DataView(m.HEAPU8.buffer);
-  const count = view.getUint8(retPtr);
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push(view.getUint8(retPtr + 1 + i));
-  }
-  return result;
-}
-function getFormsByStyle(styleId) {
-  const a = getApi();
-  const m = getModule();
-  const retPtr = a.getFormsByStylePtr(styleId);
-  const view = new DataView(m.HEAPU8.buffer);
-  const count = view.getUint8(retPtr);
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    result.push(view.getUint8(retPtr + 1 + i));
-  }
-  return result;
-}
-function isCallOrientedVocalStyle(style) {
-  return getApi().vocalStyleCallEnabled(style) !== 0;
-}
-
 // js/src/builder.ts
 function clampUnitInterval(value) {
   return Math.max(0, Math.min(1, value));
@@ -780,6 +715,19 @@ var ChangeTracker = class {
     };
   }
 };
+var EXPLICIT_FLAGS = {
+  drumsEnabled: "drumsEnabledExplicit",
+  compositionStyle: "compositionStyleExplicit",
+  mood: "moodExplicit",
+  formId: "formExplicit",
+  hookIntensity: "hookIntensityExplicit",
+  vocalGroove: "vocalGrooveExplicit",
+  enableSyncopation: "enableSyncopationExplicit",
+  chordExtSusProb: "chordExtProbExplicit",
+  chordExt7thProb: "chordExtProbExplicit",
+  chordExt9thProb: "chordExtProbExplicit",
+  chordExtTritoneSubProb: "chordExtProbExplicit"
+};
 var SongConfigBuilder = class {
   /**
    * Create a new builder with default config for the given style
@@ -787,6 +735,7 @@ var SongConfigBuilder = class {
    */
   constructor(styleId = 0) {
     this.explicitFields = /* @__PURE__ */ new Set();
+    this.derivedFields = /* @__PURE__ */ new Map();
     this.lastChangeResult = null;
     this.config = createDefaultConfig(styleId);
   }
@@ -826,11 +775,13 @@ var SongConfigBuilder = class {
     const sid = styleId ?? this.config.stylePresetId;
     this.config = createDefaultConfig(sid);
     this.explicitFields.clear();
+    this.derivedFields.clear();
     this.lastChangeResult = null;
     return this;
   }
   /**
-   * Reset to defaults but keep explicitly set values
+   * Reset to defaults but keep explicitly set values, together with the flags
+   * that tell the core they are explicit
    * @param styleId Optional new style ID (defaults to current)
    */
   resetKeepExplicit(styleId) {
@@ -842,6 +793,7 @@ var SongConfigBuilder = class {
     }
     this.config = defaultConfig;
     Object.assign(this.config, preserved);
+    this.derivedFields.clear();
     this.lastChangeResult = null;
     return this;
   }
@@ -878,7 +830,6 @@ var SongConfigBuilder = class {
    */
   setForm(id) {
     this.setField("formId", id, "basic");
-    this.setField("formExplicit", true, "basic");
     return this;
   }
   /**
@@ -894,34 +845,16 @@ var SongConfigBuilder = class {
     return this;
   }
   /**
-   * Set vocal style preset with cascade detection
+   * Set vocal style preset
    *
-   * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) auto-enable the
-   * call system if callSetting/callEnabled is not explicitly set.
+   * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) turn the call
+   * system on while callSetting stays Auto: the core resolves Auto from the
+   * vocal style, so changing the style again changes the answer with it.
    *
    * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
    */
   setVocalStyle(style) {
-    const tracker = new ChangeTracker();
-    const oldStyle = this.config.vocalStyle;
-    this.config.vocalStyle = style;
-    this.explicitFields.add("vocalStyle");
-    tracker.addChange("vocal", "vocalStyle", oldStyle, style, "User set vocal style");
-    if (isCallOrientedVocalStyle(style) && !this.explicitFields.has("callSetting") && !this.explicitFields.has("callEnabled")) {
-      if (!this.config.callEnabled) {
-        const oldCall = this.config.callEnabled;
-        this.config.callEnabled = true;
-        this.config.callSetting = 1;
-        tracker.addChange(
-          "call",
-          "callEnabled",
-          oldCall,
-          true,
-          `Call-oriented vocalStyle (${style}) auto-enables call system`
-        );
-      }
-    }
-    this.lastChangeResult = tracker.toResult();
+    this.setField("vocalStyle", style, "vocal");
     return this;
   }
   /**
@@ -961,7 +894,7 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldTiming = this.config.modulationTiming;
     this.config.modulationTiming = timing;
-    this.explicitFields.add("modulationTiming");
+    this.markExplicit("modulationTiming");
     tracker.addChange(
       "modulation",
       "modulationTiming",
@@ -972,7 +905,7 @@ var SongConfigBuilder = class {
     if (semitones !== void 0) {
       const oldSemitones = this.config.modulationSemitones;
       this.config.modulationSemitones = semitones;
-      this.explicitFields.add("modulationSemitones");
+      this.markExplicit("modulationSemitones");
       tracker.addChange(
         "modulation",
         "modulationSemitones",
@@ -1020,9 +953,6 @@ var SongConfigBuilder = class {
     }
     if (opts.tritoneProb !== void 0) {
       this.setField("chordExtTritoneSubProb", opts.tritoneProb, "chord");
-    }
-    if (opts.susProb !== void 0 || opts.seventhProb !== void 0 || opts.ninthProb !== void 0 || opts.tritoneProb !== void 0) {
-      this.config.chordExtProbExplicit = true;
     }
     return this;
   }
@@ -1091,12 +1021,12 @@ var SongConfigBuilder = class {
     if (opts.setting !== void 0) {
       this.setField("callSetting", opts.setting, "call");
       this.config.callEnabled = opts.setting === 1;
-      this.explicitFields.add("callEnabled");
+      this.markExplicit("callEnabled");
     }
     if (opts.enabled !== void 0) {
       this.setField("callEnabled", opts.enabled, "call");
       this.config.callSetting = opts.enabled ? 1 : 2;
-      this.explicitFields.add("callSetting");
+      this.markExplicit("callSetting");
     }
     if (opts.notesEnabled !== void 0) {
       this.setField("callNotesEnabled", opts.notesEnabled, "call");
@@ -1216,7 +1146,10 @@ var SongConfigBuilder = class {
     this.setField("energyCurve", curve, "basic");
     return this;
   }
-  /** Set the optional per-song melody overrides. */
+  /**
+   * Set the optional per-song melody overrides. `maxLeap` caps the blueprint's
+   * leap budget; left unset, the style's leap value does not narrow it.
+   */
   setMelodyOverrides(opts) {
     if (opts.maxLeap !== void 0) {
       this.setField("melodyMaxLeap", opts.maxLeap, "vocal");
@@ -1252,7 +1185,6 @@ var SongConfigBuilder = class {
    */
   setMood(mood) {
     this.setField("mood", mood, "basic");
-    this.setField("moodExplicit", true, "basic");
     return this;
   }
   /**
@@ -1269,11 +1201,15 @@ var SongConfigBuilder = class {
   /**
    * Set blueprint with cascade detection
    *
-   * Setting a blueprint may automatically change:
+   * Setting a blueprint may automatically change, unless the field was set
+   * explicitly (then it only warns):
    * - drumsEnabled (if the blueprint has drums_required=true, per the C++
    *   blueprint table via getBlueprintDrumsRequired)
    * - hookIntensity (BehavioralLoop forces Maximum)
-   * - BPM warning or auto-adjustment for RhythmSync paradigm
+   * - BPM auto-adjustment into the blueprint's tempo range
+   *
+   * Values a previous blueprint changed this way are restored first, so the
+   * result does not depend on which blueprint was set before.
    *
    * BehavioralLoop (ID 9): Forces HookIntensity=Maximum, RiffPolicy=LockedPitch
    *
@@ -1283,16 +1219,17 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldBlueprint = this.config.blueprintId;
     this.config.blueprintId = id;
-    this.explicitFields.add("blueprintId");
+    this.markExplicit("blueprintId");
     tracker.addChange("basic", "blueprintId", oldBlueprint, id, "User set blueprint");
+    this.revertDerived("blueprintId", tracker);
     if (id !== 255) {
       const paradigm = getBlueprintParadigm(id);
       const riffPolicy = getBlueprintRiffPolicy(id);
       const isDrumsRequired = getBlueprintDrumsRequired(id);
       if (isDrumsRequired) {
-        if (!this.config.drumsEnabled) {
+        if (!this.config.drumsEnabled && !this.explicitFields.has("drumsEnabled")) {
           const oldDrums = this.config.drumsEnabled;
-          this.config.drumsEnabled = true;
+          this.deriveField("blueprintId", "drums", "drumsEnabled", true);
           tracker.addChange(
             "drums",
             "drumsEnabled",
@@ -1303,11 +1240,15 @@ var SongConfigBuilder = class {
           tracker.addWarning(
             `Blueprint ${getBlueprintName(id)} has drums_required=true; drumsEnabled forced to true`
           );
+        } else if (!this.config.drumsEnabled) {
+          tracker.addWarning(
+            `Blueprint ${getBlueprintName(id)} has drums_required=true; drums stay off as explicitly set`
+          );
         }
       } else if (paradigm === GenerationParadigm.RhythmSync) {
         if (!this.config.drumsEnabled && !this.explicitFields.has("drumsEnabled")) {
           const oldDrums = this.config.drumsEnabled;
-          this.config.drumsEnabled = true;
+          this.deriveField("blueprintId", "drums", "drumsEnabled", true);
           tracker.addChange(
             "drums",
             "drumsEnabled",
@@ -1324,7 +1265,7 @@ var SongConfigBuilder = class {
         if (this.config.bpm > 0 && (this.config.bpm < tempoRange.min || this.config.bpm > tempoRange.max) && !this.explicitFields.has("bpm")) {
           const oldBpm = this.config.bpm;
           const newBpm = Math.max(tempoRange.min, Math.min(tempoRange.max, this.config.bpm));
-          this.config.bpm = newBpm;
+          this.deriveField("blueprintId", "bpm", "bpm", newBpm);
           tracker.addChange(
             "bpm",
             "bpm",
@@ -1341,7 +1282,7 @@ var SongConfigBuilder = class {
       if (id === 9) {
         if (this.config.hookIntensity !== HookIntensity.Maximum && !this.explicitFields.has("hookIntensity")) {
           const oldHook = this.config.hookIntensity;
-          this.config.hookIntensity = HookIntensity.Maximum;
+          this.deriveField("blueprintId", "hook", "hookIntensity", HookIntensity.Maximum);
           tracker.addChange(
             "hook",
             "hookIntensity",
@@ -1373,7 +1314,8 @@ var SongConfigBuilder = class {
    * Warns if BPM is outside the selected blueprint's declared tempo range.
    * C++ respects explicit BPM and skips clamping.
    *
-   * @param bpm BPM value (0 = use style default)
+   * @param bpm BPM value (0 = implicit: a named blueprint's tempo, otherwise the
+   *   explicit mood's or the style preset's, with a drawn blueprint chosen to fit it)
    */
   setBpm(bpm) {
     const tracker = new ChangeTracker();
@@ -1387,7 +1329,7 @@ var SongConfigBuilder = class {
       }
     }
     this.config.bpm = bpm;
-    this.explicitFields.add("bpm");
+    this.markExplicit("bpm");
     tracker.addChange("bpm", "bpm", oldBpm, bpm, "User set BPM");
     this.lastChangeResult = tracker.toResult();
     return this;
@@ -1395,9 +1337,11 @@ var SongConfigBuilder = class {
   /**
    * Set composition style with cascade detection
    *
-   * Setting composition style may automatically change:
-   * - skipVocal (for BackgroundMotif/SynthDriven)
-   * - arpeggioEnabled (for SynthDriven)
+   * Setting composition style may automatically change arpeggioEnabled (for
+   * SynthDriven), restored when the style changes again. BackgroundMotif and
+   * SynthDriven songs generated in one call have no vocal; the core leaves it
+   * out itself, so skipVocal is not touched. The vocal-first calls
+   * (generateVocal, generateWithVocal) still sing the vocal they are asked for.
    *
    * @param style 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
    */
@@ -1405,26 +1349,13 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldStyle = this.config.compositionStyle;
     this.config.compositionStyle = style;
-    this.config.compositionStyleExplicit = true;
-    this.explicitFields.add("compositionStyle");
+    this.markExplicit("compositionStyle");
     tracker.addChange("basic", "compositionStyle", oldStyle, style, "User set composition style");
-    if ((style === CompositionStyle.BackgroundMotif || style === CompositionStyle.SynthDriven) && !this.explicitFields.has("skipVocal")) {
-      const oldSkipVocal = this.config.skipVocal;
-      if (!oldSkipVocal) {
-        this.config.skipVocal = true;
-        tracker.addChange(
-          "vocal",
-          "skipVocal",
-          oldSkipVocal,
-          true,
-          style === CompositionStyle.BackgroundMotif ? "BackgroundMotif style skips vocal" : "SynthDriven style skips vocal"
-        );
-      }
-    }
+    this.revertDerived("compositionStyle", tracker);
     if (style === CompositionStyle.SynthDriven && !this.explicitFields.has("arpeggioEnabled")) {
       const oldArpeggio = this.config.arpeggioEnabled;
       if (!oldArpeggio) {
-        this.config.arpeggioEnabled = true;
+        this.deriveField("compositionStyle", "arpeggio", "arpeggioEnabled", true);
         tracker.addChange(
           "arpeggio",
           "arpeggioEnabled",
@@ -1440,7 +1371,9 @@ var SongConfigBuilder = class {
   /**
    * Set style preset with cascade detection
    *
-   * Changing style preset resets mood, chord, form, bpm to style defaults.
+   * Changing style preset resets chord, form, bpm and vocal attitude to the
+   * style's defaults unless they were set explicitly. The bpm default is 0,
+   * which plays the style's own tempo when the blueprint is drawn at random.
    *
    * @param id Style preset ID (0-16)
    */
@@ -1449,7 +1382,7 @@ var SongConfigBuilder = class {
     const oldStyleId = this.config.stylePresetId;
     const defaultConfig = createDefaultConfig(id);
     this.config.stylePresetId = id;
-    this.explicitFields.add("stylePresetId");
+    this.markExplicit("stylePresetId");
     tracker.addChange("basic", "stylePresetId", oldStyleId, id, "User set style preset");
     const fieldsToReset = [
       "chordProgressionId",
@@ -1478,8 +1411,7 @@ var SongConfigBuilder = class {
     const tracker = new ChangeTracker();
     const oldDrums = this.config.drumsEnabled;
     this.config.drumsEnabled = enabled;
-    this.config.drumsEnabledExplicit = true;
-    this.explicitFields.add("drumsEnabled");
+    this.markExplicit("drumsEnabled");
     tracker.addChange("drums", "drumsEnabled", oldDrums, enabled, "User set drums");
     if (!enabled && this.config.blueprintId !== 255) {
       const paradigm = getBlueprintParadigm(this.config.blueprintId);
@@ -1496,10 +1428,51 @@ var SongConfigBuilder = class {
   setConfigValue(field, value) {
     this.config[field] = value;
   }
+  /**
+   * Record that the user chose a field; the one place explicitness is written.
+   * Sets the paired core flag too, so it survives resetKeepExplicit with the value.
+   */
+  markExplicit(field) {
+    this.explicitFields.add(field);
+    this.derivedFields.delete(field);
+    const flag = EXPLICIT_FLAGS[field];
+    if (flag !== void 0) {
+      this.setConfigValue(flag, true);
+      this.explicitFields.add(flag);
+    }
+  }
+  /** Write a value a cascade derived from `trigger`, remembering what it replaced. */
+  deriveField(trigger, category, field, value) {
+    if (!this.derivedFields.has(field)) {
+      this.derivedFields.set(field, { trigger, category, previous: this.config[field] });
+    }
+    this.setConfigValue(field, value);
+  }
+  /** Undo what the previous value of `trigger` cascaded into fields the user has not set since. */
+  revertDerived(trigger, tracker) {
+    for (const [field, derived] of this.derivedFields) {
+      if (derived.trigger !== trigger) {
+        continue;
+      }
+      this.derivedFields.delete(field);
+      const current = this.config[field];
+      if (current === derived.previous) {
+        continue;
+      }
+      this.setConfigValue(field, derived.previous);
+      tracker.addChange(
+        derived.category,
+        field,
+        current,
+        derived.previous,
+        `Restored: ${trigger} no longer sets it`
+      );
+    }
+  }
   setField(field, value, category) {
     const oldValue = this.config[field];
     this.setConfigValue(field, value);
-    this.explicitFields.add(field);
+    this.markExplicit(field);
     this.lastChangeResult = {
       changedCount: 1,
       changedCategories: [category],
@@ -1626,29 +1599,27 @@ var MidiSketch = class {
    * Regenerate vocal track with new configuration or seed.
    * Keeps the same chord progression and structure.
    * @param configOrSeed VocalConfig object or seed number (default: 0 = new random)
+   * @throws {MidiSketchConfigError} If the vocal config fails validation
    * @throws {MidiSketchGenerationError} If regeneration fails
    */
   regenerateVocal(configOrSeed = 0) {
     const a = getApi();
     if (typeof configOrSeed === "number" && configOrSeed === 0) {
       const result2 = a.regenerateVocalFromJson(this.handle, "", 0);
-      if (result2 !== 0) {
-        this.throwGenerationError(result2, "Vocal regeneration");
-      }
+      this.handleGenerationResult(result2, "Vocal regeneration");
       return;
     }
     const vocalConfig = typeof configOrSeed === "number" ? { seed: configOrSeed } : configOrSeed;
     const json = serializeVocalConfig(vocalConfig);
     const result = a.regenerateVocalFromJson(this.handle, json, json.length);
-    if (result !== 0) {
-      this.throwGenerationError(result, "Vocal regeneration");
-    }
+    this.handleGenerationResult(result, "Vocal regeneration");
   }
   /**
    * Generate accompaniment tracks for existing vocal.
    * Must be called after generateVocal() or generateWithVocal().
    * Generates: Aux -> Bass -> Chord -> Drums (adapting to vocal).
    * @param config Optional accompaniment configuration
+   * @throws {MidiSketchConfigError} If the accompaniment config fails validation
    * @throws {MidiSketchGenerationError} If generation fails
    */
   generateAccompaniment(config) {
@@ -1661,9 +1632,7 @@ var MidiSketch = class {
     } else {
       const json = serializeAccompanimentConfig(config);
       const result = a.generateAccompanimentFromJson(this.handle, json, json.length);
-      if (result !== 0) {
-        this.throwGenerationError(result, "Accompaniment generation");
-      }
+      this.handleGenerationResult(result, "Accompaniment generation");
     }
   }
   /**
@@ -1672,6 +1641,7 @@ var MidiSketch = class {
    * (Aux, Bass, Chord, Drums, etc.) with the specified seed/config.
    * Must have existing vocal (call generateVocal() first).
    * @param seedOrConfig Random seed (0 = auto-generate) or AccompanimentConfig
+   * @throws {MidiSketchConfigError} If the accompaniment config fails validation
    * @throws {MidiSketchGenerationError} If regeneration fails
    */
   regenerateAccompaniment(seedOrConfig = 0) {
@@ -1684,9 +1654,7 @@ var MidiSketch = class {
     } else {
       const json = serializeAccompanimentConfig(seedOrConfig);
       const result = a.regenerateAccompanimentFromJson(this.handle, json, json.length);
-      if (result !== 0) {
-        this.throwGenerationError(result, "Accompaniment regeneration");
-      }
+      this.handleGenerationResult(result, "Accompaniment regeneration");
     }
   }
   /**
@@ -2061,6 +2029,84 @@ var MidiSketch = class {
   }
 };
 var midi_sketch_default = MidiSketch;
+
+// js/src/presets.ts
+function getStructures() {
+  const a = getApi();
+  const count = a.structureCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({ name: a.structureName(i) });
+  }
+  return result;
+}
+function getMoods() {
+  const a = getApi();
+  const count = a.moodCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      name: a.moodName(i),
+      defaultBpm: a.moodDefaultBpm(i)
+    });
+  }
+  return result;
+}
+function getChords() {
+  const a = getApi();
+  const count = a.chordCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      name: a.chordName(i),
+      display: a.chordDisplay(i)
+    });
+  }
+  return result;
+}
+function getStylePresets() {
+  const a = getApi();
+  const count = a.stylePresetCount();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push({
+      id: i,
+      name: a.stylePresetName(i),
+      displayName: a.stylePresetDisplayName(i),
+      description: a.stylePresetDescription(i),
+      tempoDefault: a.stylePresetTempoDefault(i),
+      allowedAttitudes: a.stylePresetAllowedAttitudes(i)
+    });
+  }
+  return result;
+}
+function getProgressionsByStyle(styleId) {
+  const a = getApi();
+  const m = getModule();
+  const retPtr = a.getProgressionsByStylePtr(styleId);
+  const view = new DataView(m.HEAPU8.buffer);
+  const count = view.getUint8(retPtr);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(view.getUint8(retPtr + 1 + i));
+  }
+  return result;
+}
+function getFormsByStyle(styleId) {
+  const a = getApi();
+  const m = getModule();
+  const retPtr = a.getFormsByStylePtr(styleId);
+  const view = new DataView(m.HEAPU8.buffer);
+  const count = view.getUint8(retPtr);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(view.getUint8(retPtr + 1 + i));
+  }
+  return result;
+}
+function isCallOrientedVocalStyle(style) {
+  return getApi().vocalStyleCallEnabled(style) !== 0;
+}
 
 // js/src/types.ts
 var NoteSafety = {

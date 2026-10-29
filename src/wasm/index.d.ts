@@ -15,7 +15,11 @@ interface SongConfig {
     stylePresetId: number;
     /** Key (0-11) */
     key: number;
-    /** BPM (0 = use style default) */
+    /**
+     * BPM. 0 = implicit: a blueprint set by blueprintId plays at its own tempo;
+     * otherwise the explicit mood's tempo, else the style preset's, with a random
+     * blueprint drawn from those whose range holds it.
+     */
     bpm: number;
     /** Random seed (0 = random) */
     seed: number;
@@ -29,7 +33,12 @@ interface SongConfig {
     drumsEnabled: boolean;
     /** True if drumsEnabled was explicitly set by user */
     drumsEnabledExplicit: boolean;
-    /** Blueprint ID: 0=Traditional, 1=RhythmLock, 2=StoryPop, 3=Ballad, 255=random */
+    /**
+     * Blueprint ID: 0=Traditional, 1=RhythmLock, 2=StoryPop, 3=Ballad, 4=IdolStandard,
+     * 5=IdolHyper, 6=IdolKawaii, 7=IdolCoolPop, 8=IdolEmo, 9=BehavioralLoop.
+     * 255 (the default everywhere) draws a blueprint that holds the style tempo; a
+     * named blueprint 0-9 plays at its own tempo.
+     */
     blueprintId: number;
     /** Enable arpeggio */
     arpeggioEnabled: boolean;
@@ -117,8 +126,12 @@ interface SongConfig {
     melodicComplexity: number;
     /** Hook intensity: 0=Off, 1=Light, 2=Normal, 3=Strong, 4=Maximum */
     hookIntensity: number;
+    /** True if hookIntensity was explicitly set by user (blueprint and mode defaults keep it) */
+    hookIntensityExplicit: boolean;
     /** Vocal groove feel: 0=Straight, 1=OffBeat, 2=Swing, 3=Syncopated, 4=Driving16th, 5=Bouncy8th */
     vocalGroove: number;
+    /** True if vocalGroove was explicitly set by user (blueprint defaults keep it) */
+    vocalGrooveExplicit: boolean;
     /** Mood preset override (0-23, used when moodExplicit=true) */
     mood: number;
     /** 0=derive from style, 1=use mood field */
@@ -135,9 +148,14 @@ interface SongConfig {
     syllabicSubRate?: number;
     /** Enable syncopation effects (default=false) */
     enableSyncopation: boolean;
+    /** True if enableSyncopation was explicitly set by user (an explicit false keeps it off) */
+    enableSyncopationExplicit: boolean;
     /** Energy curve: 0=GradualBuild, 1=FrontLoaded, 2=WavePattern, 3=SteadyState */
     energyCurve: number;
-    /** Max leap interval: 0=preset, 1-12=override */
+    /**
+     * Max leap interval: 0 = the blueprint's leap budget, 1-12 = caps that budget.
+     * Style preset and complexity leap values are defaults and never narrow it.
+     */
     melodyMaxLeap: number;
     /** Syncopation probability: 0xFF=preset, 0-100=override */
     melodySyncopationProb: number;
@@ -149,7 +167,11 @@ interface SongConfig {
     melodyChorusRegisterShift: number;
     /** Hook repetition: 0=preset, 1=off, 2=on */
     melodyHookRepetition: number;
-    /** Leading tone: 0=preset, 1=off, 2=on */
+    /**
+     * Section-boundary pickup notes: 0 or 2 = the pickups the section transition
+     * calls for (B to Chorus, Intro to A, ...), 1 = none. 2 adds no pickup where
+     * the transition has none.
+     */
     melodyUseLeadingTone: number;
     /** Motif length: 0=auto, 1/2/4 bars */
     motifLength: number;
@@ -314,22 +336,26 @@ interface CollisionInfo {
     intervalSemitones: number;
 }
 /**
- * Piano roll safety info for a single tick
+ * Piano roll safety info for a single tick.
+ *
+ * `safety`, `reason` and `recommended` are in the generator's internal C-major
+ * pitch space; `currentKey` is the separate shift the output applies, so add it
+ * to map an entry onto the pitch that sounds.
  */
 interface PianoRollInfo {
     /** Tick position */
     tick: number;
     /** Current chord degree (0=I, 1=ii, etc.) */
     chordDegree: number;
-    /** Current key (0-11, considering modulation) */
+    /** Output key shift (0-11, considering modulation), not applied to the arrays below */
     currentKey: number;
-    /** Safety level for each MIDI note (0-127) */
+    /** Safety level for each internal C-major MIDI pitch (index 0-127) */
     safety: NoteSafetyLevel[];
-    /** Reason flags for each note (0-127) */
+    /** Reason flags for each internal C-major MIDI pitch (index 0-127) */
     reason: NoteReasonFlags[];
     /** Collision details for each note */
     collision: CollisionInfo[];
-    /** Recommended notes (priority order, max 8) */
+    /** Recommended internal C-major pitches (priority order, max 8) */
     recommended: number[];
 }
 /**
@@ -1007,6 +1033,7 @@ interface ParameterChangeResult {
 declare class SongConfigBuilder {
     private config;
     private explicitFields;
+    private derivedFields;
     private lastChangeResult;
     /**
      * Create a new builder with default config for the given style
@@ -1035,7 +1062,8 @@ declare class SongConfigBuilder {
      */
     reset(styleId?: number): this;
     /**
-     * Reset to defaults but keep explicitly set values
+     * Reset to defaults but keep explicitly set values, together with the flags
+     * that tell the core they are explicit
      * @param styleId Optional new style ID (defaults to current)
      */
     resetKeepExplicit(styleId?: number): this;
@@ -1066,10 +1094,11 @@ declare class SongConfigBuilder {
      */
     setVocalRange(low: number, high: number): this;
     /**
-     * Set vocal style preset with cascade detection
+     * Set vocal style preset
      *
-     * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) auto-enable the
-     * call system if callSetting/callEnabled is not explicitly set.
+     * Call-oriented vocal styles (Idol, BrightKira, CuteAffected) turn the call
+     * system on while callSetting stays Auto: the core resolves Auto from the
+     * vocal style, so changing the style again changes the answer with it.
      *
      * @param style Vocal style ID (0=Auto, 1=Standard, 2=Vocaloid, etc.)
      */
@@ -1211,7 +1240,10 @@ declare class SongConfigBuilder {
     setSyncopation(enabled: boolean): this;
     /** Set the section energy curve (0=GradualBuild through 3=SteadyState). */
     setEnergyCurve(curve: number): this;
-    /** Set the optional per-song melody overrides. */
+    /**
+     * Set the optional per-song melody overrides. `maxLeap` caps the blueprint's
+     * leap budget; left unset, the style's leap value does not narrow it.
+     */
     setMelodyOverrides(opts: {
         maxLeap?: number;
         syncopationProb?: number;
@@ -1236,11 +1268,15 @@ declare class SongConfigBuilder {
     /**
      * Set blueprint with cascade detection
      *
-     * Setting a blueprint may automatically change:
+     * Setting a blueprint may automatically change, unless the field was set
+     * explicitly (then it only warns):
      * - drumsEnabled (if the blueprint has drums_required=true, per the C++
      *   blueprint table via getBlueprintDrumsRequired)
      * - hookIntensity (BehavioralLoop forces Maximum)
-     * - BPM warning or auto-adjustment for RhythmSync paradigm
+     * - BPM auto-adjustment into the blueprint's tempo range
+     *
+     * Values a previous blueprint changed this way are restored first, so the
+     * result does not depend on which blueprint was set before.
      *
      * BehavioralLoop (ID 9): Forces HookIntensity=Maximum, RiffPolicy=LockedPitch
      *
@@ -1253,15 +1289,18 @@ declare class SongConfigBuilder {
      * Warns if BPM is outside the selected blueprint's declared tempo range.
      * C++ respects explicit BPM and skips clamping.
      *
-     * @param bpm BPM value (0 = use style default)
+     * @param bpm BPM value (0 = implicit: a named blueprint's tempo, otherwise the
+     *   explicit mood's or the style preset's, with a drawn blueprint chosen to fit it)
      */
     setBpm(bpm: number): this;
     /**
      * Set composition style with cascade detection
      *
-     * Setting composition style may automatically change:
-     * - skipVocal (for BackgroundMotif/SynthDriven)
-     * - arpeggioEnabled (for SynthDriven)
+     * Setting composition style may automatically change arpeggioEnabled (for
+     * SynthDriven), restored when the style changes again. BackgroundMotif and
+     * SynthDriven songs generated in one call have no vocal; the core leaves it
+     * out itself, so skipVocal is not touched. The vocal-first calls
+     * (generateVocal, generateWithVocal) still sing the vocal they are asked for.
      *
      * @param style 0=MelodyLead, 1=BackgroundMotif, 2=SynthDriven
      */
@@ -1269,7 +1308,9 @@ declare class SongConfigBuilder {
     /**
      * Set style preset with cascade detection
      *
-     * Changing style preset resets mood, chord, form, bpm to style defaults.
+     * Changing style preset resets chord, form, bpm and vocal attitude to the
+     * style's defaults unless they were set explicitly. The bpm default is 0,
+     * which plays the style's own tempo when the blueprint is drawn at random.
      *
      * @param id Style preset ID (0-16)
      */
@@ -1283,6 +1324,15 @@ declare class SongConfigBuilder {
      */
     setDrums(enabled: boolean): this;
     private setConfigValue;
+    /**
+     * Record that the user chose a field; the one place explicitness is written.
+     * Sets the paired core flag too, so it survives resetKeepExplicit with the value.
+     */
+    private markExplicit;
+    /** Write a value a cascade derived from `trigger`, remembering what it replaced. */
+    private deriveField;
+    /** Undo what the previous value of `trigger` cascaded into fields the user has not set since. */
+    private revertDerived;
     private setField;
 }
 //# sourceMappingURL=builder.d.ts.map
@@ -1356,6 +1406,7 @@ declare class MidiSketch {
      * Regenerate vocal track with new configuration or seed.
      * Keeps the same chord progression and structure.
      * @param configOrSeed VocalConfig object or seed number (default: 0 = new random)
+     * @throws {MidiSketchConfigError} If the vocal config fails validation
      * @throws {MidiSketchGenerationError} If regeneration fails
      */
     regenerateVocal(configOrSeed?: VocalConfig | number): void;
@@ -1364,6 +1415,7 @@ declare class MidiSketch {
      * Must be called after generateVocal() or generateWithVocal().
      * Generates: Aux -> Bass -> Chord -> Drums (adapting to vocal).
      * @param config Optional accompaniment configuration
+     * @throws {MidiSketchConfigError} If the accompaniment config fails validation
      * @throws {MidiSketchGenerationError} If generation fails
      */
     generateAccompaniment(config?: AccompanimentConfig): void;
@@ -1373,6 +1425,7 @@ declare class MidiSketch {
      * (Aux, Bass, Chord, Drums, etc.) with the specified seed/config.
      * Must have existing vocal (call generateVocal() first).
      * @param seedOrConfig Random seed (0 = auto-generate) or AccompanimentConfig
+     * @throws {MidiSketchConfigError} If the accompaniment config fails validation
      * @throws {MidiSketchGenerationError} If regeneration fails
      */
     regenerateAccompaniment(seedOrConfig?: number | AccompanimentConfig): void;

@@ -1,12 +1,12 @@
 {
   "version": "0.3.0",
-  "size": 892654,
-  "sizeKB": 871,
-  "gzipSize": 326276,
-  "gzipKB": 318,
-  "jsSize": 125738,
-  "jsKB": 122,
-  "md5": "3d2bc701b9a3269ee66bb0945ddc5ac4",
-  "buildDate": "2026-09-09T01:02:24Z",
-  "commitHash": "deeedfc"
+  "size": 947611,
+  "sizeKB": 925,
+  "gzipSize": 342531,
+  "gzipKB": 334,
+  "jsSize": 127604,
+  "jsKB": 124,
+  "md5": "75cea77d09b523c43b99ef02ee53fa83",
+  "buildDate": "2026-10-29T18:56:38Z",
+  "commitHash": "22b35d5"
 }
