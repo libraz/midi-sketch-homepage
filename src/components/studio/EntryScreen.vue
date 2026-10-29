@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useWizardStore } from '@/stores/useWizardStore'
 import { songImages, songImageCategories } from '@/data/songImages'
@@ -8,6 +8,8 @@ import CategoryChip from '@/components/wizard/CategoryChip.vue'
 import type { CategoryItem } from '@/components/wizard/CategoryChip.vue'
 import type { FlowType } from '@/composables/useWizardFlow'
 import EntrySetupPanel from './EntrySetupPanel.vue'
+import EntryGenerateButton from './EntryGenerateButton.vue'
+import StudioDock from './StudioDock.vue'
 
 const emit = defineEmits<{
   (e: 'generate'): void
@@ -97,6 +99,33 @@ function selectGenre(id: string) {
   store.selectSongImage(id)
 }
 
+// ============================================
+// Docked generate CTA
+// ============================================
+// The setup panel sits below the card grid, a full screen away on a phone.
+// While it is out of view a copy of its CTA docks to the bottom, so a genre
+// can be picked and generated without scrolling.
+const setupRef = ref<InstanceType<typeof EntrySetupPanel> | null>(null)
+const isSetupVisible = ref(true)
+let observer: IntersectionObserver | null = null
+
+const selectedGenreName = computed(() => {
+  const id = store.config.songImageId
+  return id ? t(`songImages.${id}.name`) : ''
+})
+
+onMounted(() => {
+  const target = setupRef.value?.$el as HTMLElement | undefined
+  if (!target) return
+  observer = new IntersectionObserver(
+    ([entry]) => { isSetupVisible.value = entry.isIntersecting },
+    { threshold: 0 }
+  )
+  observer.observe(target)
+})
+
+onBeforeUnmount(() => observer?.disconnect())
+
 // Commit the current (genre + tuned essentials) config to generation.
 function startGeneration() {
   // Pre-warmup audio for chord previews in the studio
@@ -174,16 +203,25 @@ function startGeneration() {
             <h3 class="entry-card__name">{{ t(`songImages.${image.id}.name`) }}</h3>
             <p class="entry-card__tagline">{{ t(`songImages.${image.id}.tagline`) }}</p>
           </div>
-          <span class="entry-card__bpm">BPM {{ image.tempoRange.min }}-{{ image.tempoRange.max }}</span>
-          <span class="entry-card__go">
-            {{ store.config.songImageId === image.id ? t('studio.entry.generate') : t('studio.entry.select') }}
-          </span>
+          <div class="entry-card__foot">
+            <span class="entry-card__go">
+              <template v-if="store.config.songImageId === image.id">
+                <span class="entry-card__go-icon" aria-hidden="true">▶</span>{{ t('studio.entry.generate') }}
+              </template>
+              <template v-else>{{ t('studio.entry.select') }}</template>
+            </span>
+            <span class="entry-card__bpm">BPM {{ image.tempoRange.min }}–{{ image.tempoRange.max }}</span>
+          </div>
         </article>
       </div>
 
       <!-- Pre-generation essentials: tune Key/BPM/Chord, then generate -->
-      <EntrySetupPanel @generate="startGeneration" />
+      <EntrySetupPanel ref="setupRef" @generate="startGeneration" />
     </div>
+
+    <StudioDock :show="!isSetupVisible" :detail="selectedGenreName">
+      <EntryGenerateButton @generate="startGeneration" />
+    </StudioDock>
   </div>
 </template>
 
@@ -236,6 +274,12 @@ function startGeneration() {
   .entry-grid .entry-card {
     animation: none;
   }
+
+  .entry-card,
+  .entry-card:hover,
+  .entry-card:active {
+    transform: none;
+  }
 }
 
 /* Flow toggle */
@@ -257,7 +301,7 @@ function startGeneration() {
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.25s ease;
   font-family: inherit;
 }
 
@@ -356,7 +400,6 @@ function startGeneration() {
   margin: 0;
   text-align: center;
   flex-shrink: 0;
-  text-shadow: 0 0 30px rgba(var(--studio-purple-rgb), 0.35);
 }
 
 .entry-screen__hint {
@@ -382,8 +425,13 @@ function startGeneration() {
   border-radius: 16px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.25s ease;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .entry-card__glow {
@@ -402,9 +450,14 @@ function startGeneration() {
 .entry-card:hover,
 .entry-card:focus-visible {
   border-color: var(--card-accent, rgba(var(--studio-purple-rgb), 0.25));
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px -16px var(--studio-shadow-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -18px var(--studio-shadow-strong);
   outline: none;
+}
+
+.entry-card:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 0.08s;
 }
 
 .entry-card:hover .entry-card__glow,
@@ -472,15 +525,19 @@ function startGeneration() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.15), rgba(var(--studio-pink-rgb), 0.1));
+  background: color-mix(in srgb, var(--card-accent, var(--studio-purple)) 12%, transparent);
   border-radius: 12px;
   margin-bottom: 1rem;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.entry-card:hover .entry-card__icon-wrap {
+  transform: scale(1.06);
 }
 
 .entry-card__icon {
   font-size: 1.5rem;
   color: var(--card-accent, var(--studio-purple));
-  filter: drop-shadow(0 0 8px var(--card-accent, rgba(var(--studio-purple-rgb), 0.4)));
 }
 
 .entry-card__name {
@@ -497,43 +554,49 @@ function startGeneration() {
   color: rgba(var(--studio-ink-rgb), 0.55);
   margin: 0;
   line-height: 1.4;
-  padding-bottom: 1.75rem;
+}
+
+.entry-card__foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
 }
 
 .entry-card__bpm {
-  position: absolute;
-  bottom: 0.75rem;
-  right: 0.75rem;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 500;
-  color: rgba(var(--studio-ink-rgb), 0.45);
+  font-variant-numeric: tabular-nums;
+  color: rgba(var(--studio-ink-rgb), 0.6);
   padding: 0.25rem 0.5rem;
-  background: rgba(var(--studio-ink-rgb), 0.06);
-  border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
-  border-radius: 4px;
-  z-index: 1;
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
-/* Dark keeps the original darkening overlay behind the badge */
-.dark .entry-card__bpm {
-  background: rgba(0, 0, 0, 0.2);
-}
-
+/* Action hint: "Select" on hover, a filled "Generate" pill once selected.
+   Accent text is mixed toward the ink so light accents (yellow) stay legible. */
 .entry-card__go {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--card-accent, var(--studio-purple));
+  gap: 0.35rem;
+  padding: 0.3rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--card-accent, var(--studio-purple)) 65%, var(--studio-text-primary));
   opacity: 0;
   transform: translateX(-4px);
-  transition: all 0.25s ease;
-  z-index: 1;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease, padding 0.2s ease;
+}
+
+.entry-card__go-icon {
+  font-size: 0.6rem;
 }
 
 .entry-card:hover .entry-card__go,
@@ -543,22 +606,104 @@ function startGeneration() {
   transform: translateX(0);
 }
 
+.entry-card--active .entry-card__go {
+  padding: 0.3rem 0.7rem;
+  border-radius: 100px;
+  color: var(--studio-on-accent);
+  background: color-mix(in srgb, var(--card-accent, var(--studio-purple)) 80%, var(--studio-text-primary));
+}
+
+.dark .entry-card--active .entry-card__go {
+  color: #0b0b10;
+  background: var(--card-accent, var(--studio-purple));
+}
+
 @media (max-width: 640px) {
+  /* Two compact toggles side by side; the titles carry the choice on their own */
   .entry-screen__flow {
-    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .entry-flow-option {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .entry-flow-option__icon {
+    font-size: 1.15rem;
+  }
+
+  .entry-flow-option__title {
+    font-size: 0.82rem;
+    padding-right: 1.1rem;
+  }
+
+  .entry-flow-option__desc {
+    display: none;
+  }
+
+  .entry-flow-option__check {
+    top: 50%;
+    right: 0.5rem;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+  }
+
+  .entry-screen__title {
+    font-size: 1.3rem;
+    letter-spacing: 0.08em;
   }
 
   .entry-grid {
     grid-template-columns: 1fr;
   }
 
+  /* Compact row cards: icon beside the text so the list stays short */
   .entry-card {
-    padding: 1.25rem;
-    min-height: 140px;
+    padding: 1rem;
+    min-height: 0;
   }
 
-  /* Always show the generate hint on touch devices */
-  .entry-card__go {
+  .entry-card__content {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    column-gap: 0.875rem;
+    align-items: center;
+  }
+
+  .entry-card__icon-wrap {
+    grid-row: span 2;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    border-radius: 10px;
+  }
+
+  .entry-card__icon {
+    font-size: 1.2rem;
+  }
+
+  .entry-card__name {
+    font-size: 1rem;
+    margin: 0 0 0.125rem;
+  }
+
+  .entry-card__watermark {
+    font-size: 4.5rem;
+  }
+
+  .entry-card__foot {
+    padding-top: 0.75rem;
+  }
+
+  /* No hover on touch: only the selected card carries an action hint */
+  .entry-card:not(.entry-card--active) .entry-card__go {
+    opacity: 0;
+  }
+
+  .entry-card--active .entry-card__go {
     opacity: 1;
     transform: none;
   }

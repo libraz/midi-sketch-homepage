@@ -1154,32 +1154,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.875rem;
-  background: linear-gradient(135deg, rgba(var(--studio-purple-rgb), 0.15) 0%, rgba(var(--studio-purple-rgb), 0.08) 100%);
-  border: 1px solid rgba(var(--studio-purple-rgb), 0.2);
-  border-radius: 6px;
-  position: relative;
-  overflow: hidden;
-}
-
-.section-indicator::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--section-color, var(--accent));
-  box-shadow: 0 0 8px var(--section-color, var(--accent));
+  background: color-mix(in srgb, var(--section-color, var(--accent)) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--section-color, var(--accent)) 28%, transparent);
+  border-radius: 100px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .section-indicator--idle {
   background: rgba(var(--studio-ink-rgb), 0.03);
-  border-color: rgba(var(--studio-ink-rgb), 0.06);
-}
-
-.section-indicator--idle::before {
-  background: rgba(var(--studio-ink-rgb), 0.2);
-  box-shadow: none;
+  border-color: rgba(var(--studio-ink-rgb), 0.08);
 }
 
 .section-dot {
@@ -1466,7 +1449,7 @@ onUnmounted(() => {
   border-radius: 8px;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.2s;
+  transition: filter 0.15s ease, border-color 0.2s ease, box-shadow 0.25s ease;
 }
 
 .section-block:hover {
@@ -1476,17 +1459,6 @@ onUnmounted(() => {
 .section-block:focus-visible {
   outline: 2px solid var(--section-glow);
   outline-offset: 1px;
-}
-
-.section-block::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--section-glow);
-  opacity: 0.6;
 }
 
 .section-block--active {
@@ -1666,18 +1638,28 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.3rem 0.5rem;
-  background: var(--studio-shadow-mid);
-  border: 1px solid rgba(var(--studio-ink-rgb), 0.06);
-  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  background: color-mix(in srgb, var(--track-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--track-color) 28%, transparent);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   position: relative;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mixer-track:hover {
-  background: var(--studio-shadow-strong);
-  border-color: rgba(var(--studio-ink-rgb), 0.1);
+  background: color-mix(in srgb, var(--track-color) 16%, transparent);
+  border-color: color-mix(in srgb, var(--track-color) 45%, transparent);
+}
+
+.mixer-track:active {
+  transform: scale(0.96);
+}
+
+.mixer-track:focus-visible {
+  outline: 2px solid var(--track-color);
+  outline-offset: 2px;
 }
 
 .mixer-track__indicator {
@@ -1685,27 +1667,26 @@ onUnmounted(() => {
   height: 8px;
   background: var(--track-color);
   border-radius: 2px;
-  box-shadow: 0 0 6px var(--track-color);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .mixer-track--muted .mixer-track__indicator {
-  background: rgba(var(--studio-ink-rgb), 0.15);
-  box-shadow: none;
+  background: rgba(var(--studio-ink-rgb), 0.2);
 }
 
 .mixer-track__name {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  color: rgba(var(--studio-ink-rgb), 0.8);
+  color: rgba(var(--studio-ink-rgb), 0.82);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   transition: color 0.15s ease;
 }
 
 .mixer-track--muted .mixer-track__name {
-  color: rgba(var(--studio-ink-rgb), 0.3);
+  color: rgba(var(--studio-ink-rgb), 0.35);
+  text-decoration: line-through;
 }
 
 .mixer-track__status {
@@ -1713,13 +1694,16 @@ onUnmounted(() => {
   font-size: 0.55rem;
   font-weight: 700;
   color: var(--studio-red);
-  min-width: 0.7rem;
-  text-align: center;
 }
 
-.mixer-track--muted {
-  background: rgba(var(--studio-red-rgb), 0.08);
-  border-color: rgba(var(--studio-red-rgb), 0.2);
+.mixer-track__status:empty {
+  display: none;
+}
+
+.mixer-track--muted,
+.mixer-track--muted:hover {
+  background: rgba(var(--studio-ink-rgb), 0.03);
+  border-color: rgba(var(--studio-ink-rgb), 0.1);
 }
 
 /* Horizontal zoom */

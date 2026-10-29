@@ -65,7 +65,12 @@ function onClick() {
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.22s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.22s ease, transform 0.2s ease;
+}
+
+.studio-apply:focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 2px;
 }
 
 /* Stale: the only actionable state. A single-hue fill with a slight depth
@@ -100,10 +105,9 @@ function onClick() {
 /* Clean: a quiet status line. It keeps the button's footprint so the row does
    not jump when a pending change lights the CTA up. */
 .studio-apply--clean {
-  color: rgba(var(--studio-ink-rgb), 0.4);
-  background: transparent;
-  border-style: dashed;
-  border-color: rgba(var(--studio-ink-rgb), 0.14);
+  color: rgba(var(--studio-ink-rgb), 0.45);
+  background: rgba(var(--studio-ink-rgb), 0.03);
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: default;
 }

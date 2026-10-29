@@ -157,9 +157,16 @@ async function downloadMp3() {
 }
 
 .studio-output__actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: center;
   gap: 0.625rem;
+}
+
+@media (max-width: 640px) {
+  .studio-output__actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Beta Section */

@@ -1035,24 +1035,6 @@ html[lang="ja"] .VPNavBarTitle .title::after {
   --score-steel: 144, 160, 192;
 }
 
-/* A thin brand accent edge that fades out toward the caption. */
-.score-example::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  z-index: 1;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--score-accent), 0.85) 0%,
-    rgba(var(--score-accent), 0.45) 60%,
-    rgba(var(--score-accent), 0) 100%
-  );
-  pointer-events: none;
-}
-
 /* While sounding, the whole plate catches candlelight. */
 .score-example[data-playing="true"] {
   border-color: rgba(var(--score-accent-light), 0.45);

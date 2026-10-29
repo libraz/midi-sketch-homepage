@@ -5,6 +5,7 @@ import { useWizardStore } from '@/stores/useWizardStore'
 import KeyControl from './essentials/KeyControl.vue'
 import BpmControlCompact from './essentials/BpmControlCompact.vue'
 import ChordControl from './essentials/ChordControl.vue'
+import EntryGenerateButton from './EntryGenerateButton.vue'
 
 /**
  * Pre-generation essentials panel shown on the entry screen.
@@ -36,7 +37,9 @@ const genreName = computed(() => {
         <h3 class="entry-setup__title">{{ t('studio.entry.setupTitle') }}</h3>
         <p class="entry-setup__hint">{{ t('studio.entry.setupHint') }}</p>
       </div>
-      <span class="entry-setup__genre">{{ genreName }}</span>
+      <Transition name="entry-setup-genre" mode="out-in">
+        <span :key="genreName" class="entry-setup__genre">{{ genreName }}</span>
+      </Transition>
     </div>
 
     <div class="entry-setup__pills">
@@ -45,10 +48,7 @@ const genreName = computed(() => {
       <ChordControl class="entry-setup__cell" />
     </div>
 
-    <button class="entry-setup__cta" @click="emit('generate')">
-      <span class="entry-setup__cta-icon" aria-hidden="true">▶</span>
-      <span>{{ t('studio.entry.generateCta') }}</span>
-    </button>
+    <EntryGenerateButton @generate="emit('generate')" />
   </section>
 </template>
 
@@ -124,49 +124,27 @@ const genreName = computed(() => {
   width: 100%;
 }
 
-.entry-setup__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.9rem 1rem;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--studio-on-accent);
-  /* Single-hue fill: the two-hue purple-to-pink sweep is the stock generative
-     look, and the CTA already carries enough weight from size and contrast. */
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--studio-purple) 92%, white) 0%,
-    var(--studio-purple) 100%
-  );
-  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--studio-purple) 75%, transparent);
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, filter 0.2s ease;
+/* Genre change: the pill swaps with a short fade so the re-baseline is noticed */
+.entry-setup-genre-enter-active,
+.entry-setup-genre-leave-active {
+  transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.entry-setup__cta:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.05);
-  box-shadow: 0 16px 40px -12px color-mix(in srgb, var(--studio-purple) 80%, transparent);
+.entry-setup-genre-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
-.entry-setup__cta:active {
-  transform: translateY(0);
+.entry-setup-genre-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
-.entry-setup__cta:focus-visible {
-  outline: 2px solid var(--studio-purple);
-  outline-offset: 3px;
-}
-
-.entry-setup__cta-icon {
-  font-size: 0.8rem;
+@media (prefers-reduced-motion: reduce) {
+  .entry-setup-genre-enter-from,
+  .entry-setup-genre-leave-to {
+    transform: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -184,13 +162,4 @@ const genreName = computed(() => {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .entry-setup__cta {
-    transition: none;
-  }
-
-  .entry-setup__cta:hover {
-    transform: none;
-  }
-}
 </style>

@@ -47,8 +47,7 @@ function handleRewindClick() {
       :disabled="disabled"
     >
       <span class="btn-ripple"></span>
-      <span class="btn-glow"></span>
-      <svg class="btn-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
       </svg>
     </button>
@@ -70,15 +69,7 @@ function handleRewindClick() {
       <!-- Sound engine still loading: the button holds its place and spins -->
       <span v-if="busy" class="transport-btn__busy" aria-hidden="true"></span>
 
-      <!-- Animated rings for playing state -->
-      <div class="play-rings" v-if="isPlaying">
-        <span class="play-ring play-ring--1"></span>
-        <span class="play-ring play-ring--2"></span>
-        <span class="play-ring play-ring--3"></span>
-      </div>
-
       <span class="btn-ripple"></span>
-      <span class="btn-glow btn-glow--play"></span>
 
       <!-- Icon container -->
       <span class="icon-wrap">
@@ -108,21 +99,10 @@ function handleRewindClick() {
 <style scoped>
 .transport-bar {
   --accent: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
-  --accent-alpha: rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.15);
-  --pink: var(--studio-pink);
-  --bg-dark: rgba(var(--studio-panel-deep-rgb), 0.9);
 
   display: flex;
   align-items: center;
-  background: var(--bg-dark);
-  border: 1px solid var(--accent-alpha);
-  border-radius: 28px;
-  padding: 4px;
-  gap: 4px;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 4px 16px var(--studio-shadow-strong),
-    inset 0 1px 0 rgba(var(--studio-ink-rgb), 0.04);
+  gap: 6px;
 }
 
 /* Base button style */
@@ -138,49 +118,55 @@ function handleRewindClick() {
   border-radius: 50%;
   overflow: hidden;
   transition:
-    color 0.2s ease,
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.15s ease,
+    background-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.25s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .transport-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none !important;
 }
 
-/* Rewind button */
+.transport-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Rewind: a quiet secondary control */
 .transport-btn--rewind {
-  width: 36px;
-  height: 36px;
-}
-
-/* Play button */
-.transport-btn--play {
-  width: 44px;
-  height: 44px;
-  color: var(--studio-text-primary);
-}
-
-/* Hover states */
-.transport-btn:hover:not(:disabled) {
-  color: var(--studio-text-primary);
-  transform: scale(1.08);
+  width: 40px;
+  height: 40px;
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.08);
 }
 
 .transport-btn--rewind:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.3);
+  color: var(--studio-text-primary);
+  background: rgba(var(--studio-ink-rgb), 0.09);
+}
+
+/* Play: the primary control, always filled */
+.transport-btn--play {
+  width: 52px;
+  height: 52px;
+  color: var(--studio-on-accent);
+  background: var(--accent);
+  box-shadow: 0 8px 20px -8px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.7);
 }
 
 .transport-btn--play:hover:not(:disabled) {
-  box-shadow: 0 0 24px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 10px 26px -8px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.8);
 }
 
 /* Active press */
 .transport-btn:active:not(:disabled) {
-  transform: scale(0.92);
-  transition-duration: 0.08s;
+  transform: scale(0.94);
+  transition-duration: 0.06s;
 }
 
 /* Icon */
@@ -188,81 +174,73 @@ function handleRewindClick() {
   position: relative;
   z-index: 2;
   fill: currentColor;
-  transition: transform 0.2s ease;
 }
 
-/* Icon container for morphing */
+/* Icon container for the play/pause cross-fade */
 .icon-wrap {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   z-index: 2;
 }
 
-/* Morphing icons */
 .btn-icon--morphing {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   opacity: 0;
-  transform: scale(0.6) rotate(-120deg);
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transform: scale(0.6);
+  transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .btn-icon--morphing.btn-icon--visible {
   opacity: 1;
-  transform: scale(1) rotate(0deg);
+  transform: scale(1);
 }
 
-/* Play triangle micro-animation */
-.play-triangle {
-  transition: transform 0.2s ease;
-}
-
-.transport-btn--play:hover:not(:disabled):not(.transport-btn--active) .btn-icon--visible .play-triangle {
-  transform: translateX(1px);
-}
-
-/* Pause bars equalizer animation */
+/* Pause bars: a gentle level meter while playing */
 .pause-bar {
   transform-origin: center;
 }
 
 .transport-btn--active .pause-bar--left {
-  animation: eqLeft 0.6s ease-in-out infinite;
+  animation: eqLeft 0.9s ease-in-out infinite;
 }
 
 .transport-btn--active .pause-bar--right {
-  animation: eqRight 0.6s ease-in-out infinite;
-  animation-delay: 0.08s;
+  animation: eqRight 0.9s ease-in-out infinite;
 }
 
 @keyframes eqLeft {
   0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.65); }
+  50% { transform: scaleY(0.75); }
 }
 
 @keyframes eqRight {
-  0%, 100% { transform: scaleY(0.65); }
+  0%, 100% { transform: scaleY(0.75); }
   50% { transform: scaleY(1); }
 }
 
-/* Ripple effect */
+/* Press ripple */
 .btn-ripple {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(var(--studio-ink-rgb), 0.5) 0%, rgba(var(--studio-ink-rgb), 0) 70%);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
 }
 
+.transport-btn--rewind .btn-ripple {
+  background: radial-gradient(circle at center, rgba(var(--studio-ink-rgb), 0.25) 0%, rgba(var(--studio-ink-rgb), 0) 70%);
+}
+
 .transport-btn--rippling .btn-ripple {
-  animation: ripple 0.5s ease-out forwards;
+  animation: ripple 0.45s ease-out forwards;
 }
 
 @keyframes ripple {
@@ -276,105 +254,30 @@ function handleRewindClick() {
   }
 }
 
-/* Glow effect */
-.btn-glow {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0;
-  filter: blur(10px);
-  z-index: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.btn-glow--play {
-  background: linear-gradient(135deg, var(--accent), var(--pink));
-}
-
-.transport-btn:hover:not(:disabled) .btn-glow {
-  opacity: 0.35;
-}
-
-/* Playing rings */
-.play-rings {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.play-ring {
-  position: absolute;
-  inset: -3px;
-  border: 2px solid var(--accent);
-  border-radius: 50%;
-  opacity: 0;
-}
-
-.play-ring--1 { animation: ringPulse 1.8s ease-out infinite; }
-.play-ring--2 { animation: ringPulse 1.8s ease-out infinite 0.5s; }
-.play-ring--3 { animation: ringPulse 1.8s ease-out infinite 1s; }
-
-@keyframes ringPulse {
-  0% {
-    opacity: 0.6;
-    transform: scale(0.95);
-    border-color: var(--accent);
-  }
-  60% {
-    border-color: var(--pink);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.5);
-    border-color: var(--pink);
-  }
-}
-
-/* Active (playing) state */
+/* Playing: a soft halo around the filled button */
 .transport-btn--active {
-  background: linear-gradient(135deg, var(--accent), var(--pink));
-  color: var(--studio-on-accent);
   box-shadow:
-    0 0 20px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.5),
-    0 0 40px rgba(var(--studio-pink-rgb), 0.2);
-}
-
-.transport-btn--active .btn-glow {
-  opacity: 0.5;
-  animation: glowBreathe 1.2s ease-in-out infinite;
-}
-
-@keyframes glowBreathe {
-  0%, 100% {
-    opacity: 0.4;
-    filter: blur(10px);
-  }
-  50% {
-    opacity: 0.6;
-    filter: blur(14px);
-  }
+    0 0 0 4px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.18),
+    0 8px 20px -8px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.7);
 }
 
 .transport-btn--active:hover:not(:disabled) {
   box-shadow:
-    0 0 28px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.6),
-    0 0 50px rgba(var(--studio-pink-rgb), 0.25);
+    0 0 0 5px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.22),
+    0 10px 26px -8px rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.8);
 }
 
 /* Busy (sound engine loading) */
 .transport-btn--busy .icon-wrap {
-  opacity: 0.25;
+  opacity: 0.3;
 }
 
 .transport-btn__busy {
   position: absolute;
-  inset: 6px;
+  inset: 8px;
   z-index: 3;
-  border: 2px solid rgba(var(--accent-rgb, var(--studio-purple-rgb)), 0.25);
-  border-top-color: rgb(var(--accent-rgb, var(--studio-purple-rgb)));
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--studio-on-accent);
   border-radius: 50%;
   animation: transport-busy-spin 0.8s linear infinite;
   pointer-events: none;
@@ -388,14 +291,14 @@ function handleRewindClick() {
   .transport-btn__busy {
     animation-duration: 2.4s;
   }
-}
 
-/* Paused state */
-.transport-btn--paused {
-  background: rgba(var(--studio-pink-rgb), 0.25);
-}
+  .transport-btn--active .pause-bar--left,
+  .transport-btn--active .pause-bar--right {
+    animation: none;
+  }
 
-.transport-btn--paused:hover:not(:disabled) {
-  background: rgba(var(--studio-pink-rgb), 0.35);
+  .transport-btn--rippling .btn-ripple {
+    animation: none;
+  }
 }
 </style>

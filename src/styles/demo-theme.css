@@ -57,7 +57,6 @@
 
   /* Atmosphere */
   --studio-orb-opacity: 0.18;
-  --studio-noise-opacity: 0.015;
 }
 
 .dark {
@@ -105,5 +104,4 @@
 
   /* Atmosphere */
   --studio-orb-opacity: 0.5;
-  --studio-noise-opacity: 0.03;
 }

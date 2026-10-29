@@ -18,8 +18,17 @@ const { stop: stopPlayer } = useMidiPlayer({ stopOnUnmount: true })
 type Phase = 'entry' | 'studio'
 const phase = ref<Phase>('entry')
 
+// The phase switch replaces the whole panel; whatever was scrolled to (the
+// Generate button sits at the bottom of the entry screen) no longer exists.
+function scrollToPanelTop() {
+  if (typeof window === 'undefined' || window.scrollY === 0) return
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
+}
+
 function handleGenerate() {
   phase.value = 'studio'
+  scrollToPanelTop()
   if (typeof window !== 'undefined') {
     history.pushState({ studioPhase: 'studio' }, '', '')
   }
@@ -35,6 +44,7 @@ function backToEntry() {
   store.invalidateVocal()
   store.invalidateBgm()
   phase.value = 'entry'
+  scrollToPanelTop()
 }
 
 /**
@@ -117,31 +127,12 @@ onUnmounted(() => {
 
 <template>
   <div class="midi-studio">
-    <!-- Atmospheric Background -->
-    <div class="midi-studio__atmosphere">
-      <div class="midi-studio__gradient-orb midi-studio__gradient-orb--purple"></div>
-      <div class="midi-studio__gradient-orb midi-studio__gradient-orb--pink"></div>
-      <div class="midi-studio__noise"></div>
+    <div class="midi-studio__panel">
+      <Transition name="studio-fade" mode="out-in">
+        <EntryScreen v-if="phase === 'entry'" key="entry" @generate="handleGenerate" />
+        <StudioScreen v-else key="studio" @back="requestBackToEntry" />
+      </Transition>
     </div>
-
-    <!-- Header -->
-    <header class="midi-studio__header">
-      <div class="midi-studio__logo">
-        <span class="midi-studio__logo-icon">◈</span>
-        <span class="midi-studio__logo-text">{{ t('wizard.logo') }}</span>
-      </div>
-      <div class="midi-studio__subtitle">{{ t('wizard.subtitle') }}</div>
-    </header>
-
-    <!-- Content -->
-    <main class="midi-studio__content">
-      <div class="midi-studio__panel">
-        <Transition name="studio-fade" mode="out-in">
-          <EntryScreen v-if="phase === 'entry'" key="entry" @generate="handleGenerate" />
-          <StudioScreen v-else key="studio" @back="requestBackToEntry" />
-        </Transition>
-      </div>
-    </main>
   </div>
 </template>
 
@@ -149,131 +140,13 @@ onUnmounted(() => {
 
 .midi-studio {
   position: relative;
-  background: var(--studio-bg-deep);
-  border-radius: 24px;
-  overflow: hidden;
   font-family: var(--font-body);
   isolation: isolate;
 }
 
-.midi-studio__atmosphere {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.midi-studio__gradient-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: var(--studio-orb-opacity);
-  animation: orb-drift 20s ease-in-out infinite;
-}
-
-.midi-studio__gradient-orb--purple {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, var(--studio-purple) 0%, transparent 70%);
-  top: -200px;
-  left: -100px;
-}
-
-.midi-studio__gradient-orb--pink {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, var(--studio-pink) 0%, transparent 70%);
-  bottom: -100px;
-  right: -50px;
-  animation-delay: -10s;
-}
-
-@keyframes orb-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -20px) scale(1.05); }
-  66% { transform: translate(-20px, 15px) scale(0.95); }
-}
-
-.midi-studio__noise {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: var(--studio-noise-opacity);
-  mix-blend-mode: overlay;
-}
-
-.midi-studio__header {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 2.5rem 2rem 1.5rem;
-}
-
-.midi-studio__logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.midi-studio__logo-icon {
-  font-size: 1.5rem;
-  color: var(--studio-purple);
-  text-shadow: 0 0 20px rgba(var(--studio-purple-rgb), 0.4);
-  animation: logo-breathe 5s ease-in-out infinite;
-}
-
-@keyframes logo-breathe {
-  0%, 100% {
-    text-shadow: 0 0 20px rgba(var(--studio-purple-rgb), 0.4);
-    transform: scale(1);
-  }
-  50% {
-    text-shadow: 0 0 28px rgba(var(--studio-purple-rgb), 0.7);
-    transform: scale(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .midi-studio__logo-icon {
-    animation: none;
-  }
-}
-
-.midi-studio__logo-text {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 650;
-  letter-spacing: 0.2em;
-  /* Gradient ink: text-primary fading into the purple accent at the tail */
-  background: linear-gradient(
-    100deg,
-    var(--studio-text-primary) 55%,
-    var(--studio-purple-soft) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--studio-text-primary); /* fallback */
-}
-
-.midi-studio__subtitle {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(var(--studio-ink-rgb), 0.35);
-}
-
-.midi-studio__content {
-  position: relative;
-  z-index: 1;
-  padding: 0 2rem 2rem;
-}
-
 .midi-studio__panel {
   position: relative;
-  background: rgba(var(--studio-panel-deep-rgb), 0.85);
+  background: rgba(var(--studio-panel-deep-rgb), 0.86);
   border: 1px solid rgba(var(--studio-purple-rgb), 0.12);
   border-radius: 20px;
   padding: 2rem;
@@ -282,60 +155,35 @@ onUnmounted(() => {
   -webkit-backdrop-filter: blur(20px);
   box-shadow:
     0 0 0 1px rgba(var(--studio-ink-rgb), 0.03) inset,
-    0 24px 48px -12px var(--studio-shadow-strong);
-  overflow: hidden;
+    0 30px 60px -24px var(--studio-shadow-strong);
 }
 
-/* Powered-on rail: a thin accent gradient along the panel's top edge */
-.midi-studio__panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(var(--studio-purple-rgb), 0.55) 35%,
-    rgba(var(--studio-pink-rgb), 0.45) 65%,
-    transparent
-  );
-  pointer-events: none;
-}
-
+/* Phase switch: a short cross-fade with a small lift, not a page slide */
 .studio-fade-enter-active,
 .studio-fade-leave-active {
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.22s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .studio-fade-enter-from {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(8px);
 }
 
 .studio-fade-leave-to {
   opacity: 0;
-  transform: translateY(-16px);
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-fade-enter-from,
+  .studio-fade-leave-to {
+    transform: none;
+  }
 }
 
 @media (max-width: 640px) {
-  .midi-studio {
-    border-radius: 16px;
-  }
-
-  .midi-studio__header {
-    padding: 1.5rem 1rem 1rem;
-  }
-
-  .midi-studio__logo-text {
-    font-size: 1.25rem;
-  }
-
-  .midi-studio__content {
-    padding: 0 0 1rem;
-  }
-
   .midi-studio__panel {
     padding: 1.25rem 0.75rem;
     border-radius: 16px;

@@ -285,23 +285,27 @@ function selectUrl() {
   justify-content: center;
   gap: 0.625rem;
   width: 100%;
-  padding: 0.875rem 1.5rem;
-  background: rgba(var(--studio-ink-rgb), 0.05);
-  border: 1px solid rgba(var(--studio-ink-rgb), 0.1);
+  padding: 0.875rem 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(var(--studio-ink-rgb), 0.14);
   border-radius: 12px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(var(--studio-ink-rgb), 0.6);
+  color: rgba(var(--studio-ink-rgb), 0.7);
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .backup-btn:hover {
-  background: rgba(var(--studio-ink-rgb), 0.08);
-  border-color: rgba(var(--studio-ink-rgb), 0.15);
-  color: rgba(var(--studio-ink-rgb), 0.8);
-  transform: translateY(-2px);
+  background: rgba(var(--studio-ink-rgb), 0.05);
+  border-color: rgba(var(--studio-ink-rgb), 0.22);
+  color: var(--studio-text-primary);
+}
+
+.backup-btn:focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 2px;
 }
 
 .backup-btn__icon-wrap {

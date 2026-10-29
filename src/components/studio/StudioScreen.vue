@@ -9,6 +9,7 @@ import StudioMoreOptions from './StudioMoreOptions.vue'
 import StudioOutputBar from './StudioOutputBar.vue'
 import StudioVocalEditor from './StudioVocalEditor.vue'
 import StudioApplyButton from './StudioApplyButton.vue'
+import StudioDock from './StudioDock.vue'
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -50,11 +51,9 @@ function handleEditorSaved() {
 // copy docks to the bottom of the viewport until it is dealt with.
 const essentialsRef = ref<HTMLElement | null>(null)
 const isEssentialsVisible = ref(true)
-const isClient = ref(false)
 let observer: IntersectionObserver | null = null
 
 const showDockedApply = computed(() =>
-  isClient.value &&
   !isEssentialsVisible.value &&
   !isEditing.value &&
   (studio.isStale.value || studio.isGenerating.value)
@@ -79,10 +78,7 @@ function observeEssentials() {
   observer.observe(target)
 }
 
-onMounted(() => {
-  isClient.value = true
-  nextTick(observeEssentials)
-})
+onMounted(() => nextTick(observeEssentials))
 
 // The Essentials bar only mounts once a result exists, so re-attach when it does
 watch(() => studio.eventData.value, () => nextTick(observeEssentials))
@@ -94,7 +90,7 @@ onBeforeUnmount(() => observer?.disconnect())
   <div class="studio-screen">
     <!-- Back to entry -->
     <button class="studio-screen__back" @click="emit('back')">
-      <span>←</span>
+      <span class="studio-screen__back-arrow" aria-hidden="true">←</span>
       <span>{{ t('studio.backToEntry') }}</span>
     </button>
 
@@ -121,18 +117,9 @@ onBeforeUnmount(() => observer?.disconnect())
     />
 
     <!-- Docked apply CTA, shown only while the inline one is off-screen -->
-    <Teleport v-if="isClient" to="body">
-      <Transition name="apply-dock">
-        <div v-if="showDockedApply" class="apply-dock">
-          <div class="apply-dock__inner">
-            <span v-if="dockedDetail" class="apply-dock__detail">{{ dockedDetail }}</span>
-            <div class="apply-dock__button">
-              <StudioApplyButton />
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <StudioDock :show="showDockedApply" :detail="dockedDetail">
+      <StudioApplyButton />
+    </StudioDock>
   </div>
 </template>
 
@@ -147,97 +134,35 @@ onBeforeUnmount(() => observer?.disconnect())
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.8rem;
+  gap: 0.45rem;
+  margin: -0.5rem 0 -0.25rem -0.5rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.5rem;
   background: transparent;
-  border: 1px solid rgba(var(--studio-purple-rgb), 0.15);
-  border-radius: 100px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
   color: rgba(var(--studio-ink-rgb), 0.55);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.studio-screen__back-arrow {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .studio-screen__back:hover {
   background: rgba(var(--studio-purple-rgb), 0.08);
-  border-color: rgba(var(--studio-purple-rgb), 0.35);
-  color: rgba(var(--studio-ink-rgb), 0.85);
-  transform: translateX(-2px);
+  color: var(--studio-text-primary);
 }
 
-/* Docked apply CTA */
-.apply-dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-  background: rgba(var(--studio-panel-deep-rgb), 0.92);
-  border-top: 1px solid rgba(var(--studio-purple-rgb), 0.18);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 -12px 32px -20px var(--studio-shadow-strong);
+.studio-screen__back:hover .studio-screen__back-arrow {
+  transform: translateX(-3px);
 }
 
-.apply-dock__inner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  max-width: 920px;
-  margin: 0 auto;
-}
-
-.apply-dock__detail {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: rgba(var(--studio-ink-rgb), 0.65);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.apply-dock__button {
-  flex: 0 0 auto;
-  width: 15rem;
-}
-
-.apply-dock-enter-active,
-.apply-dock-leave-active {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
-}
-
-.apply-dock-enter-from,
-.apply-dock-leave-to {
-  transform: translateY(100%);
-  opacity: 0;
-}
-
-@media (max-width: 640px) {
-  .apply-dock__detail {
-    display: none;
-  }
-
-  .apply-dock__button {
-    flex: 1 1 auto;
-    width: auto;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .apply-dock-enter-active,
-  .apply-dock-leave-active {
-    transition: opacity 0.2s ease;
-  }
-
-  .apply-dock-enter-from,
-  .apply-dock-leave-to {
-    transform: none;
-  }
+.studio-screen__back:focus-visible {
+  outline: 2px solid var(--studio-purple);
+  outline-offset: 2px;
 }
 </style>
