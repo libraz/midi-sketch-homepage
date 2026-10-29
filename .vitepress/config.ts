@@ -13,7 +13,7 @@ const LLMS_LOCALES: LlmsLocale[] = [
     prefix: '',
     title: 'MIDI Sketch',
     summary:
-      'Music theory-based pop music MIDI generator. Generates reproducible, multi-track MIDI (drums, bass, chords, arpeggio, melody) you can import and edit in any DAW — not finished AI audio. Runs in the browser via WebAssembly, plus Node.js and C++. AGPL-3.0 / Commercial dual licensed.',
+      'Music theory-based pop music MIDI generator. Generates reproducible, nine-track MIDI (drums, bass, chords, arpeggio, melody and more) you can import and edit in any DAW — not finished AI audio. Runs in the browser via WebAssembly, plus Node.js and C++. AGPL-3.0 / Commercial dual licensed.',
     intro:
       'Arrangements are derived from music theory rather than a trained model, so the same\nsettings always produce the same result. The output is editable multi-track MIDI, not\nrendered audio. The documentation also carries a music course explaining the theory\nbehind each setting. The links below point to the canonical HTML pages.',
     overviewHeading: 'Key pages',
@@ -34,7 +34,7 @@ const LLMS_LOCALES: LlmsLocale[] = [
     prefix: '/ja',
     title: 'MIDI Sketch',
     summary:
-      '音楽理論にもとづくポップス MIDI ジェネレーター。ドラム・ベース・コード・アルペジオ・メロディのマルチトラック MIDI を再現性のある形で生成し、DAW にそのまま取り込んで編集できる。AI が書き出した音声ではない。ブラウザでは WebAssembly、ほかに Node.js と C++ で動作。AGPL-3.0 / 商用のデュアルライセンス。',
+      '音楽理論にもとづくポップス MIDI ジェネレーター。ドラム・ベース・コード・アルペジオ・メロディなど9トラックの MIDI を再現性のある形で生成し、DAW にそのまま取り込んで編集できる。AI が書き出した音声ではない。ブラウザでは WebAssembly、ほかに Node.js と C++ で動作。AGPL-3.0 / 商用のデュアルライセンス。',
     intro:
       'アレンジは学習済みモデルではなく音楽理論から導かれるため、同じ設定なら常に同じ結果になる。\n出力は書き出し済みの音声ではなく、編集可能なマルチトラック MIDI。ドキュメントには各設定の\n背景にある理論を解説する音楽コースも含まれる。以下は日本語ドキュメントへのリンク一覧。',
     overviewHeading: '主要ページ',
@@ -133,7 +133,7 @@ const FAQ: Record<Locale, { q: string; a: string }[]> = {
   en: [
     {
       q: 'What is MIDI Sketch?',
-      a: 'MIDI Sketch is a music theory-based MIDI generator that creates complete pop music arrangements. Unlike AI audio generators, it outputs editable MIDI data - drums, bass, chords, arpeggios, and melodies - that you can import into your DAW and customize with your own sounds and mixing.'
+      a: 'MIDI Sketch is a music theory-based MIDI generator that creates complete pop music arrangements. Unlike AI audio generators, it outputs editable MIDI data across nine tracks - drums, bass, chords, arpeggios, melodies and more - that you can import into your DAW and customize with your own sounds and mixing.'
     },
     {
       q: 'How is MIDI Sketch different from an AI music generator?',
@@ -161,7 +161,7 @@ const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: 'What tracks are included in the MIDI output?',
-      a: 'A complete MIDI Sketch export includes: drums (kick, snare, hi-hat, fills), bass line, chord pads, optional arpeggio, and vocal melody. Each track is on a separate MIDI channel for easy DAW editing.'
+      a: 'A complete MIDI Sketch export has nine tracks: vocal melody, chords, bass, motif, arpeggio, an auxiliary sub-melody, guitar, drums (kick, snare, hi-hat, fills), and an SE track carrying markers. Each track is on a separate MIDI channel for easy DAW editing.'
     },
     {
       q: 'Can I use MIDI Sketch for commercial music production?',
@@ -175,7 +175,7 @@ const FAQ: Record<Locale, { q: string; a: string }[]> = {
   ja: [
     {
       q: 'MIDI Sketch とは何ですか？',
-      a: 'MIDI Sketch は、音楽理論にもとづいてポップスのアレンジ一式を生成するMIDIジェネレータです。AI音声生成と違い、ドラム・ベース・コード・アルペジオ・メロディを編集可能なMIDIデータとして出力するので、DAWにインポートして自分の音色とミックスで仕上げられます。'
+      a: 'MIDI Sketch は、音楽理論にもとづいてポップスのアレンジ一式を生成するMIDIジェネレータです。AI音声生成と違い、ドラム・ベース・コード・アルペジオ・メロディなど9トラックを編集可能なMIDIデータとして出力するので、DAWにインポートして自分の音色とミックスで仕上げられます。'
     },
     {
       q: 'AI音楽生成サービスと何が違いますか？',
@@ -203,7 +203,7 @@ const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: '出力されるMIDIにはどのトラックが含まれますか？',
-      a: 'ドラム（キック、スネア、ハイハット、フィル）、ベースライン、コードパッド、任意のアルペジオ、ボーカルメロディが含まれます。各トラックは別々のMIDIチャンネルに配置されるので、DAWでの編集が容易です。'
+      a: 'ボーカルメロディ、コード、ベース、モチーフ、アルペジオ、補助のサブメロディ、ギター、ドラム（キック、スネア、ハイハット、フィル）、マーカー用のSEの9トラックです。各トラックは別々のMIDIチャンネルに配置されるので、DAWでの編集が容易です。'
     },
     {
       q: '生成したMIDIを商用制作に使えますか？',

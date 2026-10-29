@@ -64,7 +64,7 @@ The penalty score starts at 1.0, subtracts nine penalties, adds two bonuses, and
 
 | Penalty | Max | Detection Target |
 |---------|-----|------------------|
-| **High Register** | 0.5 | Consecutive or sustained notes at D5 (74) or above |
+| **High Register** | 0.5 | Consecutive or sustained notes at D5 (74) or above; a high run the phrase ends on is not penalised |
 | **Leap After High** | 0.4 | Leap of a 5th or more landing at D5 or above |
 | **Rapid Direction Change** | 0.3 | More than three direction reversals at eighth-note spacing or faster |
 | **Isolated Note** | 0.3 | Notes with a 5th or wider on both sides |

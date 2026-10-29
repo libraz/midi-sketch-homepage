@@ -190,7 +190,7 @@ BackgroundMotifはMotif生成を有効にします。セクションマスクと
 | `blueprintId` | `255`（デフォルト） | ムードに合い、曲のテンポを収める Blueprint から重みに従って抽選します |
 | `seed` | `0` | ランダムシードを自動生成 |
 | `targetDurationSeconds` | `0` | `formId`で指定した構造パターンを使用 |
-| `vocalStyle` | `0` (Auto) | スタイルに応じたランダム選択 |
+| `vocalStyle` | `0` (Auto) | Blueprintのシンガーテーブルから選択。持たないBlueprintではスタイルプリセットのテーブルから選択 |
 | `melodyTemplate` | `0` (Auto) | スタイルに応じたデフォルト選択 |
 | `arpeggioPattern` | `255` (Auto) | ムード既定のパターンを使用 |
 | `arpeggioSpeed` | `255` (Auto) | ムード既定の速度を使用 |
@@ -541,7 +541,7 @@ min_seconds = min_bars * 240 / bpm
 {
   compositionStyle: 1,  // BackgroundMotif (BGM専用)
   compositionStyleExplicit: true,
-  // skipVocalの指定は不要（BackgroundMotifでは自動的にVocal無効）
+  // skipVocalの指定は不要（BackgroundMotifの曲全体生成ではコアがVocalを省く）
 
   // Motif設定
   motifMaxChordCount: 4,
@@ -660,7 +660,7 @@ min_seconds = min_bars * 240 / bpm
 
 | ID | 名前 | 特徴 |
 |----|------|------|
-| 0 | Auto | スタイルに応じてランダム選択 |
+| 0 | Auto | 楽曲シードによる重み付き抽選。Blueprintのシンガーテーブル（Blueprint 1、3〜8。例：Balladは Ballad 70% / Standard 30%）、なければスタイルプリセットのテーブル（Blueprint 0、2、9）を使います。抽選されたスタイルのプリセット値がその後に適用されます（Standardが選ばれた場合は適用なし） |
 | 1 | Standard | 標準的なポップス |
 | 2 | Vocaloid | 高密度・広跳躍・シンコペーション（歌唱可能） |
 | 3 | UltraVocaloid | 超高速・極端な跳躍（機械向け） |
@@ -739,15 +739,18 @@ min_seconds = min_bars * 240 / bpm
 
 ### 12.7 hookIntensity → フレーズ生成変更
 
-| hookIntensity | duration乗数 | velocity加算 | 対象セクション |
-|---------------|-------------|-------------|----------------|
-| `Off (0)` | - | - | なし |
-| `Light (1)` | ×1.3 | +5 | Chorus, B |
-| `Normal (2)` | ×1.5 | +10 | Chorus, B |
-| `Strong (3)` | ×2.0 | +15 | **全セクション** |
+| hookIntensity | duration乗数 | velocity加算 | 強調する音数 | フックポイント |
+|---------------|-------------|-------------|:-----------:|----------------|
+| `Off (0)` | - | - | - | なし |
+| `Light (1)` | ×1.3 | +5 | 1 | Chorusの頭 |
+| `Normal (2)` | ×1.5 | +10 | 2 | Chorusの頭と、8小節以上のChorusではその中間点 |
+| `Strong (3)` | ×2.0 | +15 | 3 | Normalに加えてBの頭 |
+| `Maximum (4)` | ×2.0 | +15 | 3 | Strongと同じ |
+
+強調されるのは、各フックポイントの最初の2拍に入る先頭の音だけです。AとBridgeがフックポイントになることはありません。`Off`ではChorus内のフックスケルトン、詠唱、中間点の再提示のいずれも書かれません。2回目以降のChorusが最初のChorusを繰り返すのは曲の形式なので、Offでもそのまま残ります。
 
 ::: warning Maximum (4) は Behavioral Loop 用
-`hookIntensity=4`（Maximum）はBehavioralLoopモード向けで、`blueprintId=9`または`addictiveMode=true`の場合に自動設定されます。明示的に指定してもバリデーションは通りますが、シンプルなパターンの最大反復が強制されるため、通常の楽曲では0-3を使用してください。
+`hookIntensity=4`（Maximum）の強調はStrongと同じで、追加の効果はフックスケルトンの選択に現れます。BehavioralLoopモード向けで、`blueprintId=9`または`addictiveMode=true`の場合に自動設定されます。明示的に指定してもバリデーションは通りますが、シンプルなパターンの最大反復が強制されるため、通常の楽曲では0-3を使用してください。
 :::
 
 ---
@@ -995,7 +998,7 @@ Production Blueprintは、スタイル/ムード設定とは独立して、音�
 
 | ポリシー | 値 | 説明 | motifRepeatScope への影響 |
 |---------|:--:|------|--------------------------|
-| Free | 0 | セクションごとに変化 | `motifRepeatScope` 設定を使用 |
+| Free | 0 | 曲全体で1つ、またはセクション種別ごとにモチーフを持つ | `motifRepeatScope` 設定を使用 |
 | LockedContour | 1 | ピッチ輪郭は固定、リズムと表現は変化 | `motifRepeatScope` を**無視** |
 | LockedPitch | 2 | ピッチ完全固定、ベロシティは変化 | `motifRepeatScope` を**無視** |
 | LockedAll | 3 | 全要素固定 | `motifRepeatScope` を**無視** |

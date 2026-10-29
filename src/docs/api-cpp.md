@@ -891,8 +891,8 @@ typedef struct {
 typedef struct {
   uint32_t tick;
   int8_t chord_degree;
-  uint8_t current_key;
-  uint8_t safety[128];
+  uint8_t current_key;  // output key shift; not applied to the arrays below
+  uint8_t safety[128];  // indexed by internal C-major pitch, as are reason, collision, recommended
   uint16_t reason[128];
   MidiSketchCollisionInfo collision[128];
   uint8_t recommended[8];

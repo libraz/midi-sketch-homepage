@@ -377,6 +377,8 @@ const format = sketch.getMidiFormat()
 ボーカルトラック（およびAuxトラック）のみを再生成します。同じコード進行と構成を維持します。
 `generateVocal()` 後のボーカル優先の試行錯誤や、`generateFromConfig()` の `skipVocal: true` と組み合わせたBGM先行ワークフローで使用します。
 `VocalConfig` オブジェクトまたはシード番号（デフォルト: 0 = 新規ランダム）を受け付けます。
+ボーカル設定が検証に通らない場合は `MidiSketchConfigError`、それ以外の失敗では `MidiSketchGenerationError` を送出します。
+ボーカルスタイルが Auto の場合は、曲を生成したときのシードで決まったスタイルを使います。スタイルと複雑さは曲の元のパラメータにそれまでの更新を重ねて導出し直すため、テイクを重ねてもスタイルが引き直されたり、前回の調整が積み重なったりしません。
 
 ```javascript
 // VocalConfig オブジェクトで指定
@@ -461,6 +463,7 @@ sketch.generateVocal(vocalConfig)
 ### `generateAccompaniment(config?)`
 
 既存のボーカルに対して伴奏トラックを生成します。`generateVocal()`、`generateWithVocal()`、または `setVocalNotes()` の後に呼び出す必要があります。生成順序：Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE（ボーカルに適応）
+伴奏設定が検証に通らない場合は `MidiSketchConfigError`、それ以外の失敗では `MidiSketchGenerationError` を送出します。
 
 ```javascript
 // シンプル：デフォルト設定を使用
@@ -500,6 +503,7 @@ sketch.generateAccompaniment({
 ### `regenerateAccompaniment(seedOrConfig)`
 
 新しいシードまたは設定で伴奏トラックを再生成します。現在のボーカルを保持し、全ての伴奏トラック（Aux、Bass、Chord、Drums等）を再生成します。
+伴奏設定が検証に通らない場合は `MidiSketchConfigError`、それ以外の失敗では `MidiSketchGenerationError` を送出します。
 
 ```javascript
 // シードのみ
@@ -546,18 +550,21 @@ const midi = sketch.getMidi()
 
 ### `getPianoRollSafetyAt(tick, prevPitch?)`
 
-単一ティックのピアノロール安全性情報を取得します。各MIDIノート（0-127）の安全性レベル、理由フラグ、衝突情報を返します。カスタムボーカルノートを配置する前に、どのノートが安全かを確認するために使用します。
+単一ティックのピアノロール安全性情報を取得します。各MIDIピッチ（0-127）の安全性レベル、理由フラグ、衝突情報を返します。カスタムボーカルノートを配置する前に、どのノートが安全かを確認するために使用します。
+
+配列と `recommended` は、ジェネレーター内部の C メジャーのピッチ空間で表されます。`currentKey` は出力時に上乗せされるシフト量なので、インデックスに足すと実際に鳴るピッチになります。
 
 ```javascript
 const info = sketch.getPianoRollSafetyAt(0)
 
-// C4（ピッチ60）が安全かチェック
-if (info.safety[60] === 0) { // NoteSafety.Safe
+// 実際に鳴る C4（MIDI 60）が安全かチェック：内部の C メジャー空間で引く
+const internal = 60 - info.currentKey
+if (info.safety[internal] === 0) { // NoteSafety.Safe
   console.log('C4はコードトーン、使用可能')
 }
 
-// 推奨ノートを取得
-console.log('推奨:', info.recommended)
+// 推奨ノートを実際に鳴るピッチに変換
+console.log('推奨:', info.recommended.map((p) => p + info.currentKey))
 ```
 
 ### `getPianoRollSafety(startTick, endTick, step)`
@@ -818,11 +825,11 @@ const builder = new midisketch.SongConfigBuilder(styleId)
 | `setForm(id)` | number | フォーム ID を設定し `formExplicit=true` にする |
 | `setVocalRange(low, high)` | number, number | MIDI ボーカル音域を設定し、上下を正規化する |
 | `setBpm(bpm)` | number | BPM 設定 (0=指定した Blueprint のテンポ、なければ明示したムードのテンポ、それ以外はスタイルのテンポ)。選択した Blueprint の宣言済み範囲外で警告 |
-| `setBlueprint(id)` | number | Blueprint 設定 (0-9 はその Blueprint のテンポで使用、255 はスタイルのテンポに合うものを抽選)。カスケード: drums, hookIntensity |
+| `setBlueprint(id)` | number | Blueprint 設定 (0-9 はその Blueprint のテンポで使用、255 はスタイルのテンポに合うものを抽選)。カスケード: drums, hookIntensity, BPM |
 | `setStylePreset(id)` | number | スタイルプリセット設定。未明示の chord, form, BPM, vocal attitude をスタイルデフォルトにリセット |
-| `setVocalStyle(style)` | number | ボーカルスタイル設定 (0=自動, 1-13)。アイドル系スタイルは call を自動有効化 |
+| `setVocalStyle(style)` | number | ボーカルスタイル設定 (0=自動, 1-13)。アイドル系スタイルは `callSetting` が Auto の間 call を有効化 |
 | `setVocalAttitude(attitude)` | number | ボーカルアティチュード設定 (0=Clean, 1=Expressive, 2=Raw) |
-| `setCompositionStyle(style)` | number | 作曲スタイル設定 (0-2)。カスケード: skipVocal, arpeggioEnabled |
+| `setCompositionStyle(style)` | number | 作曲スタイル設定 (0-2)。カスケード: arpeggioEnabled |
 | `setModulation(timing, semitones?)` | number, number | 転調設定 (timing 0-4, semitones 1-4) |
 | `setChordExtensions(opts)` | object | 拡張と正規化確率を設定 (`sus`, `seventh`, `ninth`, `tritone`, `susProb`, `seventhProb`, `ninthProb`, `tritoneProb`; 確率は 0.0-1.0) |
 | `setArpeggio(enabled, opts?)` | boolean, object | アルペジオ設定 (`pattern`, `speed`, `octaveRange`, `gate`, `syncChord`, `baseVelocity`)。SongConfig の `gate` は 0.0-1.0 または -1 |
@@ -873,17 +880,17 @@ const derived = builder.getDerivedFields()
 // 全設定をデフォルトにリセット
 builder.reset()       // style ID を渡す場合は builder.reset(1)
 
-// デフォルトにリセットするが、明示的に設定した値は保持
+// デフォルトにリセットするが、明示的に設定した値（と対応する *Explicit フラグ）は保持
 builder.resetKeepExplicit() // style ID を渡す場合は builder.resetKeepExplicit(1)
 ```
 
 ### カスケード検出
 
-特定のパラメータ変更は、関連パラメータへのカスケード更新をトリガーします：
+特定のパラメータ変更は、関連パラメータへのカスケード更新をトリガーします。明示的に設定したフィールドはカスケードで変わらず、警告が出るだけです。きっかけになった値をもう一度変えると、前回のカスケードで変わったフィールドを先に元へ戻すため、呼び出し順で結果は変わりません。
 
-- **Blueprint 変更**: `drumsEnabled` を自動調整する場合あり (Blueprint 1, 5, 7 はドラム必須)、`hookIntensity` (BehavioralLoop は Maximum を強制)
-- **作曲スタイル変更**: `skipVocal`, `arpeggioEnabled` を自動調整する場合あり (SynthDriven はアルペジオ有効化)
-- **ボーカルスタイル変更**: アイドル系プリセット (4=Idol, 9=BrightKira, 11=CuteAffected) は明示的に設定されていなければ call を自動有効化
+- **Blueprint 変更**: `drumsEnabled` (Blueprint 1, 5, 7 はドラム必須)、`hookIntensity` (BehavioralLoop は Maximum を強制)、BPM (Blueprint のテンポ範囲内へ移動) を自動調整する場合あり
+- **作曲スタイル変更**: `arpeggioEnabled` を自動調整する場合あり (SynthDriven はアルペジオ有効化)。`skipVocal` には触れません。BackgroundMotif と SynthDriven の曲全体生成では、コアが自分でボーカルを省きます
+- **ボーカルスタイル変更**: アイドル系プリセット (4=Idol, 9=BrightKira, 11=CuteAffected) は `callSetting` が Auto の間 call を有効にします。Auto はコアがボーカルスタイルから決めるので、スタイルを変え直せば結果もそれに従います
 - **BPM 変更**: 選択した Blueprint の宣言済みテンポ範囲外の場合に警告
 - **ドラム変更**: ドラム必須 Blueprint でドラムを無効化する場合に警告
 
@@ -1204,7 +1211,7 @@ ConfigError.InvalidTargetDuration   // 35
 
 ### エラークラス
 
-`MidiSketchConfigError` は `Error` を継承し、`code: ConfigErrorCode` と `nativeMessage` を持ちます。`MidiSketchGenerationError` は `Error` を継承し、コアが返した数値 `code` を持ちます。設定を使う生成メソッドは検証失敗時に設定エラー、それ以外の失敗時に生成エラーを送出します。
+`MidiSketchConfigError` は `Error` を継承し、`code: ConfigErrorCode` と `nativeMessage` を持ちます。`MidiSketchGenerationError` は `Error` を継承し、コアが返した数値 `code` を持ちます。設定を使う生成メソッド（`regenerateVocal`、`generateAccompaniment`、`regenerateAccompaniment` を含む）は検証失敗時に設定エラー、それ以外の失敗時に生成エラーを送出します。
 
 ```javascript
 try {
@@ -1479,11 +1486,11 @@ MIDI Sketchは時間単位として**ティック**を使用します（四分�
 interface PianoRollInfo {
   tick: number                // ティック位置
   chordDegree: number         // 現在のコード度数 (0=I, 1=ii等)
-  currentKey: number          // 現在のキー (0-11、転調考慮)
-  safety: NoteSafetyLevel[]   // 各MIDIノートの安全性レベル (0-127)
-  reason: NoteReasonFlags[]   // 各ノートの理由フラグ (0-127)
+  currentKey: number          // 出力時のキーシフト (0-11、転調考慮)。以下の配列には適用されていない
+  safety: NoteSafetyLevel[]   // 内部 C メジャー空間の各ピッチの安全性レベル (インデックス 0-127)
+  reason: NoteReasonFlags[]   // 内部 C メジャー空間の各ピッチの理由フラグ (インデックス 0-127)
   collision: CollisionInfo[]  // 各ノートの衝突詳細
-  recommended: number[]       // 推奨ノート（優先順、最大8）
+  recommended: number[]       // 推奨ピッチ（内部 C メジャー空間、優先順、最大8）
 }
 ```
 

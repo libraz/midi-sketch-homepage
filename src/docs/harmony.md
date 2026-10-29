@@ -168,6 +168,10 @@ When 7ths are enabled, a chorus proposes one colour per chord instead of running
 Separately, an A section replaces IV with ii in the chord timeline, unless that IV resolves to V or I or ii is already the chord before or after it. This substitution does not depend on any extension setting.
 :::
 
+::: info Chorus loop restatement
+A chorus's chord loop is the progression's cycle stretched to a 4-bar statement. Every later statement copies the first one's chords, including its secondary dominants, colours, substitutions and anticipations, so a hook sung twice meets the same harmony both times. The last 2 bars stay as planned for the cadence. A progression that does not fit a 4-bar phrase (the five-chord ones) states no loop and is not restated. Arpeggio, guitar and bass anticipation decisions are made alike on every restated bar. In the dense choruses (EnergeticDance, IdolPop, AnimeHighEnergy, FutureBass) the chord splits mid-bar on bar 3 of each 4-bar statement, and a restatement splits the same bars.
+:::
+
 ### Configuration
 
 ```cpp
@@ -539,9 +543,12 @@ For external tools such as piano roll editors, the [JavaScript `PianoRollSafety`
 
 ```javascript
 const info = sketch.getPianoRollSafetyAt(0)
-const safety = info.safety[60]
-const reasons = info.reason[60]
+const internal = 60 - info.currentKey  // sounding C4 in the internal C-major space
+const safety = info.safety[internal]
+const reasons = info.reason[internal]
 ```
+
+The arrays are indexed in the generator's internal C-major space; `currentKey` is the shift the output adds on top.
 
 The colors describe this display API's own safety levels: green is safe, yellow is a warning, and red is dissonant or out of range. Its severity policy is separate from the HarmonyContext generator filter and does not inherit that filter's chord exceptions.
 

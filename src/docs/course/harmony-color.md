@@ -58,7 +58,7 @@ The same device aimed at the relative-minor chord — `V/vi`, or E7 resolving to
 
 <ScoreExample example="secondaryDominantVi" locale="en" />
 
-MidiSketch inserts secondary dominants automatically — there is no flag to set. It builds the dominant of an upcoming diatonic chord — the eligible targets are `ii`, `IV`, `V` and `vi` — favors high-tension sections such as the pre-chorus and especially the approach into the chorus, and caps roughly one per eight bars with a cooldown so each one stays an event rather than a habit.
+MidiSketch inserts secondary dominants automatically — there is no flag to set. It builds the dominant of an upcoming diatonic chord — the eligible targets are `ii`, `IV`, `V` and `vi` — favors high-tension sections such as the pre-chorus and especially the approach into the chorus, and caps roughly one per eight bars with a cooldown (the cap applies before a chorus restates its loop; restated bars copy the first pass, so a finished chorus can hold more) so each one stays an event rather than a habit.
 
 ## The tritone: the engine of tension
 

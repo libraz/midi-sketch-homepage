@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="tvp-ttl tvp-dsc">
   <title id="tvp-ttl">セクションがボーカルフレーズを要求したときの流れ</title>
-  <desc id="tvp-dsc">セクションが始まると、セクションタイプ・小節数・開始コード度数を組み合わせたキーでフレーズキャッシュを引きます。ヒットすれば保存済みのフレーズを再利用し、このセクションの頭に移して音域に合わせ直します。ミスの場合は MelodyTemplate を選び、フレーズを生成・採点してキャッシュします。いずれの場合もフレーズは 1 本にまとまり、ボイスリーディング、HarmonyContext.getSafePitch、ボーカル音域へのオクターブフォールドを経て、ボーカルトラックへ書き出されます。</desc>
+  <desc id="tvp-dsc">セクションが始まると、セクションタイプをキーにフレーズキャッシュを引きます。ヒットすれば保存済みのフレーズを再利用し、このセクションの頭に移して音域に合わせ直します。ミスの場合は MelodyTemplate を選び、フレーズを生成・採点してキャッシュします。いずれの場合もフレーズは 1 本にまとまり、ボイスリーディング、HarmonyContext.getSafePitch、ボーカル音域へのオクターブフォールドを経て、ボーカルトラックへ書き出されます。</desc>
 
   <defs>
     <marker id="tvp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
@@ -21,7 +21,7 @@
 
   <rect class="card" x="220" y="72" width="408" height="46" rx="6"/>
   <text class="h" x="232" y="93">フレーズキャッシュを引く</text>
-  <text class="s" x="232" y="111">キー = セクションタイプ + 小節数 + 開始コード度数</text>
+  <text class="s" x="232" y="111">キー = セクションタイプ</text>
 
   <path class="ln" d="M 424 118 V 130"/>
   <path class="ln" d="M 317 130 H 531"/>

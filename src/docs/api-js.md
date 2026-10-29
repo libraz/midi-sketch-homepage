@@ -377,6 +377,8 @@ const format = sketch.getMidiFormat()
 Regenerate only the vocal track (and Aux track). Keeps the same chord progression and structure.
 Use after `generateVocal()` for vocal-first trial-and-error, or after `generateFromConfig()` with `skipVocal: true` for BGM-first workflow.
 Accepts either a `VocalConfig` object or a seed number (default: 0 = new random).
+Throws `MidiSketchConfigError` if the vocal config fails validation and `MidiSketchGenerationError` for other failures.
+An Auto vocal style resolves from the seed the song was generated with, and style and complexity are derived from the song's original parameters plus every update so far, so repeated takes do not re-roll the style or compound earlier adjustments.
 
 ```javascript
 // With VocalConfig object
@@ -461,6 +463,7 @@ sketch.generateVocal(vocalConfig)
 ### `generateAccompaniment(config?)`
 
 Generate accompaniment tracks for existing vocal. Must be called after `generateVocal()`, `generateWithVocal()`, or `setVocalNotes()`. Generates: Aux → Bass → Chord → Guitar → Arpeggio → Drums → SE (adapting to vocal).
+Throws `MidiSketchConfigError` if the accompaniment config fails validation and `MidiSketchGenerationError` for other failures.
 
 ```javascript
 // Simple: use default settings
@@ -500,6 +503,7 @@ sketch.generateAccompaniment({
 ### `regenerateAccompaniment(seedOrConfig)`
 
 Regenerate accompaniment tracks with a new seed or configuration. Keeps current vocal, regenerates all accompaniment tracks (Aux, Bass, Chord, Drums, etc.).
+Throws `MidiSketchConfigError` if the accompaniment config fails validation and `MidiSketchGenerationError` for other failures.
 
 ```javascript
 // With seed only
@@ -546,18 +550,21 @@ const midi = sketch.getMidi()
 
 ### `getPianoRollSafetyAt(tick, prevPitch?)`
 
-Get piano roll safety info for a single tick. Returns safety level, reason flags, and collision info for each MIDI note (0-127). Use this before placing custom vocal notes to see which notes are safe.
+Get piano roll safety info for a single tick. Returns safety level, reason flags, and collision info for each MIDI pitch (0-127). Use this before placing custom vocal notes to see which notes are safe.
+
+The arrays and `recommended` are in the generator's internal C-major pitch space. `currentKey` is the shift the output applies on top, so add it to an index to get the pitch that sounds.
 
 ```javascript
 const info = sketch.getPianoRollSafetyAt(0)
 
-// Check if C4 (pitch 60) is safe
-if (info.safety[60] === 0) { // NoteSafety.Safe
+// Check whether sounding C4 (MIDI 60) is safe: index in the internal C-major space
+const internal = 60 - info.currentKey
+if (info.safety[internal] === 0) { // NoteSafety.Safe
   console.log('C4 is a chord tone, safe to use')
 }
 
-// Get recommended notes
-console.log('Recommended:', info.recommended)
+// Recommended notes, mapped onto sounding pitches
+console.log('Recommended:', info.recommended.map((p) => p + info.currentKey))
 ```
 
 ### `getPianoRollSafety(startTick, endTick, step)`
@@ -819,11 +826,11 @@ All setter methods return `this` for chaining:
 | `setForm(id)` | number | Set form ID and mark `formExplicit=true` |
 | `setVocalRange(low, high)` | number, number | Set and normalize the MIDI vocal range |
 | `setBpm(bpm)` | number | Set BPM (0=a named blueprint's tempo, else the explicit mood's, else the style's). Warns when outside the selected blueprint's declared range |
-| `setBlueprint(id)` | number | Set blueprint (0-9 plays at that blueprint's tempo; 255 draws one that holds the style tempo). May cascade: drums, hookIntensity |
+| `setBlueprint(id)` | number | Set blueprint (0-9 plays at that blueprint's tempo; 255 draws one that holds the style tempo). May cascade: drums, hookIntensity, BPM |
 | `setStylePreset(id)` | number | Set style preset. Resets non-explicit chord, form, BPM, and vocal attitude fields |
-| `setVocalStyle(style)` | number | Set vocal style (0=Auto, 1-13). Idol styles auto-enable call |
+| `setVocalStyle(style)` | number | Set vocal style (0=Auto, 1-13). Idol styles turn calls on while `callSetting` is Auto |
 | `setVocalAttitude(attitude)` | number | Set vocal attitude (0=Clean, 1=Expressive, 2=Raw) |
-| `setCompositionStyle(style)` | number | Set composition style (0-2). May cascade: skipVocal, arpeggioEnabled |
+| `setCompositionStyle(style)` | number | Set composition style (0-2). May cascade: arpeggioEnabled |
 | `setModulation(timing, semitones?)` | number, number | Set modulation (timing 0-4, semitones 1-4) |
 | `setChordExtensions(opts)` | object | Set extensions and normalized probabilities (`sus`, `seventh`, `ninth`, `tritone`, `susProb`, `seventhProb`, `ninthProb`, `tritoneProb`; probabilities are 0.0-1.0) |
 | `setArpeggio(enabled, opts?)` | boolean, object | Set arpeggio (`pattern`, `speed`, `octaveRange`, `gate`, `syncChord`, `baseVelocity`); SongConfig `gate` is 0.0-1.0 or -1 |
@@ -874,17 +881,17 @@ const derived = builder.getDerivedFields()
 // Reset all settings to defaults
 builder.reset()       // Or pass a style ID, for example builder.reset(1)
 
-// Reset to defaults but keep explicitly set values
+// Reset to defaults but keep explicitly set values (and their *Explicit flags)
 builder.resetKeepExplicit() // Or pass a style ID, for example builder.resetKeepExplicit(1)
 ```
 
 ### Cascade Detection
 
-Certain parameter changes trigger cascading updates to related parameters:
+Certain parameter changes trigger cascading updates to related parameters. A field you set explicitly is never changed by a cascade; the builder only warns. When the triggering value changes again, the fields it changed are restored first, so the result does not depend on the order of calls.
 
-- **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum)
-- **Composition style change**: May auto-adjust `skipVocal`, `arpeggioEnabled` (SynthDriven enables arpeggio)
-- **Vocal style change**: Idol-style presets (4=Idol, 9=BrightKira, 11=CuteAffected) auto-enable call if not explicitly set
+- **Blueprint change**: May auto-adjust `drumsEnabled` (blueprints 1, 5, 7 require drums), `hookIntensity` (BehavioralLoop forces Maximum), and BPM (moved into the blueprint's tempo range)
+- **Composition style change**: May auto-adjust `arpeggioEnabled` (SynthDriven enables arpeggio). `skipVocal` is not touched: a full-song generation with BackgroundMotif or SynthDriven leaves the vocal out by itself
+- **Vocal style change**: Idol-style presets (4=Idol, 9=BrightKira, 11=CuteAffected) turn calls on while `callSetting` is Auto. The core resolves Auto from the vocal style, so changing the style again changes the answer with it
 - **BPM change**: Warns if BPM is outside the selected blueprint's declared tempo range
 - **Drums change**: Warns if disabling drums for a blueprint that requires them
 
@@ -1205,7 +1212,7 @@ ConfigError.InvalidTargetDuration   // 35
 
 ### Error classes
 
-`MidiSketchConfigError` extends `Error` and carries `code: ConfigErrorCode` plus `nativeMessage`. `MidiSketchGenerationError` extends `Error` and carries the numeric `code` returned by the core. Config-backed generation methods throw the config error when validation fails and the generation error for other failures.
+`MidiSketchConfigError` extends `Error` and carries `code: ConfigErrorCode` plus `nativeMessage`. `MidiSketchGenerationError` extends `Error` and carries the numeric `code` returned by the core. Config-backed generation methods, including `regenerateVocal`, `generateAccompaniment` and `regenerateAccompaniment`, throw the config error when validation fails and the generation error for other failures.
 
 ```javascript
 try {
@@ -1480,11 +1487,11 @@ Piano roll safety info for a single tick:
 interface PianoRollInfo {
   tick: number                // Tick position
   chordDegree: number         // Current chord degree (0=I, 1=ii, etc.)
-  currentKey: number          // Current key (0-11, considering modulation)
-  safety: NoteSafetyLevel[]   // Safety level for each MIDI note (0-127)
-  reason: NoteReasonFlags[]   // Reason flags for each note (0-127)
+  currentKey: number          // Output key shift (0-11, considering modulation); not applied to the arrays below
+  safety: NoteSafetyLevel[]   // Safety level for each internal C-major pitch (index 0-127)
+  reason: NoteReasonFlags[]   // Reason flags for each internal C-major pitch (index 0-127)
   collision: CollisionInfo[]  // Collision details for each note
-  recommended: number[]       // Recommended notes (priority order, max 8)
+  recommended: number[]       // Recommended internal C-major pitches (priority order, max 8)
 }
 ```
 

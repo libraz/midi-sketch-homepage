@@ -198,6 +198,8 @@ cmake --build build --target midisketch_cli
 
 `--config` は `SongConfig` JSON オブジェクトを読み込みます。フィールド名は snake_case で、`arpeggio` と `chord_extension` のネストしたオブジェクトも native の設定型と同じ名前を使います。CLI オプションがない設定項目はこの JSON で指定します。
 
+設定ファイルが曲の記述のすべてです。`--config` は `--input`、`--validate`、`--regenerate` と併用できず、生成オプションを並べるとエラーになります。併用できるのは `--no-guitar`、`--format`、`--output`、`--analyze`、`--json`、`--bar`、`--dump-collisions-at` だけで、それ以外を変えたいときは設定ファイルを編集します。
+
 ```json
 {
   "style_preset_id": 3,

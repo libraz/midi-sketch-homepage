@@ -198,6 +198,8 @@ With `--analyze --json`, stdout contains only the analysis document. The generat
 
 `--config` reads a `SongConfig` JSON object. Field names use snake_case, and nested `arpeggio` and `chord_extension` objects use the same names as the native configuration type. This is the configuration path for controls that have no CLI flag.
 
+The config file is the whole song description. `--config` cannot be combined with `--input`, `--validate` or `--regenerate`, and any generation flag beside it is an error; only `--no-guitar`, `--format`, `--output`, `--analyze`, `--json`, `--bar` and `--dump-collisions-at` apply. Edit the config file to change anything else.
+
 ```json
 {
   "style_preset_id": 3,

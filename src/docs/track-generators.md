@@ -111,6 +111,10 @@ The starting chord is deliberately not part of the key. The progression restarts
 
 Each restatement is exact with a probability that falls as the phrase is reused: 80% on the first restatement, 60% on the second and 30% from the third onward, so later sections are fresher. Exact repetition is also forced to stop after two consecutive identical statements.
 
+A chorus of 8 or more bars states its hook twice (hook, answer, hook): the opening two bars are restated at the chorus midpoint, so the second statement is heard as the same hook. When the hook skeleton is Repeat, TripleHit, RhythmRepeat, StutterRepeat or Ostinato, the chorus head is also chanted on a single chord tone for 3 to 6 beats, and the restatement carries the chant too. Under RhythmSync the lead figure is stamped at the midpoint as well. A quieter chorus (ochisabi) sings the same tune thinner but leaves its two-bar hook intact.
+
+Separately, a **recitation** is a run of 4 to 8 rapid same-pitch notes at a phrase head. At most one is placed per section, mostly in the section leading into the chorus, and none in a chorus whose line already has a patter run. The chance is a per-style rate times a section weight: Vocaloid and UltraVocaloid 0.9, KPop and Idol 0.7, Anime 0.6, Ballad 0, with the other styles in between.
+
 ::: info Phrase Variation
 When a reuse is not exact, one of six variations is applied. All of them preserve the melodic identity of the phrase — none of them transpose, invert or re-cut it:
 
@@ -135,6 +139,8 @@ struct VocalRangeResult {
 ```
 
 The effective range starts with the singer bounds (`vocal_low` and `vocal_high`), then applies the Blueprint `max_pitch` ceiling and reserves headroom for a later upward modulation by lowering the effective high bound by the modulation amount. The lower bound is preserved. When positive modulation is requested, the adjusted high is clamped so at least one octave remains; a Blueprint `max_pitch` cap without modulation may produce a narrower span. Composition styles change `velocity_scale`; they do not create a separate foreground/background vocal range. Motif-follow-vocal behavior is a separate constraint: when a vocal exists, the motif generator still narrows its register around the vocal median.
+
+The chorus is kept as the song's melodic peak. A and B sections stop climbing at the tessitura centre and two semitones above it. A non-chorus phrase that would rise above the chorus peak is lowered as a unit by the smallest diatonic shift, rather than clamped note by note, so its contour survives. Each later chorus head is lifted at least slightly above the first chorus head, measured in the sounding key, so a modulation counts toward the lift.
 
 ### Non-Chord Tone Decoration
 
@@ -250,11 +256,13 @@ Chorus sections use a dedicated hook generation system built from **17 rhythm pa
 | RhythmRepeat | Pitch varies, rhythm constant |
 
 **Hook Intensity** controls hook prominence:
-- **Off (0)**: No hook emphasis
+- **Off (0)**: No hook emphasis, and no hook skeleton, chant or midpoint restatement inside the chorus; later choruses still restate the first
 - **Light (1)**: Chorus start only
-- **Normal (2)**: Chorus start and middle
-- **Strong (3)**: All hook points
+- **Normal (2)**: Chorus start and middle (the midpoint of a chorus of 8 or more bars)
+- **Strong (3)**: Chorus start, chorus middle and the start of each B section
 - **Maximum (4)**: Maximum repetition, simple patterns only
+
+A and Bridge sections are never hook points. At each hook point the first 1 (Light), 2 (Normal) or 3 (Strong, Maximum) notes within the first two beats are lengthened and accented.
 
 ### Global Motif System
 
@@ -330,6 +338,8 @@ The Aux (auxiliary) track provides **sub-melody support** when a main vocal exis
 | 6 | MelodicHook | Melodic hook riff |
 | 7 | MotifCounter | Counter melody (contrary motion) |
 | 8 | SustainPad | Whole-note chord tone pad |
+
+MotifCounter steps 3 semitones against the vocal's direction on each note and holds its pitch while the vocal is static. Against a low vocal it sits below the vocal floor (at most G4), and it stays silent rather than land a semitone from a sounding vocal note.
 
 ### Aux Function Selection
 
@@ -410,6 +420,8 @@ constexpr uint8_t CHORD_LOW = 48;   // C3
 constexpr uint8_t CHORD_HIGH = 84;  // C6
 ```
 
+The accompaniment never doubles the vocal's exact pitch. A chord voice that would sound the vocal's pitch moves to the same tone in another octave, or is dropped when no octave fits.
+
 ---
 
 ## Guitar Track
@@ -439,6 +451,11 @@ Guitar generation is influenced by Blueprint constraints:
 - Patterns adapt to section energy and mood
 - Per-section `guitar_style_hint` (0-7) in the Blueprint's SectionSlot can influence the style of guitar accompaniment
 - Guitar appears on MIDI channel 6 with Electric Guitar clean (program 27) as the fallback program; moods can assign a different guitar program
+- A guitar note that would resolve to the vocal's own pitch is refused rather than doubled
+- Power chords use the chord's own fifth, so a diminished chord (vii, #IVdim) gets a diminished fifth
+- When a strum (voices raked about 8 ticks apart) has a voice that crosses above the vocal, that voice is dropped instead of folded down alone, so the strum keeps its string order
+
+The same rule covers the sustains at the end of a section: the exit-pattern lengthening of Chord, Motif, Arpeggio, Guitar and Bass notes is cut before the vocal sounds the same pitch.
 
 ---
 
@@ -467,6 +484,8 @@ The rest cover genre-specific cases: RhythmicDrive, PowerDrive, Aggressive, Side
 <DocFigure name="tracks-bass-generation" />
 
 The section type steers which pattern is used, but it never shifts the octave. The root only moves by an octave when that is what keeps it inside the bass range of E1 (28) to G3 (55).
+
+Patterns come from the mood's genre row for the section: the primary pattern 60% of the time, the secondary 30% and the tertiary 10%. Two things narrow that choice to one member of the row. With drums off, the bass takes the row's densest pattern, since it carries the rhythm. In A, B and chorus sections, a vocal denser than 0.6 gets the row's sparsest pattern (never in a chorus or a peak section), and a vocal sparser than 0.3 gets the densest. A PedalTone is swapped for WholeNote under an arpeggio, except in a Bridge. Vocal motion moves only the octave the bar's root is anchored in, never its pitch class.
 
 Peak handling runs after pattern selection. `PeakLevel::Medium` promotes the selected pattern one density level and `PeakLevel::Max` promotes it twice. This applies to an explicit `bass_style_hint` as well as to an automatically selected pattern: the hint names the base pattern, while the peak still adds density.
 
@@ -507,11 +526,11 @@ constexpr uint8_t TOM_LOW = 45;
 
 `FillType` has 13 members. The common ones are SnareRoll, TomDescend, TomAscend and SnareTomCombo; the rest cover sparser and more idiomatic cases — SimpleCrash, LinearFill, GhostToAccent, BDSnareAlternate, HiHatChoke, TomShuffle, BreakdownFill, FlamsAndDrags and HalfTimeFill. `selectFillType()` picks one from the section pair, the drum style and the next section's energy.
 
-A fill does not have to cover every beat of its window; when a fill type has nothing to say on a beat, the section's ordinary pattern is kept there rather than leaving silence.
+A fill does not have to cover every beat of its window; when a fill type has nothing to say on a beat, the section's ordinary pattern is kept there rather than leaving silence. The subtle fills (SimpleCrash, BreakdownFill, HalfTimeFill) never write on beats 1 and 2, so the groove plays through them even when a high-energy section opens the window early.
 
 A fill is placed only in the last bar of a section, and only when the next section asks for one (`fill_before`) or is a full-weight chorus; a quiet chorus (ochisabi) is not led into by a fill. The fill starts on beat 4 in low-energy sections, beat 3 in medium ones and beat 1 (the whole bar) in high-energy ones. The final section never fills, and the bar that breaks into the last chorus keeps its groove and drops its final beat instead.
 
-For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. If that cut removes an entry crash, post-processing restores the crash at the next section boundary so the chorus still has an arrival marker.
+For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. `DrumHit` always marks the chorus entry with a crash; `Dramatic` only restores the entry crash if that cut removed one, so the chorus still has an arrival marker. A quiet chorus (ochisabi) gets no entry crash and none of the energy lift that otherwise keeps a section from entering below the one before it.
 
 ### Euclidean Drums
 
@@ -568,7 +587,7 @@ Groove offsets are a separate mechanism: the section's time feel shifts drum ons
 
 ### Vocal Synchronization
 
-When `drums_sync_vocal` is enabled, kick drums align with vocal onset positions:
+When `drums_sync_vocal` is enabled, the drums follow the vocal by adding supporting kicks; the style's own kick pattern is always written. Under RhythmSync the added kicks land on vocal onsets, at most 3 per bar and never on beats 1 and 3. Under MelodyDriven, off-beat kicks (beats 1.5 and 3.5) are added only in vocally dense bars, and none are added for the FourOnFloor and Sparse styles.
 
 ```cpp
 void generateDrumsTrackWithVocal(
@@ -642,11 +661,11 @@ The motif track occupies C4 (60) - C8 (108). The register flag picks the base no
 | Mid (default) | C4 (60) |
 | High | G4 (67) |
 
-When a vocal is present, the usable range is narrowed around the vocal median: the ceiling drops to three semitones above it and the floor rises to fifteen below, which keeps the motif from piling up at the top of its range.
+When a vocal is present, the usable range is narrowed around the vocal median: the floor is fifteen semitones below it (never under C4) and the ceiling three semitones above it (never over C8), but never narrower than an octave. This keeps the motif from piling up at the top of its range. A cached or replayed motif section thins to that section's own density, and a motif note held across a dissonant chord change is released before the change.
 
 ### Repetition
 
-For the `Free` policy, `repeat_scope` controls whether `FullSong` generates a fresh motif for each section or `Section` caches and reuses a pattern by section type. The locked policies (LockedContour, LockedPitch, LockedAll) replay the cached pattern on repeated section types. `Evolving` mutates its cached riff once per section while retaining its identity. When `phrase_tail_rest` applies, the motif stops starting notes halfway through the final bar of the tail; the coordinator asks the generator for that cutoff when it copies a frozen bar.
+For the `Free` policy, `repeat_scope` controls whether `FullSong` (the default) keeps one motif for the whole song or `Section` caches a separate pattern for each section type. The locked policies (LockedContour, LockedPitch, LockedAll) replay the cached pattern on repeated section types. `Evolving` mutates its cached riff once per section while retaining its identity. When `phrase_tail_rest` applies, the motif stops starting notes halfway through the final bar of the tail; the coordinator asks the generator for that cutoff when it copies a frozen bar.
 
 ---
 
@@ -687,6 +706,8 @@ struct ArpeggioParams {
 | 255 | Auto | Use the mood or blueprint default pattern (the JS default) |
 
 The chord tones are stacked across `octave_range` octaves before the pattern is applied, so with the default of 2 an Up arpeggio on a C major triad plays C E G C E G, not C E G C.
+
+The arpeggio follows the chord that actually sounds, not the raw progression: substitutions, restated loops, anticipations and mid-bar chord changes are all followed. A `PeakLevel::Max` section adds one octave to `octave_range`, capped at 3, and the Blueprint's `prefer_stepwise` constraint forces it to 1. Under RhythmSync, an explicit `speed` or `gate` is kept; the Sixteenth speed and a gate of at least 0.95 apply only to Auto.
 
 ### Speed Conversion
 

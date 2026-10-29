@@ -105,7 +105,7 @@ The Emotion Curve system plans the emotional journey of a song, assigning specif
 - **Intro**: Anticipation (low tension, building energy)
 - **Verse (A)**: Expectation (moderate tension)
 - **Pre-chorus (B)**: Tension build (high tension, upward pitch tendency)
-- **Chorus**: Release/resolution (peak energy, maximum density)
+- **Chorus**: Release/resolution (peak energy, maximum density). An ochisabi chorus is never the last-chorus peak, and each section's energy is scaled by its modifier
 - **Bridge**: Reflection (lower energy, contrast)
 - **Outro**: Closure (decreasing tension)
 
@@ -186,7 +186,7 @@ Alongside the basic Up, Down, UpDown and Random patterns:
 ### Piano Roll Safety API
 
 ::: details Note Safety Analysis
-The Piano Roll Safety API analyzes pitch safety at any point in the generated song. For each MIDI pitch (0-127), it reports:
+The Piano Roll Safety API analyzes pitch safety at any point in the generated song. For each MIDI pitch (0-127, in the generator's internal C-major space; add `currentKey` for the sounding pitch), it reports:
 - **Safety level**: Safe (chord tone), Warning (tension/low register/passing tone), or Dissonant (non-scale/collision)
 - **Reason flags**: Detailed bit flags indicating why a pitch is rated at its level (e.g., ChordTone, Tension, LargeLeap, Minor2nd collision)
 - **Collision detection**: Identifies which tracks would collide with a given pitch

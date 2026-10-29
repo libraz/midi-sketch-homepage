@@ -49,7 +49,7 @@ So the table follows the Traditional/MelodyDriven sequence with skipped tracks r
 
 ## Phase 1: Structure Building
 
-The generator selects the song structure from the target duration, an explicit form, a Blueprint section flow, or `StructurePattern`. It can then insert call sections, overlay Blueprint slot properties, apply Behavioral Loop exit patterns, and apply an **Energy Curve** (GradualBuild, FrontLoaded, WavePattern, or SteadyState) to shape the overall dynamic arc.
+The generator selects the song structure from the target duration, an explicit form, a Blueprint section flow, or `StructurePattern`. It can then insert call sections, overlay Blueprint slot properties, apply Behavioral Loop exit patterns, and apply an **Energy Curve** (GradualBuild, FrontLoaded, WavePattern, or SteadyState) to shape the overall dynamic arc. Structure and tempo are planned once. With a target duration, call-section bars are reserved first; lengthening adds whole A-B-Chorus blocks before the Outro, while shortening removes verses and pre-choruses after the first chorus, then breaks, then a chorus other than the last. The last chorus and the B leading into it are never cut, the last chorus is the only one that carries the climax, and the engine warns when the target is missed.
 
 ### Structure Patterns
 
@@ -101,6 +101,8 @@ The most complex generator with phrase caching and template-driven design. When 
 ::: info Auto Template Selection
 When `melodyTemplate=Auto`, the template is resolved per section from a style × section override table, falling back to the section default. For example, Anime style has no chorus override, so it takes the section default and always uses HookRepeat there; Rock and PowerfulShout are overridden to JumpAccent in the chorus.
 :::
+
+A chorus of eight or more bars restates its opening two bars at its midpoint, and a repeat-type hook head is chanted on a single chord tone. See [Track Generators](/docs/track-generators) for the per-track detail.
 
 **Vocal Attitudes:**
 
@@ -157,7 +159,7 @@ Bass provides the harmonic foundation, adapting to vocal when present:
 
 **Bass Patterns:**
 
-The bass system supports 17 pattern types (BassPattern). The active pattern is selected automatically based on mood and section, or can be influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot configuration (0=auto, 1-17 maps to BassPattern+1). Section type selects the pattern and the velocity — it does not transpose the bass by octave; the register only moves to keep the root inside the bass range.
+The bass system supports 17 pattern types (BassPattern). The active pattern is selected automatically from the mood's genre row and the section, then adjusted to the drums and the vocal's density (see [Track Generators](/docs/track-generators)), or can be influenced per-section via `bass_style_hint` in the Blueprint's SectionSlot configuration (0=auto, 1-17 maps to BassPattern+1). Section type selects the pattern and the velocity — it does not transpose the bass by octave; the register only moves to keep the root inside the bass range.
 
 Peak handling is a second step after selection. `PeakLevel::Medium` promotes the chosen pattern one density level and `PeakLevel::Max` promotes it twice. This also applies when `bass_style_hint` explicitly names the base pattern; the hint chooses the starting pattern, not whether a peak is allowed to thicken it.
 
@@ -220,6 +222,8 @@ Blueprints carry a `euclidean_drums_percent` field and the drum generator sample
 - Tom descend/ascend patterns
 - Snare rolls
 - Combination fills at section transitions
+
+Vocal sync adds supporting kicks around the style's kick pattern rather than replacing it. An ochisabi chorus gets no entry crash, no energy lift and no fill.
 
 For a `Dramatic` or `DrumHit` chorus drop, the final drop zone also truncates the kit. If that cut removes an entry crash, the post-processor restores the crash at the next section boundary so the chorus still has an arrival marker.
 
@@ -296,7 +300,9 @@ Velocity humanization is applied to the pitched tracks (vocal, chord, bass, moti
 
 ### Cross-Track Voice Limiting and Final Repair
 
-After track generation, sections with `max_moving_voices` cap how many pitched tracks may change between adjacent bars. The coordinator freezes lower-priority moving tracks in this order (highest to lowest): **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**. Drums and SE are outside the cap. A frozen bar copies the previous bar, shifts it into place, and then re-quantizes pitches against the new chord and the other tracks. Chord-boundary policies may split or shorten notes; the generator's motif phrase-tail cutoff is applied during this copy/quantization pass, and guitar rake order is restored after pitch resolution so the result remains in string order with a playable fingering.
+After track generation, sections with `max_moving_voices` cap how many pitched tracks may change between adjacent bars. The coordinator freezes lower-priority moving tracks in this order (highest to lowest): **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**. Drums and SE are outside the cap. A frozen bar copies the previous bar, shifts it into place, and then re-quantizes pitches against the new chord and the other tracks. Copied bass notes follow the chord-root motion, so a root stays a root and a fifth stays a fifth, and a copied slash-bass note returns to the root unless the destination chord asks for the same inversion. A chord bar that states an anticipation in its last eighth is not frozen; the next lowest-priority track is frozen instead. A frozen chord bar is cleared of the vocal's pitch and of voices above it. Chord-boundary policies may split or shorten notes; the generator's motif phrase-tail cutoff is applied during this copy/quantization pass, and guitar rake order is restored after pitch resolution so the result remains in string order with a playable fingering.
+
+After generation, a vocal-crossing pass handles Chord, Aux, Guitar and, outside RhythmSync, Motif notes left above the sounding vocal: each is dropped by octaves to a consonant pitch, shortened, or removed. The arpeggio is excluded because its register above the vocal is intentional. A single voice of a guitar strum (the 8-tick rake) is dropped rather than moved alone, so the strum keeps its string order. Accompaniment tracks never double the vocal's exact pitch, and exit-pattern sustains are cut before the vocal reaches their pitch.
 
 The final tail gate handles a short accidental overlap by trimming the earlier note at the later onset when the overlap is no longer than a quarter note and the remainder either is at least a 32nd note or retains at least seven eighths of an already-short note. Longer overlaps or a shorter remainder follow the ordinary clash rules. See the [Harmony](/docs/harmony) reference for the shared chord-aware collision policy.
 

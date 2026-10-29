@@ -62,6 +62,8 @@ MidiSketchはモチーフトラックを生成し、その形に対する複数�
 
 MidiSketchの `hookIntensity`（0 = Off、1 = Light、2 = Normal、3 = Strong、4 = Maximum）は、サビがフック素材をどれだけ強く反復するかを制御します。デフォルトは2（Normal）です。BehavioralLoopブループリント／`addictiveMode` は、これを自動的にMaximumへ押し上げます。
 
+8小節以上のサビでは、エンジンはフックを2回提示します（フック、アンサー、フック）。曲の中間で同じ図形が戻ってくるので、聴き手の記憶に残りやすくなります。また `hookIntensity` がOffより上のとき、反復を軸にしたフック（Repeat、TripleHit、RhythmRepeat、StutterRepeat、Ostinato の型）は、ひとつのコードトーンで唱えるように歌われます。観客がひとつの音節を叫ぶのと同じで、繰り返されるリズムそのものが耳に残ります。
+
 ## コール＆レスポンス：対話するフレーズ
 
 フレーズはしばしば問いと答えの構造でペアになります。ブルースからアイドル曲の観客コールまで、あらゆるものを支える仕掛けです。

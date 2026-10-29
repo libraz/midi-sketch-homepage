@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="tvp-ttl tvp-dsc">
   <title id="tvp-ttl">What happens when a section asks for a vocal phrase</title>
-  <desc id="tvp-dsc">A section begins and the phrase cache is looked up with a key made of section type, bar count and starting chord degree. On a hit the stored phrase is reused, shifted to this section's start and re-fitted to the range. On a miss a MelodyTemplate is chosen, a phrase is generated, scored and cached. Either way one phrase comes out and passes through the same tail: voice leading, HarmonyContext.getSafePitch, an octave fold back into the vocal range, and finally the write to the vocal track.</desc>
+  <desc id="tvp-dsc">A section begins and the phrase cache is looked up by section type. On a hit the stored phrase is reused, shifted to this section's start and re-fitted to the range. On a miss a MelodyTemplate is chosen, a phrase is generated, scored and cached. Either way one phrase comes out and passes through the same tail: voice leading, HarmonyContext.getSafePitch, an octave fold back into the vocal range, and finally the write to the vocal track.</desc>
 
   <defs>
     <marker id="tvp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
@@ -21,7 +21,7 @@
 
   <rect class="card" x="220" y="72" width="408" height="46" rx="6"/>
   <text class="h" x="232" y="93">look up the phrase cache</text>
-  <text class="s" x="232" y="111">key = section type + bar count + starting chord degree</text>
+  <text class="s" x="232" y="111">key = section type</text>
 
   <path class="ln" d="M 424 118 V 130"/>
   <path class="ln" d="M 317 130 H 531"/>

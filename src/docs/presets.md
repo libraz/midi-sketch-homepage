@@ -50,6 +50,8 @@ Each preset is a bundle of the config fields taught in the course. The capstone 
 
 ::: tip Duration Calculation
 At 120 BPM: 1 bar ≈ 2 seconds. Use `targetDurationSeconds=0` to use the exact pattern duration, or specify a target duration for auto-generated structures.
+
+A target duration is met as follows. Call-section bars (intro chant, MIX) are reserved from the target first. Lengthening adds whole A-B-Chorus blocks before the Outro; a remainder of more than two phrases becomes one more B leading into a chorus, and more than one phrase repeats the last chorus, so the ending is never a fragment. Shortening removes verses and pre-choruses after the first chorus first, then breaks, then a chorus other than the last. The last chorus and the B leading into it are never cut, and exactly one chorus, the last, carries the climax. If the result still misses the target, generation returns a warning.
 :::
 
 ## Mood Presets
@@ -221,7 +223,7 @@ Traditional and MelodyDriven share the same track order; what separates them is 
 
 | Policy | Value | Description |
 |--------|:-----:|-------------|
-| Free | 0 | Each section varies independently |
+| Free | 0 | One motif song-wide or per section type, per `motifRepeatScope` |
 | LockedContour | 1 | Contour locked, rhythm varies |
 | LockedPitch | 2 | Pitch fully locked, velocity varies |
 | LockedAll | 3 | All aspects locked |

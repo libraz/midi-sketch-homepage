@@ -69,9 +69,9 @@
   <rect class="chip" x="728" y="200" width="192" height="32" rx="5"/>
   <text class="s" x="824" y="220" text-anchor="middle">スケール補正と音域クランプ</text>
 
-  <text class="s" x="30" y="196">キャッシュのキーはセクション種別・</text>
-  <text class="s" x="30" y="212">小節数・コード度数です。繰り返すサビは</text>
-  <text class="s" x="30" y="228">ここで当たり、変化を付けて戻ります。</text>
+  <text class="s" x="30" y="196">キャッシュのキーはセクション種別だけです。</text>
+  <text class="s" x="30" y="212">繰り返すサビはここで当たり、</text>
+  <text class="s" x="30" y="228">変化を付けて戻ります。</text>
 
   <path class="seam" d="M 24 256 H 936"/>
   <text class="s" x="480" y="276" text-anchor="middle">メロディテンプレートとボーカルアティチュードは独立した工程ではなく、この流れ全体の判断を導きます。</text>

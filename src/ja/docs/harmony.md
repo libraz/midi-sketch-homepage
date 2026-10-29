@@ -168,6 +168,10 @@ ChordQuality getChordQuality(int8_t degree) {
 これとは別に、A メロではコードのタイムライン上で IV を ii に置き換えます。その IV が V や I へ解決する場合と、直前または直後のコードがすでに ii である場合は置き換えません。この置き換えはエクステンションの設定に左右されません。
 :::
 
+::: info サビのループの繰り返し
+サビのコードループは、進行の1周を4小節の1まとまり（ステートメント）に引き伸ばしたものです。2回目以降のステートメントは、セカンダリードミナント・色付け・代理コード・先取りを含めて、1回目のコードをそのままコピーします。そのため2回歌われるフックは、どちらも同じハーモニーに出会います。最後の2小節はカデンツのために計画どおりのままです。4小節のフレーズに収まらない進行（5コードのもの）はループを持たず、繰り返されません。アルペジオ・ギター・ベースの先取りの判定は、繰り返された小節のどれでも同じに行われます。濃いサビ（EnergeticDance・IdolPop・AnimeHighEnergy・FutureBass）では、各ステートメントの3小節目でコードが小節の途中で切り替わり、繰り返しでも同じ小節で切り替わります。
+:::
+
 ### 設定
 
 ```cpp
@@ -538,9 +542,12 @@ HarmonyContextがなければ、メロディが伴奏と衝突する可能性が
 
 ```javascript
 const info = sketch.getPianoRollSafetyAt(0)
-const safety = info.safety[60]
-const reasons = info.reason[60]
+const internal = 60 - info.currentKey  // 実際に鳴る C4 を内部の C メジャー空間に直す
+const safety = info.safety[internal]
+const reasons = info.reason[internal]
 ```
+
+配列のインデックスはジェネレーター内部の C メジャー空間のピッチです。`currentKey` は出力時に上乗せされるシフト量です。
 
 色はこの表示API独自の安全度を表します。緑は安全、黄は警告、赤は不協和音または音域外です。深刻度の規則はHarmonyContextの生成側フィルターとは別で、生成側のコード例外を引き継ぎません。
 

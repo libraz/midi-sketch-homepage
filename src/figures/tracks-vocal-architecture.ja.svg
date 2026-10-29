@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 364" role="img" aria-labelledby="tva-ttl tva-dsc">
   <title id="tva-ttl">ボーカル生成を構成する 3 つのコンポーネントの関係</title>
-  <desc id="tva-dsc">左から右へのパイプラインです。左端の VocalStyleProfile が 2 つの設定を供給します。StyleBias は生成される音の偏りを決め、EvaluatorConfig は候補の採点の重みを決めます。中央の MelodyDesigner は候補フレーズをまとめて生成し、それぞれを採点し、下位半分を切り捨てたうえで残りからスコア重み付きで抽選します。右側の Vocal Generator は制約パイプラインを通し、セクションタイプ・小節数・開始コード度数をキーとするキャッシュにフレーズを保存し、ボーカルトラックへ書き出します。</desc>
+  <desc id="tva-dsc">左から右へのパイプラインです。左端の VocalStyleProfile が 2 つの設定を供給します。StyleBias は生成される音の偏りを決め、EvaluatorConfig は候補の採点の重みを決めます。中央の MelodyDesigner は候補フレーズをまとめて生成し、それぞれを採点し、下位半分を切り捨てたうえで残りからスコア重み付きで抽選します。右側の Vocal Generator は制約パイプラインを通し、セクションタイプだけをキーとするキャッシュにフレーズを保存し、ボーカルトラックへ書き出します。</desc>
 
   <defs>
     <marker id="tva-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
@@ -60,8 +60,8 @@
 
   <rect class="chip" x="666" y="152" width="258" height="66" rx="5"/>
   <text class="h" x="678" y="173">フレーズキャッシュ</text>
-  <text class="s" x="678" y="192">セクションタイプ・小節数・</text>
-  <text class="s" x="678" y="208">開始コード度数がキー</text>
+  <text class="s" x="678" y="192">セクションタイプ</text>
+  <text class="s" x="678" y="208">だけがキー</text>
 
   <path class="ln" d="M 795 218 V 228" marker-end="url(#tva-a)"/>
 

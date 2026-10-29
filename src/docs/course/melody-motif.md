@@ -62,6 +62,8 @@ A **hook** is the phrase listeners can hum after a single play: compact in range
 
 MidiSketch's `hookIntensity` (0 = Off, 1 = Light, 2 = Normal, 3 = Strong, 4 = Maximum) controls how aggressively the chorus repeats its hook material; the default is 2 (Normal). The BehavioralLoop blueprint / `addictiveMode` pushes this toward Maximum automatically.
 
+In a chorus of eight or more bars the engine states the hook twice (hook, answer, hook), so the listener gets the same figure back at the midpoint. And whenever `hookIntensity` is above Off, a hook that is built on repetition (the Repeat, TripleHit, RhythmRepeat, StutterRepeat and Ostinato shapes) is chanted on a single chord tone, like a crowd shouting one syllable, which makes the repeated rhythm the thing that sticks.
+
 ## Call and response: phrases in dialogue
 
 Phrases often pair up into a question-and-answer structure, a device that powers everything from blues to idol-music crowd chants.

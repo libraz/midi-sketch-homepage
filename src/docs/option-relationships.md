@@ -190,7 +190,7 @@ BackgroundMotif enables the Motif generator; section masks and layer schedules d
 | `blueprintId` | `255` (default) | Draw a blueprint by weight from those that suit the mood and hold the song's tempo |
 | `seed` | `0` | Auto-generate random seed |
 | `targetDurationSeconds` | `0` | Use structure pattern from `formId` |
-| `vocalStyle` | `0` (Auto) | Random selection based on style |
+| `vocalStyle` | `0` (Auto) | Drawn from the blueprint's singer table, or the style preset's table when the blueprint has none |
 | `melodyTemplate` | `0` (Auto) | Default selection based on style |
 | `arpeggioPattern` | `255` (Auto) | Use the mood's default pattern |
 | `arpeggioSpeed` | `255` (Auto) | Use the mood's default speed |
@@ -541,7 +541,7 @@ Without `drumsEnabledExplicit=true`, blueprints with `drums_required=true` (ID 1
 {
   compositionStyle: 1,  // BackgroundMotif (BGM-only)
   compositionStyleExplicit: true,
-  // No need to set skipVocal (auto-disabled in BackgroundMotif)
+  // No need to set skipVocal: a full-song generation with BackgroundMotif leaves the vocal out
 
   // Motif settings
   motifMaxChordCount: 4,
@@ -660,7 +660,7 @@ Setting `vocalStyle` automatically configures internal melody generation paramet
 
 | ID | Name | Characteristics |
 |----|------|-----------------|
-| 0 | Auto | Random selection based on style |
+| 0 | Auto | Weighted draw seeded from the song seed: the blueprint's singer table (blueprints 1 and 3-8, e.g. Ballad 70% Ballad / 30% Standard), otherwise the style preset's table (blueprints 0, 2, 9). The drawn style's preset values then apply (a draw of Standard applies none) |
 | 1 | Standard | Standard pop |
 | 2 | Vocaloid | High density, wide leaps, syncopation (singable) |
 | 3 | UltraVocaloid | Ultra-fast, extreme leaps (machine-oriented) |
@@ -739,15 +739,18 @@ Other vocal styles do not trigger auto-call activation.
 
 ### 12.7 hookIntensity → Phrase Generation Changes
 
-| hookIntensity | Duration Multiplier | Velocity Addition | Target Sections |
-|---------------|--------------------|--------------------|-----------------|
-| `Off (0)` | - | - | None |
-| `Light (1)` | x1.3 | +5 | Chorus, B |
-| `Normal (2)` | x1.5 | +10 | Chorus, B |
-| `Strong (3)` | x2.0 | +15 | **All sections** |
+| hookIntensity | Duration Multiplier | Velocity Addition | Emphasised Notes | Hook Points |
+|---------------|--------------------|--------------------|:----------------:|-------------|
+| `Off (0)` | - | - | - | None |
+| `Light (1)` | x1.3 | +5 | 1 | Chorus start |
+| `Normal (2)` | x1.5 | +10 | 2 | Chorus start, plus the chorus midpoint when the chorus is 8+ bars |
+| `Strong (3)` | x2.0 | +15 | 3 | As Normal, plus the start of B |
+| `Maximum (4)` | x2.0 | +15 | 3 | Same as Strong |
+
+Only the first notes within the first two beats of each hook point are emphasised. A and Bridge are never hook points. `Off` also writes no hook skeleton, no chant and no midpoint restatement inside the chorus; later choruses still restate the first, since that is song form.
 
 ::: warning Maximum (4) is for Behavioral Loop
-`hookIntensity=4` (Maximum) is intended for BehavioralLoop mode and is set automatically when `blueprintId=9` or `addictiveMode=true`. It passes validation if set explicitly, but it forces maximum repetition with simple patterns, so for normal songs use 0-3.
+`hookIntensity=4` (Maximum) shares Strong's emphasis; its extra effect comes from hook skeleton selection. It is intended for BehavioralLoop mode and is set automatically when `blueprintId=9` or `addictiveMode=true`. It passes validation if set explicitly, but it forces maximum repetition with simple patterns, so for normal songs use 0-3.
 :::
 
 ---
@@ -995,7 +998,7 @@ Production Blueprints control **how** the music is generated, independent of sty
 
 | Policy | Value | Description | Effect on motifRepeatScope |
 |--------|:-----:|-------------|---------------------------|
-| Free | 0 | Each section varies | Uses `motifRepeatScope` setting |
+| Free | 0 | One motif song-wide or per section type | Uses `motifRepeatScope` setting |
 | LockedContour | 1 | Pitch contour fixed, rhythm and expression vary | **Ignores** `motifRepeatScope` |
 | LockedPitch | 2 | Pitch fully fixed, velocity varies | **Ignores** `motifRepeatScope` |
 | LockedAll | 3 | Every aspect fixed | **Ignores** `motifRepeatScope` |

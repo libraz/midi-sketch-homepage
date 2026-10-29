@@ -891,8 +891,8 @@ typedef struct {
 typedef struct {
   uint32_t tick;
   int8_t chord_degree;
-  uint8_t current_key;
-  uint8_t safety[128];
+  uint8_t current_key;  // 出力時のキーシフト。以下の配列には適用されない
+  uint8_t safety[128];  // 内部 C メジャー空間のピッチで引く（reason, collision, recommended も同じ）
   uint16_t reason[128];
   MidiSketchCollisionInfo collision[128];
   uint8_t recommended[8];

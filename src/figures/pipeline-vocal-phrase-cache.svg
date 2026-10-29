@@ -69,9 +69,9 @@
   <rect class="chip" x="728" y="200" width="192" height="32" rx="5"/>
   <text class="s" x="824" y="220" text-anchor="middle">scale snap &amp; range clamp</text>
 
-  <text class="s" x="30" y="196">The cache key is the section type, its bar</text>
-  <text class="s" x="30" y="212">count and the chord degree — so a repeated</text>
-  <text class="s" x="30" y="228">chorus hits it, and comes back varied.</text>
+  <text class="s" x="30" y="196">The cache key is the section type alone,</text>
+  <text class="s" x="30" y="212">so a repeated chorus hits it</text>
+  <text class="s" x="30" y="228">and comes back varied.</text>
 
   <path class="seam" d="M 24 256 H 936"/>
   <text class="s" x="480" y="276" text-anchor="middle">The melody template and the vocal attitude are not separate passes — they steer every choice along the way.</text>

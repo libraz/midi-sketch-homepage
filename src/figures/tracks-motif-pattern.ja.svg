@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 424" role="img" aria-labelledby="tmp-ttl tmp-dsc">
   <title id="tmp-ttl">モチーフパターンの組み立てと、モーションタイプが変えるもの</title>
-  <desc id="tmp-dsc">モチーフは基準音から始まります。高音域なら 67、そうでなければ 60 です。次にリズム位置を決めます。リズム密度とモチーフ長から導くか、ロックされたリズムテンプレートを使います。音数は 3〜8 に収められ、既定は 6 です。そのあとで初めてピッチ列を生成し、1 音ごとに 1 ステップ進めます。歩幅を決めるのがモーションタイプで、Stepwise は 2 度まで、GentleLeap は 3 度、WideLeap は 5 度、NarrowStep はスケール 1 度、Disjunct は不規則な跳躍、Ostinato は同一ピッチクラスの反復です。最後にリピートスコープが、1 パターンを曲全体で使うかセクションごとに作り直すかを決めます。ただしリフポリシーが毎セクション作り直しを強制している場合はそちらが優先されます。</desc>
+  <desc id="tmp-dsc">モチーフは基準音から始まります。高音域なら 67、そうでなければ 60 です。次にリズム位置を決めます。リズム密度とモチーフ長から導くか、ロックされたリズムテンプレートを使います。音数は 3〜8 に収められ、既定は 6 です。そのあとで初めてピッチ列を生成し、1 音ごとに 1 ステップ進めます。歩幅を決めるのがモーションタイプで、Stepwise は 2 度まで、GentleLeap は 3 度、WideLeap は 5 度、NarrowStep はスケール 1 度、Disjunct は不規則な跳躍、Ostinato は同一ピッチクラスの反復です。最後にリピートスコープが、1 パターンを曲全体で使うかセクションタイプごとに持つかを決めます。ただしこれが効くのは Free ポリシーのときだけで、ロック系や Evolving ではキャッシュ済みのリフを再生または変化させます。</desc>
 
   <defs>
     <marker id="tmp-a" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
@@ -77,11 +77,11 @@
 
   <rect class="chip" x="338" y="296" width="278" height="46" rx="5"/>
   <text class="h" x="350" y="317">Section</text>
-  <text class="s" x="350" y="333">セクションごとに新パターン</text>
+  <text class="s" x="350" y="333">セクションタイプごとに 1 パターン</text>
 
   <rect class="warn" x="640" y="296" width="284" height="46" rx="6"/>
   <text class="h" x="652" y="317">リフポリシーが優先</text>
-  <text class="s" x="652" y="333">Free ポリシーでは毎セクション作り直し</text>
+  <text class="s" x="652" y="333">スコープが効くのは Free のときだけ</text>
 
   <path class="seam" d="M 24 378 H 936"/>
   <text class="s" x="480" y="400" text-anchor="middle">モーションタイプが決めるのは 1 歩の幅だけで、リズムのグリッドはピッチより先に確定します。</text>

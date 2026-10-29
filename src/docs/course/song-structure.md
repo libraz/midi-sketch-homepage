@@ -48,6 +48,8 @@ The **chorus** — Japanese **sabi** (サビ) — is the song's high point and m
 
 The chorus here runs over an `F–G–Em–Am` loop and peaks at the top of the vocal range. That peak is not accidental — it is the structural reason every preceding section held back.
 
+The engine enforces that contrast. A and B stop climbing short of the chorus register, and a verse or pre-chorus phrase that would pass the chorus peak is moved down as a whole, so its contour survives. Each later chorus then opens at least slightly above the first, counting any key change, so the song keeps building rather than repeating the same height.
+
 ## Intro, interlude, and outro
 
 Three non-sung (or lightly sung) sections frame and pace the song. The **intro** opens it, the **interlude** breaks it up, and the **outro** closes it. They carry no new lyrics but do real structural work: setting expectations, giving the listener a rest, and landing the ending.
@@ -83,6 +85,8 @@ The schematic above is not a melody — each whole note stands for one section, 
 ::: warning Common pitfall — `targetDurationSeconds` overrides `formId`
 If `targetDurationSeconds` is greater than `0`, the engine auto-builds a structure to fit that length and ignores `formId`'s section layout. Leave it at `0` to honour `formId`. Likewise `formExplicit: false` lets the engine adapt your chosen form — set it `true` to lock the form exactly as numbered.
 :::
+
+When the engine fits a form to a target length, it first reserves the bars of any call sections. To lengthen, it adds whole A–B–Chorus blocks before the Outro, so the song never ends on a fragment. To shorten, it cuts verses and pre-choruses after the first chorus first, then breaks, then a chorus other than the last. The last chorus and the B leading into it are never cut, and exactly one chorus, the last, carries the climax.
 
 ## The final-chorus key change: modulation
 

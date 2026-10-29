@@ -109,9 +109,9 @@ The track generation order varies depending on the Blueprint paradigm:
 
 ### Cross-Track Voice Limiting
 
-Sections may cap the number of pitched tracks that are allowed to change from one bar to the next with `max_moving_voices`. When the cap is exceeded, the coordinator freezes the lowest-priority moving tracks by copying the previous bar. The priority order, highest to lowest, is **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**; Drums and SE are outside this limit.
+Sections may cap the number of pitched tracks that are allowed to change from one bar to the next with `max_moving_voices`. When the cap is exceeded, the coordinator freezes the lowest-priority moving tracks by copying the previous bar. The priority order, highest to lowest, is **Vocal → Guitar → Motif → Aux → Chord → Arpeggio → Bass**; Drums and SE are outside this limit. Copied bass notes follow the chord-root motion (a root stays a root, a fifth stays a fifth), and a chord bar that states an anticipation in its last eighth is not frozen, the next lowest-priority track being frozen instead. A frozen chord bar is cleared of the vocal's pitch and voices above it.
 
-The coordinator preserves track-specific phrase-tail silence during the copy/quantization pass, then restores guitar rake order after pitch resolution. See [Cross-Track Voice Limiting and Final Repair](/docs/generation-pipeline#cross-track-voice-limiting-and-final-repair) for the pass order and tail gate.
+The coordinator preserves track-specific phrase-tail silence during the copy/quantization pass, then restores guitar rake order after pitch resolution. A separate vocal-crossing pass drops Chord, Aux, Guitar and (outside RhythmSync) Motif notes left above the vocal by octaves, shortens them, or removes them; the arpeggio is excluded. See [Cross-Track Voice Limiting and Final Repair](/docs/generation-pipeline#cross-track-voice-limiting-and-final-repair) for the pass order and tail gate.
 
 ## Time Representation
 
